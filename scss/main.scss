@@ -3976,6 +3976,43 @@ td.current_day_cell.half_2nd {
   border-bottom: 1px solid $border-color;
 }
 
+/*
+  Visual-only fallback for page-level vertical scrolling. The source thead
+  remains in the original table and is the sole semantic header. JavaScript
+  shows at most one fixed clone and synchronises it with the source container.
+*/
+.team-view-sticky-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 20;
+  overflow: hidden;
+  background: $surface-muted;
+  box-shadow: $shadow-sm;
+  pointer-events: auto;
+}
+
+.team-view-sticky-header[hidden] {
+  display: none;
+}
+
+.team-view-sticky-header-viewport {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.team-view-sticky-header-table {
+  min-width: 0;
+  table-layout: fixed;
+}
+
+.team-view-sticky-header-table .team-view-name-header {
+  position: sticky;
+  left: 0;
+  z-index: 6;
+}
+
 .team-view-table .team-view-name-header {
   left: 0;
   z-index: 6;
@@ -5029,7 +5066,8 @@ td.current_day_cell.half_2nd {
   }
 
   .calendar-toolbar,
-  .team-view-table thead th {
+  .team-view-table thead th,
+  .team-view-sticky-header {
     background: #20252a;
   }
 
