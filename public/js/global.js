@@ -335,6 +335,229 @@ $(document).ready(function(){
 });
 
 
+/*
+ * Team View: page-level sticky header fallback.
+ *
+ * The source table remains the only semantic table. When an overflow-x
+ * ancestor prevents its native sticky cells from following document scroll,
+ * this controller displays one aria-hidden clone of the source <thead>.
+ * Geometry is measured from the live source and every update is rAF-batched.
+ */
+(function initTeamViewStickyHeaders(){
+  $(document).ready(function(){
+    var STATE_KEY = 'teamViewStickyHeaderState';
+    var EVENT_NAMESPACE = '.teamViewStickyHeader';
+    var NATIVE_STICKY_TOLERANCE_PX = 1.5;
+    var $shells = $('.team-view-table-shell');
+    var states = [];
+    var frameScheduled = false;
+    var measureRequested = true;
+
+    if (!$shells.length || !window.requestAnimationFrame) { return; }
+
+    function sanitiseClone($clone) {
+      var $cloneTree = $clone.add($clone.find('*'));
+
+      $cloneTree
+        .off()
+        .removeData()
+        .removeAttr('id tabindex aria-describedby data-toggle data-trigger');
+
+      $cloneTree.each(function(){
+        var attributes = this.attributes;
+        for (var index = attributes.length - 1; index >= 0; index -= 1) {
+          var attributeName = attributes[index].name;
+          if (attributeName.indexOf('data-') === 0 ||
+              attributeName.indexOf('aria-') === 0) {
+            this.removeAttribute(attributeName);
+          }
+        }
+      });
+
+      $clone.find('a, button, input, select, textarea, [contenteditable]').each(function(){
+        var $element = $(this);
+        $element.removeAttr('href tabindex contenteditable name form aria-label aria-labelledby');
+        if ($element.is('button, input, select, textarea')) {
+          $element.prop('disabled', true);
+        }
+      });
+
+      return $clone;
+    }
+
+    function buildState(shell) {
+      var $shell = $(shell);
+      var $container = $shell.children('.team-view-table-container').first();
+      var $sourceTable = $container
+        .children('.team-view-table:not(.team-view-sticky-header-table)')
+        .first();
+      var $sourceThead = $sourceTable.children('thead').first();
+      var $overlay = $shell.children('.team-view-sticky-header').first();
+      var $overlayViewport = $overlay.children('.team-view-sticky-header-viewport').first();
+      var $overlayTable = $overlayViewport.children('.team-view-sticky-header-table').first();
+
+      if (!$container.length || !$sourceTable.length || !$sourceThead.length ||
+          !$overlay.length || !$overlayViewport.length || !$overlayTable.length) {
+        return null;
+      }
+
+      var $cloneThead = sanitiseClone($sourceThead.clone(false, false));
+      $overlayTable.children('thead').replaceWith($cloneThead);
+      $overlay.prop('hidden', true);
+
+      var state = {
+        shell: shell,
+        container: $container[0],
+        sourceTable: $sourceTable[0],
+        sourceThead: $sourceThead[0],
+        overlay: $overlay[0],
+        overlayViewport: $overlayViewport[0],
+        overlayTable: $overlayTable[0],
+        cloneThead: $cloneThead[0],
+        active: false,
+        measured: false,
+        headerHeight: 0,
+        tableWidth: 0
+      };
+
+      $shell.data(STATE_KEY, state);
+      return state;
+    }
+
+    function measureState(state) {
+      var sourceHeaders = state.sourceThead.querySelectorAll('th');
+      var cloneHeaders = state.cloneThead.querySelectorAll('th');
+      var sourceTheadRect = state.sourceThead.getBoundingClientRect();
+      var tableWidth = state.sourceTable.scrollWidth;
+
+      if (!sourceHeaders.length || sourceHeaders.length !== cloneHeaders.length ||
+          !sourceTheadRect.height || !tableWidth) {
+        state.measured = false;
+        return;
+      }
+
+      for (var index = 0; index < sourceHeaders.length; index += 1) {
+        var width = sourceHeaders[index].getBoundingClientRect().width;
+        cloneHeaders[index].style.width = width + 'px';
+        cloneHeaders[index].style.minWidth = width + 'px';
+        cloneHeaders[index].style.maxWidth = width + 'px';
+      }
+
+      state.headerHeight = sourceTheadRect.height;
+      state.tableWidth = tableWidth;
+      state.overlayTable.style.width = tableWidth + 'px';
+      state.overlayTable.style.minWidth = tableWidth + 'px';
+      state.overlayTable.style.maxWidth = tableWidth + 'px';
+      state.measured = true;
+    }
+
+    function candidateGeometry(state) {
+      var shellRect = state.shell.getBoundingClientRect();
+      var containerRect = state.container.getBoundingClientRect();
+      var sourceTheadRect = state.sourceThead.getBoundingClientRect();
+      var firstHeader = state.sourceThead.querySelector('th');
+      var firstHeaderRect = firstHeader && firstHeader.getBoundingClientRect();
+      var nativeStickyActive = firstHeaderRect &&
+        sourceTheadRect.top < 0 &&
+        firstHeaderRect.top >= -NATIVE_STICKY_TOLERANCE_PX &&
+        firstHeaderRect.top <= NATIVE_STICKY_TOLERANCE_PX;
+      var ownsViewportTop = sourceTheadRect.top < 0 &&
+        shellRect.bottom > state.headerHeight &&
+        containerRect.right > 0 &&
+        containerRect.left < window.innerWidth;
+
+      return {
+        eligible: state.measured && ownsViewportTop && !nativeStickyActive,
+        containerRect: containerRect
+      };
+    }
+
+    function hideState(state) {
+      if (!state.active && state.overlay.hidden) { return; }
+      state.active = false;
+      state.overlay.hidden = true;
+    }
+
+    function showState(state, geometry) {
+      var overlayStyle = state.overlay.style;
+      overlayStyle.left = geometry.containerRect.left + 'px';
+      overlayStyle.width = geometry.containerRect.width + 'px';
+      overlayStyle.height = state.headerHeight + 'px';
+      state.overlayViewport.style.width = state.container.clientWidth + 'px';
+      state.overlayViewport.style.marginLeft = state.container.clientLeft + 'px';
+      state.overlayViewport.scrollLeft = state.container.scrollLeft;
+      state.overlay.hidden = false;
+      state.active = true;
+    }
+
+    function refresh() {
+      frameScheduled = false;
+
+      if (measureRequested) {
+        for (var measureIndex = 0; measureIndex < states.length; measureIndex += 1) {
+          measureState(states[measureIndex]);
+        }
+        measureRequested = false;
+      }
+
+      var activeState = null;
+      var activeGeometry = null;
+
+      for (var index = 0; index < states.length; index += 1) {
+        var geometry = candidateGeometry(states[index]);
+        if (geometry.eligible) {
+          activeState = states[index];
+          activeGeometry = geometry;
+        }
+      }
+
+      for (var stateIndex = 0; stateIndex < states.length; stateIndex += 1) {
+        if (states[stateIndex] === activeState) {
+          showState(states[stateIndex], activeGeometry);
+        } else {
+          hideState(states[stateIndex]);
+        }
+      }
+    }
+
+    function scheduleRefresh(shouldMeasure) {
+      measureRequested = measureRequested || Boolean(shouldMeasure);
+      if (frameScheduled) { return; }
+      frameScheduled = true;
+      window.requestAnimationFrame(refresh);
+    }
+
+    $shells.each(function(){
+      if ($(this).data(STATE_KEY)) { return; }
+      var state = buildState(this);
+      if (!state) { return; }
+      states.push(state);
+      $(state.container).on('scroll' + EVENT_NAMESPACE, function(){
+        scheduleRefresh(false);
+      });
+    });
+
+    if (!states.length) { return; }
+
+    $(window)
+      .on('scroll' + EVENT_NAMESPACE, function(){ scheduleRefresh(false); })
+      .on('resize' + EVENT_NAMESPACE, function(){ scheduleRefresh(true); });
+
+    if (window.ResizeObserver) {
+      var resizeObserver = new window.ResizeObserver(function(){
+        scheduleRefresh(true);
+      });
+      for (var index = 0; index < states.length; index += 1) {
+        resizeObserver.observe(states[index].container);
+        resizeObserver.observe(states[index].sourceTable);
+      }
+    }
+
+    scheduleRefresh(true);
+  });
+})();
+
+
 $(document).ready(function(){
 
   $('[data-tom-color-picker] a')
