@@ -5505,7 +5505,7 @@ td.current_day_cell.half_2nd {
   --surface-sunken: #121417;
   --surface-overlay: #1f2327;
   --surface-border: #2a2f34;
-  --surface-border-hairline: #23282bd;
+  --surface-border-hairline: #23282d;
   --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.32);
   --shadow-card-strong: 0 8px 24px rgba(0, 0, 0, 0.40);
   --radius-card: 10px;
@@ -5549,5 +5549,31 @@ td.current_day_cell.half_2nd {
   .employees-page .employees-filter .all-departments a:active,
   .employees-page .page-heading-actions .btn:active:not(:disabled) {
     transform: none;
+  }
+}
+
+/*
+  Mobile layout (≤768px): collapse the workspace into a single column with
+  the directory first (primary task), then the filters. Without this the
+  desktop two-column grid squeezes the directory below the card table's
+  min-content width and overflows the viewport. (Stage 8A v2 P1 fix.)
+*/
+@media (max-width: 768px) {
+  .employees-page .employees-workspace {
+    grid-template-columns: 1fr;
+  }
+  .employees-page .employees-directory {
+    order: 1;
+  }
+  .employees-page .employees-aside {
+    order: 2;
+  }
+  .employees-page .page-heading-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .employees-page .page-heading-actions .btn,
+  .employees-page .page-heading-actions .btn-group {
+    width: 100%;
   }
 }
