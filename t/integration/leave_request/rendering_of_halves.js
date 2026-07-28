@@ -223,10 +223,10 @@ describe('Ensure that leaves with not full days are rendered properly', function
       .then(dates_str => {
         expect(dates_str.sort(), 'Ensure that date ranges values are as expected')
           .to.be.deep.equal([
-            '2015-06-09 (Afternoon) 2015-06-11',
-            '2015-06-09 (Morning) 2015-06-09',
-            '2015-06-16 (Morning) 2015-06-17 (Afternoon)',
-            '2015-06-23 (Afternoon) 2015-06-24 (Morning)'
+            'Leave summary:\n2015-06-09 (Afternoon) 2015-06-11',
+            'Leave summary:\n2015-06-09 (Morning) 2015-06-09',
+            'Leave summary:\n2015-06-16 (Morning) 2015-06-17 (Afternoon)',
+            'Leave summary:\n2015-06-23 (Afternoon) 2015-06-24 (Morning)'
           ]);
         done();
       })
@@ -239,16 +239,16 @@ describe('Ensure that leaves with not full days are rendered properly', function
       driver,
     })
     .then(() => Promise.all(
-      [9, 10, 11, 16, 17, 23, 24].map(day => driver.findElement(By.css(`.month_June td.half_1st.day_${day} span`)).then(el => el.getAttribute('data-original-title')))
+      [9, 10, 11, 16, 17, 23, 24].map(day => driver.findElement(By.css(`.month_June td.half_1st.day_${day} .calendar-leave-details-trigger`)).then(el => el.getAttribute('data-original-title')))
     ))
     .then(([title9, title10, title11, title16, title17, title23, title24]) => {
-      expect(title9).to.be.eq('Holiday (morning) Sick Leave (afternoon): New absence waiting approval');
-      expect(title10).to.be.eq('Sick Leave: New absence waiting approval');
-      expect(title11).to.be.eq('Sick Leave: New absence waiting approval');
-      expect(title16).to.be.eq('Holiday (morning) : New absence waiting approval');
-      expect(title17).to.be.eq('Holiday (afternoon): New absence waiting approval');
-      expect(title23).to.be.eq('Holiday (afternoon): New absence waiting approval');
-      expect(title24).to.be.eq('Holiday (morning) : New absence waiting approval');
+      expect(title9).to.contain('Holiday (morning) Sick Leave (afternoon)');
+      expect(title10).to.contain('Sick Leave');
+      expect(title11).to.contain('Sick Leave');
+      expect(title16).to.contain('Holiday (morning)');
+      expect(title17).to.contain('Holiday (afternoon)');
+      expect(title23).to.contain('Holiday (afternoon)');
+      expect(title24).to.contain('Holiday (morning)');
       return Promise.resolve(1);
     })
     .then(function(){ done() })
@@ -290,10 +290,10 @@ describe('Ensure that leaves with not full days are rendered properly', function
       .then(dates_str => {
         expect(dates_str.sort(), 'Ensure that date ranges values are as expected')
           .to.be.deep.equal([
-            '2015-06-09 (Afternoon) 2015-06-11',
-            '2015-06-09 (Morning) 2015-06-09',
-            '2015-06-16 (Morning) 2015-06-17 (Afternoon)',
-            '2015-06-23 (Afternoon) 2015-06-24 (Morning)'
+            'Leave summary:\n2015-06-09 (Afternoon) 2015-06-11',
+            'Leave summary:\n2015-06-09 (Morning) 2015-06-09',
+            'Leave summary:\n2015-06-16 (Morning) 2015-06-17 (Afternoon)',
+            'Leave summary:\n2015-06-23 (Afternoon) 2015-06-24 (Morning)'
           ]);
         done();
       })

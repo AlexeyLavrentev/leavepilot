@@ -40,13 +40,16 @@ describe("AJAX error handling", function() {
     expect(script).to.contain("input[name=\"_csrf\"]");
   });
 
-  it("validates required fields without treating the jQuery index as an element", function() {
+  it("uses native validation and disables the activated single-click button", function() {
     const source = fs.readFileSync(
       path.join(__dirname, "../../public/js/global.js"),
       "utf8"
     );
 
-    expect(source).to.contain("formIsValid = formIsValid && !!$(this).val()");
-    expect(source).to.not.contain("function(el){formIsValid");
+    expect(source).to.contain("var button = e.currentTarget");
+    expect(source).to.contain("formElement.checkValidity()");
+    expect(source).to.contain("$(button).prop('disabled', true)");
+    expect(source).to.not.contain("$(e.target).prop('disabled', true)");
+    expect(source).to.not.contain("formIsValid");
   });
 });

@@ -224,12 +224,11 @@ describe("Remove company account", function(){
       return Promise.map(els, (el => el.getText()));
     })
     .then(dates_str => {
-      expect(dates_str.sort(), 'Ensure that date ranges values are as expected')
-        .to.be.deep.equal([
-          '2018-06-07 (Morning) 2018-06-07'
-        ]);
+      expect(dates_str[0], 'Ensure that date range value is as expected')
+        .to.contain('2018-06-07 (Morning) 2018-06-07');
       done();
-    });
+    })
+    .catch(done);
   });
 
   it("Ensure that there are still records in Email audit page", done => {

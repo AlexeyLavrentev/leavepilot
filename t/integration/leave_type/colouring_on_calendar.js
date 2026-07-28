@@ -513,7 +513,7 @@ describe('Coloring of half days', function(){
       url    : application_host + 'calendar/teamview/?date=2018-02',
       driver : driver,
     })
-    .then(() => driver.findElement(By.css(`tr[data-vpp-user-list-row="${user_id}"] span.teamview-deducted-days`)))
+    .then(() => driver.findElement(By.css(`tr[data-vpp-user-list-row="${user_id}"] button.teamview-deducted-days`)))
     .then(el => el.getText())
     .then(txt => {
       expect(txt, 'Ensure that system shows 2 days as deducted')
