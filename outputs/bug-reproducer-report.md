@@ -2,30 +2,42 @@
 
 ## ✅ FIX_PROVEN — Bug reproduced and fix proven
 
-> The same OIDC callback log test changed from failing to passing and the full Core unit suite passed.
+> The same reproducer changed from failing to passing and broader checks passed.
 
-**Project:** LeavePilot Core
-**Bug:** OIDC callback secrets leaked into structured logs
-**Environment:** Node.js 22, Mocha 10, local HTTP test on macOS
-**Generated:** 2026-07-17
+**Project:** AlexeyLavrentev/timeoff  
+**Bug:** Superseded leave forecast reappears after date invalidation  
+**Environment:** Local Node.js application with Chrome Headless Shell 148  
+**Generated:** 2026-07-28
+
+## Discovery scope
+
+- public/js/leave_forecast.js
+- views/partials/book_leave_modal.hbs
+- existing leave forecast and booking modal tests
+
+## Ranked and tested candidates
+
+| # | Candidate | Contract evidence | Trigger | Location | Confidence | Outcome |
+|---:|---|---|---|---|---|---|
+| 1 | A superseded forecast response can reappear after a required date is cleared | The client explicitly ignores superseded responses, and an invalid form state hides the forecast. | Start a forecast request, clear from_date, then resolve the old request. | /Users/aleksey/projects/timeoff-ui-accessibility/public/js/leave_forecast.js:86 | high | REPRODUCED |
 
 ## Original report
 
-Pilot logs showed that the full OIDC callback query, including one-time code, state, and session_state values, was written to structured HTTP and authentication logs.
+No bug was supplied. A read-only product audit identified a possible stale-response race in the New absence live balance forecast.
 
 | Contract | Expected | Actual |
 |---|---|---|
-| Observed behavior | Logs retain the HTTP method and pathname without recording query parameters. | req.originalUrl was logged verbatim, including the OIDC callback query string. |
+| Observed behavior | The forecast remains hidden after the required date is cleared. | The late response renders the old forecast and makes it visible again. |
 
 ## Minimal reproduction
 
-A focused Express test requests /login/sso/callback with synthetic code, state, and session_state values and captures the structured HTTP log.
+A Selenium test replaces only the forecast AJAX transport with a controlled jQuery Deferred, starts a valid request, clears from_date, and resolves the superseded request.
 
-**Confirming signal:** The pre-fix assertion found the synthetic authorization code inside the logged path.
+**Confirming signal:** Expected forecast hidden=true after invalidation; received false.
 
 ### Reproduction files approved at Gate 1
 
-- [request_id.js](/tmp/timeoff-log-redaction/t/unit/middleware/request_id.js:129) — Regression test approved at Gate 1.
+- [leave_forecast_stale_response.js](/Users/aleksey/projects/timeoff-ui-accessibility/t/integration/leave_request/leave_forecast_stale_response.js:1) — Deterministic Selenium regression approved at Gate 1.
 
 ## Red to green evidence
 
@@ -33,68 +45,84 @@ A focused Express test requests /login/sso/callback with synthetic code, state, 
 |---|---:|---:|
 | Exit code | 1 | 0 |
 | Timed out | False | False |
-| Duration | 153 ms | 340 ms |
+| Duration | 3,000 ms | 3,017.502 ms |
 | Same command | — | True |
 | Broader suite | — | passed |
 
 ### Before — failing evidence
 
 ```text
-0 passing; 1 failing: expected the OIDC callback path not to include the test authorization code, but the raw query string was logged.
+Leave forecast stale-response handling
+    ✔ creates an isolated company and opens the booking modal (1529ms)
+    1) keeps a superseded forecast hidden after a required date is cleared
+  1 passing (3s)
+  1 failing
+  1) Leave forecast stale-response handling
+       keeps a superseded forecast hidden after a required date is cleared:
+      a response superseded by clearing a required field must stay hidden
+      + expected - actual
+      -false
+      +true
+      at Context.<anonymous> (t/integration/leave_request/leave_forecast_stale_response.js:121:34)
 ```
 
 ### After — fixed evidence
 
 ```text
-1 passing: does not log OIDC callback secrets.
+Leave forecast stale-response handling
+    ✔ creates an isolated company and opens the booking modal (1463ms)
+    ✔ keeps a superseded forecast hidden after a required date is cleared (937ms)
+  2 passing (2s)
 ```
 
 ## Root cause
 
-Three structured logging paths consumed req.originalUrl directly instead of a query-free pathname.
+requestSeq advanced only when a debounced request had complete fields. Clearing a required field hid the forecast but did not invalidate an already-running request, so its completion still matched the current sequence and rendered.
 
 ## Approved fix
 
-Added one safe request-path helper and routed HTTP access logs, authentication audit metadata, and unhandled-request error logs through it.
+Advance the forecast generation synchronously on every relevant field change, hide the old result immediately, and pass that generation into the debounced request.
 
-**Why this is causal:** The helper prefers Express req.path and strips the query string from fallback URLs before any affected log entry is created.
+**Why this is causal:** Every response now carries the generation captured after its originating change. A later edit increments the generation before the old response can render, so the existing equality guard rejects it.
 
 ### Production files approved at Gate 2
 
-- [request_path.js](/tmp/timeoff-log-redaction/lib/util/request_path.js:3) — Central query-free request path helper.
-- [request_id.js](/tmp/timeoff-log-redaction/lib/middleware/request_id.js:31) — HTTP access logs use the safe path.
-- [auth_log.js](/tmp/timeoff-log-redaction/lib/util/auth_log.js:20) — Authentication audit metadata uses the safe path.
-- [app.js](/tmp/timeoff-log-redaction/app.js:378) — Unhandled request errors use the safe path.
+- [leave_forecast.js](/Users/aleksey/projects/timeoff-ui-accessibility/public/js/leave_forecast.js:86) — Generation invalidation approved at Gate 2.
 
 ## Verification
 
 | Check | Status | Evidence |
 |---|---|---|
-| OIDC log regression | ✅ passed | The same test changed from exit 1 to exit 0. |
-| Affected unit tests | ✅ passed | 10 passing. |
-| Core unit and coverage suite | ✅ passed | 782 passing. |
-| Syntax and whitespace | ✅ passed | node --check and git diff --check succeeded. |
+| Targeted stale-response regression | ✅ passed | Same command changed from exit 1 to exit 0; 2 passing. |
+| Forecast and booking modal regressions | ✅ passed | 20 passing. |
+| Full unit suite | ✅ passed | 888 passing. |
 
 ## Reproduce
 
 ```bash
-npx mocha t/unit/middleware/request_id.js --grep 'does not log OIDC callback secrets' --timeout 10000
+rtk npx mocha t/integration/leave_request/leave_forecast_stale_response.js
 ```
 ```bash
-npm run test:coverage
+rtk npx mocha t/unit/route/leave_balance_forecast.js t/integration/leave_request/book_leave_modal_focus.js t/integration/leave_request/book_leave_request_form.js
+```
+```bash
+rtk npx mocha --recursive t/unit --timeout 10000
 ```
 
 ## Limitations
 
-- The regression test uses synthetic OIDC values and a local Express route rather than a live identity provider.
+- The focused reproducer covers required-date invalidation while a request is pending.
+- Network-error feedback and modal-dismissal lifecycle behavior were not changed in this fix.
 
 ## Residual risks
 
-- Application code that writes request URLs outside the three inspected structured logging paths would need separate review.
+- Forecast network failures still hide the informational result without a visible error.
+- The separate global single-click native-validation candidate remains untested.
 
 ## Notes
 
-- No routing, callback parsing, session, or SSO provider behavior changed.
+- No endpoint, payload, CSRF, debounce duration, backend validation, or booking behavior changed.
+- Temporary test companies were removed through the application UI.
 
 ---
 
