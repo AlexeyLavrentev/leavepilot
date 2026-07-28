@@ -281,6 +281,8 @@
     "approveSelected": "Approve selected",
     "rejectSelected": "Reject selected",
     "selectedCount": "{count} selected",
+    "clearSelection": "Clear selection",
+    "processingSelected": "Processing {count} selected requests…",
     "messages": {
       "processed": "Request from {{name}} was processed",
       "approveFailed": "Failed to approve request",

@@ -2,13 +2,17 @@
 {{> header }}
 
 <a class="sr-only sr-only-focusable" href="#main-content">{{t "nav.skipToMainContent"}}</a>
-<main id="main-content" tabindex="-1">
+<main id="main-content" class="requests-page" tabindex="-1">
 <h1>{{t "requests.messagesTitle" name=logged_user.name lastname=logged_user.lastname}}</h1>
 
-{{> show_flash_messages }}
+<div id="requests-feedback" data-focus-alert-on-load>
+  {{> show_flash_messages }}
+</div>
 
-<div class="row main-row_header">
-  <p class="col-md-12">{{t "requests.toApproveTitle"}}</p>
+<div class="row">
+  <div class="col-md-12">
+    <h2 id="requests-to-approve-heading" class="main-row_header requests-section-heading">{{t "requests.toApproveTitle"}}</h2>
+  </div>
 </div>
 
 <div class="row">
@@ -40,7 +44,10 @@
         {{#each to_be_approved_leaves }}
         <tr vpp="pending_for__{{this.user.email}}">
           <td class="bulk-select-cell mobile-card-select">
-            <input type="checkbox" class="bulk-request-checkbox" name="request" value="{{this.id}}" form="bulk-action-form" aria-label="{{t "requests.selectRow"}}">
+            <label class="bulk-request-selector">
+              <input type="checkbox" class="bulk-request-checkbox" name="request" value="{{this.id}}" form="bulk-action-form" aria-label="{{t "requests.selectRow"}}: {{full_name this.user}}, {{as_date this.date_start}} — {{as_date this.date_end}}">
+              <span class="bulk-request-selector-text" aria-hidden="true">{{t "requests.selectRow"}}</span>
+            </label>
           </td>
           <td data-label="{{t 'requests.employee'}}"><span class="mobile-card-value">{{#with this.user}}{{this.full_name}}
             <button type="button" class="user-details-summary-trigger interactive-user-details-summary-trigger requests-user-details-summary-trigger details-trigger-button" data-user-id="{{this.id}}" aria-label="{{t 'user.employeeSummary'}}: {{this.full_name}}"><span class="fa fa-question-circle" aria-hidden="true"></span></button>{{/with}}</span>
@@ -59,14 +66,14 @@
           <td class="mobile-card-action">
             <form action="/requests/reject/" method="POST">
               <input type="hidden" name="_csrf" value="{{@root.csrf_token}}">
-            <input class="btn btn-warning single-click" type="submit" value="{{t "requests.reject"}}">
+            <input class="btn btn-warning single-click" type="submit" value="{{t "requests.reject"}}" aria-label="{{t "requests.reject"}}: {{full_name this.user}}, {{as_date this.date_start}} — {{as_date this.date_end}}">
             <input type="hidden" value="{{this.id}}" name="request">
             </form>
           </td>
           <td class="mobile-card-action">
             <form action="/requests/approve/" method="POST">
               <input type="hidden" name="_csrf" value="{{@root.csrf_token}}">
-            <input class="btn btn-success single-click" type="submit" value="{{t "requests.approve"}}">
+            <input class="btn btn-success single-click" type="submit" value="{{t "requests.approve"}}" aria-label="{{t "requests.approve"}}: {{full_name this.user}}, {{as_date this.date_start}} — {{as_date this.date_end}}">
             <input type="hidden" value="{{this.id}}" name="request">
             </form>
           </td>
@@ -76,70 +83,42 @@
     </table>
     </div>
 
-    <form id="bulk-action-form" class="bulk-action-bar" method="POST" action="/requests/bulk/approve/" style="margin-top: 10px;">
+    <form
+      id="bulk-action-form"
+      class="bulk-action-bar"
+      method="POST"
+      action="/requests/bulk/approve/"
+      aria-label="{{t "requests.toApproveTitle"}}"
+      data-count-template="{{t "requests.selectedCount"}}"
+      data-processing-template="{{t "requests.processingSelected"}}"
+      hidden
+    >
       <input type="hidden" name="_csrf" value="{{@root.csrf_token}}">
-      <button type="submit" formaction="/requests/bulk/approve/" class="btn btn-success bulk-approve-btn" disabled>{{t "requests.approveSelected"}}</button>
-      <button type="submit" formaction="/requests/bulk/reject/" class="btn btn-warning bulk-reject-btn" disabled>{{t "requests.rejectSelected"}}</button>
-      <span class="text-muted bulk-selected-count" aria-live="polite"></span>
+      <div class="bulk-action-summary">
+        <strong class="bulk-selected-count" aria-live="polite" aria-atomic="true"></strong>
+        <button type="button" class="btn btn-link bulk-clear-btn">{{t "requests.clearSelection"}}</button>
+      </div>
+      <div class="bulk-action-buttons">
+        <button type="submit" formaction="/requests/bulk/approve/" class="btn btn-success bulk-approve-btn" disabled>{{t "requests.approveSelected"}}</button>
+        <button type="submit" formaction="/requests/bulk/reject/" class="btn btn-warning bulk-reject-btn" disabled>{{t "requests.rejectSelected"}}</button>
+      </div>
+      <span class="sr-only bulk-action-status" role="status" aria-live="assertive" aria-atomic="true"></span>
     </form>
   </div>
   {{/unless}}
 </div>
 
 
-<div class="main-row_header">&nbsp;</div>
-
-<div class="row main-row_header">
-  <p class="col-md-12">{{t "requests.allAbsences"}}</p>
+<div class="row">
+  <div class="col-md-12">
+    <h2 id="requests-all-absences-heading" class="main-row_header requests-section-heading">{{t "requests.allAbsences"}}</h2>
+  </div>
 </div>
 
-{{> user_requests_grouped grouped_leaves=my_leaves_grouped logged_user=logged_user }}
+<div>
+  {{> user_requests_grouped grouped_leaves=my_leaves_grouped logged_user=logged_user }}
+</div>
 
 </main>
-
-<script>
-(function() {
-  var form = document.getElementById('bulk-action-form');
-  if (!form) { return; }
-
-  var selectAll = document.querySelector('.bulk-select-all');
-  var checkboxes = [].slice.call(document.querySelectorAll('.bulk-request-checkbox'));
-  var approveBtn = form.querySelector('.bulk-approve-btn');
-  var rejectBtn = form.querySelector('.bulk-reject-btn');
-  var counter = form.querySelector('.bulk-selected-count');
-  var countTemplate = "{{t "requests.selectedCount"}}";
-
-  function selectedCount() {
-    return checkboxes.filter(function(cb) { return cb.checked; }).length;
-  }
-
-  function refresh() {
-    var count = selectedCount();
-    var hasSelection = count > 0;
-
-    approveBtn.disabled = !hasSelection;
-    rejectBtn.disabled = !hasSelection;
-    counter.textContent = hasSelection ? countTemplate.replace('{count}', count) : '';
-
-    if (selectAll) {
-      selectAll.checked = count > 0 && count === checkboxes.length;
-      selectAll.indeterminate = count > 0 && count < checkboxes.length;
-    }
-  }
-
-  if (selectAll) {
-    selectAll.addEventListener('change', function() {
-      checkboxes.forEach(function(cb) { cb.checked = selectAll.checked; });
-      refresh();
-    });
-  }
-
-  checkboxes.forEach(function(cb) {
-    cb.addEventListener('change', refresh);
-  });
-
-  refresh();
-})();
-</script>
 
 {{>footer}}

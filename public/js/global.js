@@ -1549,6 +1549,162 @@ $(document).ready(function(){
 });
 
 /*
+ * Requests: contextual bulk decision controls.
+ *
+ * Selection stays native (checkboxes associated with the external form), while
+ * this page-scoped controller keeps row feedback, the fixed action surface and
+ * submit state in sync. The form action is copied from the activated submit
+ * button before controls are disabled so approve/reject keep their dedicated
+ * endpoints without relying on a disabled submitter's `formaction`.
+ */
+$(document).ready(function(){
+  var $form = $('#bulk-action-form');
+  if (!$form.length) { return; }
+
+  var $page = $('.requests-page');
+  var $selectAll = $('.bulk-select-all');
+  var $checkboxes = $('.bulk-request-checkbox');
+  var $actionButtons = $form.find('.bulk-approve-btn, .bulk-reject-btn');
+  var $clearButton = $form.find('.bulk-clear-btn');
+  var $counter = $form.find('.bulk-selected-count');
+  var $status = $form.find('.bulk-action-status');
+  var countTemplate = $form.attr('data-count-template') || '{count}';
+  var processingTemplate = $form.attr('data-processing-template') || '';
+  var submitting = false;
+  var lastChangedCheckbox = null;
+
+  function selectedCount() {
+    return $checkboxes.filter(':checked').length;
+  }
+
+  function refreshRows() {
+    $checkboxes.each(function(){
+      $(this).closest('tr').toggleClass('is-selected', this.checked);
+    });
+  }
+
+  function refresh() {
+    var count = selectedCount();
+    var hasSelection = count > 0;
+
+    refreshRows();
+    $form.prop('hidden', !hasSelection);
+    $page.toggleClass('has-active-bulk-actions', hasSelection);
+    $actionButtons.prop('disabled', !hasSelection || submitting);
+    $clearButton.prop('disabled', submitting);
+    $counter.text(hasSelection ? countTemplate.replace('{count}', count) : '');
+
+    if ($selectAll.length) {
+      $selectAll.prop('checked', count > 0 && count === $checkboxes.length);
+      $selectAll.prop('indeterminate', count > 0 && count < $checkboxes.length);
+    }
+  }
+
+  function keepRowAboveActions(checkbox) {
+    if (!checkbox || !checkbox.checked) { return; }
+
+    (window.requestAnimationFrame || function(callback) {
+      window.setTimeout(callback, 16);
+    })(function(){
+      if ($form.prop('hidden')) { return; }
+
+      var row = $(checkbox).closest('tr')[0];
+      if (!row) { return; }
+
+      var rowRect = row.getBoundingClientRect();
+      var formRect = $form[0].getBoundingClientRect();
+      var overlap = rowRect.bottom - (formRect.top - 8);
+
+      if (overlap > 0) {
+        window.scrollBy(0, overlap);
+      }
+    });
+  }
+
+  $selectAll.on('change.requestsBulkActions', function(){
+    var checked = this.checked;
+    $checkboxes.each(function(){ this.checked = checked; });
+    lastChangedCheckbox = checked ? $checkboxes.first()[0] : null;
+    refresh();
+    keepRowAboveActions(lastChangedCheckbox);
+  });
+
+  $checkboxes.on('change.requestsBulkActions', function(){
+    lastChangedCheckbox = this;
+    refresh();
+    keepRowAboveActions(this);
+  });
+
+  $clearButton.on('click.requestsBulkActions', function(){
+    $checkboxes.prop('checked', false);
+    refresh();
+    if (lastChangedCheckbox) {
+      $(lastChangedCheckbox).focus();
+    } else if ($checkboxes.length) {
+      $checkboxes.first().focus();
+    }
+  });
+
+  $actionButtons.on('click.requestsBulkActions', function(event){
+    if (submitting) {
+      event.preventDefault();
+      return;
+    }
+
+    var action = $(this).attr('formaction');
+    if (action) {
+      $form.attr('action', action);
+    }
+  });
+
+  $form.on('submit.requestsBulkActions', function(event){
+    var count = selectedCount();
+
+    if (submitting || count === 0) {
+      event.preventDefault();
+      return;
+    }
+
+    submitting = true;
+    $form.attr('aria-busy', 'true').addClass('is-submitting');
+    $status.text(processingTemplate.replace('{count}', count));
+    $actionButtons.prop('disabled', true).attr('aria-disabled', 'true');
+    $clearButton.prop('disabled', true);
+    $selectAll.prop('disabled', true);
+  });
+
+  function restoreInitialSelection() {
+    lastChangedCheckbox = $checkboxes.filter(':checked').last()[0] || null;
+    refresh();
+    keepRowAboveActions(lastChangedCheckbox);
+  }
+
+  function restoreSelectionAfterPageShow() {
+    window.setTimeout(restoreInitialSelection, 0);
+  }
+
+  $(window).on('pageshow.requestsBulkActions', restoreSelectionAfterPageShow);
+  $(window).on('resize.requestsBulkActions', function(){
+    keepRowAboveActions(lastChangedCheckbox);
+  });
+  $('.navbar-collapse').on(
+    'hidden.bs.collapse.requestsBulkActions shown.bs.collapse.requestsBulkActions',
+    function(){
+      keepRowAboveActions(lastChangedCheckbox);
+    }
+  );
+  restoreInitialSelection();
+});
+
+$(document).ready(function(){
+  var $feedback = $('#requests-feedback[data-focus-alert-on-load] [role="alert"]').first();
+
+  if ($feedback.length) {
+    $feedback.attr('tabindex', '-1').focus();
+  }
+});
+
+/*
  * Book leave modal: move focus to the first usable form control once shown.
  *
  * Bootstrap 3.3.4 already manages aria-hidden, the focus trap (enforceFocus),

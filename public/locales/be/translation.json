@@ -283,6 +283,8 @@
     "approveSelected": "Зацвердзіць выбраныя",
     "rejectSelected": "Адхіліць выбраныя",
     "selectedCount": "Выбрана: {count}",
+    "clearSelection": "Зняць выбар",
+    "processingSelected": "Апрацоўка выбраных заявак: {count}…",
     "messages": {
       "processed": "Запыт ад {{name}} апрацаваны",
       "approveFailed": "Не ўдалося адобрыць запыт",
