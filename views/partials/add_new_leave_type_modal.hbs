@@ -1,14 +1,14 @@
 
 
 
-<div class="modal fade" id="{{container_id}}" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
-  <div class="modal-dialog">
+<div class="modal fade" id="{{container_id}}" tabindex="-1" role="dialog" aria-labelledby="{{container_id}}_label" aria-hidden="true">
+  <div class="modal-dialog" role="document">
     <div class="modal-content">
     <form id="leave_type_new_form" method="POST" action="{{form_action}}">
       <input type="hidden" name="_csrf" value="{{csrf_token}}">
       <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal" aria-label="{{t 'common.close'}}"><span aria-hidden="true">&times;</span></button>
-        <h4 class="modal-title">{{t "leaveTypeModal.title"}}</h4>
+        <h4 class="modal-title" id="{{container_id}}_label">{{t "leaveTypeModal.title"}}</h4>
       </div>
 
       <div class="modal-body">
