@@ -283,6 +283,8 @@
     "approveSelected": "Таңдалғанды мақұлдау",
     "rejectSelected": "Таңдалған қабылдамау",
     "selectedCount": "Таңдалған: {count}",
+    "clearSelection": "Таңдауды тазалау",
+    "processingSelected": "Таңдалған сұраулар өңделуде: {count}…",
     "messages": {
       "processed": "{{name}} сұрауы өңделді",
       "approveFailed": "Сұрауды мақұлдау мүмкін болмады",

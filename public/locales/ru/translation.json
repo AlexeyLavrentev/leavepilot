@@ -283,6 +283,8 @@
     "approveSelected": "Утвердить выбранные",
     "rejectSelected": "Отклонить выбранные",
     "selectedCount": "Выбрано: {count}",
+    "clearSelection": "Снять выделение",
+    "processingSelected": "Обработка выбранных заявок: {count}…",
     "messages": {
       "processed": "Запрос от {{name}} обработан",
       "approveFailed": "Не удалось одобрить запрос",
