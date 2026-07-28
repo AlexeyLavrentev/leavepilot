@@ -4926,4 +4926,231 @@ td.current_day_cell.half_2nd {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.28);
 }
 
+/*
+  Employees directory page (Stage 8A v2) — scoped under the .employees-page root.
+  Light tokens are declared ON the page root; dark tokens are declared on the
+  dark-theme variant of that same root, so the rest of the app is untouched.
+  Type uses px because Bootstrap's html root font-size is 10px, meaning rem
+  would compute to unreadable px.
+*/
+.employees-page {
+  /* page-scoped tokens (light) — extend the global --color-* tokens, do not duplicate them */
+  --surface: #ffffff;
+  --surface-raised: #fbfcfe;
+  --surface-sunken: #f8fafc;
+  --surface-overlay: #ffffff;
+  --surface-border: #e3e9ef;
+  --surface-border-hairline: rgb(247.35, 247.35, 247.35);
+  --shadow-card: 0 1px 2px rgba(31, 45, 61, 0.06);
+  --shadow-card-strong: 0 8px 24px rgba(31, 45, 61, 0.08);
+  --radius-card: 10px;
+  --radius-control: 8px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --employees-link-hover: #1f5f99;
+  max-width: 1280px;
+  margin-inline: auto;
+  /* Type: px sizes (NOT rem — Bootstrap html root is 10px) */
+}
+.employees-page .page-heading h1 {
+  letter-spacing: -0.01em;
+  line-height: 1.1;
+  font-weight: 700;
+  color: var(--color-heading-primary);
+}
+.employees-page .page-heading .lead {
+  line-height: 1.4;
+  font-weight: 500;
+}
+.employees-page .page-heading-actions .btn {
+  transition: transform 0.1s ease-out;
+}
+.employees-page .page-heading-actions .btn:active:not(:disabled) {
+  transform: scale(0.98);
+}
+.employees-page {
+  /* Workspace: sidebar cluster */
+}
+.employees-page .employees-workspace {
+  display: grid;
+  grid-template-columns: minmax(220px, 280px) 1fr;
+  gap: var(--space-5);
+  align-items: start;
+}
+.employees-page {
+  /* Opaque layered surfaces */
+}
+.employees-page .surface {
+  background: var(--surface);
+  border: 1px solid var(--surface-border);
+  border-top-color: var(--surface-border-hairline);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  padding: var(--space-4);
+}
+.employees-page .employees-directory {
+  box-shadow: var(--shadow-card-strong);
+  padding: var(--space-2);
+}
+.employees-page {
+  /* Filter sidebar */
+}
+.employees-page .employees-aside {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+.employees-page .employees-filter-title {
+  margin: 0 0 var(--space-3);
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-muted);
+}
+.employees-page {
+  /* Filter links: calm, ≥44px targets. Container stays div.all-departments. */
+}
+.employees-page .employees-filter .all-departments {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.employees-page .employees-filter .all-departments a {
+  display: block;
+  min-height: 44px;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-control);
+  color: var(--color-text);
+  font-weight: 500;
+  text-decoration: none;
+  transition: transform 0.1s ease-out, background-color 0.1s ease-out, color 0.1s ease-out;
+  border-left: 3px solid transparent;
+}
+.employees-page .employees-filter .all-departments a:hover {
+  background: var(--surface-sunken);
+  color: var(--employees-link-hover);
+}
+.employees-page .employees-filter .all-departments a:active {
+  transform: scale(0.98);
+}
+.employees-page {
+  /* Active filter = calm filled state via aria-current (selected-item stays). */
+}
+.employees-page .employees-filter .all-departments a[aria-current=true] {
+  background: var(--surface-sunken);
+  color: var(--color-link);
+  font-weight: 700;
+  border-left-color: var(--color-link);
+}
+.employees-page {
+  /* Directory: hairline rows, numeric alignment, hierarchy */
+}
+.employees-page .employees-directory .table > thead > tr > th {
+  color: var(--color-text-muted);
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border-bottom: 1px solid var(--surface-border);
+}
+.employees-page .employees-directory .table > tbody > tr > td {
+  border-top: 1px solid var(--surface-border);
+  vertical-align: middle;
+  overflow-wrap: anywhere;
+}
+.employees-page .employees-directory .table > tbody > tr:hover > td {
+  background: var(--surface-raised);
+}
+.employees-page .employees-directory .user-link-cell a {
+  color: var(--color-heading-primary);
+  font-weight: 600;
+  text-decoration: none;
+}
+.employees-page .employees-directory .user-link-cell a:hover,
+.employees-page .employees-directory .user_department a:hover {
+  color: var(--employees-link-hover);
+}
+.employees-page .employees-directory .user_department a {
+  color: var(--color-text-muted);
+  text-decoration: none;
+}
+.employees-page .employees-directory .employees-cell-isadmin {
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+.employees-page .employees-directory .employees-num,
+.employees-page .employees-directory .employees-num-col {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+.employees-page {
+  /* Focus ring (global :focus-visible already covers this; ensure offset on surfaces) */
+}
+.employees-page .employees-filter a:focus-visible,
+.employees-page .employees-directory a:focus-visible,
+.employees-page .page-heading-actions .btn:focus-visible {
+  outline: 2px solid var(--color-focus-ring-strong);
+  outline-offset: 2px;
+}
+
+/* Dark: page-scoped token overrides + page-scoped link-hover fix (global token untouched).
+   Declares the FULL token set (not just diffs) so the dark scope is self-contained. */
+[data-theme=dark] .employees-page {
+  --surface: #1a1e22;
+  --surface-raised: #20252a;
+  --surface-sunken: #121417;
+  --surface-overlay: #1f2327;
+  --surface-border: #2a2f34;
+  --surface-border-hairline: #23282bd;
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.32);
+  --shadow-card-strong: 0 8px 24px rgba(0, 0, 0, 0.40);
+  --radius-card: 10px;
+  --radius-control: 8px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  /* derive dark link-hover from the DARK link color (not the light $link-color the global token uses) */
+  --employees-link-hover: rgb(81.6188976378, 155.7133858268, 240.1811023622);
+}
+
+/* High contrast */
+@media (prefers-contrast: more) {
+  .employees-page .surface {
+    border-width: 2px;
+    border-color: CanvasText;
+    box-shadow: none;
+  }
+  .employees-page .employees-filter .all-departments a[aria-current=true] {
+    outline: 2px solid CanvasText;
+    outline-offset: -2px;
+  }
+}
+/* Reduced transparency */
+@media (prefers-reduced-transparency: reduce) {
+  .employees-page .employees-filter .all-departments a[aria-current=true] {
+    background: var(--surface-overlay);
+  }
+}
+/* Reduced motion: kill transition/animation AND the press transform */
+@media (prefers-reduced-motion: reduce) {
+  .employees-page *,
+  .employees-page *::before,
+  .employees-page *::after {
+    transition: none !important;
+    animation: none !important;
+  }
+  .employees-page .employees-filter .all-departments a:active,
+  .employees-page .page-heading-actions .btn:active:not(:disabled) {
+    transform: none;
+  }
+}
+
 /*# sourceMappingURL=style.css.map */

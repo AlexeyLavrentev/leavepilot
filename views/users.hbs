@@ -2,86 +2,93 @@
 {{> header }}
 
 <a class="sr-only sr-only-focusable" href="#main-content">{{t "nav.skipToMainContent"}}</a>
-<main id="main-content" tabindex="-1">
-<h1>{{t "users.title"}}</h1>
+<main id="main-content" class="employees-page" tabindex="-1">
+  <div class="page-heading">
+    <div class="page-heading-titles">
+      <h1>{{t "users.title"}}</h1>
+      <p class="lead">{{t "users.companyStaff" company=company.name}}</p>
+    </div>
+    <div class="page-heading-actions">
+      <div class="btn-group">
+        <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+          {{t "users.addEmployee"}}
+          <span class="caret" aria-hidden="true"></span>
+          <span class="sr-only">{{t "common.toggleDropdown"}}</span>
+        </button>
+        <ul class="dropdown-menu">
+          <li><a href="/users/import/" id="import_users_btn">{{t "users.importEmployees"}}</a></li>
+          <li><a href="/users/add/" id="add_new_department">{{t "users.addSingleEmployee"}}</a></li>
+        </ul>
+      </div>
+      <form action="/users/" method="GET">
+        <input type="hidden" name="department" value="{{department_id}}">
+        <input type="hidden" name="group" value="{{group_id}}">
+        <input type="hidden" name="as-csv" value="1">
+        <button
+          class="btn btn-link single-click"
+          type="submit"
+          data-content="{{t 'users.downloadCsvTooltip'}}"
+          data-placement="top"
+          data-toggle="popover"
+          data-trigger="focus hover"
+        ><i class="fa fa-download" aria-hidden="true"></i> {{t "users.downloadCsv"}}</button>
+      </form>
+    </div>
+  </div>
 
 {{> show_flash_messages }}
 
-<div class="row">
-  <div class="col-md-3 lead">{{t "users.companyStaff" company=company.name}}</div>
-  <div class="col-md-3 col-md-offset-6">
-    <div class="btn-group pull-right">
-      <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-        {{t "users.addEmployee"}}
-        <span class="caret" aria-hidden="true"></span>
-        <span class="sr-only">{{t "common.toggleDropdown"}}</span>
-      </button>
-      <ul class="dropdown-menu">
-        <li><a href="/users/import/" id="import_users_btn">{{t "users.importEmployees"}}</a></li>
-        <li><a href="/users/add/" id="add_new_department">{{t "users.addSingleEmployee"}}</a></li>
-      </ul>
-    </div>
-    <form action="/users/" method="GET">
-      <input type="hidden" name="department" value="{{department_id}}">
-      <input type="hidden" name="group" value="{{group_id}}">
-      <input type="hidden" name="as-csv" value="1">
-      <button
-        class="btn btn-link pull-right single-click"
-        type="submit"
-        data-content="{{t 'users.downloadCsvTooltip'}}"
-        data-placement="top"
-        data-toggle="popover"
-        data-trigger="focus hover"
-      ><i class="fa fa-download" aria-hidden="true"></i> {{t "users.downloadCsv"}}</button>
-    </form>
+  <div class="employees-workspace">
+    <aside class="employees-aside">
+      <section class="surface employees-filter" aria-labelledby="employees-filter-departments-heading">
+        <h2 id="employees-filter-departments-heading" class="employees-filter-title">{{t "users.department"}}</h2>
+        <div class="all-departments">
+          <a href="/users/" class="list-group-item{{#unless department_id }} selected-item{{/unless}}"{{#unless department_id }} aria-current="true"{{/unless}}>{{t "users.allDepartments"}}</a>
+          {{#each company.departments}}
+            <a class="list-group-item {{#if_equal ../department_id this.id}} selected-item{{/if_equal}}"{{#if_equal ../department_id this.id}} aria-current="true"{{/if_equal}} href="/users/?department={{this.id}}">{{this.name}}</a>
+          {{/each}}
+        </div>
+      </section>
+
+      <section class="surface employees-filter employees-filter--groups" aria-labelledby="employees-filter-groups-heading">
+        <h2 id="employees-filter-groups-heading" class="employees-filter-title">{{t "users.allGroups"}}</h2>
+        <div class="all-departments">
+          <a href="/users/" class="list-group-item{{#unless group_id }} selected-item{{/unless}}"{{#unless group_id }} aria-current="true"{{/unless}}>{{t "users.allGroups"}}</a>
+          {{#each company.groups}}
+            <a class="list-group-item {{#if_equal ../group_id this.id}} selected-item{{/if_equal}}"{{#if_equal ../group_id this.id}} aria-current="true"{{/if_equal}} href="/users/?group={{this.id}}">{{this.name}}</a>
+          {{/each}}
+        </div>
+      </section>
+    </aside>
+
+    <section class="surface employees-directory">
+      <div class="table-responsive mobile-card-table-container" role="region" aria-label="{{t "users.companyStaff" company=company.name}}" tabindex="0">
+      <table class="table table-hover mobile-card-table">
+        <caption class="sr-only">{{t "users.companyStaff" company=company.name}}</caption>
+        <thead>
+          <tr>
+            <th scope="col">{{t "users.name"}}</th>
+            <th scope="col">{{t "users.department"}}</th>
+            <th scope="col">{{t "users.isAdmin"}}</th>
+            <th scope="col" class="employees-num-col">{{t "users.availableAllowance"}}</th>
+            <th scope="col" class="employees-num-col">{{t "users.daysUsed"}}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {{# each users_info}}
+          <tr data-vpp-user-row="{{this.user_id}}">
+            <td class="user-link-cell" data-label="{{t 'users.name'}}"><a href="/users/edit/{{this.user_id}}/">{{#unless this.is_active}}<s>{{/unless}}{{this.user_full_name}}{{#unless this.is_active}}</s>{{/unless}}</a></td>
+            <td class="user_department" data-label="{{t 'users.department'}}"><a href="/settings/departments/edit/{{ this.department_id }}/">{{this.department_name}}</a></td>
+            <td class="employees-cell-isadmin" data-label="{{t 'users.isAdmin'}}">{{# if this.is_admin }}{{t "users.yes"}}{{else}}{{/if}}</td>
+            <td class="vpp-days-remaining employees-num" data-label="{{t 'users.availableAllowance'}}">{{ this.number_of_days_available_in_allowance }}</td>
+            <td class="vpp-days-used employees-num" data-label="{{t 'users.daysUsed'}}">{{this.number_of_days_taken_from_allowance}}</td>
+          </tr>
+          {{/each}}
+        </tbody>
+      </table>
+      </div>
+    </section>
   </div>
-</div>
-
-<div class="content-spacer" aria-hidden="true"></div>
-
-<div class="col-md-3 list-group all-departments">
-  <a href="/users/" class="list-group-item{{#unless department_id }} selected-item{{/unless}}"{{#unless department_id }} aria-current="true"{{/unless}}>{{t "users.allDepartments"}}</a>
-  {{#each company.departments}}
-    <a class="list-group-item {{#if_equal ../department_id this.id}} selected-item{{/if_equal}}"{{#if_equal ../department_id this.id}} aria-current="true"{{/if_equal}} href="/users/?department={{this.id}}">{{this.name}}</a>
-  {{/each}}
-</div>
-
-<div class="col-md-3 list-group all-departments">
-  <a href="/users/" class="list-group-item{{#unless group_id }} selected-item{{/unless}}"{{#unless group_id }} aria-current="true"{{/unless}}>{{t "users.allGroups"}}</a>
-  {{#each company.groups}}
-    <a class="list-group-item {{#if_equal ../group_id this.id}} selected-item{{/if_equal}}"{{#if_equal ../group_id this.id}} aria-current="true"{{/if_equal}} href="/users/?group={{this.id}}">{{this.name}}</a>
-  {{/each}}
-</div>
-
-<div class="col-md-6">
-  <div class="data-table-scroll" role="region" aria-label="{{t "users.companyStaff" company=company.name}}" tabindex="0">
-  <table class="table table-hover">
-    <caption class="sr-only">{{t "users.companyStaff" company=company.name}}</caption>
-    <thead>
-      <tr>
-        <th>{{t "users.name"}}</th>
-        <th>{{t "users.department"}}</th>
-        <th>{{t "users.isAdmin"}}</th>
-        <th>{{t "users.availableAllowance"}}</th>
-        <th>{{t "users.daysUsed"}}</th>
-      </tr>
-    </thead>
-    <tbody>
-      {{# each users_info}}
-      <tr data-vpp-user-row="{{this.user_id}}">
-        <td class="user-link-cell"><a href="/users/edit/{{this.user_id}}/">{{#unless this.is_active}}<s>{{/unless}}{{this.user_full_name}}{{#unless this.is_active}}</s>{{/unless}}</a></td>
-        <td class="user_department"><a href="/settings/departments/edit/{{ this.department_id }}/">{{this.department_name}}</a></td>
-        <td>{{# if this.is_admin }}{{t "users.yes"}}{{else}}{{/if}}</td>
-        <td class="vpp-days-remaining">{{ this.number_of_days_available_in_allowance }}</td>
-        <td class="vpp-days-used">{{this.number_of_days_taken_from_allowance}}</td>
-      </tr>
-      {{/each}}
-    </tbody>
-  </table>
-  </div>
-</div>
-
-<div class="content-spacer" aria-hidden="true"></div>
 
 </main>
 
