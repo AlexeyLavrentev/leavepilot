@@ -255,14 +255,14 @@
 }}
 
 {{#feature_enabled "work_calendars"}}
-<div class="modal fade" id="add_work_calendar_modal" tabindex="-1" role="dialog" aria-hidden="true">
-  <div class="modal-dialog">
+<div class="modal fade" id="add_work_calendar_modal" tabindex="-1" role="dialog" aria-labelledby="add_work_calendar_modal_label" aria-hidden="true">
+  <div class="modal-dialog" role="document">
     <div class="modal-content">
       <form method="POST" action="/settings/bankholidays/calendars/">
         <input type="hidden" name="_csrf" value="{{csrf_token}}">
         <div class="modal-header">
           <button type="button" class="close" data-dismiss="modal" aria-label="{{t 'common.close'}}"><span aria-hidden="true">&times;</span></button>
-          <h4 class="modal-title">{{t "bankHolidays.addCalendar"}}</h4>
+          <h4 class="modal-title" id="add_work_calendar_modal_label">{{t "bankHolidays.addCalendar"}}</h4>
         </div>
         <div class="modal-body">
           <div class="form-group">
