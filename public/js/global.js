@@ -1523,22 +1523,19 @@ $(document).ready(function() {
  */
 $(document).ready(function(){
   $('.single-click').on('click', function(e) {
-    var form = $(e.target).closest('form');
+    var button = e.currentTarget;
+    var form = $(button).closest('form');
+    var formElement = form.get(0);
 
-    // Ensure "required" fields are populated
-    var formIsValid = true;
-    $(form).find('[required]').each(function(){
-      formIsValid = formIsValid && !!$(this).val();
-    });
-    if (formIsValid) {
-      e.stopPropagation();
-    } else {
+    // Leave invalid submissions to the browser's native validation flow.
+    if (!formElement || !formElement.checkValidity()) {
       return;
     }
 
-    $(e.target).prop('disabled', true);
+    e.stopPropagation();
+    $(button).prop('disabled', true);
 
-    var submitName = $(e.target).attr('name');
+    var submitName = $(button).attr('name');
     if (submitName !== undefined) {
       $('<input>').attr({type: 'hidden', name: submitName, value: '1'}).appendTo(form);
     }
