@@ -212,6 +212,7 @@ describe('CRUD for bank holidays', function(){
       submit_button_selector : bankholiday_form_id+' button[tom-test-hook="remove__1"]',
       message : /Bank holiday was successfully removed/,
       should_be_successful: true,
+      confirm_dialog: true,
       elements_to_check: [{
         selector : bankholiday_form_id+' input[tom-test-hook="name__0"]',
         value    : 'Z New Year',

@@ -251,6 +251,7 @@ describe('CRUD for leave types', function(){
         value    : 'Sick Leave',
       }],
       submit_button_selector : leave_type_edit_form_id+' button[data-tom-leave-type-order="remove_1"]',
+      confirm_dialog : true,
       message : /Leave type was successfully removed/,
     })
     .then(function(){ done() });

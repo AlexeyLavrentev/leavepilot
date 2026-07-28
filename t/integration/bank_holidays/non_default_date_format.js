@@ -56,6 +56,7 @@ describe('Try to manage Bank holidays with non-default date format', function(){
       driver,
       elements_to_check      : [],
       should_be_successful   : true,
+      confirm_dialog         : true,
       submit_button_selector : bankholiday_form_id+' button[tom-test-hook="remove__0"]',
     })
     .then(() => driver.sleep(1000))

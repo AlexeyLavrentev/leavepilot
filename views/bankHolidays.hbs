@@ -152,7 +152,7 @@
         </select>
       </div>
       <div class="col-md-2">
-        <button class="btn btn-default pull-right bankholiday-remove-btn" type="button" value="{{id}}" tom-test-hook="remove__{{@index}}" aria-label="{{t "common.remove"}}"><span class="fa fa-remove" aria-hidden="true"></span></button>
+        <button class="btn btn-default pull-right bankholiday-remove-btn" type="button" value="{{id}}" tom-test-hook="remove__{{@index}}" data-confirm-message="{{t "common.deleteNamedConfirm" name=name}}" aria-label="{{t "common.remove"}}: {{name}}"><span class="fa fa-remove" aria-hidden="true"></span></button>
       </div>
     </div>
 

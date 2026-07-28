@@ -4,6 +4,11 @@ $(document).ready(function () {
 
     e.stopPropagation();
 
+    var confirmationMessage = $(this).attr('data-confirm-message');
+    if (!confirmationMessage || !window.confirm(confirmationMessage)) {
+      return false;
+    }
+
     var delete_form = $('#delete_bankholiday_form');
     delete_form.attr('action', delete_form.attr('action') + $(this).attr('value') + '/');
 
