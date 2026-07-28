@@ -5576,4 +5576,34 @@ td.current_day_cell.half_2nd {
   .employees-page .page-heading-actions .btn-group {
     width: 100%;
   }
+
+  /*
+    Override properties of the global .mobile-card-table convention that
+    are wrong for this page (scoped so requests.hbs and other consumers are
+    unaffected):
+    - P1 (clip): the global `tr { overflow: hidden }` clips link content that
+      exceeds its grid track. Open it so long names/departments are not clipped.
+      At ≤768px the directory cells were also computing to white-space:nowrap
+      (observed in the rendered DOM), which prevents overflow-wrap from
+      breaking long tokens — so force `normal` on the td and the inner <a>,
+      and let `overflow-wrap: anywhere` do the wrapping.
+    - P2 (dark border): the global class paints a static light $border-color
+      (and surface), which reads as a light card outline in dark mode. Re-derive
+      from the page-scoped surface/border tokens so the card matches the theme.
+  */
+  .employees-page .mobile-card-table > tbody > tr {
+    overflow: visible;
+    background: var(--surface);
+    border-color: var(--surface-border);
+    box-shadow: var(--shadow-card);
+  }
+  .employees-page .mobile-card-table > tbody > tr > td {
+    border-top-color: var(--surface-border);
+    white-space: normal;
+  }
+  .employees-page .mobile-card-table td a {
+    white-space: normal;
+    overflow-wrap: anywhere;
+    min-width: 0;
+  }
 }

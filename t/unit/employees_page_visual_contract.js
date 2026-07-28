@@ -122,11 +122,22 @@ describe('Employees directory page visual contract (Stage 8A v2)', function () {
   });
 
   describe('P2 fix: type sizes in px, not rem', function () {
-    it('does not use rem units in the employees-page type rules', function () {
-      // the compiled .employees-page block must not contain rem-based font-size (rem = 10px base → unreadable)
-      const idx = css.indexOf('.employees-page');
-      const slice = css.slice(idx, idx + 4000);
-      expect(slice).to.not.match(/font-size:\s*[0-9.]+rem/);
+    it('does not use rem font-size in ANY .employees-page rule (whole scope, not a prefix slice)', function () {
+      // Bootstrap sets html{font-size:10px}, so any rem font-size in the page
+      // scope computes to unreadable px. Scan EVERY rule whose selector is
+      // scoped under .employees-page, not just the first N bytes.
+      // A CSS rule is: <selector-list> { <declarations> }. We walk declarations
+      // and reject any `font-size:<num>rem` whose preceding selector contained
+      // .employees-page.
+      const ruleRe = /([^{}]*?)\{([^{}]*)\}/g;
+      let m;
+      while ((m = ruleRe.exec(css)) !== null) {
+        const selector = m[1];
+        const body = m[2];
+        if (/\.employees-page/.test(selector) && /font-size:\s*[0-9.]+rem/.test(body)) {
+          expect.fail('found rem font-size in an .employees-page rule: ' + selector.trim() + ' { ' + body.trim() + ' }');
+        }
+      }
     });
   });
 

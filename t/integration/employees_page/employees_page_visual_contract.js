@@ -92,7 +92,13 @@ describe('Employees directory page visual & interaction contract (Stage 8A v2)',
   });
 
   // THE KEY v2 ADDITION: a real geometry check, not just a saved image.
-  it('has NO horizontal overflow at 390x844 (mobile card table fits the viewport)', async function () {
+  // Checks THREE things so inner clipping can't hide:
+  //   1) page-level: no documentElement horizontal overflow
+  //   2) cell-level: the name <td> right edge is within the viewport
+  //   3) content-level: the inner <a>'s right edge is within the <td> AND viewport
+  //      (catches the case where the cell fits but its link content overflows
+  //      the grid track and is clipped by an inherited overflow:hidden)
+  it('has NO horizontal overflow at 390x844 and link content is not clipped', async function () {
     await setViewport(driver, 390, 844);
     await open_page_func({ url: application_host + 'users/', driver: driver });
     await driver.wait(until.elementLocated(By.css('.employees-page')), 2000);
@@ -100,18 +106,30 @@ describe('Employees directory page visual & interaction contract (Stage 8A v2)',
     var geo = await driver.executeScript(
       'var de=document.documentElement;' +
       'var nameCell=document.querySelector(".employees-directory td.user-link-cell, .employees-directory .user-link-cell");' +
+      'var nameLink = nameCell ? nameCell.querySelector("a") : null;' +
+      'var cr = nameCell ? nameCell.getBoundingClientRect() : null;' +
+      'var lr = nameLink ? nameLink.getBoundingClientRect() : null;' +
       'return {' +
       '  scrollWidth: de.scrollWidth,' +
       '  clientWidth: de.clientWidth,' +
       '  innerWidth: window.innerWidth,' +
-      '  nameRight: nameCell ? nameCell.getBoundingClientRect().right : null,' +
+      '  cellRight: cr ? cr.right : null,' +
+      '  cellWidth: cr ? cr.width : null,' +
+      '  linkRight: lr ? lr.right : null,' +
+      '  linkWidth: lr ? lr.width : null,' +
       '  viewportWidth: window.innerWidth' +
       '};'
     );
+    // 1) page-level overflow
     assert(geo.scrollWidth <= geo.clientWidth + 1, 'horizontal overflow: scrollWidth=' + geo.scrollWidth + ' > clientWidth=' + geo.clientWidth);
     assert(geo.scrollWidth <= geo.innerWidth + 1, 'horizontal overflow: scrollWidth=' + geo.scrollWidth + ' > innerWidth=' + geo.innerWidth);
-    assert(geo.nameRight !== null, 'expected an employee name cell to exist for the bounds check');
-    assert(geo.nameRight <= geo.viewportWidth + 1, 'employee name cell right edge (' + geo.nameRight + ') exceeds viewport width (' + geo.viewportWidth + ')');
+    // 2) cell within viewport
+    assert(geo.cellRight !== null, 'expected an employee name cell to exist for the bounds check');
+    assert(geo.cellRight <= geo.viewportWidth + 1, 'name cell right edge (' + geo.cellRight + ') exceeds viewport width (' + geo.viewportWidth + ')');
+    // 3) inner link content within its cell AND viewport (the clipping guard)
+    assert(geo.linkRight !== null, 'expected an <a> inside the name cell to measure');
+    assert(geo.linkRight <= geo.cellRight + 1, 'name link right edge (' + geo.linkRight + ') exceeds its cell right edge (' + geo.cellRight + ') — link content overflows the grid track');
+    assert(geo.linkRight <= geo.viewportWidth + 1, 'name link right edge (' + geo.linkRight + ') exceeds viewport width (' + geo.viewportWidth + ')');
   });
 
   it('captures 6 screenshots: 3 viewports x 2 themes', async function () {
