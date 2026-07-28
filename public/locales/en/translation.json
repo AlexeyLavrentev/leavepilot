@@ -50,6 +50,7 @@
     "save": "Save",
     "delete": "Delete",
     "remove": "Remove",
+    "deleteNamedConfirm": "Delete “{{name}}”? This action cannot be undone.",
     "saveChanges": "Save changes",
     "loading": "Loading...",
     "from": "From",

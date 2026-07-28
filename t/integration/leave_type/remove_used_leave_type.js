@@ -164,6 +164,7 @@ describe('Try to remove used leave type', function(){
       driver : driver,
       submit_button_selector : leave_type_edit_form_id+' button[data-tom-leave-type-order="remove_0"]',
       message : /Cannot remove leave type: type is in use/,
+      confirm_dialog : true,
     })
     .then(function(){ done() });
   });

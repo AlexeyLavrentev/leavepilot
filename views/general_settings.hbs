@@ -267,7 +267,7 @@
             <input type="number" class="form-control" value="{{minimum_consecutive_days}}" name="minimum_consecutive_days__{{ this.id }}" data-tom-leave-type-order="minimum_consecutive_days_{{@index}}" aria-label="{{t "generalSettings.leaveTypeMinConsecutiveLabel"}}: {{name}}">
           </div>
           <div class="col-md-1 leave-types-remove-cell">
-            <button class="btn btn-default pull-right leavetype-remove-btn" value="{{ this.id }}" data-tom-leave-type-order="remove_{{@index}}" aria-label="{{t "common.remove"}}: {{name}}"><span class="fa fa-remove" aria-hidden="true"></span></button>
+            <button type="button" class="btn btn-default pull-right leavetype-remove-btn" value="{{ this.id }}" data-tom-leave-type-order="remove_{{@index}}" data-confirm-message="{{t "common.deleteNamedConfirm" name=name}}" aria-label="{{t "common.remove"}}: {{name}}"><span class="fa fa-remove" aria-hidden="true"></span></button>
           </div>
         </div>
 
