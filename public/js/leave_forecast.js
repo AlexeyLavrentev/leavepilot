@@ -86,7 +86,7 @@
       show(message, 'info');
     }
 
-    function requestForecast() {
+    function requestForecast(seq) {
       var leaveType = $leaveType.val();
       var from = $from.val();
       var to = $to.val();
@@ -95,8 +95,6 @@
         hide();
         return;
       }
-
-      var seq = ++requestSeq;
 
       $.ajax({
         url: url,
@@ -125,7 +123,12 @@
 
     function scheduleForecast() {
       window.clearTimeout(debounceTimer);
-      debounceTimer = window.setTimeout(requestForecast, 350);
+      var seq = ++requestSeq;
+
+      hide();
+      debounceTimer = window.setTimeout(function() {
+        requestForecast(seq);
+      }, 350);
     }
 
     $leaveType.on('change', scheduleForecast);
