@@ -5888,9 +5888,15 @@ td.current_day_cell.half_2nd {
     border-top: 1px solid var(--surface-border);
     vertical-align: middle;
     overflow-wrap: anywhere;
+    white-space: normal;
   }
   .departments-catalog .table > tbody > tr:hover > td {
     background: var(--surface-raised);
+  }
+  /* Row links are inline-block so the press transform (scale) actually renders —
+     CSS transform does not apply to non-replaced inline elements. */
+  .departments-catalog a {
+    display: inline-block;
   }
   .departments-name-cell a {
     color: var(--color-heading-primary);
@@ -5993,5 +5999,40 @@ td.current_day_cell.half_2nd {
     padding: var(--space-3) var(--space-4);
     background: var(--surface-sunken);
     border-radius: var(--radius-control);
+  }
+  /*
+    Override the global .mobile-card-table card chrome (which uses static light
+    $surface-color/$border-color/$shadow-sm and overflow:hidden):
+    - P1 dark card: re-derive surface/border/shadow from the page-scoped tokens so
+      dark-mode cards match the theme.
+    - P1 clipping: open the card so long manager/department names wrap
+      (white-space:normal + overflow-wrap:anywhere on the link) instead of being
+      clipped; round the end cells to follow the card outline.
+    The wrapper is .mobile-card-table-container (NOT .data-table-scroll), so the
+    global .data-table-scroll min-width:640px never applies — no page overflow.
+  */
+  .departments-page .mobile-card-table > tbody > tr {
+    overflow: visible;
+    background: var(--surface);
+    border-color: var(--surface-border);
+    box-shadow: var(--shadow-card);
+    border-radius: var(--radius-card);
+  }
+  .departments-page .mobile-card-table > tbody > tr > td {
+    border-top-color: var(--surface-border);
+    white-space: normal;
+  }
+  .departments-page .mobile-card-table > tbody > tr > td:first-child {
+    border-top-left-radius: var(--radius-card);
+    border-top-right-radius: var(--radius-card);
+  }
+  .departments-page .mobile-card-table > tbody > tr > td:last-child {
+    border-bottom-left-radius: var(--radius-card);
+    border-bottom-right-radius: var(--radius-card);
+  }
+  .departments-page .mobile-card-table td a {
+    white-space: normal;
+    overflow-wrap: anywhere;
+    min-width: 0;
   }
 }
