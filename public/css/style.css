@@ -5280,7 +5280,8 @@ td.current_day_cell.half_2nd {
   overflow-wrap: anywhere;
   transition: transform 0.1s ease-out, box-shadow 0.1s ease-out;
 }
-.reports-hub .report-card:active {
+.reports-hub .report-card:active,
+.reports-hub .report-card:hover:active {
   transform: scale(0.985);
 }
 .reports-hub .report-card-icon {

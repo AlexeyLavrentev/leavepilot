@@ -72,6 +72,11 @@ describe('Reports Hub contract (Stage 8B)', function () {
         expect((b.match(/<a /g) || []).length).to.equal(1);
       });
     });
+    it('uses a <div> (not <span>) for the card body, since it wraps block <h2>/<p>', function () {
+      // A <span> wrapping block elements is an invalid HTML content model.
+      expect(view).to.match(/<div class="report-card-body">[\s\S]*?<\/div>/);
+      expect(view).to.not.match(/<span class="report-card-body">/);
+    });
   });
 
   describe('legacy markup removed', function () {
@@ -118,8 +123,10 @@ describe('Reports Hub contract (Stage 8B)', function () {
       expect(css).to.match(/prefers-reduced-motion:\s*reduce/);
       expect(css).to.match(/\.reports-hub[^{]*:active[^{]*\{[^}]*transform:\s*none/);
     });
-    it('has a press feedback scale on report-card', function () {
-      expect(css).to.match(/\.reports-hub[^{]*\.report-card:active[^{]*\{[^}]*scale\(0\.985\)/);
+    it('has a press feedback scale on report-card that wins over resting hover', function () {
+      // During a mouse press :hover is also active; the scale must win. The
+      // :hover:active compound (higher specificity than :hover alone) guarantees it.
+      expect(css).to.match(/\.reports-hub[^{]*\.report-card:hover:active[^{]*\{[^}]*scale\(0\.985\)/);
     });
     it('hover elevation is gated behind (hover:hover)', function () {
       expect(css).to.match(/\(hover:\s*hover\)/);

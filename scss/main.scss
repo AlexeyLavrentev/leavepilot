@@ -5684,7 +5684,11 @@ td.current_day_cell.half_2nd {
     overflow-wrap: anywhere;
     transition: transform 0.1s ease-out, box-shadow 0.1s ease-out;
   }
-  .report-card:active {
+  // Press feedback. Include the :hover:active compound so that during a mouse
+  // press (when :hover is also active) the scale still wins over the resting
+  // hover lift — the compound selector has higher specificity than :hover alone.
+  .report-card:active,
+  .report-card:hover:active {
     transform: scale(0.985);
   }
 
