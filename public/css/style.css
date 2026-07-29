@@ -5365,6 +5365,7 @@ td.current_day_cell.half_2nd {
     animation: none !important;
   }
   .reports-hub .report-card:active,
+  .reports-hub .report-card:hover:active,
   .reports-hub .report-card:hover {
     transform: none;
   }

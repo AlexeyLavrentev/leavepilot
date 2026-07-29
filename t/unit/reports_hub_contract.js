@@ -119,9 +119,15 @@ describe('Reports Hub contract (Stage 8B)', function () {
       expect(block).to.include('--surface:');
       expect(block).to.include('--shadow-card:');
     });
-    it('reduced-motion neutralizes transform too', function () {
+    it('reduced-motion neutralizes transform too (incl. the :hover:active press compound)', function () {
       expect(css).to.match(/prefers-reduced-motion:\s*reduce/);
+      // The press scale uses a :hover:active compound (higher specificity than
+      // :hover alone) so it wins under default media; the reduced-motion block
+      // must therefore also target that compound, or the press leaks under RM.
       expect(css).to.match(/\.reports-hub[^{]*:active[^{]*\{[^}]*transform:\s*none/);
+      // Inside the reduced-motion media block, the :hover:active compound must
+      // be reset to transform:none. Match: media query ... { ... :hover:active ... transform:none ... }
+      expect(css).to.match(/prefers-reduced-motion:\s*reduce\s*\)\s*\{[\s\S]*?\.reports-hub[^{]*:hover:active[^{]*\{[^}]*transform:\s*none/);
     });
     it('has a press feedback scale on report-card that wins over resting hover', function () {
       // During a mouse press :hover is also active; the scale must win. The
