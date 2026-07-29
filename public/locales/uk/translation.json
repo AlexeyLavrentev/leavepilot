@@ -1038,7 +1038,9 @@
     "employeesLeaves": "Відсутності співробітників",
     "allReports": "Усі звіти",
     "downloadCsvTooltip": "Завантажити звіт у форматі .CSV",
-    "updateResults": "Оновити результати"
+    "updateResults": "Оновити результати",
+    "allowanceByTimeDescription": "Порівняння наданого, використаного та залишкового ліміту за обраний період.",
+    "employeesLeavesDescription": "Перегляд відсутностей співробітників за обраний період із розбивкою за типом відсутності."
   },
   "reportsLeaves": {
     "title": "Відсутності",

@@ -5620,3 +5620,166 @@ td.current_day_cell.half_2nd {
     min-width: 0;
   }
 }
+
+
+/*
+  Reports Hub (Stage 8B) — scoped under .reports-hub.
+  Tokens declared ON the page root (light) and [data-theme="dark"] .reports-hub
+  (dark) so the rest of the app is untouched. Type uses px (Bootstrap sets
+  html root to 10px, so rem would compute to unreadable px).
+*/
+.reports-hub {
+  --surface: #{$surface-color};
+  --surface-raised: #{$surface-subtle};
+  --surface-sunken: #{$surface-muted};
+  --surface-overlay: #ffffff;
+  --surface-border: #{$border-color};
+  --surface-border-hairline: #{color.adjust($surface-color, $lightness: -3%)};
+  --shadow-card: #{$shadow-sm};
+  --shadow-card-strong: #{$shadow-md};
+  --radius-card: 10px;
+  --radius-control: #{$radius-md};
+  --space-1: #{$space-1};
+  --space-2: #{$space-2};
+  --space-3: #{$space-3};
+  --space-4: #{$space-4};
+  --space-5: #{$space-5};
+  --space-6: #{$space-6};
+
+  max-width: 1280px;
+  margin-inline: auto;
+
+  .page-heading h1 {
+    letter-spacing: -0.01em;
+    line-height: 1.1;
+    font-weight: 700;
+    color: var(--color-heading-primary);
+  }
+  .page-heading .lead {
+    line-height: 1.4;
+    font-weight: 500;
+  }
+
+  .reports-hub-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-5);
+    align-items: stretch;
+  }
+
+  /* The entire card is the link — opaque surface, calm border/radius/shadow. */
+  .report-card {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-4);
+    min-height: 44px;
+    padding: var(--space-5);
+    background: var(--surface);
+    border: 1px solid var(--surface-border);
+    border-top-color: var(--surface-border-hairline);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-card);
+    color: var(--color-text);
+    text-decoration: none;
+    overflow-wrap: anywhere;
+    transition: transform 0.1s ease-out, box-shadow 0.1s ease-out;
+  }
+  .report-card:active {
+    transform: scale(0.985);
+  }
+
+  .report-card-icon {
+    flex: 0 0 auto;
+    width: 22px;
+    font-size: 22px;
+    line-height: 1.2;
+    color: var(--color-link);
+    text-align: center;
+  }
+  .report-card-body {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  .report-card-body h2 {
+    margin: 0 0 var(--space-2);
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--color-heading-primary);
+    line-height: 1.25;
+  }
+  .report-card-desc {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.45;
+    color: var(--color-text-muted);
+  }
+  .report-card-chevron {
+    flex: 0 0 auto;
+    align-self: center;
+    font-size: 14px;
+    color: var(--color-text-muted);
+  }
+
+  /* Visible focus */
+  .report-card:focus-visible {
+    outline: 2px solid var(--color-focus-ring-strong);
+    outline-offset: 2px;
+  }
+}
+
+/* Hover elevation only on hover-capable devices (no touch fallback flash). */
+@media (hover: hover) {
+  .reports-hub .report-card:hover {
+    box-shadow: var(--shadow-card-strong);
+    transform: translateY(-1px);
+  }
+}
+
+/* Dark theme: scoped token overrides. */
+[data-theme="dark"] .reports-hub {
+  --surface: #1a1e22;
+  --surface-raised: #20252a;
+  --surface-sunken: #121417;
+  --surface-overlay: #1f2327;
+  --surface-border: #2a2f34;
+  --surface-border-hairline: #23282d;
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.32);
+  --shadow-card-strong: 0 8px 24px rgba(0, 0, 0, 0.40);
+}
+
+/* High contrast: thicker borders, drop shadow. */
+@media (prefers-contrast: more) {
+  .reports-hub .report-card {
+    border-width: 2px;
+    border-color: CanvasText;
+    box-shadow: none;
+  }
+}
+
+/* Reduced transparency: explicit solid surface. */
+@media (prefers-reduced-transparency: reduce) {
+  .reports-hub .report-card {
+    background: var(--surface-overlay);
+  }
+}
+
+/* Reduced motion: kill transition/animation AND the press transform + hover lift. */
+@media (prefers-reduced-motion: reduce) {
+  .reports-hub *,
+  .reports-hub *::before,
+  .reports-hub *::after {
+    transition: none !important;
+    animation: none !important;
+  }
+  .reports-hub .report-card:active,
+  .reports-hub .report-card:hover {
+    transform: none;
+  }
+}
+
+/* Mobile: single column. */
+@media (max-width: 768px) {
+  .reports-hub .reports-hub-grid {
+    grid-template-columns: 1fr;
+  }
+}

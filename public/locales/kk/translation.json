@@ -1038,7 +1038,9 @@
     "employeesLeaves": "Қызметкерлердің жұмыста болмауы",
     "allReports": "Барлық есептер",
     "downloadCsvTooltip": "Есепті .CSV пішімінде жүктеп алыңыз",
-    "updateResults": "Нәтижелерді жаңарту"
+    "updateResults": "Нәтижелерді жаңарту",
+    "allowanceByTimeDescription": "Таңдалған кезеңдегі берілген, пайдаланылған және қалған шекті салыстыру.",
+    "employeesLeavesDescription": "Таңдалған кезеңдегі қызметкерлердің жұмыста болмауын болмау түрі бойынша қарап шығу."
   },
   "reportsLeaves": {
     "title": "Қатысулар",

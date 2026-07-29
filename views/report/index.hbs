@@ -2,29 +2,34 @@
 {{> header }}
 
 <a class="sr-only sr-only-focusable" href="#main-content">{{t "nav.skipToMainContent"}}</a>
-<main id="main-content" tabindex="-1">
-<h1>{{t "reportsPage.title"}}</h1>
-
-<div class="row">
-  <div class="col-md-6 lead">{{t "reportsPage.subtitle"}}</div>
-</div>
-
-{{> show_flash_messages }}
-
-<div class="content-spacer" aria-hidden="true"></div>
-
-<div class="row">
-  <div class="col-md-4">
-    <div class="well well-lg text-center">
-      <a class="btn btn-link btn-lg" href="/reports/allowancebytime/">{{t "reportsPage.allowanceByTime"}} <i class="fa fa-chevron-right" aria-hidden="true"></i></a>
+<main id="main-content" class="reports-hub" tabindex="-1">
+  <div class="page-heading">
+    <div class="page-heading-titles">
+      <h1>{{t "reportsPage.title"}}</h1>
+      <p class="lead">{{t "reportsPage.subtitle"}}</p>
     </div>
   </div>
-    <div class="col-md-4">
-    <div class="well well-lg text-center">
-      <a class="btn btn-link btn-lg" href="/reports/leaves/">{{t "reportsPage.employeesLeaves"}} <i class="fa fa-chevron-right" aria-hidden="true"></i></a>
-    </div>
-  </div>
-</div>
 
+  {{> show_flash_messages }}
+
+  <section class="reports-hub-grid" aria-label="{{t "reportsPage.subtitle"}}">
+    <a class="report-card" href="/reports/allowancebytime/">
+      <span class="report-card-icon fa fa-bar-chart" aria-hidden="true"></span>
+      <span class="report-card-body">
+        <h2>{{t "reportsPage.allowanceByTime"}}</h2>
+        <p class="report-card-desc">{{t "reportsPage.allowanceByTimeDescription"}}</p>
+      </span>
+      <span class="report-card-chevron fa fa-chevron-right" aria-hidden="true"></span>
+    </a>
+
+    <a class="report-card" href="/reports/leaves/">
+      <span class="report-card-icon fa fa-list" aria-hidden="true"></span>
+      <span class="report-card-body">
+        <h2>{{t "reportsPage.employeesLeaves"}}</h2>
+        <p class="report-card-desc">{{t "reportsPage.employeesLeavesDescription"}}</p>
+      </span>
+      <span class="report-card-chevron fa fa-chevron-right" aria-hidden="true"></span>
+    </a>
+  </section>
 </main>
 {{> footer }}
