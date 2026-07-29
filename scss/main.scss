@@ -5596,10 +5596,23 @@ td.current_day_cell.half_2nd {
     background: var(--surface);
     border-color: var(--surface-border);
     box-shadow: var(--shadow-card);
+    border-radius: var(--radius-card);
   }
   .employees-page .mobile-card-table > tbody > tr > td {
     border-top-color: var(--surface-border);
     white-space: normal;
+  }
+  /* Match the cell backgrounds to the card's rounded corners so hover/active
+     backgrounds don't paint square corners over the rounded card outline
+     (the global convention relies on tr{overflow:hidden} for this; since we
+     open that up to avoid clipping link content, round the end cells instead). */
+  .employees-page .mobile-card-table > tbody > tr > td:first-child {
+    border-top-left-radius: var(--radius-card);
+    border-top-right-radius: var(--radius-card);
+  }
+  .employees-page .mobile-card-table > tbody > tr > td:last-child {
+    border-bottom-left-radius: var(--radius-card);
+    border-bottom-right-radius: var(--radius-card);
   }
   .employees-page .mobile-card-table td a {
     white-space: normal;
