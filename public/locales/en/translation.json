@@ -1036,7 +1036,9 @@
     "employeesLeaves": "Employee absences",
     "allReports": "All reports",
     "downloadCsvTooltip": "Download report as .CSV file",
-    "updateResults": "Update results"
+    "updateResults": "Update results",
+    "allowanceByTimeDescription": "Compare allowance granted, used, and remaining for the selected period.",
+    "employeesLeavesDescription": "Review employee absences for the selected period, broken down by leave type."
   },
   "reportsLeaves": {
     "title": "Leaves",
