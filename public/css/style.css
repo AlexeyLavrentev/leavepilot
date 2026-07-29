@@ -5605,6 +5605,12 @@ td.current_day_cell.half_2nd {
     box-shadow: var(--shadow-card);
     border-radius: var(--radius-card);
   }
+  /* The global .mobile-card-table.table-hover > tbody > tr:hover { background: $surface-color }
+     uses static light color and has higher specificity (0,3,2) than the base override above.
+     Re-derive hover from the token so dark-mode cards don't flash a light background. */
+  .departments-page .mobile-card-table.table-hover > tbody > tr:hover {
+    background: var(--surface);
+  }
   .departments-page .mobile-card-table > tbody > tr > td {
     border-top-color: var(--surface-border);
     white-space: normal;

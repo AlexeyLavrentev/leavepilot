@@ -187,6 +187,10 @@ describe('Departments overview contract (Stage 8C)', function () {
       expect(css).to.match(/max-width:\s*768px\s*\)\s*\{[\s\S]*?\.departments-page[^{]*\.mobile-card-table > tbody > tr[^{]*\{[^}]*background:\s*var\(--surface\)/);
       expect(css).to.match(/max-width:\s*768px\s*\)\s*\{[\s\S]*?\.departments-page[^{]*\.mobile-card-table > tbody > tr[^{]*\{[^}]*border-color:\s*var\(--surface-border\)/);
       expect(css).to.match(/max-width:\s*768px\s*\)\s*\{[\s\S]*?\.departments-page[^{]*\.mobile-card-table > tbody > tr[^{]*\{[^}]*overflow:\s*visible/);
+      // The global .table-hover > tr:hover uses static light $surface-color at higher
+      // specificity (0,3,2) than the base override — the scoped :hover must re-derive
+      // from the token or dark-mode cards flash light on hover.
+      expect(css).to.match(/max-width:\s*768px\s*\)\s*\{[\s\S]*?\.departments-page[^{]*\.mobile-card-table\.table-hover > tbody > tr:hover[^{]*\{[^}]*background:\s*var\(--surface\)/);
     });
     it('makes row links inline-block so the press transform renders', function () {
       // CSS transform does not apply to non-replaced inline elements; the row <a>s
