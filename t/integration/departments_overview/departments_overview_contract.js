@@ -378,21 +378,32 @@ describe('Departments overview interaction, mobile Tab a11y, geometry & visual m
       'count-link click did not reach filtered employees page for id ' + expectedId + ' (got ' + landed + ')');
   });
 
-  it('mobile (390px): no horizontal overflow; longest cell text within viewport; single-column cards', async function () {
+  it('mobile (390px): no horizontal overflow; cell + link content within viewport; single-column cards', async function () {
     await setViewport(driver, 390, 844);
     await openDepartments(driver, application_host);
     await driver.sleep(300);
     var g = await driver.executeScript(function () {
       var de = document.documentElement;
       var rows = document.querySelectorAll('tr[data-vpp-department-list-mode="readonly"]');
-      // Name cells hold the longest cell text on the page.
+      // Measure BOTH the td and the inner <a> for name + manager cells — clipping
+      // can hide inside a td whose edge fits but whose link overflows the grid track.
       var nameCells = document.querySelectorAll('.departments-name-cell');
-      var maxRight = 0;
-      for (var i = 0; i < nameCells.length; i++) {
-        var r = nameCells[i].getBoundingClientRect().right;
-        if (r > maxRight) maxRight = r;
+      var mgrCells = document.querySelectorAll('.departments-secondary');
+      function maxLinkRight(cells) {
+        var max = 0;
+        for (var i = 0; i < cells.length; i++) {
+          var a = cells[i].querySelector('a');
+          if (a) { var r = a.getBoundingClientRect().right; if (r > max) max = r; }
+        }
+        return max;
       }
-      // Card layout: rows stack vertically (mobile-card-table flattens tr to display:block).
+      function maxCellRight(cells) {
+        var max = 0;
+        for (var i = 0; i < cells.length; i++) {
+          var r = cells[i].getBoundingClientRect().right; if (r > max) max = r;
+        }
+        return max;
+      }
       var a = rows[0] ? rows[0].getBoundingClientRect() : null;
       var b = rows[1] ? rows[1].getBoundingClientRect() : null;
       var stacked = a && b ? (b.top > a.top) : null;
@@ -400,7 +411,9 @@ describe('Departments overview interaction, mobile Tab a11y, geometry & visual m
         scrollWidth: de.scrollWidth,
         clientWidth: de.clientWidth,
         innerWidth: window.innerWidth,
-        nameMaxRight: maxRight,
+        nameCellRight: maxCellRight(nameCells),
+        nameLinkRight: maxLinkRight(nameCells),
+        mgrLinkRight: maxLinkRight(mgrCells),
         rowCount: rows.length,
         stacked: stacked
       };
@@ -410,8 +423,15 @@ describe('Departments overview interaction, mobile Tab a11y, geometry & visual m
       'horizontal overflow: scrollWidth=' + g.scrollWidth + ' > clientWidth=' + g.clientWidth);
     assert(g.scrollWidth <= g.innerWidth + 1,
       'horizontal overflow: scrollWidth=' + g.scrollWidth + ' > innerWidth=' + g.innerWidth);
-    assert(g.nameMaxRight <= g.innerWidth + 1,
-      'name cell right edge (' + g.nameMaxRight + ') exceeds viewport (' + g.innerWidth + ')');
+    assert(g.nameCellRight <= g.innerWidth + 1,
+      'name cell right edge (' + g.nameCellRight + ') exceeds viewport (' + g.innerWidth + ')');
+    // inner link content must not overflow its cell or the viewport (clipping guard)
+    assert(g.nameLinkRight <= g.nameCellRight + 1,
+      'name link right (' + g.nameLinkRight + ') exceeds its cell right (' + g.nameCellRight + ') — link content overflows the grid track');
+    assert(g.nameLinkRight <= g.innerWidth + 1,
+      'name link right (' + g.nameLinkRight + ') exceeds viewport (' + g.innerWidth + ')');
+    assert(g.mgrLinkRight <= g.innerWidth + 1,
+      'manager link right (' + g.mgrLinkRight + ') exceeds viewport (' + g.innerWidth + ') — long manager name clipped/overflowing');
     assert(g.stacked === true,
       'mobile: rows should stack vertically (row2 below row1)');
   });
@@ -550,6 +570,40 @@ describe('Departments overview interaction, mobile Tab a11y, geometry & visual m
       'RU: cell right edge (' + g.maxCellRight + ') exceeds viewport (' + g.innerWidth + ')');
 
     await capture(driver, 'departments_390x844_ru');
+  });
+
+  // KK long-text geometry. Switch to Kazakh (GET /language/kk), re-open the page,
+  // and assert no horizontal overflow / clip at 390px — KK Cyrillic labels are long.
+  it('KK locale (390px): localized labels wrap without overflow or clip', async function () {
+    await open_page_func({ url: application_host + 'language/kk', driver: driver });
+    await setViewport(driver, 390, 844);
+    await openDepartments(driver, application_host);
+    await driver.sleep(300);
+
+    var g = await driver.executeScript(function () {
+      var de = document.documentElement;
+      var cells = document.querySelectorAll('td[data-label]');
+      var maxRight = 0;
+      for (var i = 0; i < cells.length; i++) {
+        var before = cells[i].getBoundingClientRect();
+        if (before.right > maxRight) maxRight = before.right;
+      }
+      return {
+        scrollWidth: de.scrollWidth,
+        clientWidth: de.clientWidth,
+        innerWidth: window.innerWidth,
+        maxCellRight: maxRight
+      };
+    });
+    assert(g.maxCellRight > 0, 'KK: no td[data-label] cells found');
+    assert(g.scrollWidth <= g.clientWidth + 1,
+      'KK: horizontal overflow scrollWidth=' + g.scrollWidth + ' > clientWidth=' + g.clientWidth);
+    assert(g.scrollWidth <= g.innerWidth + 1,
+      'KK: horizontal overflow scrollWidth=' + g.scrollWidth + ' > innerWidth=' + g.innerWidth);
+    assert(g.maxCellRight <= g.innerWidth + 1,
+      'KK: cell right edge (' + g.maxCellRight + ') exceeds viewport (' + g.innerWidth + ')');
+
+    await capture(driver, 'departments_390x844_kk');
   });
 
   // Visual matrix: 6 states (3 viewports x 2 themes). Default locale (en).

@@ -179,5 +179,23 @@ describe('Departments overview contract (Stage 8C)', function () {
     it('wraps long text (overflow-wrap)', function () {
       expect(css).to.match(/\.departments-page[^}]*overflow-wrap:\s*anywhere/);
     });
+    it('overrides the global mobile-card chrome with scoped tokens (dark card fix)', function () {
+      // The reused global .mobile-card-table paints static light $surface-color/
+      // $border-color; the page must override surface/border/shadow via tokens so
+      // dark-mode cards match the theme, and open the card (overflow visible) so
+      // long link content wraps instead of clipping.
+      expect(css).to.match(/max-width:\s*768px\s*\)\s*\{[\s\S]*?\.departments-page[^{]*\.mobile-card-table > tbody > tr[^{]*\{[^}]*background:\s*var\(--surface\)/);
+      expect(css).to.match(/max-width:\s*768px\s*\)\s*\{[\s\S]*?\.departments-page[^{]*\.mobile-card-table > tbody > tr[^{]*\{[^}]*border-color:\s*var\(--surface-border\)/);
+      expect(css).to.match(/max-width:\s*768px\s*\)\s*\{[\s\S]*?\.departments-page[^{]*\.mobile-card-table > tbody > tr[^{]*\{[^}]*overflow:\s*visible/);
+    });
+    it('makes row links inline-block so the press transform renders', function () {
+      // CSS transform does not apply to non-replaced inline elements; the row <a>s
+      // must be inline-block (or block) to produce a transformable box.
+      expect(css).to.match(/\.departments-page[^{}]*\.departments-catalog a[^{}]*\{[^}]*display:\s*inline-block/);
+    });
+    it('mobile links wrap long content (white-space normal + overflow-wrap on the link)', function () {
+      expect(css).to.match(/max-width:\s*768px\s*\)\s*\{[\s\S]*?\.departments-page[^{]*\.mobile-card-table td a[^{]*\{[^}]*white-space:\s*normal/);
+      expect(css).to.match(/max-width:\s*768px\s*\)\s*\{[\s\S]*?\.departments-page[^{]*\.mobile-card-table td a[^{]*\{[^}]*overflow-wrap:\s*anywhere/);
+    });
   });
 });
