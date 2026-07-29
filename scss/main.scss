@@ -5828,6 +5828,7 @@ td.current_day_cell.half_2nd {
     font-weight: 500;
   }
   .page-heading-actions .btn {
+    min-height: 44px;
     transition: transform 0.1s ease-out;
   }
   .page-heading-actions .btn:active,
@@ -5866,6 +5867,12 @@ td.current_day_cell.half_2nd {
   /* Desktop popover buttons: visible by default. */
   .policy-help-desktop {
     display: inline;
+  }
+  /* Help buttons reach the 44px tap-target guidance without breaking table
+     row density (they sit in the header, not in data rows). */
+  .policy-help-desktop button {
+    min-height: 44px;
+    min-width: 44px;
   }
 
   /* Table hierarchy + numeric alignment. */

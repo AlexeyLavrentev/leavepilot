@@ -58,7 +58,7 @@ describe('Departments overview contract (Stage 8C)', function () {
       expect((view.match(/<th scope="col">/g) || []).length).to.equal(7);
     });
     it('adds a localized data-label to every data cell', function () {
-      for (const key of ['common.name', 'departments.manager', 'departments.allowance', 'departments.numberEmployees', 'departments.publicHolidays', 'departments.accruedAllowance']) {
+      for (const key of ['common.name', 'departments.manager', 'departments.allowance', 'departments.numberEmployees', 'departments.publicHolidays', 'departments.accruedAllowance', 'departments.editDepartment']) {
         expect(view).to.include("data-label=\"{{t '" + key + "'}}\"");
       }
     });
@@ -160,6 +160,12 @@ describe('Departments overview contract (Stage 8C)', function () {
     });
     it('has a prefers-contrast block', function () {
       expect(css).to.match(/prefers-contrast:\s*more/);
+    });
+    it('enforces 44px tap targets on the action button and desktop help buttons', function () {
+      // WCAG 2.5.5: these sit in the page/column header (not data rows), so a
+      // min-height:44px is safe and must not be dropped.
+      expect(css).to.match(/\.departments-page[^{]*\.page-heading-actions \.btn[^{]*\{[^}]*min-height:\s*44px/);
+      expect(css).to.match(/\.departments-page[^{]*\.policy-help-desktop button[^{]*\{[^}]*min-height:\s*44px/);
     });
     it('uses px (not rem) font-size in every .departments-page rule', function () {
       const ruleRe = /([^{}]*?)\{([^{}]*)\}/g;

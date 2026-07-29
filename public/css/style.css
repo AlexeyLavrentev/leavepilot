@@ -5413,6 +5413,7 @@ td.current_day_cell.half_2nd {
   font-weight: 500;
 }
 .departments-page .page-heading-actions .btn {
+  min-height: 44px;
   transition: transform 0.1s ease-out;
 }
 .departments-page .page-heading-actions .btn:active,
@@ -5451,6 +5452,14 @@ td.current_day_cell.half_2nd {
 }
 .departments-page .policy-help-desktop {
   display: inline;
+}
+.departments-page {
+  /* Help buttons reach the 44px tap-target guidance without breaking table
+     row density (they sit in the header, not in data rows). */
+}
+.departments-page .policy-help-desktop button {
+  min-height: 44px;
+  min-width: 44px;
 }
 .departments-page {
   /* Table hierarchy + numeric alignment. */
