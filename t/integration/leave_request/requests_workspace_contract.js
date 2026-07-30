@@ -397,14 +397,22 @@ describe('Requests workspace interaction, geometry & visual matrix (Stage 8D)', 
     await driver.executeScript('document.body.focus();');
     await driver.sleep(120);
 
+    // Full mobile Tab walk: keep tabbing until focus LEAVES .requests-page (i.e. the whole
+    // in-page control region has been traversed) or we hit the safety cap. This walks PAST
+    // the mobile select-all and through the row checkboxes + action controls, so it would
+    // catch a hidden desktop checkbox sitting anywhere in the focus order.
     var focusedDesktopSelectAll = false;
     var reachedMobileSelectAll = false;
     var focusRingSeen = false;
+    var rowCheckboxReached = false;
+    var actionControlReached = false;
+    var leftRequests = false;
+    var enteredRequests = false; // skip the header/nav controls before .requests-page
     var sequence = [];
-    var MAX_TABS = 50;
+    var MAX_TABS = 90;
     for (var i = 0; i < MAX_TABS; i++) {
       await driver.actions().sendKeys(Key.TAB).perform();
-      await driver.sleep(50);
+      await driver.sleep(40);
       var info = await driver.executeScript(function () {
         var el = document.activeElement;
         if (!el || el === document.body) return null;
@@ -412,33 +420,76 @@ describe('Requests workspace interaction, geometry & visual matrix (Stage 8D)', 
         var mobWrap = el.closest ? el.closest('.bulk-select-mobile') : null;
         var inRequests = !!(el.closest && el.closest('.requests-page'));
         var cs = getComputedStyle(el);
-        // a non-empty focus ring on a Requests control
-        var hasRing = inRequests && cs.outlineStyle !== 'none' && cs.outlineWidth !== '0px';
+        var cls = String(el.className || '');
+        var isRowCheckbox = /\bbulk-request-checkbox\b/.test(cls);
+        // an action control: per-row approve/reject submit, or revoke/cancel button
+        var isAction = /\b(single-click|revoke-btn)\b/.test(cls) ||
+          (el.tagName === 'INPUT' && (el.getAttribute('type') === 'submit'));
         return {
           tag: el.tagName,
           type: el.getAttribute('type') || '',
-          cls: String(el.className || ''),
+          cls: cls,
           inDeskWrap: !!deskWrap,
           inMobWrap: !!mobWrap,
           inRequests: inRequests,
-          hasRing: hasRing
+          isRowCheckbox: isRowCheckbox,
+          isAction: isAction,
+          hasRing: inRequests && cs.outlineStyle !== 'none' && cs.outlineWidth !== '0px'
         };
       });
-      if (!info) { sequence.push('(body)'); continue; }
+      if (!info) { sequence.push('(body/out)'); if (enteredRequests) leftRequests = true; break; }
       sequence.push(info.tag + (info.type ? '[' + info.type + ']' : '') + (info.cls ? '.' + info.cls.split(/\s+/)[0] : ''));
-      if (info.inDeskWrap) focusedDesktopSelectAll = true;
-      if (info.inMobWrap) reachedMobileSelectAll = true;
-      if (info.hasRing) focusRingSeen = true;
-      // Stop once we've exercised the relevant region (reached mobile select-all + a ring).
-      if (reachedMobileSelectAll && focusRingSeen && i >= 5) break;
+      // Once we have entered the .requests-page region, leaving it ends the walk. Before that,
+      // keep tabbing through header/nav controls (navbar toggle, skip link, etc.).
+      if (info.inRequests) {
+        enteredRequests = true;
+        if (info.inDeskWrap) focusedDesktopSelectAll = true;
+        if (info.inMobWrap) reachedMobileSelectAll = true;
+        if (info.isRowCheckbox) rowCheckboxReached = true;
+        if (info.isAction) actionControlReached = true;
+        if (info.hasRing) focusRingSeen = true;
+      } else if (enteredRequests) {
+        // focus left .requests-page after having entered it — the region is fully traversed
+        leftRequests = true;
+        break;
+      }
     }
     assert(!focusedDesktopSelectAll,
       'FAIL: the hidden desktop thead select-all received focus at 390px — it must be display:none ' +
       '(out of Tab order). Sequence: ' + sequence.join(' -> '));
     assert(reachedMobileSelectAll,
       'the visible mobile select-all was never reached by Tab. Sequence: ' + sequence.join(' -> '));
+    assert(rowCheckboxReached,
+      'Tab walk never reached a row selection checkbox. Sequence: ' + sequence.join(' -> '));
+    assert(actionControlReached,
+      'Tab walk never reached an action control (approve/reject/revoke/cancel). Sequence: ' + sequence.join(' -> '));
     assert(focusRingSeen,
       'no Requests control showed a visible focus ring during the Tab walk. Sequence: ' + sequence.join(' -> '));
+    // The walk must have actually traversed the region (left it or hit the cap), not stopped early.
+    assert(leftRequests || sequence.length >= MAX_TABS,
+      'Tab walk ended without leaving .requests-page — it did not fully traverse the control region. Sequence: ' + sequence.join(' -> '));
+  });
+
+  // The mobile revoke/cancel buttons must meet the >=44px tap-target contract at 390px
+  // (desktop stays compact for density; the flex action cell now has room on mobile).
+  it('mobile (390px): revoke/cancel action buttons meet the 44px tap-target guidance', async function () {
+    await setViewport(driver, 390, 844);
+    await openRequests(driver, application_host);
+    await driver.sleep(300);
+    var rects = await driver.executeScript(function () {
+      // revoke (admin approved own leave) + cancel (admin pending own leave) both render in
+      // the history table as .revoke-btn inside .mobile-card-action.
+      var btns = document.querySelectorAll('.requests-history-table .mobile-card-action .revoke-btn');
+      return Array.prototype.map.call(btns, function (b) {
+        var r = b.getBoundingClientRect();
+        return { w: Math.round(r.width), h: Math.round(r.height) };
+      });
+    });
+    assert(rects.length > 0, 'expected >=1 revoke/cancel button in the history action cells at 390px');
+    for (var i = 0; i < rects.length; i++) {
+      assert(rects[i].h >= 44 && rects[i].w >= 44,
+        'revoke/cancel button ' + i + ' must be >=44px on both axes at 390px, got ' + JSON.stringify(rects[i]));
+    }
   });
 
   // Space selects a row and exposes the controller-driven bulk bar.
@@ -581,14 +632,39 @@ describe('Requests workspace interaction, geometry & visual matrix (Stage 8D)', 
     var probe = await driver.executeScript(function () {
       return {
         mobileCardTables: document.querySelectorAll('.mobile-card-table').length,
+        mobileCardActions: document.querySelectorAll('.mobile-card-action').length,
         hasScrollHint: !!document.querySelector('.requests.scrollTable, .visible-xs-block em'),
         userRequestTables: document.querySelectorAll('.user-requests-table').length
       };
     });
     assert.strictEqual(probe.mobileCardTables, 0,
       '/calendar/ must NOT render a .mobile-card-table (opt-in param not passed), got ' + probe.mobileCardTables);
+    assert.strictEqual(probe.mobileCardActions, 0,
+      '/calendar/ must NOT render .mobile-card-action cells (gated behind mobile_cards), got ' + probe.mobileCardActions);
     assert(probe.hasScrollHint, '/calendar/ should keep the horizontal-scroll hint for its legacy table');
     assert(probe.userRequestTables > 0, '/calendar/ should still render the .user-requests-table');
+  });
+
+  // User Details absences also consumes the shared partial (via user_requests_grouped) WITHOUT
+  // mobile_cards, so it must keep the legacy table too — including NO .mobile-card-action cells
+  // (the opt-in must be complete: the action class is gated, not just the table classes).
+  it('user-details absences (390px): shared partial keeps the legacy table (no mobile-card, no action cells)', async function () {
+    await setViewport(driver, 390, 844);
+    await open_page_func({ url: application_host + 'users/edit/' + admin.id + '/absences/', driver: driver });
+    await driver.sleep(400);
+    var probe = await driver.executeScript(function () {
+      return {
+        mobileCardTables: document.querySelectorAll('.mobile-card-table').length,
+        mobileCardActions: document.querySelectorAll('.mobile-card-action').length,
+        hasScrollHint: !!document.querySelector('.requests.scrollTable, .visible-xs-block em'),
+        userRequestTables: document.querySelectorAll('.user-requests-table').length
+      };
+    });
+    assert.strictEqual(probe.mobileCardTables, 0,
+      'user-details must NOT render a .mobile-card-table (opt-in param not passed), got ' + probe.mobileCardTables);
+    assert.strictEqual(probe.mobileCardActions, 0,
+      'user-details must NOT render .mobile-card-action cells (gated behind mobile_cards), got ' + probe.mobileCardActions);
+    assert(probe.userRequestTables > 0, 'user-details should still render the .user-requests-table');
   });
 
   it('RU locale (390px): labels + chips wrap without overflow or clip', async function () {

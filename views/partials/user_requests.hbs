@@ -38,7 +38,7 @@
         <td {{#if ../mobile_cards}}data-label="{{t 'requests.type'}}"{{/if}}>{{ this.leave_type.name }}{{#if this.is_pended_revoke_leave}}<br>({{t "requests.pendedRevoke"}}){{/if}}</td>
         <td {{#if ../mobile_cards}}data-label="{{t 'requests.deducted'}}"{{/if}}>{{ this.get_deducted_days_number }}</td>
         <td class="user-request-table-approver" {{#if ../mobile_cards}}data-label="{{t 'requests.approvedBy'}}"{{/if}}>{{#with this.approver}}{{this.full_name}}{{/with}}</td>
-        <td class="mobile-card-action">
+        <td {{#if ../mobile_cards}}class="mobile-card-action"{{/if}}>
           {{# if this.is_approved_leave }}
           {{# unless this.is_pended_revoke_leave}}
           <form method="post" action="/requests/revoke/">

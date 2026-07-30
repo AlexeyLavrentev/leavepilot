@@ -5941,6 +5941,14 @@ td.current_day_cell.half_2nd {
     display: block;
     text-align: center;
   }
+  /* Restore the >=44px tap-target contract for the mobile revoke/cancel controls. On
+     desktop they stay compact (min-height:28px) for table density, but on mobile each
+     is a full-width primary destructive action and must meet the 44px minimum; the flex
+     action cell now has room to contain it. */
+  .requests-page .mobile-card-table .mobile-card-action .revoke-btn {
+    min-height: 44px;
+    min-width: 44px;
+  }
   /* The selected-row highlight (controller toggles tr.is-selected) must stay
      readable on the scoped card surface in both themes. */
   .requests-page .requests-to-approve-table > tbody > tr.is-selected > td {

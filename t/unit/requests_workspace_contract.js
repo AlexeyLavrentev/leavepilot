@@ -85,6 +85,12 @@ describe('Requests workspace contract (Stage 8D)', function () {
       expect(history).to.match(/\{\{#if mobile_cards\}\}mobile-card-table requests-history-table\{\{\/if\}\}/);
       expect(history).to.match(/\{\{#if mobile_cards\}\}mobile-card-table-container\{\{\/if\}\}/);
     });
+    it('gates the action cell class behind the mobile_cards param', function () {
+      // The global mobile-card rules give .mobile-card-action forms/buttons width:100%,
+      // display:block and a margin — that must NOT apply to the legacy calendar/user-details
+      // table. The class is added only when mobile_cards is truthy.
+      expect(history).to.match(/<td \{\{#if \.\.\/mobile_cards\}\}class="mobile-card-action"\{\{\/if\}\}>/);
+    });
     it('gates every data-label behind the mobile_cards param', function () {
       // data-labels are only needed for the mobile card layout; on the legacy table they'd be dead.
       for (const key of [
