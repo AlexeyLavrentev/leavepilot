@@ -5629,5 +5629,355 @@ td.current_day_cell.half_2nd {
     min-width: 0;
   }
 }
+/* ============================================================
+ * Stage 8D — Requests Workspace (.requests-page)
+ * Scoped tokens + raised surfaces for the two /requests/ areas
+ * (approval table + year-grouped absence history). Pure EOF
+ * append; no edits to global :root, the global dark block, the
+ * global .mobile-card-table rule, or Bootstrap. New history-table
+ * chrome is scoped to .requests-page so the shared user_requests
+ * partial only picks up the bare global-default card on other
+ * pages (calendar / user-details).
+ * ============================================================ */
+.requests-page {
+  --surface: #ffffff;
+  --surface-raised: #fbfcfe;
+  --surface-sunken: #f8fafc;
+  --surface-overlay: #ffffff;
+  --surface-border: #e3e9ef;
+  --surface-border-hairline: rgb(247.35, 247.35, 247.35);
+  --shadow-card: 0 1px 2px rgba(31, 45, 61, 0.06);
+  --shadow-card-strong: 0 8px 24px rgba(31, 45, 61, 0.08);
+  --radius-card: 10px;
+  --radius-control: 8px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  max-width: 1280px;
+  margin-inline: auto;
+}
+.requests-page .page-heading h1 {
+  letter-spacing: -0.01em;
+  line-height: 1.1;
+  font-weight: 700;
+  color: var(--color-heading-primary);
+}
+.requests-page {
+  /* Calm, opaque raised surfaces for both areas. */
+}
+.requests-page .surface {
+  background: var(--surface);
+  border: 1px solid var(--surface-border);
+  border-top-color: var(--surface-border-hairline);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  padding: var(--space-4);
+}
+.requests-page .requests-approval {
+  margin-bottom: var(--space-6);
+}
+.requests-page .requests-history { /* container only; year surfaces carry the chrome */ }
+.requests-page .requests-year-surface {
+  margin-bottom: var(--space-5);
+}
+.requests-page .requests-year-surface:last-of-type {
+  margin-bottom: 0;
+}
+.requests-page {
+  /* The section + year headings stay on the locked .main-row_header colour
+     (locked test requires color: var(--color-heading)). */
+}
+.requests-page .requests-year-heading {
+  margin: 0 0 var(--space-3) 0;
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--color-heading-primary);
+}
+.requests-page .requests-year-deduction {
+  margin: var(--space-3) 0 0 0;
+  color: var(--color-text-muted);
+}
+.requests-page {
+  /* Desktop table hierarchy: readable, dense, calm. */
+}
+.requests-page .table {
+  margin: 0;
+}
+.requests-page .table > thead > tr > th {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  letter-spacing: 0.02em;
+  border-bottom-color: var(--surface-border);
+}
+.requests-page .table > tbody > tr > td {
+  border-top: 1px solid var(--surface-border);
+  vertical-align: middle;
+}
+.requests-page .table > tbody > tr:hover > td {
+  background: var(--surface-raised);
+}
+.requests-page {
+  /* Status chips: calm text badges (not colour-only state). */
+}
+.requests-page .request-status-chip {
+  display: inline-block;
+  min-width: 64px;
+  padding: 2px 8px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.5;
+  text-align: center;
+  border-radius: var(--radius-control);
+  border: 1px solid transparent;
+}
+.requests-page .request-status--pending {
+  color: #6b5b00;
+  background: #fdf3d4;
+  border-color: #ecd98a;
+}
+.requests-page .request-status--approved {
+  color: #1f5130;
+  background: #d8f0df;
+  border-color: #aedcbf;
+}
+.requests-page .request-status--rejected {
+  color: #8a1f1f;
+  background: #f7dcdc;
+  border-color: #e3aaaa;
+}
+.requests-page {
+  /* Approve = primary positive; Reject/Revoke/Cancel = noticeable but not dominant. */
+}
+.requests-page .single-click {
+  transition: transform 0.1s ease-out;
+}
+.requests-page .single-click:active,
+.requests-page .single-click:hover:active {
+  transform: scale(0.98);
+}
+.requests-page {
+  /* Row actions that are links need a transformable box (inline-block) for the
+     press scale to actually render — same lesson as the 8C row links. */
+}
+.requests-page .mobile-card-action a,
+.requests-page .requests-history a {
+  display: inline-block;
+}
+.requests-page {
+  /* Visible focus ring for keyboard users. */
+}
+.requests-page a:focus-visible,
+.requests-page button:focus-visible,
+.requests-page input:focus-visible,
+.requests-page [tabindex]:focus-visible {
+  outline: 2px solid var(--color-focus-ring-strong);
+  outline-offset: 2px;
+}
+.requests-page {
+  /* ≥44px tap targets on primary action controls. The history revoke/cancel buttons
+     are btn-xs destructive controls where forcing 44px would break the dense card grid
+     (the action cell's clientHeight can't grow under the grid layout); they keep their
+     compact size but remain focus-visible ringed + ≥24px hit area via their padding. */
+}
+.requests-page .requests-to-approve-table .mobile-card-action .btn,
+.requests-page .bulk-clear-btn {
+  min-height: 44px;
+  min-width: 44px;
+}
+.requests-page {
+  /* On the legacy (desktop) history table, ensure the revoke/cancel buttons hit at least
+     a comfortable target without forcing the compact btn-xs to inflate the row. */
+}
+.requests-page .requests-history .revoke-btn {
+  min-height: 28px;
+}
+.requests-page {
+  /* Bulk action bar — keep the controller-driven visibility (hidden attr +
+     .has-active-bulk-actions page class) and the locked position:fixed; this
+     block only improves the dark/mobile presentation scoped to the page. */
+}
+.requests-page.has-active-bulk-actions .bulk-action-bar {
+  background: var(--surface-overlay);
+  border-color: var(--surface-border);
+  box-shadow: var(--shadow-card-strong);
+}
+.requests-page {
+  /* Select-all: the desktop checkbox lives in the (mobile-sr-only-clipped) thead, so on
+     mobile it would be invisible-but-focusable. The visible mobile select-all is a separate
+     checkbox (.bulk-select-mobile) shown only <=768px; both carry .bulk-select-all so the
+     controller keeps them in sync. Desktop default: show thead checkbox, hide the mobile one. */
+}
+.requests-page .bulk-select-desktop {
+  display: inline-block;
+}
+.requests-page .bulk-select-mobile {
+  display: none;
+}
+
+/* Dark-mode scoped tokens (mirrors Stage 8C). */
+[data-theme=dark] .requests-page {
+  --surface: #1a1e22;
+  --surface-raised: #20252a;
+  --surface-sunken: #121417;
+  --surface-overlay: #1f2327;
+  --surface-border: #2a2f34;
+  --surface-border-hairline: #23282d;
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.32);
+  --shadow-card-strong: 0 8px 24px rgba(0, 0, 0, 0.40);
+  /* Calm chip colours tuned for the dark surface (AA contrast). */
+}
+[data-theme=dark] .requests-page .request-status--pending {
+  color: #f5d76e;
+  background: #3a3220;
+  border-color: #5a4d28;
+}
+[data-theme=dark] .requests-page .request-status--approved {
+  color: #7fd49a;
+  background: #1f3a2a;
+  border-color: #2f5a40;
+}
+[data-theme=dark] .requests-page .request-status--rejected {
+  color: #e58a8a;
+  background: #3a2222;
+  border-color: #5a3030;
+}
+
+/* Prefers more contrast: thicker borders, drop the shadow. */
+@media (prefers-contrast: more) {
+  .requests-page .surface {
+    border-width: 2px;
+    box-shadow: none;
+  }
+  .requests-page .table > tbody > tr > td {
+    border-top-width: 2px;
+  }
+}
+/* Reduced transparency: solid surface. */
+@media (prefers-reduced-transparency: reduce) {
+  .requests-page .surface {
+    background: var(--surface-overlay);
+  }
+}
+/* Reduced motion: kill transition/animation AND transforms (incl. :hover:active). */
+@media (prefers-reduced-motion: reduce) {
+  .requests-page *,
+  .requests-page *::before,
+  .requests-page *::after {
+    transition: none !important;
+    animation: none !important;
+  }
+  .requests-page .single-click:active,
+  .requests-page .single-click:hover:active {
+    transform: none;
+  }
+}
+/*
+  Mobile (≤768px): single-column cards via the established mobile-card-table.
+  Override the global .mobile-card-table card chrome (which uses static light
+  $surface-color/$border-color/$shadow-sm and overflow:hidden) so dark-mode cards
+  match the theme and long names/comments/types/RU-KK labels wrap instead of clip.
+*/
+@media (max-width: 768px) {
+  .requests-page .mobile-card-table > tbody > tr {
+    overflow: visible;
+    background: var(--surface);
+    border-color: var(--surface-border);
+    box-shadow: var(--shadow-card);
+    border-radius: var(--radius-card);
+  }
+  /* The global .mobile-card-table.table-hover > tbody > tr:hover uses static light
+     at higher specificity — re-derive from the token so dark cards don't flash. */
+  .requests-page .mobile-card-table.table-hover > tbody > tr:hover {
+    background: var(--surface);
+  }
+  .requests-page .mobile-card-table > tbody > tr > td {
+    border-top-color: var(--surface-border);
+    white-space: normal;
+  }
+  .requests-page .mobile-card-table > tbody > tr > td:first-child {
+    border-top-left-radius: var(--radius-card);
+    border-top-right-radius: var(--radius-card);
+  }
+  .requests-page .mobile-card-table > tbody > tr > td:last-child {
+    border-bottom-left-radius: var(--radius-card);
+    border-bottom-right-radius: var(--radius-card);
+  }
+  .requests-page .mobile-card-table td a {
+    white-space: normal;
+    overflow-wrap: anywhere;
+    min-width: 0;
+  }
+  /* Action cells hold a revoke/cancel form with a .pull-right (float) button. Inside the
+     grid td a float doesn't expand the cell, so the button overflows (scrollH>clientH) and
+     clips. Force the action cell to a block formatting context (matching the global
+     .mobile-card-action rule, which the grid td otherwise overrides via higher specificity)
+     that contains the float, and let the button fill the row on mobile. */
+  .requests-page .mobile-card-table > tbody > tr > td.mobile-card-action {
+    display: block;
+    overflow: visible;
+    /* The grid td defaults to align-items:start with a label track; an action cell has no
+       label, so reset padding/height so the block button defines the cell height. */
+    padding: var(--space-2) var(--space-3);
+    min-height: 0;
+  }
+  /* The action form contains only hidden inputs + a floated (.pull-right) button, so a plain
+     block form collapses to height 0 and the button overflows the cell. Use a flex form so the
+     button establishes the form height. */
+  .requests-page .mobile-card-table .mobile-card-action form {
+    display: flex !important;
+    margin: 0;
+  }
+  .requests-page .mobile-card-table .mobile-card-action form,
+  .requests-page .mobile-card-table .mobile-card-action .btn {
+    float: none;
+    width: 100%;
+  }
+  .requests-page .mobile-card-table .mobile-card-action .btn {
+    display: block;
+    text-align: center;
+  }
+  /* Restore the >=44px tap-target contract for the mobile revoke/cancel controls. On
+     desktop they stay compact (min-height:28px) for table density, but on mobile each
+     is a full-width primary destructive action and must meet the 44px minimum; the flex
+     action cell now has room to contain it. */
+  .requests-page .mobile-card-table .mobile-card-action .revoke-btn {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  /* The selected-row highlight (controller toggles tr.is-selected) must stay
+     readable on the scoped card surface in both themes. */
+  .requests-page .requests-to-approve-table > tbody > tr.is-selected > td {
+    background: var(--surface-raised);
+  }
+  /* Select-all swap: hide the invisible thead checkbox (removes it from the Tab order),
+     show the visible mobile select-all as a full-width, >=44px tap target. */
+  .requests-page .bulk-select-desktop {
+    display: none;
+  }
+  .requests-page .bulk-select-mobile {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-height: 44px;
+    margin: 0 0 var(--space-3) 0;
+    padding: var(--space-2) var(--space-3);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+    border-bottom: 1px solid var(--surface-border);
+  }
+  .requests-page .bulk-select-mobile input.bulk-select-all {
+    width: 18px;
+    height: 18px;
+    margin: 0;
+  }
+}
 
 /*# sourceMappingURL=style.css.map */

@@ -7,9 +7,14 @@
   {{else}}
 
   <div class="col-md-12">
+    {{!-- The mobile-card layout is OPT-IN: it activates only when the consumer passes
+          mobile_cards=1 (the Requests page). Calendar and user-details still get the
+          legacy horizontally-scrollable table + its scroll hint, unchanged. --}}
+    {{# unless mobile_cards}}
     <p class="visible-xs-block"><em class="text-muted">{{t "requests.scrollTable"}}</em></p>
-    <div class="table-responsive" role="region" aria-label="{{table_label}}" tabindex="0">
-    <table class="table table-hover user-requests-table">
+    {{/unless}}
+    <div class="table-responsive {{#if mobile_cards}}mobile-card-table-container{{/if}}" role="region" aria-label="{{table_label}}" tabindex="0">
+    <table class="table table-hover user-requests-table {{#if mobile_cards}}mobile-card-table requests-history-table{{/if}}">
       <caption class="sr-only">{{table_label}}</caption>
       <thead>
         <tr>
@@ -27,13 +32,13 @@
       {{# each leaves }}
 
       <tr class="leave-request-row">
-        <td data-tom-leave-dates="1">
+        <td {{#if ../mobile_cards}}data-label="{{t 'requests.datesColumn'}}"{{/if}} data-tom-leave-dates="1">
           <button type="button" class="leave-details-summary-trigger interactive-leave-details-summary-trigger leave-details-date-trigger" data-leave-id="{{this.id}}" aria-expanded="false"><span class="sr-only">{{t "leave.leaveSummary"}}: </span>{{> leave_dates leave=this}}</button>
         </td>
-        <td>{{ this.leave_type.name }}{{#if this.is_pended_revoke_leave}}<br>({{t "requests.pendedRevoke"}}){{/if}}</td>
-        <td>{{ this.get_deducted_days_number }}</td>
-        <td class="user-request-table-approver">{{#with this.approver}}{{this.full_name}}{{/with}}</td>
-        <td>
+        <td {{#if ../mobile_cards}}data-label="{{t 'requests.type'}}"{{/if}}>{{ this.leave_type.name }}{{#if this.is_pended_revoke_leave}}<br>({{t "requests.pendedRevoke"}}){{/if}}</td>
+        <td {{#if ../mobile_cards}}data-label="{{t 'requests.deducted'}}"{{/if}}>{{ this.get_deducted_days_number }}</td>
+        <td class="user-request-table-approver" {{#if ../mobile_cards}}data-label="{{t 'requests.approvedBy'}}"{{/if}}>{{#with this.approver}}{{this.full_name}}{{/with}}</td>
+        <td {{#if ../mobile_cards}}class="mobile-card-action"{{/if}}>
           {{# if this.is_approved_leave }}
           {{# unless this.is_pended_revoke_leave}}
           <form method="post" action="/requests/revoke/">
@@ -54,8 +59,8 @@
             {{/if_equal}}
           {{/if}}
         </td>
-        <td>{{this.comment.comment}}</td>
-        <td><span class="pull-right leave-request-row-status">{{#if this.is_new_leave }}{{t "requests.statusPending"}}{{else}}{{#if this.is_approved_leave}}{{t "requests.statusApproved"}}{{else}}{{t "requests.statusRejected"}}{{/if}}{{/if}}</span></td>
+        <td {{#if ../mobile_cards}}data-label="{{t 'requests.comment'}}"{{/if}}>{{this.comment.comment}}</td>
+        <td {{#if ../mobile_cards}}data-label="{{t 'requests.status'}}"{{/if}}><span class="pull-right leave-request-row-status">{{#if this.is_new_leave }}<span class="request-status-chip request-status--pending">{{t "requests.statusPending"}}</span>{{else}}{{#if this.is_approved_leave}}<span class="request-status-chip request-status--approved">{{t "requests.statusApproved"}}</span>{{else}}<span class="request-status-chip request-status--rejected">{{t "requests.statusRejected"}}</span>{{/if}}{{/if}}</span></td>
       </tr>
 
       {{/ each }}
