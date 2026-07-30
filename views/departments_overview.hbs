@@ -2,87 +2,93 @@
 {{> header }}
 
 <a class="sr-only sr-only-focusable" href="#main-content">{{t "nav.skipToMainContent"}}</a>
-<main id="main-content" tabindex="-1">
-<h1>{{t "departments.title"}}</h1>
+<main id="main-content" class="departments-page" tabindex="-1">
+  <div class="page-heading">
+    <div class="page-heading-titles">
+      <h1>{{t "departments.title"}}</h1>
+      <p class="lead">{{t "departments.allDepartments"}}</p>
+    </div>
+    <div class="page-heading-actions">
+      <button class="btn btn-info" data-toggle="modal" data-target="#add_new_department_modal" type="button" id="add_new_department_btn">{{t "departments.addNew"}}</button>
+    </div>
+  </div>
 
 {{> show_flash_messages }}
 
-<div class="row">
-  <div class="col-md-4 lead">{{t "departments.allDepartments"}}</div>
-  <div class="col-md-4 col-md-offset-4">
-    <button class="btn btn-info pull-right" data-toggle="modal" data-target="#add_new_department_modal" type="button" id="add_new_department_btn">{{t "departments.addNew"}}</button>
-  </div>
-</div>
+  <section class="departments-catalog surface">
+    {{#unless departments.length}}
+      <p class="departments-empty">{{t "departments.noDepartments"}}</p>
+    {{/unless}}
 
+    {{#if departments.length}}
+    <section class="policy-help-mobile" aria-label="{{t "departments.allDepartments"}}">
+      <p class="policy-help-item">
+        <strong>{{t "departments.publicHolidays"}}</strong> — {{t "departments.publicHolidaysHelp"}}
+      </p>
+      <p class="policy-help-item">
+        <strong>{{t "departments.accruedAllowance"}}</strong> — {{t "departments.accruedAllowanceHelp"}}
+      </p>
+    </section>
 
-<div class="content-spacer" aria-hidden="true"></div>
-
-
-{{# unless departments.length }}
-<div class="row">
-    <div class="col-md-4">{{t "departments.noDepartments"}}</div>
-</div>
-{{/unless}}
-
-<div class="row">
-
-  <div class="col-md-12">
-    <div class="data-table-scroll" role="region" aria-label="{{t "departments.allDepartments"}}" tabindex="0">
-    <table class="table table-hover">
+    <div class="table-responsive mobile-card-table-container" role="region" aria-label="{{t "departments.allDepartments"}}" tabindex="0">
+    <table class="table table-hover mobile-card-table">
       <caption class="sr-only">{{t "departments.allDepartments"}}</caption>
       <thead>
         <tr>
-          <th>{{t "common.name"}}</th>
-          <th>{{t "departments.manager"}}</th>
-          <th>{{t "departments.allowance"}}</th>
-          <th>{{t "departments.numberEmployees"}}</th>
-          <th>{{t "departments.publicHolidays"}}
-            <button type="button"
-              class="btn btn-xs btn-link"
-              data-content="{{t "departments.publicHolidaysHelp"}}"
-              data-placement="top"
-              data-toggle="popover"
-              data-trigger="focus hover"
-              aria-label="{{t "departments.publicHolidays"}}"
-            >
-              <span class="fa fa-question-circle" aria-hidden="true"> </span>
-            </button>
+          <th scope="col">{{t "common.name"}}</th>
+          <th scope="col">{{t "departments.manager"}}</th>
+          <th scope="col">{{t "departments.allowance"}}</th>
+          <th scope="col">{{t "departments.numberEmployees"}}</th>
+          <th scope="col">{{t "departments.publicHolidays"}}
+            <span class="policy-help-desktop">
+              <button type="button"
+                class="btn btn-xs btn-link"
+                data-content="{{t "departments.publicHolidaysHelp"}}"
+                data-placement="top"
+                data-toggle="popover"
+                data-trigger="focus hover"
+                aria-label="{{t "departments.publicHolidays"}}"
+              >
+                <span class="fa fa-question-circle" aria-hidden="true"> </span>
+              </button>
+            </span>
           </th>
-          <th>{{t "departments.accruedAllowance"}}
-            <button type="button"
-              class="btn btn-xs btn-link"
-              data-content="{{t "departments.accruedAllowanceHelp"}}"
-              data-placement="top"
-              data-toggle="popover"
-              data-trigger="focus hover"
-              aria-label="{{t "departments.accruedAllowance"}}"
-            >
-              <span class="fa fa-question-circle" aria-hidden="true"> </span>
-            </button>
+          <th scope="col">{{t "departments.accruedAllowance"}}
+            <span class="policy-help-desktop">
+              <button type="button"
+                class="btn btn-xs btn-link"
+                data-content="{{t "departments.accruedAllowanceHelp"}}"
+                data-placement="top"
+                data-toggle="popover"
+                data-trigger="focus hover"
+                aria-label="{{t "departments.accruedAllowance"}}"
+              >
+                <span class="fa fa-question-circle" aria-hidden="true"> </span>
+              </button>
+            </span>
           </th>
-          <th></th>
+          <th scope="col"></th>
         </tr>
       </thead>
       <tbody>
         {{#each departments}}
         <tr data-vpp-department-list-mode="readonly">
-          <td><a href="/settings/departments/edit/{{this.id}}/" data-vpp-department-name=1>{{this.name}}</a></td>
-          <td><a href="/users/edit/{{this.boss.id}}/">{{# with this.boss }}{{this.full_name }}{{/with}}</a></td>
-          <td>
+          <td class="departments-name-cell" data-label="{{t 'common.name'}}"><a href="/settings/departments/edit/{{this.id}}/" data-vpp-department-name=1>{{this.name}}</a></td>
+          <td class="departments-secondary" data-label="{{t 'departments.manager'}}"><a href="/users/edit/{{this.boss.id}}/">{{# with this.boss }}{{this.full_name }}{{/with}}</a></td>
+          <td class="departments-secondary" data-label="{{t 'departments.allowance'}}">
             {{#each ../allowance_options}}{{#if_equal this.value ../allowance}}{{caption}}{{/if_equal}}{{/each}}
           </td>
-          <td><a href="/users/?department={{ this.id }}">{{this.users.length}}</a></td>
-          <td>{{# if this.include_public_holidays }}{{t "common.yes"}}{{/if}}</td>
-          <td>{{# if this.is_accrued_allowance }}{{t "common.yes"}}{{/if}}</td>
-          <td><a href="/settings/departments/edit/{{this.id}}/" class="btn btn-link btn-xs pull-right" aria-label="{{t "departments.editDepartment"}}: {{this.name}}"><span class="fa fa-chevron-right" aria-hidden="true"></span></a></td>
+          <td class="departments-num" data-label="{{t 'departments.numberEmployees'}}"><a href="/users/?department={{ this.id }}">{{this.users.length}}</a></td>
+          <td class="departments-bool" data-label="{{t 'departments.publicHolidays'}}">{{# if this.include_public_holidays }}{{t "common.yes"}}{{else}}{{t "common.no"}}{{/if}}</td>
+          <td class="departments-bool" data-label="{{t 'departments.accruedAllowance'}}">{{# if this.is_accrued_allowance }}{{t "common.yes"}}{{else}}{{t "common.no"}}{{/if}}</td>
+          <td data-label="{{t 'departments.editDepartment'}}"><a href="/settings/departments/edit/{{this.id}}/" class="btn btn-link btn-xs pull-right" aria-label="{{t "departments.editDepartment"}}: {{this.name}}"><span class="fa fa-chevron-right" aria-hidden="true"></span></a></td>
         </tr>
         {{/each}}
       </tbody>
     </table>
     </div>
-  </div>
-
-</div>
+    {{/if}}
+  </section>
 
 {{> add_new_department_modal
   container_id='add_new_department_modal'
