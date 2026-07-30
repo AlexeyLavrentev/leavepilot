@@ -117,6 +117,144 @@ async function addDepartment(driver, name, allowance) {
   });
 }
 
+// Shared mobile-geometry probe + assertion for 390px. Used by the default, RU and KK
+// locale tests so all three exercise the SAME contract (the prior version only measured
+// the RIGHT edge of <a>/<td> containers and RU/KK measured only td — both false-positives
+// that missed inner text clipping).
+//
+// For EVERY department card cell, the probe measures the real rendered glyph boxes via
+// DOM text-node Ranges (Range.getClientRects), plus every descendant element border box
+// (links/spans), and asserts each rect stays within (a) its CELL, (b) its CARD, and
+// (c) the VIEWPORT on ALL FOUR sides — not just the right. It also guards per-card and
+// per-cell scroll dimensions (scrollWidth/Height > clientWidth/Height => content overflows
+// the box => clip risk under overflow:hidden) and document scrollWidth. The manager link
+// is a descendant of the .departments-secondary cell, so it is compared to its own cell.
+var MOBILE_GEOMETRY_SCRIPT = function () {
+  var de = document.documentElement;
+  var TOL = 1;            // sub-pixel tolerance for rect bounds
+  var SCROLL_TOL = 2;     // tolerance for scroll-vs-client (absorbs border/padding rounding)
+  var rows = document.querySelectorAll('tr[data-vpp-department-list-mode="readonly"]');
+  var findings = [];
+  var innerW = window.innerWidth;
+  var innerH = window.innerHeight;
+  var cellsChecked = 0;
+  var textRanges = 0;
+
+  function rnd(n) { return Math.round(n * 10) / 10; }
+  function rec(kind, side, value, limit, where) {
+    findings.push({ kind: kind, side: side, value: rnd(value), limit: rnd(limit), where: where });
+  }
+
+  // Real glyph boxes for every text node under the cell (catches overflow that the td's
+  // own box hides under white-space:nowrap + overflow:hidden) plus descendant element boxes.
+  function cellRects(td) {
+    var out = [];
+    var walker = document.createTreeWalker(td, NodeFilter.SHOW_TEXT, null);
+    var n;
+    while ((n = walker.nextNode())) {
+      if (!(n.nodeValue || '').trim()) continue;
+      var rng = document.createRange();
+      rng.selectNodeContents(n);
+      var rs = rng.getClientRects();
+      for (var i = 0; i < rs.length; i++) {
+        if (rs[i].width <= 0 || rs[i].height <= 0) continue;
+        out.push({ kind: 'text', l: rs[i].left, r: rs[i].right, t: rs[i].top, b: rs[i].bottom });
+        textRanges++;
+      }
+    }
+    var els = td.querySelectorAll('*');
+    for (var j = 0; j < els.length; j++) {
+      var b = els[j].getBoundingClientRect();
+      if (b.width <= 0 || b.height <= 0) continue;
+      out.push({ kind: 'el<' + els[j].tagName.toLowerCase() + '>', l: b.left, r: b.right, t: b.top, b: b.bottom });
+    }
+    return out;
+  }
+
+  // scroll-vs-client overflow guard for an element box (both axes).
+  function scrollGuard(el, where) {
+    if (el.scrollWidth > el.clientWidth + SCROLL_TOL) rec('scroll', 'scrollW>clientW', el.scrollWidth, el.clientWidth, where);
+    if (el.scrollHeight > el.clientHeight + SCROLL_TOL) rec('scroll', 'scrollH>clientH', el.scrollHeight, el.clientHeight, where);
+  }
+
+  var r0 = rows[0] ? rows[0].getBoundingClientRect() : null;
+  var r1 = rows[1] ? rows[1].getBoundingClientRect() : null;
+  var stacked = r0 && r1 ? r1.top > r0.top : null;
+
+  for (var ri = 0; ri < rows.length; ri++) {
+    var card = rows[ri].getBoundingClientRect();
+    scrollGuard(rows[ri], 'card#row' + ri);
+    var tds = rows[ri].querySelectorAll('td[data-label]');
+    for (var ti = 0; ti < tds.length; ti++) {
+      var td = tds[ti];
+      cellsChecked++;
+      var cell = td.getBoundingClientRect();
+      var where0 = 'row' + ri + '.td#' + ti + '(' + (td.getAttribute('data-label') || '') + ')';
+      scrollGuard(td, where0);
+      var rs = cellRects(td);
+      for (var k = 0; k < rs.length; k++) {
+        var r = rs[k];
+        var where = where0 + '.' + r.kind;
+        // vs cell — all four sides
+        if (r.l < cell.left - TOL) rec(r.kind, 'left<cell', r.l, cell.left, where);
+        if (r.r > cell.right + TOL) rec(r.kind, 'right>cell', r.r, cell.right, where);
+        if (r.t < cell.top - TOL) rec(r.kind, 'top<cell', r.t, cell.top, where);
+        if (r.b > cell.bottom + TOL) rec(r.kind, 'bottom>cell', r.b, cell.bottom, where);
+        // vs card
+        if (r.l < card.left - TOL) rec(r.kind, 'left<card', r.l, card.left, where);
+        if (r.r > card.right + TOL) rec(r.kind, 'right>card', r.r, card.right, where);
+        if (r.t < card.top - TOL) rec(r.kind, 'top<card', r.t, card.top, where);
+        if (r.b > card.bottom + TOL) rec(r.kind, 'bottom>card', r.b, card.bottom, where);
+        // vs viewport — HORIZONTAL only. A mobile catalog is a TALL scrolling page:
+        // cards stack well below the fold, so top/bottom-vs-viewport is normal scroll,
+        // not clipping. The vertical-clip signal that actually matters is scrollH>clientH
+        // on a clipped box (checked by scrollGuard above), plus content escaping its
+        // cell/card box (the four-side checks above). Horizontal overflow off-viewport,
+        // however, is a real layout bug — the page must not scroll sideways.
+        if (r.l < -TOL) rec(r.kind, 'left<viewport', r.l, 0, where);
+        if (r.r > innerW + TOL) rec(r.kind, 'right>viewport', r.r, innerW, where);
+      }
+    }
+  }
+
+  return {
+    rowCount: rows.length,
+    cellsChecked: cellsChecked,
+    textRanges: textRanges,
+    stacked: stacked,
+    scrollWidth: de.scrollWidth,
+    clientWidth: de.clientWidth,
+    scrollHeight: de.scrollHeight,
+    clientHeight: de.clientHeight,
+    innerWidth: innerW,
+    innerHeight: innerH,
+    findings: findings
+  };
+};
+
+// Drive the probe and assert. Call AFTER the page is open at 390x844. `locale` labels
+// assertion messages (null for the default/en test). NOTE: vertical PAGE scroll is
+// legitimate (cards stack tall), so scrollHeight is reported for diagnostics but the
+// substantive vertical-clip guard is the per-cell/card four-side + scroll-vs-client check.
+async function assertMobileGeometry(driver, locale) {
+  await driver.sleep(300);
+  var g = await driver.executeScript(MOBILE_GEOMETRY_SCRIPT);
+  var L = locale ? '[' + locale + '] ' : '';
+  assert(g.rowCount >= 2, L + 'expected >=2 department rows for geometry, got ' + g.rowCount);
+  assert(g.cellsChecked > 0, L + 'no td[data-label] cells found');
+  assert(g.textRanges > 0, L + 'no text-node ranges measured — probe is degenerate');
+  assert(g.stacked === true,
+    L + 'mobile: rows should stack vertically (row2 below row1), stacked=' + g.stacked);
+  assert(g.scrollWidth <= g.clientWidth + 1,
+    L + 'horizontal overflow: scrollWidth=' + g.scrollWidth + ' > clientWidth=' + g.clientWidth);
+  assert(g.scrollWidth <= g.innerWidth + 1,
+    L + 'horizontal overflow: scrollWidth=' + g.scrollWidth + ' > innerWidth=' + g.innerWidth);
+  assert(g.findings.length === 0,
+    L + 'mobile geometry violations (' + g.findings.length + '): ' +
+    JSON.stringify(g.findings.slice(0, 12)));
+  return g;
+}
+
 describe('Departments overview interaction, mobile Tab a11y, geometry & visual matrix (Stage 8C)', function () {
 
   this.timeout(config.get_execution_timeout());
@@ -378,62 +516,10 @@ describe('Departments overview interaction, mobile Tab a11y, geometry & visual m
       'count-link click did not reach filtered employees page for id ' + expectedId + ' (got ' + landed + ')');
   });
 
-  it('mobile (390px): no horizontal overflow; cell + link content within viewport; single-column cards', async function () {
+  it('mobile (390px): all cell text ranges + child boxes within cell/card/viewport; no scroll overflow', async function () {
     await setViewport(driver, 390, 844);
     await openDepartments(driver, application_host);
-    await driver.sleep(300);
-    var g = await driver.executeScript(function () {
-      var de = document.documentElement;
-      var rows = document.querySelectorAll('tr[data-vpp-department-list-mode="readonly"]');
-      // Measure BOTH the td and the inner <a> for name + manager cells — clipping
-      // can hide inside a td whose edge fits but whose link overflows the grid track.
-      var nameCells = document.querySelectorAll('.departments-name-cell');
-      var mgrCells = document.querySelectorAll('.departments-secondary');
-      function maxLinkRight(cells) {
-        var max = 0;
-        for (var i = 0; i < cells.length; i++) {
-          var a = cells[i].querySelector('a');
-          if (a) { var r = a.getBoundingClientRect().right; if (r > max) max = r; }
-        }
-        return max;
-      }
-      function maxCellRight(cells) {
-        var max = 0;
-        for (var i = 0; i < cells.length; i++) {
-          var r = cells[i].getBoundingClientRect().right; if (r > max) max = r;
-        }
-        return max;
-      }
-      var a = rows[0] ? rows[0].getBoundingClientRect() : null;
-      var b = rows[1] ? rows[1].getBoundingClientRect() : null;
-      var stacked = a && b ? (b.top > a.top) : null;
-      return {
-        scrollWidth: de.scrollWidth,
-        clientWidth: de.clientWidth,
-        innerWidth: window.innerWidth,
-        nameCellRight: maxCellRight(nameCells),
-        nameLinkRight: maxLinkRight(nameCells),
-        mgrLinkRight: maxLinkRight(mgrCells),
-        rowCount: rows.length,
-        stacked: stacked
-      };
-    });
-    assert(g.rowCount >= 2, 'expected >=2 rows for stacking check, got ' + g.rowCount);
-    assert(g.scrollWidth <= g.clientWidth + 1,
-      'horizontal overflow: scrollWidth=' + g.scrollWidth + ' > clientWidth=' + g.clientWidth);
-    assert(g.scrollWidth <= g.innerWidth + 1,
-      'horizontal overflow: scrollWidth=' + g.scrollWidth + ' > innerWidth=' + g.innerWidth);
-    assert(g.nameCellRight <= g.innerWidth + 1,
-      'name cell right edge (' + g.nameCellRight + ') exceeds viewport (' + g.innerWidth + ')');
-    // inner link content must not overflow its cell or the viewport (clipping guard)
-    assert(g.nameLinkRight <= g.nameCellRight + 1,
-      'name link right (' + g.nameLinkRight + ') exceeds its cell right (' + g.nameCellRight + ') — link content overflows the grid track');
-    assert(g.nameLinkRight <= g.innerWidth + 1,
-      'name link right (' + g.nameLinkRight + ') exceeds viewport (' + g.innerWidth + ')');
-    assert(g.mgrLinkRight <= g.innerWidth + 1,
-      'manager link right (' + g.mgrLinkRight + ') exceeds viewport (' + g.innerWidth + ') — long manager name clipped/overflowing');
-    assert(g.stacked === true,
-      'mobile: rows should stack vertically (row2 below row1)');
+    await assertMobileGeometry(driver, null);
   });
 
   // Reduced-motion via CDP. The departments transform is :active-gated
@@ -535,74 +621,24 @@ describe('Departments overview interaction, mobile Tab a11y, geometry & visual m
   });
 
   // RU long-text geometry. Switch to Russian (GET /language/ru), re-open the page, and
-  // assert no horizontal overflow / clip at 390px.
-  it('RU locale (390px): localized labels wrap without overflow or clip', async function () {
+  // assert no horizontal overflow / clip at 390px using the shared geometry probe
+  // (text ranges + child boxes on all four sides vs cell/card/viewport + scroll guards).
+  it('RU locale (390px): localized labels + manager name wrap without overflow or clip', async function () {
     await open_page_func({ url: application_host + 'language/ru', driver: driver });
     await setViewport(driver, 390, 844);
     await openDepartments(driver, application_host);
-    await driver.sleep(300);
-
-    var g = await driver.executeScript(function () {
-      var de = document.documentElement;
-      // data-label::before text on mobile cards carries the localized column headers.
-      var cells = document.querySelectorAll('td[data-label]');
-      var maxRight = 0;
-      var sampleTexts = [];
-      for (var i = 0; i < cells.length; i++) {
-        var before = cells[i].getBoundingClientRect();
-        if (before.right > maxRight) maxRight = before.right;
-        if (i < 6) sampleTexts.push(cells[i].getAttribute('data-label'));
-      }
-      return {
-        scrollWidth: de.scrollWidth,
-        clientWidth: de.clientWidth,
-        innerWidth: window.innerWidth,
-        maxCellRight: maxRight,
-        sampleLabels: sampleTexts
-      };
-    });
-    assert(g.maxCellRight > 0, 'RU: no td[data-label] cells found');
-    assert(g.scrollWidth <= g.clientWidth + 1,
-      'RU: horizontal overflow scrollWidth=' + g.scrollWidth + ' > clientWidth=' + g.clientWidth);
-    assert(g.scrollWidth <= g.innerWidth + 1,
-      'RU: horizontal overflow scrollWidth=' + g.scrollWidth + ' > innerWidth=' + g.innerWidth);
-    assert(g.maxCellRight <= g.innerWidth + 1,
-      'RU: cell right edge (' + g.maxCellRight + ') exceeds viewport (' + g.innerWidth + ')');
-
+    await assertMobileGeometry(driver, 'RU');
     await capture(driver, 'departments_390x844_ru');
   });
 
   // KK long-text geometry. Switch to Kazakh (GET /language/kk), re-open the page,
-  // and assert no horizontal overflow / clip at 390px — KK Cyrillic labels are long.
-  it('KK locale (390px): localized labels wrap without overflow or clip', async function () {
+  // and assert no horizontal overflow / clip at 390px using the shared geometry probe
+  // — KK Cyrillic labels are long.
+  it('KK locale (390px): localized labels + manager name wrap without overflow or clip', async function () {
     await open_page_func({ url: application_host + 'language/kk', driver: driver });
     await setViewport(driver, 390, 844);
     await openDepartments(driver, application_host);
-    await driver.sleep(300);
-
-    var g = await driver.executeScript(function () {
-      var de = document.documentElement;
-      var cells = document.querySelectorAll('td[data-label]');
-      var maxRight = 0;
-      for (var i = 0; i < cells.length; i++) {
-        var before = cells[i].getBoundingClientRect();
-        if (before.right > maxRight) maxRight = before.right;
-      }
-      return {
-        scrollWidth: de.scrollWidth,
-        clientWidth: de.clientWidth,
-        innerWidth: window.innerWidth,
-        maxCellRight: maxRight
-      };
-    });
-    assert(g.maxCellRight > 0, 'KK: no td[data-label] cells found');
-    assert(g.scrollWidth <= g.clientWidth + 1,
-      'KK: horizontal overflow scrollWidth=' + g.scrollWidth + ' > clientWidth=' + g.clientWidth);
-    assert(g.scrollWidth <= g.innerWidth + 1,
-      'KK: horizontal overflow scrollWidth=' + g.scrollWidth + ' > innerWidth=' + g.innerWidth);
-    assert(g.maxCellRight <= g.innerWidth + 1,
-      'KK: cell right edge (' + g.maxCellRight + ') exceeds viewport (' + g.innerWidth + ')');
-
+    await assertMobileGeometry(driver, 'KK');
     await capture(driver, 'departments_390x844_kk');
   });
 
