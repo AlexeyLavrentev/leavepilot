@@ -7,9 +7,8 @@
   {{else}}
 
   <div class="col-md-12">
-    <p class="visible-xs-block"><em class="text-muted">{{t "requests.scrollTable"}}</em></p>
-    <div class="table-responsive" role="region" aria-label="{{table_label}}" tabindex="0">
-    <table class="table table-hover user-requests-table">
+    <div class="table-responsive mobile-card-table-container" role="region" aria-label="{{table_label}}" tabindex="0">
+    <table class="table table-hover user-requests-table mobile-card-table requests-history-table">
       <caption class="sr-only">{{table_label}}</caption>
       <thead>
         <tr>
@@ -27,13 +26,13 @@
       {{# each leaves }}
 
       <tr class="leave-request-row">
-        <td data-tom-leave-dates="1">
+        <td data-label="{{t 'requests.datesColumn'}}" data-tom-leave-dates="1">
           <button type="button" class="leave-details-summary-trigger interactive-leave-details-summary-trigger leave-details-date-trigger" data-leave-id="{{this.id}}" aria-expanded="false"><span class="sr-only">{{t "leave.leaveSummary"}}: </span>{{> leave_dates leave=this}}</button>
         </td>
-        <td>{{ this.leave_type.name }}{{#if this.is_pended_revoke_leave}}<br>({{t "requests.pendedRevoke"}}){{/if}}</td>
-        <td>{{ this.get_deducted_days_number }}</td>
-        <td class="user-request-table-approver">{{#with this.approver}}{{this.full_name}}{{/with}}</td>
-        <td>
+        <td data-label="{{t 'requests.type'}}">{{ this.leave_type.name }}{{#if this.is_pended_revoke_leave}}<br>({{t "requests.pendedRevoke"}}){{/if}}</td>
+        <td data-label="{{t 'requests.deducted'}}">{{ this.get_deducted_days_number }}</td>
+        <td class="user-request-table-approver" data-label="{{t 'requests.approvedBy'}}">{{#with this.approver}}{{this.full_name}}{{/with}}</td>
+        <td class="mobile-card-action">
           {{# if this.is_approved_leave }}
           {{# unless this.is_pended_revoke_leave}}
           <form method="post" action="/requests/revoke/">
@@ -54,8 +53,8 @@
             {{/if_equal}}
           {{/if}}
         </td>
-        <td>{{this.comment.comment}}</td>
-        <td><span class="pull-right leave-request-row-status">{{#if this.is_new_leave }}{{t "requests.statusPending"}}{{else}}{{#if this.is_approved_leave}}{{t "requests.statusApproved"}}{{else}}{{t "requests.statusRejected"}}{{/if}}{{/if}}</span></td>
+        <td data-label="{{t 'requests.comment'}}">{{this.comment.comment}}</td>
+        <td data-label="{{t 'requests.status'}}"><span class="pull-right leave-request-row-status">{{#if this.is_new_leave }}<span class="request-status-chip request-status--pending">{{t "requests.statusPending"}}</span>{{else}}{{#if this.is_approved_leave}}<span class="request-status-chip request-status--approved">{{t "requests.statusApproved"}}</span>{{else}}<span class="request-status-chip request-status--rejected">{{t "requests.statusRejected"}}</span>{{/if}}{{/if}}</span></td>
       </tr>
 
       {{/ each }}

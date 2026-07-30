@@ -3,12 +3,18 @@
 
 <a class="sr-only sr-only-focusable" href="#main-content">{{t "nav.skipToMainContent"}}</a>
 <main id="main-content" class="requests-page" tabindex="-1">
-<h1>{{t "requests.messagesTitle" name=logged_user.name lastname=logged_user.lastname}}</h1>
+<div class="page-heading">
+  <div class="page-heading-titles">
+    <h1>{{t "requests.messagesTitle" name=logged_user.name lastname=logged_user.lastname}}</h1>
+    <p class="lead">{{t "requests.toApproveTitle"}}</p>
+  </div>
+</div>
 
 <div id="requests-feedback" data-focus-alert-on-load>
   {{> show_flash_messages }}
 </div>
 
+<section class="requests-approval surface">
 <div class="row">
   <div class="col-md-12">
     <h2 id="requests-to-approve-heading" class="main-row_header requests-section-heading">{{t "requests.toApproveTitle"}}</h2>
@@ -107,8 +113,9 @@
   </div>
   {{/unless}}
 </div>
+</section>
 
-
+<section class="requests-history">
 <div class="row">
   <div class="col-md-12">
     <h2 id="requests-all-absences-heading" class="main-row_header requests-section-heading">{{t "requests.allAbsences"}}</h2>
@@ -118,6 +125,7 @@
 <div>
   {{> user_requests_grouped grouped_leaves=my_leaves_grouped logged_user=logged_user }}
 </div>
+</section>
 
 </main>
 
