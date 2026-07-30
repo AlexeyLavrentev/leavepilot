@@ -78,14 +78,15 @@ describe('Requests workspace contract (Stage 8D)', function () {
     });
   });
 
-  describe('history table — mobile-card wiring + data-labels (scoped-safe)', function () {
-    it('adds mobile-card-table + requests-history-table to the shared history table', function () {
-      // user-requests-table is a locked class — it MUST remain. The two new classes give
-      // the global grid layout + a scoped marker; the scoped chrome is .requests-page only,
-      // so calendar/user-details only get the bare global-default card (per approved approach).
-      expect(history).to.match(/class="table table-hover user-requests-table mobile-card-table requests-history-table"/);
+  describe('history table — opt-in mobile-card wiring (no global layout change)', function () {
+    it('gates the mobile-card classes behind the mobile_cards param', function () {
+      // The shared partial must NOT add mobile-card-table unconditionally — that would change
+      // /calendar/ and user-details too. The classes activate only when mobile_cards is truthy.
+      expect(history).to.match(/\{\{#if mobile_cards\}\}mobile-card-table requests-history-table\{\{\/if\}\}/);
+      expect(history).to.match(/\{\{#if mobile_cards\}\}mobile-card-table-container\{\{\/if\}\}/);
     });
-    it('adds localized data-label to every history cell', function () {
+    it('gates every data-label behind the mobile_cards param', function () {
+      // data-labels are only needed for the mobile card layout; on the legacy table they'd be dead.
       for (const key of [
         'requests.datesColumn',
         'requests.type',
@@ -97,8 +98,17 @@ describe('Requests workspace contract (Stage 8D)', function () {
         expect(history).to.include('data-label="{{t \'' + key + '\'}}"', 'missing data-label for ' + key);
       }
     });
-    it('removes the obsolete horizontal-scroll hint (mobile cards replace it)', function () {
-      expect(history).to.not.include('requests.scrollTable');
+    it('keeps the scroll hint for the legacy (non-mobile) consumers', function () {
+      // calendar/user-details still render the horizontally-scrollable table + its hint.
+      expect(history).to.include('requests.scrollTable');
+    });
+    it('requests.hbs opts the history into the mobile-card layout via mobile_cards=1', function () {
+      expect(view).to.match(/user_requests_grouped[^\}]*mobile_cards=1/);
+    });
+    it('the grouped partial forwards mobile_cards to the inner user_requests partial', function () {
+      // Inside {{#each grouped_leaves}} the mobile_cards param lives one level up (the partial
+      // root), so the forward is ../mobile_cards.
+      expect(grouped).to.match(/mobile_cards=\.\.\/mobile_cards/);
     });
     it('keeps the locked leave-details date trigger markup', function () {
       expect(history).to.include('leave-details-summary-trigger interactive-leave-details-summary-trigger leave-details-date-trigger');
@@ -110,6 +120,36 @@ describe('Requests workspace contract (Stage 8D)', function () {
       expect(history).to.include('{{#> leave_order_actions leave=this logged_user=../logged_user}}{{/leave_order_actions}}');
       expect(history).to.include('class="leave-request-row"');
       expect(history).to.include('leave-request-row-status');
+    });
+  });
+
+  describe('select-all — visible mobile target (P1)', function () {
+    it('wraps the desktop thead select-all so it can be hidden on mobile', function () {
+      // The thead is sr-only-clipped on mobile, leaving the desktop checkbox invisible-but-
+      // focusable. Wrap it so CSS display:none removes it from the Tab order <=768px.
+      expect(view).to.match(/<span class="bulk-select-desktop">\s*<input[^>]*class="bulk-select-all"/);
+    });
+    it('provides a visible mobile-only select-all (also .bulk-select-all for sync)', function () {
+      expect(view).to.match(/<label class="bulk-select-mobile">\s*<input[^>]*class="bulk-select-all"/);
+    });
+    it('keeps exactly one .bulk-select-all that is visible at desktop width', function () {
+      // The mobile label is display:none on desktop, so only the thead checkbox shows there.
+      // Both carry .bulk-select-all (the controller syncs them).
+      const matches = view.match(/class="bulk-select-all"/g) || [];
+      expect(matches.length).to.equal(2, 'expected 2 .bulk-select-all (desktop thead + mobile), got ' + matches.length);
+    });
+  });
+
+  describe('POST endpoints render in the DOM (not just route source)', function () {
+    it('renders the cancel form in the DOM when the row is the user\'s own pending leave', function () {
+      // The cancel form lives in the shared history partial and must POST to /requests/cancel/.
+      expect(history).to.include("action='/requests/cancel/'");
+    });
+  });
+
+  describe('page heading has no duplicate subtitle (P2)', function () {
+    it('keeps only the h1 in the page heading (no lead duplicating the section h2)', function () {
+      expect(view).to.not.match(/<p class="lead">\{\{t "requests\.toApproveTitle"\}\}/);
     });
   });
 

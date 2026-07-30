@@ -118,6 +118,7 @@ const MOBILE_GEOMETRY_SCRIPT = function () {
   var cellsChecked = 0;
   var textRanges = 0;
   var tablesFound = 0;
+  var tableCounts = []; // per-table count of td cells checked (so callers can assert BOTH tables)
 
   function rnd(n) { return Math.round(n * 10) / 10; }
   function rec(kind, side, value, limit, where) {
@@ -175,15 +176,19 @@ const MOBILE_GEOMETRY_SCRIPT = function () {
     var table = tables[ti];
     tablesFound++;
     var rows = table.querySelectorAll('tbody > tr');
+    var perTableCells = 0;
     for (var ri = 0; ri < rows.length; ri++) {
       var card = rows[ri].getBoundingClientRect();
       scrollGuard(rows[ri], 'table' + ti + '.row' + ri);
-      var tds = rows[ri].querySelectorAll('td[data-label]');
+      // Measure EVERY td (incl. select/action cells that have no data-label) so the probe
+      // can't miss a clipping bug hiding in a control-only cell.
+      var tds = rows[ri].querySelectorAll('td');
       for (var ci = 0; ci < tds.length; ci++) {
         var td = tds[ci];
         cellsChecked++;
+        perTableCells++;
         var cell = td.getBoundingClientRect();
-        var where0 = 'table' + ti + '.row' + ri + '.cell#' + ci;
+        var where0 = 'table' + ti + '.row' + ri + '.cell#' + ci + (td.getAttribute('data-label') ? '(' + td.getAttribute('data-label') + ')' : '(no-label)');
         scrollGuard(td, where0);
         var rs = cellRects(td);
         for (var k = 0; k < rs.length; k++) {
@@ -230,10 +235,12 @@ const MOBILE_GEOMETRY_SCRIPT = function () {
         }
       }
     }
+    tableCounts.push(perTableCells);
   }
 
   return {
     tablesFound: tablesFound,
+    tableCounts: tableCounts,
     cellsChecked: cellsChecked,
     textRanges: textRanges,
     scrollWidth: de.scrollWidth,
@@ -249,8 +256,15 @@ async function assertMobileGeometry(driver, locale) {
   await driver.sleep(300);
   const g = await driver.executeScript(MOBILE_GEOMETRY_SCRIPT);
   const L = locale ? '[' + locale + '] ' : '';
-  assert(g.tablesFound >= 1, L + 'expected >=1 mobile-card-table, got ' + g.tablesFound);
-  assert(g.cellsChecked > 0, L + 'no td[data-label] cells found');
+  // BOTH tables must be present and measured: the approval table AND the history table
+  // (the recurring failure is the shared history partial). Require >=2 tables, each with
+  // a non-zero td count, so the probe can't silently skip either surface.
+  assert(g.tablesFound >= 2, L + 'expected >=2 mobile-card-tables (approval + history), got ' + g.tablesFound);
+  for (var t = 0; t < g.tableCounts.length; t++) {
+    assert(g.tableCounts[t] > 0,
+      L + 'table#' + t + ' had 0 measured cells — surface missing or probe skipped it (counts=' + JSON.stringify(g.tableCounts) + ')');
+  }
+  assert(g.cellsChecked > 0, L + 'no td cells found');
   assert(g.textRanges > 0, L + 'no text-node ranges measured — probe is degenerate');
   assert(g.scrollWidth <= g.clientWidth + 1,
     L + 'horizontal overflow: scrollWidth=' + g.scrollWidth + ' > clientWidth=' + g.clientWidth);
@@ -315,6 +329,16 @@ describe('Requests workspace interaction, geometry & visual matrix (Stage 8D)', 
         date_start: histStart.format('YYYY-MM-DD'),
         date_end: histStart.clone().add(1, 'days').format('YYYY-MM-DD')
       });
+      // One PENDING leave owned by the admin (their own pending absence) so the history
+      // table renders a CANCEL action form (the P2 "rendered Cancel fixture" requirement).
+      await models.Leave.create({
+        userId: admin.id,
+        approverId: null,
+        leaveTypeId: leaveType.id,
+        status: models.Leave.status_new(),
+        date_start: leaveStart.clone().add(70, 'days').format('YYYY-MM-DD'),
+        date_end: leaveStart.clone().add(71, 'days').format('YYYY-MM-DD')
+      });
       done();
     }, done);
   });
@@ -347,37 +371,74 @@ describe('Requests workspace interaction, geometry & visual matrix (Stage 8D)', 
     assert(approved.length > 0, 'expected an approved status chip (admin approved leave)');
   });
 
-  // Real Tab reaches a visible, focusable control (not a JS .focus() shortcut).
-  it('real Tab reaches a visible focusable control', async function () {
-    await setViewport(driver, 1024, 768);
+  // Full mobile Tab walk (390px): prove the hidden desktop thead select-all NEVER
+  // receives focus (it's display:none on mobile, so removed from the Tab order — unlike
+  // a sr-only clip), AND the visible mobile select-all IS reachable, AND a Requests
+  // control shows a visible focus ring while focused. This is the P1 a11y contract.
+  it('mobile (390px) Tab walk: hidden thead select-all never focuses; visible select-all + a request control show focus', async function () {
+    await setViewport(driver, 390, 844);
     await openRequests(driver, application_host);
+    await driver.sleep(200);
+
+    // Precondition: the desktop checkbox is display:none (its wrapper), mobile is visible.
+    var wiring = await driver.executeScript(function () {
+      var desk = document.querySelector('.bulk-select-desktop');
+      var mob = document.querySelector('.bulk-select-mobile');
+      return {
+        deskDisplay: desk ? getComputedStyle(desk).display : 'no-desktop',
+        mobDisplay: mob ? getComputedStyle(mob).display : 'no-mobile'
+      };
+    });
+    assert.strictEqual(wiring.deskDisplay, 'none',
+      '.bulk-select-desktop must be display:none at 390, got ' + wiring.deskDisplay);
+    assert.notStrictEqual(wiring.mobDisplay, 'none',
+      '.bulk-select-mobile must be visible at 390, got ' + wiring.mobDisplay);
+
     await driver.executeScript('document.body.focus();');
     await driver.sleep(120);
-    var reached = false;
+
+    var focusedDesktopSelectAll = false;
+    var reachedMobileSelectAll = false;
+    var focusRingSeen = false;
     var sequence = [];
-    for (var i = 0; i < 30; i++) {
+    var MAX_TABS = 50;
+    for (var i = 0; i < MAX_TABS; i++) {
       await driver.actions().sendKeys(Key.TAB).perform();
-      await driver.sleep(40);
+      await driver.sleep(50);
       var info = await driver.executeScript(function () {
         var el = document.activeElement;
-        if (!el) return null;
+        if (!el || el === document.body) return null;
+        var deskWrap = el.closest ? el.closest('.bulk-select-desktop') : null;
+        var mobWrap = el.closest ? el.closest('.bulk-select-mobile') : null;
+        var inRequests = !!(el.closest && el.closest('.requests-page'));
+        var cs = getComputedStyle(el);
+        // a non-empty focus ring on a Requests control
+        var hasRing = inRequests && cs.outlineStyle !== 'none' && cs.outlineWidth !== '0px';
         return {
           tag: el.tagName,
           type: el.getAttribute('type') || '',
           cls: String(el.className || ''),
-          visible: !!(el.offsetWidth > 0 || el.offsetHeight > 0)
+          inDeskWrap: !!deskWrap,
+          inMobWrap: !!mobWrap,
+          inRequests: inRequests,
+          hasRing: hasRing
         };
       });
-      if (!info) { sequence.push('(none)'); continue; }
-      sequence.push(info.tag + (info.type ? '[' + info.type + ']' : ''));
-      // a visible, focusable interactive element proves the Tab loop works
-      if (info.visible && (info.tag === 'A' || info.tag === 'BUTTON' ||
-          (info.tag === 'INPUT' && (info.type === 'checkbox' || info.type === 'submit')))) {
-        reached = true;
-        break;
-      }
+      if (!info) { sequence.push('(body)'); continue; }
+      sequence.push(info.tag + (info.type ? '[' + info.type + ']' : '') + (info.cls ? '.' + info.cls.split(/\s+/)[0] : ''));
+      if (info.inDeskWrap) focusedDesktopSelectAll = true;
+      if (info.inMobWrap) reachedMobileSelectAll = true;
+      if (info.hasRing) focusRingSeen = true;
+      // Stop once we've exercised the relevant region (reached mobile select-all + a ring).
+      if (reachedMobileSelectAll && focusRingSeen && i >= 5) break;
     }
-    assert(reached, 'Tab loop never reached a visible interactive control. Sequence: ' + sequence.join(' -> '));
+    assert(!focusedDesktopSelectAll,
+      'FAIL: the hidden desktop thead select-all received focus at 390px — it must be display:none ' +
+      '(out of Tab order). Sequence: ' + sequence.join(' -> '));
+    assert(reachedMobileSelectAll,
+      'the visible mobile select-all was never reached by Tab. Sequence: ' + sequence.join(' -> '));
+    assert(focusRingSeen,
+      'no Requests control showed a visible focus ring during the Tab walk. Sequence: ' + sequence.join(' -> '));
   });
 
   // Space selects a row and exposes the controller-driven bulk bar.
@@ -404,20 +465,19 @@ describe('Requests workspace interaction, geometry & visual matrix (Stage 8D)', 
     assert(/1/.test(state.countText), 'selected count should mention 1, got "' + state.countText + '"');
   });
 
-  // POST endpoints present in the rendered markup (single + bulk + revoke + cancel).
-  it('exposes the exact POST endpoints for every operation', async function () {
+  // POST endpoints present in the rendered DOM (single + bulk + revoke + cancel as real forms).
+  it('exposes the exact POST endpoints for every operation as rendered forms', async function () {
     await openRequests(driver, application_host);
     var src = await driver.executeScript('return document.documentElement.outerHTML');
     assert(src.indexOf('action="/requests/approve/"') > -1, 'missing single approve endpoint');
     assert(src.indexOf('action="/requests/reject/"') > -1, 'missing single reject endpoint');
     assert(src.indexOf('formaction="/requests/bulk/approve/"') > -1, 'missing bulk approve endpoint');
     assert(src.indexOf('formaction="/requests/bulk/reject/"') > -1, 'missing bulk reject endpoint');
-    assert(src.indexOf('action="/requests/revoke/"') > -1, 'missing revoke endpoint');
-    // cancel endpoint (only present for the employee\'s own pending leave; the admin
-    // approved leave yields revoke). Assert the route exists in the controller source
-    // rather than the DOM to avoid depending on which rows render cancel.
-    var routeSrc = fs.readFileSync(path.join(__dirname, '..', '..', '..', 'lib', 'route', 'requests.js'), 'utf8');
-    assert(routeSrc.indexOf("'/cancel/'") > -1, 'cancel route not registered in controller');
+    // revoke (admin's own approved leave) AND cancel (admin's own pending leave) must both
+    // render as real forms in the DOM — not merely exist in the controller source. The browser
+    // normalises attribute quotes, so match either single or double quotes.
+    assert(/action=["']\/requests\/revoke\/["']/.test(src), 'missing revoke endpoint in DOM');
+    assert(/action=["']\/requests\/cancel\/["']/.test(src), 'missing cancel endpoint in DOM (admin own-pending leave)');
   });
 
   // Press-feedback: pointer-down yields a non-identity transform under default media.
@@ -509,6 +569,26 @@ describe('Requests workspace interaction, geometry & visual matrix (Stage 8D)', 
     await setViewport(driver, 390, 844);
     await openRequests(driver, application_host);
     await assertMobileGeometry(driver, null);
+  });
+
+  // The shared user_requests partial is also used by /calendar/ and user-details. The opt-in
+  // mobile_cards param means those consumers must keep the LEGACY horizontally-scrollable
+  // table + its scroll hint at 390px — the new mobile-card layout is /requests/ only.
+  it('calendar (390px): shared partial keeps the legacy table (no mobile-card, scroll hint present)', async function () {
+    await setViewport(driver, 390, 844);
+    await open_page_func({ url: application_host + 'calendar/', driver: driver });
+    await driver.sleep(400);
+    var probe = await driver.executeScript(function () {
+      return {
+        mobileCardTables: document.querySelectorAll('.mobile-card-table').length,
+        hasScrollHint: !!document.querySelector('.requests.scrollTable, .visible-xs-block em'),
+        userRequestTables: document.querySelectorAll('.user-requests-table').length
+      };
+    });
+    assert.strictEqual(probe.mobileCardTables, 0,
+      '/calendar/ must NOT render a .mobile-card-table (opt-in param not passed), got ' + probe.mobileCardTables);
+    assert(probe.hasScrollHint, '/calendar/ should keep the horizontal-scroll hint for its legacy table');
+    assert(probe.userRequestTables > 0, '/calendar/ should still render the .user-requests-table');
   });
 
   it('RU locale (390px): labels + chips wrap without overflow or clip', async function () {
