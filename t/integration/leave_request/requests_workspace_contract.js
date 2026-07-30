@@ -465,9 +465,14 @@ describe('Requests workspace interaction, geometry & visual matrix (Stage 8D)', 
       'Tab walk never reached an action control (approve/reject/revoke/cancel). Sequence: ' + sequence.join(' -> '));
     assert(focusRingSeen,
       'no Requests control showed a visible focus ring during the Tab walk. Sequence: ' + sequence.join(' -> '));
-    // The walk must have actually traversed the region (left it or hit the cap), not stopped early.
-    assert(leftRequests || sequence.length >= MAX_TABS,
-      'Tab walk ended without leaving .requests-page — it did not fully traverse the control region. Sequence: ' + sequence.join(' -> '));
+    // The walk must have actually left .requests-page — proving the whole control region was
+    // traversed. MAX_TABS only guards against an infinite loop; hitting it (without leaving) is
+    // a FAILURE, not a pass.
+    assert.strictEqual(leftRequests, true,
+      'Tab walk did not leave .requests-page (exited-focus signal never observed after entering) — ' +
+      'it did not fully traverse the control region' +
+      (sequence.length >= MAX_TABS ? ' (hit the MAX_TABS safety cap)' : '') +
+      '. Sequence: ' + sequence.join(' -> '));
   });
 
   // The mobile revoke/cancel buttons must meet the >=44px tap-target contract at 390px
@@ -664,6 +669,7 @@ describe('Requests workspace interaction, geometry & visual matrix (Stage 8D)', 
       'user-details must NOT render a .mobile-card-table (opt-in param not passed), got ' + probe.mobileCardTables);
     assert.strictEqual(probe.mobileCardActions, 0,
       'user-details must NOT render .mobile-card-action cells (gated behind mobile_cards), got ' + probe.mobileCardActions);
+    assert(probe.hasScrollHint, 'user-details should keep the horizontal-scroll hint for its legacy table');
     assert(probe.userRequestTables > 0, 'user-details should still render the .user-requests-table');
   });
 
