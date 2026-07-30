@@ -5783,13 +5783,22 @@ td.current_day_cell.half_2nd {
   outline-offset: 2px;
 }
 .requests-page {
-  /* ≥44px tap targets on action controls (without breaking table density). */
+  /* ≥44px tap targets on primary action controls. The history revoke/cancel buttons
+     are btn-xs destructive controls where forcing 44px would break the dense card grid
+     (the action cell's clientHeight can't grow under the grid layout); they keep their
+     compact size but remain focus-visible ringed + ≥24px hit area via their padding. */
 }
-.requests-page .mobile-card-action .btn,
-.requests-page .bulk-clear-btn,
-.requests-page .requests-history .revoke-btn {
+.requests-page .requests-to-approve-table .mobile-card-action .btn,
+.requests-page .bulk-clear-btn {
   min-height: 44px;
   min-width: 44px;
+}
+.requests-page {
+  /* On the legacy (desktop) history table, ensure the revoke/cancel buttons hit at least
+     a comfortable target without forcing the compact btn-xs to inflate the row. */
+}
+.requests-page .requests-history .revoke-btn {
+  min-height: 28px;
 }
 .requests-page {
   /* Bulk action bar — keep the controller-driven visibility (hidden attr +
@@ -5800,6 +5809,18 @@ td.current_day_cell.half_2nd {
   background: var(--surface-overlay);
   border-color: var(--surface-border);
   box-shadow: var(--shadow-card-strong);
+}
+.requests-page {
+  /* Select-all: the desktop checkbox lives in the (mobile-sr-only-clipped) thead, so on
+     mobile it would be invisible-but-focusable. The visible mobile select-all is a separate
+     checkbox (.bulk-select-mobile) shown only <=768px; both carry .bulk-select-all so the
+     controller keeps them in sync. Desktop default: show thead checkbox, hide the mobile one. */
+}
+.requests-page .bulk-select-desktop {
+  display: inline-block;
+}
+.requests-page .bulk-select-mobile {
+  display: none;
 }
 
 /* Dark-mode scoped tokens (mirrors Stage 8C). */
@@ -5895,10 +5916,63 @@ td.current_day_cell.half_2nd {
     overflow-wrap: anywhere;
     min-width: 0;
   }
+  /* Action cells hold a revoke/cancel form with a .pull-right (float) button. Inside the
+     grid td a float doesn't expand the cell, so the button overflows (scrollH>clientH) and
+     clips. Force the action cell to a block formatting context (matching the global
+     .mobile-card-action rule, which the grid td otherwise overrides via higher specificity)
+     that contains the float, and let the button fill the row on mobile. */
+  .requests-page .mobile-card-table > tbody > tr > td.mobile-card-action {
+    display: block;
+    overflow: visible;
+    /* The grid td defaults to align-items:start with a label track; an action cell has no
+       label, so reset padding/height so the block button defines the cell height. */
+    padding: var(--space-2) var(--space-3);
+    min-height: 0;
+  }
+  /* The action form contains only hidden inputs + a floated (.pull-right) button, so a plain
+     block form collapses to height 0 and the button overflows the cell. Use a flex form so the
+     button establishes the form height. */
+  .requests-page .mobile-card-table .mobile-card-action form {
+    display: flex !important;
+    margin: 0;
+  }
+  .requests-page .mobile-card-table .mobile-card-action form,
+  .requests-page .mobile-card-table .mobile-card-action .btn {
+    float: none;
+    width: 100%;
+  }
+  .requests-page .mobile-card-table .mobile-card-action .btn {
+    display: block;
+    text-align: center;
+  }
   /* The selected-row highlight (controller toggles tr.is-selected) must stay
      readable on the scoped card surface in both themes. */
   .requests-page .requests-to-approve-table > tbody > tr.is-selected > td {
     background: var(--surface-raised);
+  }
+  /* Select-all swap: hide the invisible thead checkbox (removes it from the Tab order),
+     show the visible mobile select-all as a full-width, >=44px tap target. */
+  .requests-page .bulk-select-desktop {
+    display: none;
+  }
+  .requests-page .bulk-select-mobile {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-height: 44px;
+    margin: 0 0 var(--space-3) 0;
+    padding: var(--space-2) var(--space-3);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+    border-bottom: 1px solid var(--surface-border);
+  }
+  .requests-page .bulk-select-mobile input.bulk-select-all {
+    width: 18px;
+    height: 18px;
+    margin: 0;
   }
 }
 

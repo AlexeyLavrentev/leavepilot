@@ -2,7 +2,7 @@
 {{# each grouped_leaves}}
   <section class="requests-year-surface surface">
     <h2 class="requests-year-heading">{{this.year}}</h2>
-    {{> user_requests leaves=this.leaves no_header=1 logged_user=../logged_user table_label=(t "requests.allAbsences")}}
+    {{> user_requests leaves=this.leaves no_header=1 logged_user=../logged_user table_label=(t "requests.allAbsences") mobile_cards=../mobile_cards}}
     <p class="requests-year-deduction"><em>{{t "requests.deductedFromAllowance"}}:</em> <span>{{this.total_deduction}}</span></p>
   </section>
   <div class="content-spacer" aria-hidden="true"></div>

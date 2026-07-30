@@ -6,7 +6,6 @@
 <div class="page-heading">
   <div class="page-heading-titles">
     <h1>{{t "requests.messagesTitle" name=logged_user.name lastname=logged_user.lastname}}</h1>
-    <p class="lead">{{t "requests.toApproveTitle"}}</p>
   </div>
 </div>
 
@@ -28,13 +27,26 @@
   </div>
   {{else}}
   <div class="col-md-12">
+    {{!-- Visible mobile-only select-all (the thead is sr-only-clipped on mobile, so the
+          desktop checkbox there would otherwise be invisible-but-focusable). Mirrors the
+          desktop checkbox: same .bulk-select-all class keeps both in sync via the controller. --}}
+    <label class="bulk-select-mobile">
+      <input type="checkbox" class="bulk-select-all" aria-label="{{t "requests.selectAll"}}">
+      <span class="bulk-select-mobile-text">{{t "requests.selectAll"}}</span>
+    </label>
     <div class="table-responsive mobile-card-table-container" role="region" aria-label="{{t "requests.toApproveTitle"}}" tabindex="0">
     <table class="table table-hover requests-to-approve-table mobile-card-table">
       <caption class="sr-only">{{t "requests.toApproveTitle"}}</caption>
       <thead>
         <tr>
           <th class="bulk-select-cell">
-            <input type="checkbox" class="bulk-select-all" aria-label="{{t "requests.selectAll"}}">
+            {{!-- Desktop select-all lives in the (sr-only-clipped on mobile) thead, which
+                  leaves it invisible-but-focusable at <=768px. Wrap it so CSS can hide it
+                  on mobile, and surface a visible mobile-only select-all below. Both carry
+                  .bulk-select-all so the controller keeps them in sync. --}}
+            <span class="bulk-select-desktop">
+              <input type="checkbox" class="bulk-select-all" aria-label="{{t "requests.selectAll"}}">
+            </span>
           </th>
           <th>{{t "requests.employee"}}</th>
           <th>{{t "requests.department"}}</th>
@@ -123,7 +135,7 @@
 </div>
 
 <div>
-  {{> user_requests_grouped grouped_leaves=my_leaves_grouped logged_user=logged_user }}
+  {{> user_requests_grouped grouped_leaves=my_leaves_grouped logged_user=logged_user mobile_cards=1 }}
 </div>
 </section>
 
