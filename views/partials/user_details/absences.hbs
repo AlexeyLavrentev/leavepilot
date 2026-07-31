@@ -1,4 +1,5 @@
 
+  <section class="employee-absence-surface surface">
   <form method="POST" action="/users/edit/{{employee.id}}/" class="admin-form-card employee-absence-card">
     <input type="hidden" name="_csrf" value="{{csrf_token}}">
 
@@ -10,8 +11,6 @@
   <input type="hidden" name="admin" value="{{#if employee.admin}}1{{else}}0{{/if}}">
   <input type="hidden" name="start_date" value="{{as_date employee.start_date}}">
   <input type="hidden" name="end_date" value="{{as_date employee.end_date}}">
-
-  {{> user_details/breadcrumb employee=employee }}
 
   <div class="form-group">
     <h2 class="employee-section-title">{{t "absences.overview"}}</h2>
@@ -113,7 +112,8 @@
     <button id="save_changes_btn" type="submit" class="btn btn-success single-click">{{t "common.saveChanges"}}</button>
   </div>
   </form>
+  </section>
 
   <div class="content-spacer" aria-hidden="true"></div>
 
-  {{> user_requests_grouped grouped_leaves=grouped_leaves logged_user=logged_user }}
+  {{> user_requests_grouped grouped_leaves=grouped_leaves logged_user=logged_user mobile_cards=1 }}

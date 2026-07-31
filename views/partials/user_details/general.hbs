@@ -1,8 +1,7 @@
 
+<section class="employee-general-surface surface">
 <form method="POST" action="/users/edit/{{employee.id}}/" class="admin-form-card employee-form-card">
   <input type="hidden" name="_csrf" value="{{csrf_token}}">
-
-  {{> user_details/breadcrumb employee=employee }}
 
   <div class="form-group">
     <label for="name_inp" class="control-label">{{t "userDetails.firstName"}}</label>
@@ -95,3 +94,4 @@
 </div>
 
 </form>
+</section>
