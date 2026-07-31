@@ -6381,3 +6381,280 @@ td.current_day_cell.half_2nd {
     margin: 0;
   }
 }
+
+
+/* ============================================================
+ * Stage 8E — Employee Details workspace (.employee-details-page)
+ * Scoped tokens + raised surfaces for the four edit-user tabs
+ * (general / schedule / calendar / absences). Pure EOF append;
+ * no edits to global :root, the global dark block, the global
+ * .mobile-card-table rule, or Bootstrap. The absences history opts
+ * into the shared mobile-card layout (mobile_cards=1) and is scoped
+ * here so calendar/requests consumers are unaffected.
+ * ============================================================ */
+.employee-details-page {
+  --surface: #{$surface-color};
+  --surface-raised: #{$surface-subtle};
+  --surface-sunken: #{$surface-muted};
+  --surface-overlay: #ffffff;
+  --surface-border: #{$border-color};
+  --surface-border-hairline: #{color.adjust($surface-color, $lightness: -3%)};
+  --shadow-card: #{$shadow-sm};
+  --shadow-card-strong: #{$shadow-md};
+  --radius-card: 10px;
+  --radius-control: #{$radius-md};
+  --space-1: #{$space-1};
+  --space-2: #{$space-2};
+  --space-3: #{$space-3};
+  --space-4: #{$space-4};
+  --space-5: #{$space-5};
+  --space-6: #{$space-6};
+
+  max-width: 1280px;
+  margin-inline: auto;
+
+  .page-heading h1 {
+    letter-spacing: -0.01em;
+    line-height: 1.1;
+    font-weight: 700;
+    color: var(--color-heading-primary);
+  }
+  .page-heading .lead {
+    line-height: 1.4;
+    font-weight: 500;
+  }
+  .page-heading-actions {
+    align-self: center;
+  }
+
+  /* Calm, opaque raised surfaces for each tab. */
+  .surface {
+    background: var(--surface);
+    border: 1px solid var(--surface-border);
+    border-top-color: var(--surface-border-hairline);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-card);
+    padding: var(--space-4);
+  }
+
+  /* Restrained danger action: the delete form stays a clear, focused control, never a
+     dominant red surface. Visible focus ring; btn-danger retained. */
+  .employee-details-danger-action {
+    display: inline-block;
+  }
+  .employee-details-danger-action .btn-danger {
+    transition: transform 0.1s ease-out;
+  }
+  .employee-details-danger-action .btn-danger:active,
+  .employee-details-danger-action .btn-danger:hover:active {
+    transform: scale(0.98);
+  }
+
+  /* Sidebar + content grid. Content is wider and min-width:0 so long form/calendar
+     content cannot force the page to overflow. */
+  .employee-details-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 220px) minmax(0, 1fr);
+    gap: var(--space-5);
+    align-items: start;
+  }
+  .employee-details-content {
+    min-width: 0;
+  }
+
+  /* Section navigation: a calm vertical list on desktop. Active state is signalled by
+     more than colour (weight + inset + border) and aria-current="page". */
+  .employee-details-nav {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .employee-details-nav .list-group-item {
+    display: block;
+    margin: 0;
+    padding: var(--space-2) var(--space-3);
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--color-text);
+    text-decoration: none;
+    background: var(--surface);
+    border: 1px solid var(--surface-border);
+    border-radius: var(--radius-control);
+    transition: transform 0.1s ease-out, background-color 0.1s ease-out;
+  }
+  .employee-details-nav .list-group-item.selected-item {
+    font-weight: 700;
+    color: var(--color-heading-primary);
+    background: var(--surface-raised);
+    border-color: var(--surface-border);
+    box-shadow: inset 3px 0 0 0 var(--color-focus-ring);
+  }
+  .employee-details-nav .list-group-item:active,
+  .employee-details-nav .list-group-item:hover:active {
+    transform: scale(0.98);
+  }
+
+  /* Forms: keep label/input/help together; help reads as secondary (muted). */
+  .help-block {
+    color: var(--color-text-muted);
+    font-size: 13px;
+  }
+  .checkbox label,
+  .checkbox {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+  .admin-form-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    align-items: center;
+    justify-content: flex-end;
+    margin-top: var(--space-4);
+  }
+  .admin-form-actions .btn {
+    min-height: 44px;
+    transition: transform 0.1s ease-out;
+  }
+  .admin-form-actions .btn:active,
+  .admin-form-actions .btn:hover:active {
+    transform: scale(0.98);
+  }
+
+  /* Tabular numerics for the calendar/absence statistics. */
+  .employee-calendar-statistics dt,
+  .employee-calendar-statistics dd,
+  .employee-absence-summary dt,
+  .employee-absence-summary dd {
+    overflow-wrap: anywhere;
+  }
+  .employee-calendar-statistics dt,
+  .employee-absence-summary dt,
+  .top-leave-type-statistics dt[data-tom-days-available-in-allowance] {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Inline links that need a press transform must be transformable boxes. */
+  .employee-details-content a {
+    overflow-wrap: anywhere;
+  }
+
+  /* Visible focus ring for keyboard users. */
+  a:focus-visible,
+  button:focus-visible,
+  input:focus-visible,
+  select:focus-visible,
+  [tabindex]:focus-visible {
+    outline: 2px solid var(--color-focus-ring-strong);
+    outline-offset: 2px;
+  }
+}
+
+/* Dark-mode scoped tokens (mirrors Stage 8D). */
+[data-theme="dark"] .employee-details-page {
+  --surface: #1a1e22;
+  --surface-raised: #20252a;
+  --surface-sunken: #121417;
+  --surface-overlay: #1f2327;
+  --surface-border: #2a2f34;
+  --surface-border-hairline: #23282d;
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.32);
+  --shadow-card-strong: 0 8px 24px rgba(0, 0, 0, 0.40);
+}
+
+/* Prefers more contrast: thicker borders, drop the shadow. */
+@media (prefers-contrast: more) {
+  .employee-details-page .surface {
+    border-width: 2px;
+    box-shadow: none;
+  }
+  .employee-details-page .employee-details-nav .list-group-item {
+    border-width: 2px;
+  }
+}
+
+/* Reduced transparency: solid surface. */
+@media (prefers-reduced-transparency: reduce) {
+  .employee-details-page .surface {
+    background: var(--surface-overlay);
+  }
+}
+
+/* Reduced motion: kill transition/animation AND transforms (incl. :hover:active). */
+@media (prefers-reduced-motion: reduce) {
+  .employee-details-page *,
+  .employee-details-page *::before,
+  .employee-details-page *::after {
+    transition: none !important;
+    animation: none !important;
+  }
+  .employee-details-page .employee-details-danger-action .btn-danger:active,
+  .employee-details-page .employee-details-danger-action .btn-danger:hover:active,
+  .employee-details-page .employee-details-nav .list-group-item:active,
+  .employee-details-page .employee-details-nav .list-group-item:hover:active,
+  .employee-details-page .admin-form-actions .btn:active,
+  .employee-details-page .admin-form-actions .btn:hover:active {
+    transform: none;
+  }
+}
+
+/*
+  Mobile (≤768px): single column (heading + nav, then content). Navigation becomes a
+  responsive 2×2 grid so it needs no horizontal scroll; each link is >=44px and long
+  RU/KK labels wrap. Override the global .mobile-card-table chrome (absences history)
+  so dark-mode cards match the theme and long content wraps instead of clipping.
+*/
+@media (max-width: 768px) {
+  .employee-details-page .employee-details-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .employee-details-nav {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-2);
+  }
+  .employee-details-nav .list-group-item {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+  .employee-details-page .surface {
+    padding: var(--space-3);
+  }
+
+  /* Absences history mobile-card chrome (mirrors Stage 8D). */
+  .employee-details-page .mobile-card-table > tbody > tr {
+    overflow: visible;
+    background: var(--surface);
+    border-color: var(--surface-border);
+    box-shadow: var(--shadow-card);
+    border-radius: var(--radius-card);
+  }
+  .employee-details-page .mobile-card-table.table-hover > tbody > tr:hover {
+    background: var(--surface);
+  }
+  .employee-details-page .mobile-card-table > tbody > tr > td {
+    border-top-color: var(--surface-border);
+    white-space: normal;
+  }
+  .employee-details-page .mobile-card-table > tbody > tr > td:first-child {
+    border-top-left-radius: var(--radius-card);
+    border-top-right-radius: var(--radius-card);
+  }
+  .employee-details-page .mobile-card-table > tbody > tr > td:last-child {
+    border-bottom-left-radius: var(--radius-card);
+    border-bottom-right-radius: var(--radius-card);
+  }
+  .employee-details-page .mobile-card-table td a {
+    white-space: normal;
+    overflow-wrap: anywhere;
+    min-width: 0;
+  }
+}

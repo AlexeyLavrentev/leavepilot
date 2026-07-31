@@ -1,9 +1,8 @@
 
+  <section class="employee-schedule-surface surface">
   <form method="POST" action="/settings/schedule" id="company_schedule_form" class="admin-form-card employee-schedule-card">
     <input type="hidden" name="_csrf" value="{{csrf_token}}">
   <input type="hidden" name="user_id" value="{{employee.id}}">
-
-  {{> user_details/breadcrumb employee=employee }}
 
   <fieldset class="employee-schedule-fieldset">
     <legend class="employee-section-title">{{t "schedule.title"}}</legend>
@@ -34,3 +33,4 @@
     {{/with}}
   </div>
   </form>
+  </section>

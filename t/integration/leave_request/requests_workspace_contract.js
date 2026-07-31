@@ -650,10 +650,11 @@ describe('Requests workspace interaction, geometry & visual matrix (Stage 8D)', 
     assert(probe.userRequestTables > 0, '/calendar/ should still render the .user-requests-table');
   });
 
-  // User Details absences also consumes the shared partial (via user_requests_grouped) WITHOUT
-  // mobile_cards, so it must keep the legacy table too — including NO .mobile-card-action cells
-  // (the opt-in must be complete: the action class is gated, not just the table classes).
-  it('user-details absences (390px): shared partial keeps the legacy table (no mobile-card, no action cells)', async function () {
+  // User Details absences (Stage 8E) intentionally opts the shared partial INTO the mobile-card
+  // layout via mobile_cards=1, so it MUST render the mobile-card table + action cells and MUST
+  // NOT show the legacy scroll hint. Calendar (the block above) stays legacy; Requests is its
+  // own workspace — proving the opt-in is scoped to User Details only.
+  it('user-details absences (390px): intentionally opts into the mobile-card layout (Stage 8E)', async function () {
     await setViewport(driver, 390, 844);
     await open_page_func({ url: application_host + 'users/edit/' + admin.id + '/absences/', driver: driver });
     await driver.sleep(400);
@@ -665,11 +666,12 @@ describe('Requests workspace interaction, geometry & visual matrix (Stage 8D)', 
         userRequestTables: document.querySelectorAll('.user-requests-table').length
       };
     });
-    assert.strictEqual(probe.mobileCardTables, 0,
-      'user-details must NOT render a .mobile-card-table (opt-in param not passed), got ' + probe.mobileCardTables);
-    assert.strictEqual(probe.mobileCardActions, 0,
-      'user-details must NOT render .mobile-card-action cells (gated behind mobile_cards), got ' + probe.mobileCardActions);
-    assert(probe.hasScrollHint, 'user-details should keep the horizontal-scroll hint for its legacy table');
+    assert(probe.mobileCardTables > 0,
+      'user-details absences should now render a .mobile-card-table (Stage 8E opt-in), got ' + probe.mobileCardTables);
+    assert(probe.mobileCardActions > 0,
+      'user-details absences should render .mobile-card-action cells (opt-in is active), got ' + probe.mobileCardActions);
+    assert(!probe.hasScrollHint,
+      'user-details absences should NOT show the legacy scroll hint under mobile_cards, got hint=' + probe.hasScrollHint);
     assert(probe.userRequestTables > 0, 'user-details should still render the .user-requests-table');
   });
 

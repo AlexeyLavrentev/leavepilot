@@ -3,38 +3,41 @@
 
 <a class="sr-only sr-only-focusable" href="#main-content">{{t "nav.skipToMainContent"}}</a>
 
-<main id="main-content" tabindex="-1">
+<main id="main-content" class="employee-details-page" tabindex="-1">
 
-<h1 class="employee-page-title">
-  {{t "userDetails.title" name=employee.name lastname=employee.lastname}}
-  {{#with employee }}{{#unless this.is_active}}<span class="label label-warning employee-status">{{t "userDetails.deactivated"}}</span>{{/unless}}{{/with}}
-</h1>
-
-<div class="row admin-page-header">
-    <div class="col-sm-7 lead">{{t "userDetails.sectionTitle"}}</div>
-    <div class="col-sm-5 admin-page-actions">
+<div class="page-heading">
+  <div class="page-heading-titles">
+    <h1 class="employee-page-title">
+      {{t "userDetails.title" name=employee.name lastname=employee.lastname}}
+      {{#with employee }}{{#unless this.is_active}}<span class="label label-warning employee-status">{{t "userDetails.deactivated"}}</span>{{/unless}}{{/with}}
+    </h1>
+    <p class="lead">{{t "userDetails.sectionTitle"}}</p>
+  </div>
+  <div class="page-heading-actions">
+    <span class="employee-details-danger-action">
     <form id="add_new_user_frm" method="post" action="/users/delete/{{employee.id}}/" onsubmit="return confirm('{{t 'userDetails.deleteConfirm' name=employee.name lastname=employee.lastname}}');">
       <input type="hidden" name="_csrf" value="{{csrf_token}}">
       <button id="remove_btn" type="submit" class="btn btn-danger single-click" data-toggle="tooltip" data-placement="top" title="{{t 'userDetails.removeEmployee'}}"><i class="fa fa-trash" aria-hidden="true"></i> {{t "common.delete"}}</button>
     </form>
-    </div>
+    </span>
+  </div>
 </div>
 
 {{> show_flash_messages }}
 
+{{> user_details/breadcrumb employee=employee }}
+
 <div class="content-spacer-sm" aria-hidden="true"></div>
 
-<div class="row admin-detail-layout employee-detail-layout">
-  <div class="col-md-3">
-    <nav class="list-group employee-detail-nav" aria-label="{{t "userDetails.sectionTitle"}}">
-      <a href="/users/edit/{{employee.id}}/" class="list-group-item{{# if show_main_tab }} selected-item{{/if}}"{{# if show_main_tab }} aria-current="page"{{/if}}>{{t "userDetails.generalDetails"}}</a>
-      <a href="/users/edit/{{employee.id}}/schedule/" class="list-group-item{{# if show_schedule_tab }} selected-item{{/if}}"{{# if show_schedule_tab }} aria-current="page"{{/if}}>{{t "userDetails.schedule"}}</a>
-      <a href="/users/edit/{{employee.id}}/calendar/" class="list-group-item{{# if show_calendar_tab }} selected-item{{/if}}"{{# if show_calendar_tab }} aria-current="page"{{/if}}>{{t "calendar.calendarTitle"}}</a>
-      <a href="/users/edit/{{employee.id}}/absences/" class="list-group-item{{# if show_absence_tab }} selected-item{{/if}}"{{# if show_absence_tab }} aria-current="page"{{/if}}>{{t "userDetails.absences"}}</a>
-    </nav>
-  </div>
+<div class="employee-details-layout">
+  <nav class="employee-details-nav" aria-label="{{t "userDetails.sectionTitle"}}">
+    <a href="/users/edit/{{employee.id}}/" class="list-group-item{{# if show_main_tab }} selected-item{{/if}}"{{# if show_main_tab }} aria-current="page"{{/if}}>{{t "userDetails.generalDetails"}}</a>
+    <a href="/users/edit/{{employee.id}}/schedule/" class="list-group-item{{# if show_schedule_tab }} selected-item{{/if}}"{{# if show_schedule_tab }} aria-current="page"{{/if}}>{{t "userDetails.schedule"}}</a>
+    <a href="/users/edit/{{employee.id}}/calendar/" class="list-group-item{{# if show_calendar_tab }} selected-item{{/if}}"{{# if show_calendar_tab }} aria-current="page"{{/if}}>{{t "calendar.calendarTitle"}}</a>
+    <a href="/users/edit/{{employee.id}}/absences/" class="list-group-item{{# if show_absence_tab }} selected-item{{/if}}"{{# if show_absence_tab }} aria-current="page"{{/if}}>{{t "userDetails.absences"}}</a>
+  </nav>
 
-  <div class="col-md-9">
+  <div class="employee-details-content">
     {{# if show_absence_tab }}
       {{> user_details/absences }}
     {{else if show_schedule_tab}}
