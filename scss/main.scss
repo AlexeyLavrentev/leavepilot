@@ -6729,3 +6729,624 @@ td.current_day_cell.half_2nd {
     min-width: 0;
   }
 }
+
+
+/* ============================================================
+ * Stage 8F — General Settings workspace (.general-settings-page)
+ * Six deliberate surfaces group company details, schedule,
+ * allowance operations, leave types, related data and danger.
+ * Tokens and component rules remain page-scoped so legacy
+ * settings, Bootstrap and premium consumers are unaffected.
+ * ============================================================ */
+.general-settings-page {
+  --settings-surface: #{$surface-color};
+  --settings-surface-raised: #{$surface-subtle};
+  --settings-surface-muted: #{$surface-muted};
+  --settings-surface-overlay: #ffffff;
+  --settings-border: #{$border-color};
+  --settings-border-subtle: #{color.adjust($surface-color, $lightness: -3%)};
+  --settings-shadow: #{$shadow-sm};
+  --settings-shadow-strong: #{$shadow-md};
+  --settings-danger: #b42318;
+  --settings-danger-surface: #fff7f6;
+  --settings-danger-border: #e7aaa5;
+  --settings-text-muted: #586b7d;
+  --settings-radius: 10px;
+  --settings-control-radius: #{$radius-md};
+  --settings-space-1: #{$space-1};
+  --settings-space-2: #{$space-2};
+  --settings-space-3: #{$space-3};
+  --settings-space-4: #{$space-4};
+  --settings-space-5: #{$space-5};
+  --settings-space-6: #{$space-6};
+
+  max-width: 1280px;
+  margin-inline: auto;
+
+  .page-heading h1 {
+    color: var(--color-heading-primary);
+    font-weight: 700;
+    line-height: 1.1;
+    letter-spacing: -0.01em;
+  }
+
+  .page-heading .lead {
+    color: var(--color-text-muted);
+    font-weight: 500;
+    line-height: 1.4;
+  }
+
+  .general-settings-workspace {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(320px, 1fr);
+    gap: var(--settings-space-5);
+    align-items: start;
+  }
+
+  .surface {
+    min-width: 0;
+    padding: var(--settings-space-5);
+    color: var(--color-text);
+    background: var(--settings-surface);
+    border: 1px solid var(--settings-border);
+    border-top-color: var(--settings-border-subtle);
+    border-radius: var(--settings-radius);
+    box-shadow: var(--settings-shadow);
+  }
+
+  .general-settings-company {
+    grid-column: 1;
+  }
+
+  .general-settings-operations {
+    display: grid;
+    grid-column: 2;
+    gap: var(--settings-space-5);
+    min-width: 0;
+  }
+
+  .general-settings-leave-types,
+  .general-settings-related,
+  .general-settings-danger {
+    grid-column: 1 / -1;
+  }
+
+  .settings-section-heading {
+    margin: 0 0 var(--settings-space-4);
+    padding: 0 0 var(--settings-space-3);
+    border-bottom: 1px solid var(--settings-border);
+  }
+
+  .settings-section-heading h2,
+  .settings-related-item h3,
+  .settings-danger-content h3 {
+    overflow-wrap: anywhere;
+    color: var(--color-heading-primary);
+    font-weight: 700;
+  }
+
+  .settings-section-heading h2 {
+    margin: 0;
+    font-size: 20px;
+    line-height: 1.25;
+    letter-spacing: -0.01em;
+  }
+
+  .settings-related-item h3,
+  .settings-danger-content h3 {
+    margin: 0 0 var(--settings-space-1);
+    font-size: 15px;
+    line-height: 1.35;
+  }
+
+  .settings-section-heading-with-copy {
+    display: flex;
+    align-items: start;
+    justify-content: space-between;
+    gap: var(--settings-space-3);
+  }
+
+  .settings-section-heading-with-copy .settings-help {
+    margin-top: var(--settings-space-1);
+  }
+
+  .settings-form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--settings-space-4);
+  }
+
+  .settings-field {
+    min-width: 0;
+  }
+
+  .settings-field-wide {
+    grid-column: 1 / -1;
+  }
+
+  .settings-field > label,
+  .leave-types-mobile-label {
+    display: block;
+    margin-bottom: var(--settings-space-1);
+    color: var(--color-heading-primary);
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1.35;
+  }
+
+  .form-control {
+    min-width: 0;
+    min-height: 44px;
+    color: var(--color-text);
+    background: var(--settings-surface-overlay);
+    border-color: var(--settings-border);
+    border-radius: var(--settings-control-radius);
+    box-shadow: none;
+  }
+
+  .form-control:focus {
+    border-color: var(--color-focus-ring-strong);
+    box-shadow: 0 0 0 1px var(--color-focus-ring-strong);
+  }
+
+  .settings-help,
+  .settings-operation-copy {
+    overflow-wrap: anywhere;
+    color: var(--settings-text-muted);
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  .settings-help {
+    margin: var(--settings-space-2) 0 0;
+  }
+
+  .settings-operation-copy {
+    margin-bottom: var(--settings-space-4);
+  }
+
+  .settings-operation-copy p {
+    margin: 0 0 var(--settings-space-2);
+  }
+
+  .settings-choice-list {
+    display: grid;
+    gap: var(--settings-space-3);
+    margin-top: var(--settings-space-5);
+    padding-top: var(--settings-space-4);
+    border-top: 1px solid var(--settings-border);
+  }
+
+  .settings-choice {
+    min-width: 0;
+  }
+
+  .settings-choice > label,
+  .leave-types-checkbox {
+    display: flex;
+    align-items: center;
+    gap: var(--settings-space-2);
+    min-height: 44px;
+    margin: 0;
+    color: var(--color-heading-primary);
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .settings-choice input,
+  .leave-types-checkbox input {
+    flex: 0 0 auto;
+    width: 18px;
+    height: 18px;
+    margin: 0;
+  }
+
+  .settings-choice .settings-help {
+    margin: 0 0 0 26px;
+  }
+
+  .settings-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: var(--settings-space-2);
+    margin-top: var(--settings-space-4);
+  }
+
+  .settings-actions .btn,
+  .settings-related-item > .btn,
+  .settings-danger-content > .btn,
+  .leave-types-row .btn {
+    min-height: 44px;
+    transition: transform 0.1s ease-out;
+  }
+
+  .settings-actions .btn:active,
+  .settings-actions .btn:hover:active,
+  .settings-related-item > .btn:active,
+  .settings-related-item > .btn:hover:active,
+  .settings-danger-content > .btn:active,
+  .settings-danger-content > .btn:hover:active,
+  .leave-types-row .btn:active,
+  .leave-types-row .btn:hover:active {
+    transform: scale(0.98);
+  }
+
+  .settings-schedule-widget {
+    min-width: 0;
+    overflow-x: auto;
+    padding: 2px;
+  }
+
+  .settings-schedule-widget .schedule-week-grid {
+    display: flex;
+    width: 100%;
+  }
+
+  .settings-schedule-widget .schedule-week-grid > .btn {
+    display: flex;
+    flex: 1 1 0;
+    align-items: center;
+    justify-content: center;
+    min-width: 40px;
+    min-height: 44px;
+  }
+
+  .leave-types-header,
+  .leave-types-row {
+    display: grid;
+    grid-template-columns:
+      minmax(220px, 2.2fr)
+      minmax(160px, 1.35fr)
+      minmax(90px, 0.7fr)
+      minmax(150px, 1.15fr)
+      minmax(120px, 0.9fr)
+      44px;
+    gap: var(--settings-space-3);
+    align-items: center;
+  }
+
+  .leave-types-header {
+    padding: 0 var(--settings-space-3) var(--settings-space-2);
+    color: var(--settings-text-muted);
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1.35;
+  }
+
+  .leave-types-list {
+    display: grid;
+    gap: var(--settings-space-2);
+  }
+
+  .leave-types-row {
+    min-width: 0;
+    padding: var(--settings-space-3);
+    background: var(--settings-surface-raised);
+    border: 1px solid var(--settings-border);
+    border-radius: var(--settings-control-radius);
+  }
+
+  .leave-types-row > div,
+  .leave-types-row .input-group {
+    min-width: 0;
+  }
+
+  .leave-types-row .input-group {
+    width: 100%;
+  }
+
+  .leave-types-name-cell .input-group-addon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 44px;
+    min-height: 44px;
+    margin: 0;
+    padding: 0;
+    cursor: pointer;
+  }
+
+  .leave-types-name-cell .input-group-addon input {
+    margin: 0;
+  }
+
+  .leave-types-mobile-label {
+    display: none;
+  }
+
+  .leave-types-options-cell {
+    display: grid;
+    gap: 2px;
+  }
+
+  .leave-types-checkbox {
+    min-height: 32px;
+    font-size: 12px;
+  }
+
+  .leave-types-checkbox label {
+    margin: 0;
+    overflow-wrap: anywhere;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .leave-types-remove-cell {
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  .leave-types-remove-cell .btn {
+    min-width: 44px;
+  }
+
+  .settings-empty-state {
+    margin: 0 0 var(--settings-space-4);
+    padding: var(--settings-space-4);
+    color: var(--settings-text-muted);
+    background: var(--settings-surface-raised);
+    border: 1px dashed var(--settings-border);
+    border-radius: var(--settings-control-radius);
+  }
+
+  .settings-related-list {
+    display: grid;
+    gap: 0;
+  }
+
+  .settings-related-item {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: var(--settings-space-4);
+    align-items: center;
+    padding: var(--settings-space-3) 0;
+  }
+
+  .settings-related-item + .settings-related-item {
+    border-top: 1px solid var(--settings-border);
+  }
+
+  .settings-related-item .settings-help {
+    margin-top: var(--settings-space-1);
+  }
+
+  .general-settings-danger {
+    border-color: var(--settings-danger-border);
+    border-left: 4px solid var(--settings-danger);
+    background: var(--settings-danger-surface);
+    box-shadow: none;
+  }
+
+  .general-settings-danger .settings-section-heading {
+    border-bottom-color: var(--settings-danger-border);
+  }
+
+  .general-settings-danger .settings-section-heading h2,
+  .settings-danger-warning {
+    color: var(--settings-danger);
+  }
+
+  .settings-danger-content {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: var(--settings-space-5);
+    align-items: center;
+  }
+
+  .settings-danger-content p {
+    margin: 0 0 var(--settings-space-2);
+    overflow-wrap: anywhere;
+  }
+
+  .settings-danger-warning {
+    font-weight: 700;
+  }
+
+  a:focus-visible,
+  button:focus-visible,
+  input:focus-visible,
+  select:focus-visible,
+  [tabindex]:focus-visible {
+    outline: 2px solid var(--color-focus-ring-strong);
+    outline-offset: 2px;
+  }
+}
+
+[data-theme="dark"] .general-settings-page {
+  --settings-surface: #1a1e22;
+  --settings-surface-raised: #20252a;
+  --settings-surface-muted: #121417;
+  --settings-surface-overlay: #15191d;
+  --settings-border: #343a40;
+  --settings-border-subtle: #2a3035;
+  --settings-shadow: 0 1px 2px rgba(0, 0, 0, 0.32);
+  --settings-shadow-strong: 0 8px 24px rgba(0, 0, 0, 0.4);
+  --settings-danger: #ff9b91;
+  --settings-danger-surface: #2b1d1d;
+  --settings-danger-border: #70423e;
+  --settings-text-muted: #aebdca;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .general-settings-page .settings-related-item > .btn:hover,
+  .general-settings-page .settings-actions .btn:hover,
+  .general-settings-page .leave-types-row .btn:hover {
+    box-shadow: var(--settings-shadow-strong);
+  }
+}
+
+@media (prefers-contrast: more) {
+  .general-settings-page .surface,
+  .general-settings-page .leave-types-row,
+  .general-settings-page .form-control {
+    border-width: 2px;
+    box-shadow: none;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .general-settings-page .surface,
+  .general-settings-page .form-control {
+    background: var(--settings-surface-overlay);
+    backdrop-filter: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .general-settings-page *,
+  .general-settings-page *::before,
+  .general-settings-page *::after {
+    transition: none !important;
+    animation: none !important;
+  }
+
+  .general-settings-page .settings-actions .btn:active,
+  .general-settings-page .settings-actions .btn:hover:active,
+  .general-settings-page .settings-related-item > .btn:active,
+  .general-settings-page .settings-related-item > .btn:hover:active,
+  .general-settings-page .settings-danger-content > .btn:active,
+  .general-settings-page .settings-danger-content > .btn:hover:active,
+  .general-settings-page .leave-types-row .btn:active,
+  .general-settings-page .leave-types-row .btn:hover:active {
+    transform: none;
+  }
+}
+
+@media (max-width: 980px) {
+  .general-settings-page .general-settings-workspace {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .general-settings-page .general-settings-company,
+  .general-settings-page .general-settings-operations,
+  .general-settings-page .general-settings-leave-types,
+  .general-settings-page .general-settings-related,
+  .general-settings-page .general-settings-danger {
+    grid-column: 1;
+  }
+
+  .general-settings-page .general-settings-operations {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .general-settings-page .leave-types-header {
+    display: none;
+  }
+
+  .general-settings-page .leave-types-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .general-settings-page .leave-types-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+  }
+
+  .general-settings-page .leave-types-name-cell,
+  .general-settings-page .leave-types-options-cell {
+    grid-column: 1 / -1;
+  }
+
+  .general-settings-page .leave-types-mobile-label {
+    display: block;
+  }
+
+  .general-settings-page .leave-types-remove-cell {
+    align-self: end;
+  }
+}
+
+@media (max-width: 768px) {
+  .general-settings-page .general-settings-workspace,
+  .general-settings-page .general-settings-operations,
+  .general-settings-page .settings-form-grid,
+  .general-settings-page .leave-types-list,
+  .general-settings-page .leave-types-row,
+  .general-settings-page .settings-related-item,
+  .general-settings-page .settings-danger-content {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .general-settings-page .surface {
+    overflow: visible;
+    padding: var(--settings-space-3);
+  }
+
+  .general-settings-page .settings-field-wide,
+  .general-settings-page .leave-types-name-cell,
+  .general-settings-page .leave-types-options-cell,
+  .general-settings-page .leave-types-limit-cell,
+  .general-settings-page .leave-types-deduction-cell,
+  .general-settings-page .leave-types-min-cell,
+  .general-settings-page .leave-types-remove-cell {
+    grid-column: 1;
+  }
+
+  .general-settings-page .leave-types-remove-cell {
+    grid-row: auto;
+  }
+
+  .general-settings-page .settings-schedule-widget {
+    overflow: visible;
+  }
+
+  .general-settings-page .settings-schedule-widget .schedule-week-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: var(--settings-space-1);
+  }
+
+  .general-settings-page .settings-schedule-widget .schedule-week-grid > .btn {
+    float: none;
+    width: auto;
+    min-width: 0;
+    border-radius: var(--settings-control-radius);
+  }
+
+  .general-settings-page .leave-types-row {
+    overflow: visible;
+    background: var(--settings-surface-raised);
+    border-color: var(--settings-border);
+    box-shadow: var(--settings-shadow);
+  }
+
+  .general-settings-page .leave-types-row .form-control,
+  .general-settings-page .leave-types-row .input-group,
+  .general-settings-page .leave-types-row .input-group-btn {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .general-settings-page .leave-types-row input,
+  .general-settings-page .leave-types-row select,
+  .general-settings-page .leave-types-row label {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .general-settings-page .leave-types-checkbox {
+    min-height: 44px;
+  }
+
+  .general-settings-page .leave-types-remove-cell,
+  .general-settings-page .settings-related-item,
+  .general-settings-page .settings-danger-content {
+    justify-items: stretch;
+  }
+
+  .general-settings-page .leave-types-remove-cell .btn,
+  .general-settings-page .settings-related-item > .btn,
+  .general-settings-page .settings-danger-content > .btn,
+  .general-settings-page .settings-actions .btn {
+    width: 100%;
+    min-width: 44px;
+    min-height: 44px;
+    white-space: normal;
+  }
+
+  .general-settings-page .settings-actions-grouped {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
