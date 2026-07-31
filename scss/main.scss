@@ -6628,6 +6628,12 @@ td.current_day_cell.half_2nd {
   .employee-details-page .surface {
     padding: var(--space-3);
   }
+  /* >=44px tap targets for the destructive delete control on mobile (it sits in the page
+     heading, not in .admin-form-actions, so the action-buttons rule above does not cover it). */
+  .employee-details-page .employee-details-danger-action .btn-danger {
+    min-height: 44px;
+    min-width: 44px;
+  }
 
   /* Absences history mobile-card chrome (mirrors Stage 8D). */
   .employee-details-page .mobile-card-table > tbody > tr {
