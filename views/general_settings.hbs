@@ -1,354 +1,266 @@
-
-
 {{> header }}
 
 <a class="sr-only sr-only-focusable" href="#main-content">{{t "nav.skipToMainContent"}}</a>
-<main id="main-content" tabindex="-1">
-<h1>{{t "generalSettings.title"}}</h1>
-
-<p class="lead">{{t "generalSettings.subtitle"}}</p>
-
-{{> show_flash_messages }}
-
-<div class="content-spacer" aria-hidden="true"></div>
-
-<div class="row">
-  <div class="col-md-12">
-    <div class="panel panel-default">
-      <div class="panel-heading">
-        {{t "generalSettings.companyPanelTitle"}}
-      </div>
-      <div class="panel-body">
-        <div class="row">
-
-          <div class="col-md-5">
-            <form class="form-horizontal" method="POST" action="/settings/company/" id="company_edit_form">
-              <input type="hidden" name="_csrf" value="{{csrf_token}}">
-              <div class="form-group">
-                <label for="input_company_name" class="col-md-4 control-label">{{t "generalSettings.companyNameLabel"}}</label>
-                <div class="col-md-8">
-                  <input class="form-control" id="input_company_name" placeholder="{{t "generalSettings.companyNamePlaceholder"}}" value="{{company.name}}" name="name" required>
-                </div>
-              </div>
-              <div class="form-group">
-                <label for="input_country" class="col-md-4 control-label">{{t "generalSettings.countryLabel"}}</label>
-                <div class="col-md-8">
-                  <select class="form-control" id="input_country" name="country">
-                    {{#each countries}}
-                    <option value="{{@key}}" {{# if_equal @key ../company.country }} selected="selected"{{/if_equal}}>{{@key}}: {{this.name}}</option>
-                    {{/each}}
-                  </select>
-                </div>
-              </div>
-              <div class="form-group">
-                <label for="input_date_format" class="col-md-4 control-label">{{t "generalSettings.dateFormatLabel"}}</label>
-                <div class="col-md-8">
-                  <select class="form-control" id="input_date_format" name="date_format">
-                    {{#with company}}
-                    {{#each this.get_available_date_formats}}
-                    <option value="{{this}}" {{# if_equal this ../date_format }} selected="selected"{{/if_equal}}>{{this}}</option>
-                    {{/each}}
-                    {{/with}}
-                  </select>
-                </div>
-              </div>
-
-
-              <div class="form-group">
-                <label for="input_time_zone" class="col-md-4 control-label">{{t "generalSettings.timeZoneLabel"}}</label>
-                <div class="col-md-8">
-                  <select class="form-control" id="input_time_zone" name="timezone">
-                    {{#each timezones_available}}
-                    <option value="{{this}}" {{# if_equal this ../company.timezone }} selected="selected"{{/if_equal}}>{{this}}</option>
-                    {{/each}}
-                  </select>
-                </div>
-              </div>
-
-
-              <div class="form-group">
-                <label for="input_carry_over" class="col-md-4 control-label">{{t "generalSettings.carriedOverDaysLabel"}}</label>
-                <div class="col-md-8">
-                  <select class="form-control" id="input_carry_over" name="carry_over">
-                    {{#each carryOverOptions}}
-                    <option value="{{this.days}}" {{# if_equal this.days ../company.carry_over }} selected="selected"{{/if_equal}}>{{this.label}}</option>
-                    {{/each}}
-                  </select>
-                    <p>
-                      <em>{{t "generalSettings.carriedOverDaysHelp"}}</em>
-                    </p>
-                </div>
-              </div>
-
-
-              <div class="form-group">
-                <div class="col-md-offset-4 col-md-8">
-                  <div class="checkbox">
-                    <label for="share-all-absences">
-                      <input id="share-all-absences" type="checkbox" name="share_all_absences" {{# if company.share_all_absences }} checked="checked"{{/if}}>{{t "generalSettings.shareAbsencesLabel"}}
-                    </label>
-                    <p>
-                      <em>{{t "generalSettings.shareAbsencesHelp"}}</em>
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div class="form-group">
-                <div class="col-md-offset-4 col-md-8">
-                  <div class="checkbox">
-                    <label for="is-team-view-hidden">
-                      <input id="is-team-view-hidden" type="checkbox" name="is_team_view_hidden" {{# if company.is_team_view_hidden }} checked="checked"{{/if}}>{{t "generalSettings.hideTeamViewLabel"}}
-                    </label>
-                    <p>
-                      <em>{{t "generalSettings.hideTeamViewHelp"}}</em>
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-
-              <div class="form-group">
-                <div class="col-md-offset-2 col-md-10">
-                  <button type="submit" class="btn btn-success pull-right single-click">{{t "common.saveChanges"}}</button>
-                </div>
-              </div>
-            </form>
-          </div>
-
-          <div class="col-md-offset-1 col-md-5">
-
-            <div class="form-horizontal">
-              <div class="form-group">
-                <label for="" class="col-md-7 control-label">{{t "generalSettings.backupTitle"}}</label>
-              </div>
-              <div class="form-group">
-                <div class="col-md-offset-2">
-                  <em>{{t "generalSettings.backupHelp"}}</em>
-                </div>
-              </div>
-              <div class="form-group">
-                <div class="col-md-offset-2 col-md-11">
-                  <a class="btn btn-success pull-right" href="/settings/company/backup/"><i class="fa fa-download" aria-hidden="true"></i> {{t "generalSettings.downloadBackup"}}</a>
-                </div>
-              </div>
-            </div>
-
-            <form class="form-horizontal" method="POST" action="/settings/schedule" id="company_schedule_form">
-              <input type="hidden" name="_csrf" value="{{csrf_token}}">
-            <input type="hidden" name="company_wide" value="1">
-            <div class="form-group">
-              <label for="" class="col-md-6 control-label">{{t "generalSettings.companyWeekScheduleTitle"}}</label>
-            </div>
-            <div class="form-group">
-              <div class="col-md-offset-2">
-                {{> schedule_widget}}
-              </div>
-            </div>
-            <div class="form-group">
-              <div class="col-md-offset-2">
-                <em>{{t "generalSettings.companyWeekScheduleHelp"}}</em>
-              </div>
-            </div>
-            <div class="form-group">
-              <div class="col-md-offset-2 col-md-11">
-                <button type="submit" class="btn btn-success pull-right single-click">{{t "generalSettings.saveSchedule"}}</button>
-              </div>
-            </div>
-            </form>
-
-            <div class="form-horizontal">
-              <div class="form-group">
-                <label for="" class="col-md-10 control-label">{{t "generalSettings.carryOverTitle"}}</label>
-              </div>
-              <div class="form-group">
-                <div class="col-md-offset-2">
-                  <p><em>{{t "generalSettings.carryOverHelpFirst" yearPrev=yearPrev yearCurrent=yearCurrent}}</em></p>
-                  <p><em>{{t "generalSettings.carryOverHelpSecond"}}</em></p>
-                </div>
-              </div>
-              <div class="form-group">
-                <form class="col-md-offset-2 col-md-11" id="calculate_carry_over_form" method="post" action="/settings/carryOverUnusedAllowance">
-                  <input type="hidden" name="_csrf" value="{{csrf_token}}">
-                  <button class="btn btn-success pull-right single-click" type="submit"><i class="fa fa-share" aria-hidden="true"></i> {{t "generalSettings.carryOverButton"}}</button>
-                </form>
-              </div>
-            </div>
-
-          </div>
-        </div>
-      </div>
+<main id="main-content" class="general-settings-page" tabindex="-1">
+  <div class="page-heading">
+    <div class="page-heading-titles">
+      <h1>{{t "generalSettings.title"}}</h1>
+      <p class="lead">{{t "generalSettings.subtitle"}}</p>
     </div>
   </div>
-</div>
 
+  {{> show_flash_messages }}
 
-<div class="row">
-
-  <div class="col-md-8">
-    <div class="panel panel-default leave-types-panel">
-      <div class="panel-heading">
-        {{t "generalSettings.leaveTypesTitle"}}
+  <div class="general-settings-workspace">
+    <section class="general-settings-company surface" aria-labelledby="general-settings-company-title">
+      <div class="settings-section-heading">
+        <h2 id="general-settings-company-title">{{t "generalSettings.companyPanelTitle"}}</h2>
       </div>
-      <div class="panel-body">
-        <div class="row leave-types-header">
-          <div class="col-md-4 leave-types-name-cell">
-            <label class="control-label">{{t "generalSettings.leaveTypeNameLabel"}}</label>
-            <p><em>{{t "generalSettings.leaveTypeNameHelp"}}</em></p>
-          </div>
-          <div class="col-md-offset-2 col-md-2 leave-types-limit-cell">
-            <label class="control-label">{{t "generalSettings.leaveTypeLimitLabel"}}</label>
-            <p><em>{{t "generalSettings.leaveTypeLimitHelp"}}</em></p>
-          </div>
-          <div class="col-md-2 leave-types-deduction-cell">
-            <label class="control-label">{{t "generalSettings.leaveTypeDeductionUnitLabel"}}</label>
-            <p><em>{{t "generalSettings.leaveTypeDeductionUnitHelp"}}</em></p>
-          </div>
-          <div class="col-md-2 leave-types-min-cell">
-            <label class="control-label">{{t "generalSettings.leaveTypeMinConsecutiveLabel"}}</label>
-            <p><em>{{t "generalSettings.leaveTypeMinConsecutiveHelp"}}</em></p>
-          </div>
-        </div>
 
-        <div class="content-spacer content-spacer-sm" aria-hidden="true"></div>
+      <form method="POST" action="/settings/company/" id="company_edit_form">
+        <input type="hidden" name="_csrf" value="{{csrf_token}}">
 
-        <form id="delete_leavetype_form" method="post" action="/settings/leavetypes/delete/"><input type="hidden" name="_csrf" value="{{csrf_token}}"></form>
-        <form id="leave_type_edit_form" method="post" action="/settings/leavetypes/">
-          <input type="hidden" name="_csrf" value="{{csrf_token}}">
-
-        {{#unless leave_types.length }}
-        <div class="row">
-          <div class="col-md-4">{{t "generalSettings.noLeaveTypes"}}</div>
-        </div>
-        {{/unless}}
-
-        {{#each leave_types}}
-        <div class="row leave-types-row">
-          <div class="col-md-4 leave-types-name-cell">
-
-            <div class="input-group">
-              <span class="input-group-addon">
-                <input type="radio" name="first_record" value="{{ this.id }}" {{# if this.sort_order }}checked="checked"{{/ if}} aria-label="{{t "generalSettings.leaveTypeNameHelp"}}: {{name}}">
-              </span>
-              <input type="text" class="form-control" name="name__{{ this.id }}" value="{{name}}" data-tom-leave-type-order="name_{{@index}}" aria-label="{{t "generalSettings.leaveTypeNameLabel"}}: {{name}}">
-
-              <div class="input-group-btn" data-tom-color-picker="1" data-tom-leave-type-order="colour__{{@index}}">
-                <input type="hidden" name="color__{{ this.id }}" value="{{# with this }}{{ this.get_color_class }}{{/with}}">
-                <button type="button" class="btn btn-default dropdown-toggle {{# with this }}{{ this.get_color_class }}{{/with}}" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" aria-label="{{t "generalSettings.leaveTypeColorAction"}}: {{name}}"><i class="fa fa-paint-brush" aria-hidden="true"></i></button>
-                <ul class="dropdown-menu color-picker-menu">
-                  {{> options_for_color_picker}}
-                </ul>
-              </div>
-
-            </div>
-
+        <div class="settings-form-grid">
+          <div class="settings-field">
+            <label for="input_company_name">{{t "generalSettings.companyNameLabel"}}</label>
+            <input class="form-control" id="input_company_name" placeholder="{{t "generalSettings.companyNamePlaceholder"}}" value="{{company.name}}" name="name" required>
           </div>
 
-          <div class="col-md-2 leave-types-options-cell">
-            <div class="leave-types-checkbox">
-              <input name="use_allowance__{{ this.id }}" id="use_allowance__{{ this.id }}" type="checkbox" {{#if use_allowance}}checked="checked"{{/if}} data-tom-leave-type-order="allowance_{{@index}}">
-              <label for="use_allowance__{{ this.id }}" class="control-label">{{t "generalSettings.leaveTypeUseAllowance"}}</label>
-            </div>
-            <div class="leave-types-checkbox">
-              <input name="auto_approve__{{ this.id }}" id="auto_approve__{{ this.id }}" type="checkbox" {{#if auto_approve}}checked="checked"{{/if}} data-tom-leave-type-order="approve_{{@index}}">
-              <label for="auto_approve__{{ this.id }}" class="control-label">{{t "generalSettings.leaveTypeAutoApprove"}}</label>
-            </div>
-          </div>
-          <div class="col-md-2 leave-types-limit-cell">
-            <input type="number" class="form-control" value="{{limit}}" name="limit__{{ this.id }}" data-tom-leave-type-order="limit_{{@index}}" aria-label="{{t "generalSettings.leaveTypeLimitLabel"}}: {{name}}">
-          </div>
-          <div class="col-md-2 leave-types-deduction-cell">
-            <select class="form-control" name="deduction_unit__{{ this.id }}" data-tom-leave-type-order="deduction_unit_{{@index}}" aria-label="{{t "generalSettings.leaveTypeDeductionUnitLabel"}}: {{name}}">
-              <option value="working_days" {{# if_equal deduction_unit "working_days" }}selected="selected"{{/if_equal}}>{{t "generalSettings.leaveTypeDeductionWorkingDays"}}</option>
-              <option value="calendar_days" {{# if_equal deduction_unit "calendar_days" }}selected="selected"{{/if_equal}}>{{t "generalSettings.leaveTypeDeductionCalendarDays"}}</option>
+          <div class="settings-field">
+            <label for="input_country">{{t "generalSettings.countryLabel"}}</label>
+            <select class="form-control" id="input_country" name="country">
+              {{#each countries}}
+              <option value="{{@key}}" {{# if_equal @key ../company.country }} selected="selected"{{/if_equal}}>{{@key}}: {{this.name}}</option>
+              {{/each}}
             </select>
           </div>
-          <div class="col-md-2 leave-types-min-cell">
-            <input type="number" class="form-control" value="{{minimum_consecutive_days}}" name="minimum_consecutive_days__{{ this.id }}" data-tom-leave-type-order="minimum_consecutive_days_{{@index}}" aria-label="{{t "generalSettings.leaveTypeMinConsecutiveLabel"}}: {{name}}">
+
+          <div class="settings-field">
+            <label for="input_date_format">{{t "generalSettings.dateFormatLabel"}}</label>
+            <select class="form-control" id="input_date_format" name="date_format">
+              {{#with company}}
+              {{#each this.get_available_date_formats}}
+              <option value="{{this}}" {{# if_equal this ../date_format }} selected="selected"{{/if_equal}}>{{this}}</option>
+              {{/each}}
+              {{/with}}
+            </select>
           </div>
-          <div class="col-md-1 leave-types-remove-cell">
-            <button type="button" class="btn btn-default pull-right leavetype-remove-btn" value="{{ this.id }}" data-tom-leave-type-order="remove_{{@index}}" data-confirm-message="{{t "common.deleteNamedConfirm" name=name}}" aria-label="{{t "common.remove"}}: {{name}}"><span class="fa fa-remove" aria-hidden="true"></span></button>
+
+          <div class="settings-field">
+            <label for="input_time_zone">{{t "generalSettings.timeZoneLabel"}}</label>
+            <select class="form-control" id="input_time_zone" name="timezone">
+              {{#each timezones_available}}
+              <option value="{{this}}" {{# if_equal this ../company.timezone }} selected="selected"{{/if_equal}}>{{this}}</option>
+              {{/each}}
+            </select>
+          </div>
+
+          <div class="settings-field settings-field-wide">
+            <label for="input_carry_over">{{t "generalSettings.carriedOverDaysLabel"}}</label>
+            <select class="form-control" id="input_carry_over" name="carry_over">
+              {{#each carryOverOptions}}
+              <option value="{{this.days}}" {{# if_equal this.days ../company.carry_over }} selected="selected"{{/if_equal}}>{{this.label}}</option>
+              {{/each}}
+            </select>
+            <p class="settings-help">{{t "generalSettings.carriedOverDaysHelp"}}</p>
           </div>
         </div>
 
-        <div class="content-spacer content-spacer-sm" aria-hidden="true"></div>
+        <div class="settings-choice-list">
+          <div class="settings-choice">
+            <label for="share-all-absences">
+              <input id="share-all-absences" type="checkbox" name="share_all_absences" {{# if company.share_all_absences }} checked="checked"{{/if}}>
+              <span>{{t "generalSettings.shareAbsencesLabel"}}</span>
+            </label>
+            <p class="settings-help">{{t "generalSettings.shareAbsencesHelp"}}</p>
+          </div>
 
-        {{/each}}
-
-        <div class="content-spacer content-spacer-sm" aria-hidden="true"></div>
-
-        <div class="row">
-          <div class="col-md-12">
-            <div class="pull-right">
-              <button class="btn btn-default" data-toggle="modal" data-target="#add_new_leave_type_modal" type="button" id="add_new_leave_type_btn">{{t "common.addNew"}}</button>
-              <button type="submit" class="btn btn-success single-click">{{t "common.saveChanges"}}</button>
-            </div>
+          <div class="settings-choice">
+            <label for="is-team-view-hidden">
+              <input id="is-team-view-hidden" type="checkbox" name="is_team_view_hidden" {{# if company.is_team_view_hidden }} checked="checked"{{/if}}>
+              <span>{{t "generalSettings.hideTeamViewLabel"}}</span>
+            </label>
+            <p class="settings-help">{{t "generalSettings.hideTeamViewHelp"}}</p>
           </div>
         </div>
+
+        <div class="settings-actions">
+          <button type="submit" class="btn btn-success single-click">{{t "common.saveChanges"}}</button>
+        </div>
+      </form>
+    </section>
+
+    <div class="general-settings-operations">
+      <section class="general-settings-schedule surface" aria-labelledby="general-settings-schedule-title">
+        <div class="settings-section-heading">
+          <h2 id="general-settings-schedule-title">{{t "generalSettings.companyWeekScheduleTitle"}}</h2>
+        </div>
+
+        <form method="POST" action="/settings/schedule" id="company_schedule_form">
+          <input type="hidden" name="_csrf" value="{{csrf_token}}">
+          <input type="hidden" name="company_wide" value="1">
+          <div class="settings-schedule-widget">
+            {{> schedule_widget}}
+          </div>
+          <p class="settings-help">{{t "generalSettings.companyWeekScheduleHelp"}}</p>
+          <div class="settings-actions">
+            <button type="submit" class="btn btn-success single-click">{{t "generalSettings.saveSchedule"}}</button>
+          </div>
         </form>
-      </div>
-    </div>
-  </div>
+      </section>
 
-  <div class="col-md-4 setting-general-2nd-column">
-    <div class="panel panel-default">
-      <div class="panel-heading">
-        {{t "generalSettings.bankHolidaysTitle"}}
-      </div>
-      <div class="panel-body">
-        <div class="row">
-          <div class="col-md-12 tst-no-bank-holidays">{{t "generalSettings.bankHolidaysHint"}} <a href="/settings/bankholidays/">{{t "generalSettings.bankHolidaysLink"}}</a></div>
+      <section class="general-settings-carry-over surface" aria-labelledby="general-settings-carry-over-title">
+        <div class="settings-section-heading">
+          <h2 id="general-settings-carry-over-title">{{t "generalSettings.carryOverTitle"}}</h2>
+        </div>
+        <div class="settings-operation-copy">
+          <p>{{t "generalSettings.carryOverHelpFirst" yearPrev=yearPrev yearCurrent=yearCurrent}}</p>
+          <p>{{t "generalSettings.carryOverHelpSecond"}}</p>
+        </div>
+        <form id="calculate_carry_over_form" method="post" action="/settings/carryOverUnusedAllowance">
+          <input type="hidden" name="_csrf" value="{{csrf_token}}">
+          <div class="settings-actions">
+            <button class="btn btn-default single-click" type="submit"><i class="fa fa-share" aria-hidden="true"></i> {{t "generalSettings.carryOverButton"}}</button>
+          </div>
+        </form>
+      </section>
+    </div>
+
+    <section class="general-settings-leave-types surface" aria-labelledby="general-settings-leave-types-title">
+      <div class="settings-section-heading settings-section-heading-with-copy">
+        <div>
+          <h2 id="general-settings-leave-types-title">{{t "generalSettings.leaveTypesTitle"}}</h2>
+          <p class="settings-help">{{t "generalSettings.leaveTypeNameHelp"}}</p>
         </div>
       </div>
-    </div>
-  </div>
 
-</div>
-
-
-
-<div class="row">
-  <div class="col-md-12">
-    <div class="panel panel-danger">
-      <div class="panel-heading">
-        <i class="fa fa-bomb" aria-hidden="true"></i> {{t "generalSettings.dangerZoneTitle"}}
+      <div class="leave-types-header" aria-hidden="true">
+        <span>{{t "generalSettings.leaveTypeNameLabel"}}</span>
+        <span>{{t "generalSettings.leaveTypeUseAllowance"}} / {{t "generalSettings.leaveTypeAutoApprove"}}</span>
+        <span>{{t "generalSettings.leaveTypeLimitLabel"}}</span>
+        <span>{{t "generalSettings.leaveTypeDeductionUnitLabel"}}</span>
+        <span>{{t "generalSettings.leaveTypeMinConsecutiveLabel"}}</span>
+        <span></span>
       </div>
-      <div class="panel-body">
 
-          <div class="col-md-12">
+      <form id="delete_leavetype_form" method="post" action="/settings/leavetypes/delete/"><input type="hidden" name="_csrf" value="{{csrf_token}}"></form>
+      <form id="leave_type_edit_form" method="post" action="/settings/leavetypes/">
+        <input type="hidden" name="_csrf" value="{{csrf_token}}">
 
-            <div class="form-horizontal">
-              <div class="form-group">
-                <label for="" class="control-label">{{t "generalSettings.removeCompanyTitle"}}</label>
-              </div>
-              <div class="form-group">
-                <div class="col-md-6">
-                  <p><em>{{t "generalSettings.removeCompanyHelp" company=company.name}}</em></p>
-                  <p><em>{{t "generalSettings.removeCompanyWarning"}}</em></p>
-                  <p><em>{{t "generalSettings.removeCompanyBackupHint"}} <a href="/settings/company/backup/">{{t "generalSettings.removeCompanyBackupLink"}}</a> {{t "generalSettings.removeCompanyBackupSuffix"}}</em></p>
-                </div>
-                <div class="col-md-6">
-                  <button class="btn btn-danger pull-right" data-toggle="modal" data-target="#remove_company_modal" type="button"><i class="fa fa-remove" aria-hidden="true"></i> {{t "generalSettings.removeCompanyButton"}}</button>
+        {{#unless leave_types.length }}
+        <p class="settings-empty-state">{{t "generalSettings.noLeaveTypes"}}</p>
+        {{/unless}}
+
+        <div class="leave-types-list">
+          {{#each leave_types}}
+          <div class="leave-types-row">
+            <div class="leave-types-name-cell">
+              <span class="leave-types-mobile-label">{{t "generalSettings.leaveTypeNameLabel"}}</span>
+              <div class="input-group">
+                <label class="input-group-addon">
+                  <input type="radio" name="first_record" value="{{ this.id }}" {{# if this.sort_order }}checked="checked"{{/ if}} aria-label="{{t "generalSettings.leaveTypeNameHelp"}}: {{name}}">
+                </label>
+                <input type="text" class="form-control" name="name__{{ this.id }}" value="{{name}}" data-tom-leave-type-order="name_{{@index}}" aria-label="{{t "generalSettings.leaveTypeNameLabel"}}: {{name}}">
+                <div class="input-group-btn" data-tom-color-picker="1" data-tom-leave-type-order="colour__{{@index}}">
+                  <input type="hidden" name="color__{{ this.id }}" value="{{# with this }}{{ this.get_color_class }}{{/with}}">
+                  <button type="button" class="btn btn-default dropdown-toggle {{# with this }}{{ this.get_color_class }}{{/with}}" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" aria-label="{{t "generalSettings.leaveTypeColorAction"}}: {{name}}"><i class="fa fa-paint-brush" aria-hidden="true"></i></button>
+                  <ul class="dropdown-menu color-picker-menu">
+                    {{> options_for_color_picker}}
+                  </ul>
                 </div>
               </div>
             </div>
 
+            <div class="leave-types-options-cell">
+              <div class="leave-types-checkbox">
+                <input name="use_allowance__{{ this.id }}" id="use_allowance__{{ this.id }}" type="checkbox" {{#if use_allowance}}checked="checked"{{/if}} data-tom-leave-type-order="allowance_{{@index}}">
+                <label for="use_allowance__{{ this.id }}">{{t "generalSettings.leaveTypeUseAllowance"}}</label>
+              </div>
+              <div class="leave-types-checkbox">
+                <input name="auto_approve__{{ this.id }}" id="auto_approve__{{ this.id }}" type="checkbox" {{#if auto_approve}}checked="checked"{{/if}} data-tom-leave-type-order="approve_{{@index}}">
+                <label for="auto_approve__{{ this.id }}">{{t "generalSettings.leaveTypeAutoApprove"}}</label>
+              </div>
+            </div>
+
+            <div class="leave-types-limit-cell">
+              <span class="leave-types-mobile-label">{{t "generalSettings.leaveTypeLimitLabel"}}</span>
+              <input type="number" class="form-control" value="{{limit}}" name="limit__{{ this.id }}" data-tom-leave-type-order="limit_{{@index}}" aria-label="{{t "generalSettings.leaveTypeLimitLabel"}}: {{name}}">
+            </div>
+
+            <div class="leave-types-deduction-cell">
+              <span class="leave-types-mobile-label">{{t "generalSettings.leaveTypeDeductionUnitLabel"}}</span>
+              <select class="form-control" name="deduction_unit__{{ this.id }}" data-tom-leave-type-order="deduction_unit_{{@index}}" aria-label="{{t "generalSettings.leaveTypeDeductionUnitLabel"}}: {{name}}">
+                <option value="working_days" {{# if_equal deduction_unit "working_days" }}selected="selected"{{/if_equal}}>{{t "generalSettings.leaveTypeDeductionWorkingDays"}}</option>
+                <option value="calendar_days" {{# if_equal deduction_unit "calendar_days" }}selected="selected"{{/if_equal}}>{{t "generalSettings.leaveTypeDeductionCalendarDays"}}</option>
+              </select>
+            </div>
+
+            <div class="leave-types-min-cell">
+              <span class="leave-types-mobile-label">{{t "generalSettings.leaveTypeMinConsecutiveLabel"}}</span>
+              <input type="number" class="form-control" value="{{minimum_consecutive_days}}" name="minimum_consecutive_days__{{ this.id }}" data-tom-leave-type-order="minimum_consecutive_days_{{@index}}" aria-label="{{t "generalSettings.leaveTypeMinConsecutiveLabel"}}: {{name}}">
+            </div>
+
+            <div class="leave-types-remove-cell">
+              <button type="button" class="btn btn-default leavetype-remove-btn" value="{{ this.id }}" data-tom-leave-type-order="remove_{{@index}}" data-confirm-message="{{t "common.deleteNamedConfirm" name=name}}" aria-label="{{t "common.remove"}}: {{name}}"><span class="fa fa-remove" aria-hidden="true"></span></button>
+            </div>
           </div>
+          {{/each}}
+        </div>
 
+        <div class="settings-actions settings-actions-grouped">
+          <button class="btn btn-default" data-toggle="modal" data-target="#add_new_leave_type_modal" type="button" id="add_new_leave_type_btn">{{t "common.addNew"}}</button>
+          <button type="submit" class="btn btn-success single-click">{{t "common.saveChanges"}}</button>
+        </div>
+      </form>
+    </section>
 
+    <section class="general-settings-related surface" aria-labelledby="general-settings-related-title">
+      <div class="settings-section-heading">
+        <h2 id="general-settings-related-title">{{t "generalSettings.backupTitle"}}</h2>
       </div>
-    </div>
+
+      <div class="settings-related-list">
+        <div class="settings-related-item">
+          <div>
+            <p class="settings-help">{{t "generalSettings.backupHelp"}}</p>
+          </div>
+          <a class="btn btn-default" href="/settings/company/backup/"><i class="fa fa-download" aria-hidden="true"></i> {{t "generalSettings.downloadBackup"}}</a>
+        </div>
+
+        <div class="settings-related-item tst-no-bank-holidays">
+          <div>
+            <h3>{{t "generalSettings.bankHolidaysTitle"}}</h3>
+            <p class="settings-help">{{t "generalSettings.bankHolidaysHint"}}</p>
+          </div>
+          <a class="btn btn-default" href="/settings/bankholidays/">{{t "generalSettings.bankHolidaysLink"}}</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="general-settings-danger surface" aria-labelledby="general-settings-danger-title">
+      <div class="settings-section-heading">
+        <h2 id="general-settings-danger-title">{{t "generalSettings.dangerZoneTitle"}}</h2>
+      </div>
+
+      <div class="settings-danger-content">
+        <div>
+          <h3>{{t "generalSettings.removeCompanyTitle"}}</h3>
+          <p>{{t "generalSettings.removeCompanyHelp" company=company.name}}</p>
+          <p class="settings-danger-warning">{{t "generalSettings.removeCompanyWarning"}}</p>
+          <p class="settings-help">{{t "generalSettings.removeCompanyBackupHint"}} <a href="/settings/company/backup/">{{t "generalSettings.removeCompanyBackupLink"}}</a> {{t "generalSettings.removeCompanyBackupSuffix"}}</p>
+        </div>
+        <button class="btn btn-danger" data-toggle="modal" data-target="#remove_company_modal" type="button"><i class="fa fa-remove" aria-hidden="true"></i> {{t "generalSettings.removeCompanyButton"}}</button>
+      </div>
+    </section>
   </div>
-</div>
 
-{{> add_new_leave_type_modal
-  container_id='add_new_leave_type_modal'
-  form_action='/settings/leavetypes/'
-}}
+  {{> add_new_leave_type_modal
+    container_id='add_new_leave_type_modal'
+    form_action='/settings/leavetypes/'
+  }}
 
-{{> remove_company_modal
-  container_id='remove_company_modal'
-}}
-
+  {{> remove_company_modal
+    container_id='remove_company_modal'
+  }}
 </main>
 {{> footer }}
