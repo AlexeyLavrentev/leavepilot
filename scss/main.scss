@@ -6549,6 +6549,46 @@ td.current_day_cell.half_2nd {
   .top-leave-type-statistics dt[data-tom-days-available-in-allowance] {
     font-variant-numeric: tabular-nums;
   }
+  /* Calendar allowance statistics: the global .top-leave-type-statistics rules set WHITE
+     text (intended for the dark .summary-card-primary hero on the main calendar), but on the
+     Employee Details surface this block sits on a light/dark raised surface — white-on-white
+     made the primary allowance figure nearly invisible. Override both layout and colours here
+     so the big number and its captions read clearly in light AND dark (via scoped tokens). */
+  .employee-calendar-statistics .top-leave-type-statistics {
+    display: block;
+    text-align: left;
+  }
+  .employee-calendar-statistics .top-leave-type-statistics dt {
+    color: var(--color-heading-primary);
+    font-size: 40px;
+    font-weight: 700;
+    line-height: 1.05;
+    border: 0;
+    margin: 0 0 var(--space-2) 0;
+    padding: 0;
+  }
+  .employee-calendar-statistics .top-leave-type-statistics dd {
+    color: var(--color-text-muted);
+    font-size: 13px;
+    margin: 0;
+  }
+  .employee-calendar-statistics .top-leave-type-statistics dd:first-of-type {
+    color: var(--color-text);
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 2px;
+  }
+  .employee-calendar-statistics .secondary-leave-type-statistics dt {
+    color: var(--color-heading-primary);
+    border-bottom-color: var(--surface-border);
+  }
+  .employee-calendar-statistics .secondary-leave-type-statistics dd {
+    color: var(--color-text-muted);
+    border-bottom-color: var(--surface-border-hairline);
+  }
+  .employee-calendar-statistics .secondary-leave-type-statistics dd em {
+    color: var(--color-text);
+  }
 
   /* Inline links that need a press transform must be transformable boxes. */
   .employee-details-content a {

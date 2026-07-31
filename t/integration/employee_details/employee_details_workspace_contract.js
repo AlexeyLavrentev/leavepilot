@@ -457,6 +457,58 @@ describe('Employee details workspace interaction, geometry & visual matrix (Stag
     assert(!cleared, 'CDP reset did not clear reduced-motion');
   });
 
+  // Calendar allowance statistics: the primary allowance figure (.top-leave-type-statistics
+  // dt + dd:first-of-type) must be readable on the Employee Details surface in BOTH themes —
+  // the global rules paint them white (for a dark hero card), which was invisible on the light
+  // surface. Assert WCAG AA contrast (>=4.5) on desktop+mobile, light+dark.
+  it('calendar: allowance statistics meet WCAG AA contrast (>=4.5) in light and dark', async function () {
+    async function contrastOn(theme, w, h) {
+      await setViewport(driver, w, h);
+      await setTheme(driver, theme);
+      await openEdit(driver, application_host, employee.id, 'calendar/');
+      await driver.sleep(200);
+      return driver.executeScript(function () {
+        function lum(c) {
+          var m = c.match(/\d+/g);
+          if (!m) return 0;
+          var rs = m.map(function (v) { v = v / 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); });
+          return 0.2126 * rs[0] + 0.7152 * rs[1] + 0.0722 * rs[2];
+        }
+        function ratio(fg, bg) {
+          var l1 = lum(fg), l2 = lum(bg);
+          return (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
+        }
+        function measure(sel) {
+          var el = document.querySelector(sel);
+          if (!el) return null;
+          var cs = getComputedStyle(el);
+          // walk up to find the surface background (the nearest .surface / .employee-calendar-card)
+          var bgEl = el.closest('.surface') || el.closest('.employee-calendar-card') || document.body;
+          var bgCs = getComputedStyle(bgEl);
+          return { ratio: Math.round(ratio(cs.color, bgCs.backgroundColor) * 100) / 100, fg: cs.color, bg: bgCs.backgroundColor };
+        }
+        return {
+          dt: measure('.top-leave-type-statistics dt'),
+          ddFirst: measure('.top-leave-type-statistics dd:first-of-type')
+        };
+      });
+    }
+    var states = [
+      { theme: 'light', w: 1440, h: 900 },
+      { theme: 'dark', w: 1440, h: 900 },
+      { theme: 'light', w: 390, h: 844 },
+      { theme: 'dark', w: 390, h: 844 }
+    ];
+    for (var i = 0; i < states.length; i++) {
+      var s = states[i];
+      var r = await contrastOn(s.theme, s.w, s.h);
+      assert(r.dt && r.dt.ratio >= 4.5,
+        '.top-leave-type-statistics dt ' + s.theme + ' ' + s.w + ' contrast ' + (r.dt ? r.dt.ratio : 'null') + ' < 4.5 (fg=' + (r.dt ? r.dt.fg : '?') + ' bg=' + (r.dt ? r.dt.bg : '?') + ')');
+      assert(r.ddFirst && r.ddFirst.ratio >= 4.5,
+        '.top-leave-type-statistics dd:first-of-type ' + s.theme + ' ' + s.w + ' contrast ' + (r.ddFirst ? r.ddFirst.ratio : 'null') + ' < 4.5 (fg=' + (r.ddFirst ? r.ddFirst.fg : '?') + ' bg=' + (r.ddFirst ? r.ddFirst.bg : '?') + ')');
+    }
+  });
+
   // Absences history opts into mobile-card cards (Stage 8E); Calendar consumer stays legacy.
   it('absences history uses mobile-card cards on User Details; Calendar stays legacy', async function () {
     await setViewport(driver, 390, 844);
