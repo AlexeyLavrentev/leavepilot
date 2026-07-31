@@ -6033,6 +6033,19 @@ td.current_day_cell.half_2nd {
   padding: var(--space-4);
 }
 .employee-details-page {
+  /* The .surface is the single raised wrapper; the legacy .admin-form-card inside it carries
+     its own padding/border/radius/shadow and would double up (card-in-card). Neutralise its
+     chrome here so only one raised surface remains, with the form laid out transparently. */
+}
+.employee-details-page .surface .admin-form-card,
+.employee-details-page .surface .employee-calendar-card {
+  padding: 0;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+.employee-details-page {
   /* Restrained danger action: the delete form stays a clear, focused control, never a
      dominant red surface. Visible focus ring; btn-danger retained. */
 }
@@ -6212,12 +6225,15 @@ td.current_day_cell.half_2nd {
   .employee-details-page .employee-details-layout {
     grid-template-columns: minmax(0, 1fr);
   }
-  .employee-details-nav {
+  /* Scope the mobile nav rules under .employee-details-page so they outrank the desktop
+     sidebar rules (which compile to .employee-details-page .employee-details-nav, 0,2,0).
+     Without the prefix the unscoped mobile selector lost the cascade and the nav stayed 1×4. */
+  .employee-details-page .employee-details-nav {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: var(--space-2);
   }
-  .employee-details-nav .list-group-item {
+  .employee-details-page .employee-details-nav .list-group-item {
     min-height: 44px;
     display: flex;
     align-items: center;
@@ -6232,6 +6248,17 @@ td.current_day_cell.half_2nd {
   .employee-details-page .employee-details-danger-action .btn-danger {
     min-height: 44px;
     min-width: 44px;
+  }
+  /* Neutralise the Bootstrap .row negative gutter margin inside surfaces: on narrow screens it
+     makes the row 30px wider than its container and overflows by a few px (scrollW>clientW). The
+     columns are stacked at this width anyway, so the gutter adds no spacing — drop it. */
+  .employee-details-page .surface .row {
+    margin-left: 0;
+    margin-right: 0;
+  }
+  .employee-details-page .surface .row > [class*=col-] {
+    padding-left: 0;
+    padding-right: 0;
   }
   /* Absences history mobile-card chrome (mirrors Stage 8D). */
   .employee-details-page .mobile-card-table > tbody > tr {

@@ -14,12 +14,12 @@
     <p class="lead">{{t "userDetails.sectionTitle"}}</p>
   </div>
   <div class="page-heading-actions">
-    <span class="employee-details-danger-action">
+    <div class="employee-details-danger-action">
     <form id="add_new_user_frm" method="post" action="/users/delete/{{employee.id}}/" onsubmit="return confirm('{{t 'userDetails.deleteConfirm' name=employee.name lastname=employee.lastname}}');">
       <input type="hidden" name="_csrf" value="{{csrf_token}}">
       <button id="remove_btn" type="submit" class="btn btn-danger single-click" data-toggle="tooltip" data-placement="top" title="{{t 'userDetails.removeEmployee'}}"><i class="fa fa-trash" aria-hidden="true"></i> {{t "common.delete"}}</button>
     </form>
-    </span>
+    </div>
   </div>
 </div>
 

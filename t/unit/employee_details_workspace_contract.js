@@ -94,6 +94,11 @@ describe('Employee details workspace contract (Stage 8E)', function () {
       // The delete action is wrapped so scoped CSS can make it restrained; btn-danger stays.
       expect(shell).to.match(/class="[^"]*employee-details-danger-action/);
     });
+    it('wraps the delete form in a <div>, not a <span> (valid HTML model)', function () {
+      // A <span> cannot contain flow content / a <form>; the wrapper must be a <div>.
+      expect(shell).to.match(/<div class="[^"]*employee-details-danger-action/);
+      expect(shell).to.not.match(/<span class="[^"]*employee-details-danger-action/);
+    });
   });
 
   describe('four-tab navigation + routes', function () {
@@ -266,6 +271,18 @@ describe('Employee details workspace contract (Stage 8E)', function () {
       expect(css).to.match(/\.employee-details-page\s*\{[^}]*--surface:/);
       expect(css).to.match(/\.employee-details-page\s*\{[^}]*--shadow-card:/);
       expect(css).to.match(/\.employee-details-page\s*\{[^}]*--radius-card:/);
+    });
+    it('neutralises the legacy .admin-form-card chrome inside .surface (no card-in-card)', function () {
+      // The .surface is the single raised wrapper; the legacy .admin-form-card carries its own
+      // padding/border/radius/shadow and must be neutralised so only one raised surface remains.
+      expect(css).to.match(/\.employee-details-page[^{}]*\.surface[^{}]*\.admin-form-card[^{}]*\{[^}]*padding:\s*0/);
+      expect(css).to.match(/\.employee-details-page[^{}]*\.surface[^{}]*\.admin-form-card[^{}]*\{[^}]*background:\s*transparent/);
+      expect(css).to.match(/\.employee-details-page[^{}]*\.surface[^{}]*\.admin-form-card[^{}]*\{[^}]*box-shadow:\s*none/);
+    });
+    it('scopes the mobile nav under .employee-details-page so it wins the cascade (2x2 grid)', function () {
+      // Desktop compiles to .employee-details-page .employee-details-nav (0,2,0); the mobile
+      // rule must carry the same prefix or it loses the cascade and the nav stays 1x4.
+      expect(css).to.match(/max-width:\s*768px\s*\)\s*\{[\s\S]*?\.employee-details-page\s*\.employee-details-nav\s*\{[^}]*grid-template-columns:\s*repeat\(2/);
     });
     it('declares dark tokens under [data-theme="dark"] .employee-details-page', function () {
       // dart-sass strips quotes from the compiled selector; assert against the SCSS source.

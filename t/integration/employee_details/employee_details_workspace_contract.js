@@ -174,8 +174,12 @@ var MOBILE_GEOMETRY_SCRIPT = function () {
       measureBlock(tds[ci], 'table' + ti + '.td' + ci);
     }
   }
-  // measure the surface blocks (form-groups/sections) on the current tab
-  var surfaces = document.querySelectorAll('.employee-details-content .surface, .employee-details-content .form-group');
+  // measure the surface blocks (form-groups/sections) on the current tab. Exclude the absence-
+  // history year surfaces (.requests-year-surface): those are containers for the mobile-card
+  // table, whose cards are already measured per-td by the scan above — measuring the whole year
+  // surface as one block would flag its inner table rows as "overflowing the surface", which is
+  // just the cards legitimately filling the container.
+  var surfaces = document.querySelectorAll('.employee-details-content .surface:not(.requests-year-surface), .employee-details-content .form-group');
   for (var si = 0; si < surfaces.length; si++) {
     measureBlock(surfaces[si], 'surface' + si);
   }
@@ -356,8 +360,9 @@ describe('Employee details workspace interaction, geometry & visual matrix (Stag
       'Tab walk did not leave .employee-details-page (region not fully traversed). Sequence: ' + sequence.join(' -> '));
   });
 
-  // Mobile 390: no horizontal overflow; nav links >=44px; Save/Delete >=44x44; long name wraps.
-  it('mobile (390px): no horizontal overflow; nav + action controls >=44px; name wraps', async function () {
+  // Mobile 390: no horizontal overflow; nav links >=44px; nav is a real 2×2 grid (not 1×4);
+  // Save/Delete >=44x44; long name wraps.
+  it('mobile (390px): no horizontal overflow; nav is a 2×2 grid; nav + action controls >=44px; name wraps', async function () {
     await setViewport(driver, 390, 844);
     await openEdit(driver, application_host, employee.id, '');
     await driver.sleep(300);
@@ -366,7 +371,7 @@ describe('Employee details workspace interaction, geometry & visual matrix (Stag
       var navLinks = document.querySelectorAll('.employee-details-nav a');
       var navRects = Array.prototype.map.call(navLinks, function (a) {
         var r = a.getBoundingClientRect();
-        return { h: Math.round(r.height), w: Math.round(r.width) };
+        return { top: Math.round(r.top), left: Math.round(r.left), h: Math.round(r.height), w: Math.round(r.width) };
       });
       var h1 = document.querySelector('h1.employee-page-title');
       var h1r = h1 ? h1.getBoundingClientRect() : null;
@@ -382,6 +387,12 @@ describe('Employee details workspace interaction, geometry & visual matrix (Stag
     assert(g.scrollWidth <= g.clientWidth + 1,
       'horizontal overflow: scrollWidth=' + g.scrollWidth + ' > clientWidth=' + g.clientWidth);
     assert(g.navRects.length === 4, 'expected 4 nav links, got ' + g.navRects.length);
+    // 2×2 grid: links 0 and 1 share the same row (equal top); link 2 starts a new row (greater top).
+    // A 1×4 stack would have link 1 below link 0 (greater top) — this catches the cascade bug.
+    assert.strictEqual(g.navRects[0].top, g.navRects[1].top,
+      'nav links 0 and 1 should share row 1 of the 2×2 grid, got top0=' + g.navRects[0].top + ' top1=' + g.navRects[1].top + ' rects=' + JSON.stringify(g.navRects));
+    assert(g.navRects[2].top > g.navRects[0].top,
+      'nav link 2 should start row 2 of the 2×2 grid (top greater than link 0), got top0=' + g.navRects[0].top + ' top2=' + g.navRects[2].top + ' rects=' + JSON.stringify(g.navRects));
     for (var i = 0; i < g.navRects.length; i++) {
       assert(g.navRects[i].h >= 44,
         'nav link ' + i + ' height ' + g.navRects[i].h + ' < 44');
@@ -472,30 +483,36 @@ describe('Employee details workspace interaction, geometry & visual matrix (Stag
       '/calendar/ must stay legacy (no mobile-card), got ' + cal.mobileCards);
   });
 
-  it('mobile (390px) general: geometry (text ranges + child boxes) within block/viewport; no overflow', async function () {
-    await open_page_func({ url: application_host + 'language/en', driver: driver });
-    await setViewport(driver, 390, 844);
-    await openEdit(driver, application_host, employee.id, '');
-    await assertMobileGeometry(driver, null);
-  });
+  // Geometry probe runs across ALL four routes (not just General): each tab's surface is
+  // measured for text-range + child-box overflow at 390px. A table-driven run keeps every
+  // route under the same contract instead of only photographing three of them.
+  var GEOMETRY_TABS = [
+    { tab: '', locale: null, name: 'general' },
+    { tab: 'schedule/', locale: null, name: 'schedule' },
+    { tab: 'calendar/', locale: null, name: 'calendar' },
+    { tab: 'absences/', locale: null, name: 'absences' },
+    // long-text locales on the two densest tabs (general form labels, absences history/cards)
+    { tab: '', locale: 'ru', name: 'general_ru' },
+    { tab: 'absences/', locale: 'ru', name: 'absences_ru' },
+    { tab: '', locale: 'kk', name: 'general_kk' },
+    { tab: 'absences/', locale: 'kk', name: 'absences_kk' }
+  ];
+  for (var gi = 0; gi < GEOMETRY_TABS.length; gi++) {
+    (function (tc) {
+      it('mobile (390px) ' + tc.name + ': geometry within block/viewport; no overflow', async function () {
+        if (tc.locale) {
+          await open_page_func({ url: application_host + 'language/' + tc.locale + '/', driver: driver });
+        } else {
+          await open_page_func({ url: application_host + 'language/en', driver: driver });
+        }
+        await setViewport(driver, 390, 844);
+        await openEdit(driver, application_host, employee.id, tc.tab);
+        await assertMobileGeometry(driver, tc.locale ? tc.locale.toUpperCase() : null);
+      });
+    })(GEOMETRY_TABS[gi]);
+  }
 
-  it('RU locale (390px) general: labels wrap without overflow or clip', async function () {
-    await open_page_func({ url: application_host + 'language/ru', driver: driver });
-    await setViewport(driver, 390, 844);
-    await openEdit(driver, application_host, employee.id, '');
-    await assertMobileGeometry(driver, 'RU');
-    await capture(driver, 'general_390_ru');
-  });
-
-  it('KK locale (390px) general: labels wrap without overflow or clip', async function () {
-    await open_page_func({ url: application_host + 'language/kk', driver: driver });
-    await setViewport(driver, 390, 844);
-    await openEdit(driver, application_host, employee.id, '');
-    await assertMobileGeometry(driver, 'KK');
-    await capture(driver, 'general_390_kk');
-  });
-
-  // Visual matrix: actually capture and review the key states.
+  // Visual matrix: actually capture and review the key states (12 frames).
   it('captures the visual matrix (general light/dark desktop+mobile, calendar, absences, schedule, RU/KK)', async function () {
     await open_page_func({ url: application_host + 'language/en', driver: driver });
     async function shot(name, w, h, theme, tab) {
@@ -514,6 +531,16 @@ describe('Employee details workspace interaction, geometry & visual matrix (Stag
     await shot('absences_desktop_light', 1440, 900, 'light', 'absences/');
     await shot('absences_mobile_light', 390, 844, 'light', 'absences/');
     await shot('schedule_mobile_light', 390, 844, 'light', 'schedule/');
-    // RU + KK mobile already captured in the locale tests above (general_390_ru / general_390_kk)
+    await shot('schedule_desktop_light', 1440, 900, 'light', 'schedule/');
+    // RU + KK mobile (frames 11 and 12 of the 12-frame matrix)
+    await open_page_func({ url: application_host + 'language/ru', driver: driver });
+    await setViewport(driver, 390, 844);
+    await setTheme(driver, 'light');
+    await openEdit(driver, application_host, employee.id, '');
+    await capture(driver, 'general_390_ru');
+    await open_page_func({ url: application_host + 'language/kk', driver: driver });
+    await setViewport(driver, 390, 844);
+    await openEdit(driver, application_host, employee.id, '');
+    await capture(driver, 'general_390_kk');
   });
 });
