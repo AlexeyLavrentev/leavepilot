@@ -7194,5 +7194,467 @@ td.current_day_cell.half_2nd {
     overflow-wrap: anywhere;
   }
 }
+/* ============================================================
+ * Stage 8H — Bank Holidays & Work Calendars workspace
+ * Page-scoped calendar switching, year navigation, holiday
+ * editing and import preview. Core calendar cells, forms and
+ * controller hooks remain behaviorally unchanged.
+ * ============================================================ */
+.bank-holidays-page {
+  --bank-surface: #ffffff;
+  --bank-surface-raised: #fbfcfe;
+  --bank-surface-overlay: #ffffff;
+  --bank-border: #e3e9ef;
+  --bank-border-subtle: rgb(247.35, 247.35, 247.35);
+  --bank-shadow: 0 1px 2px rgba(31, 45, 61, 0.06);
+  --bank-shadow-strong: 0 8px 24px rgba(31, 45, 61, 0.08);
+  --bank-muted: #586b7d;
+  --bank-accent-soft: #eaf4fb;
+  --bank-accent-edge: #2b7da8;
+  --bank-radius: 10px;
+  --bank-control-radius: 8px;
+  --bank-space-1: 4px;
+  --bank-space-2: 8px;
+  --bank-space-3: 12px;
+  --bank-space-4: 16px;
+  --bank-space-5: 24px;
+  max-width: 1320px;
+  margin-inline: auto;
+}
+.bank-holidays-page .page-heading h1 {
+  color: var(--color-heading-primary);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+}
+.bank-holidays-page .page-heading .lead {
+  overflow-wrap: anywhere;
+  color: var(--bank-muted);
+  font-weight: 500;
+  line-height: 1.45;
+}
+.bank-holidays-page .bank-holidays-calendar-switcher {
+  margin-bottom: var(--bank-space-5);
+  padding: var(--bank-space-2);
+  background: var(--bank-surface);
+  border: 1px solid var(--bank-border);
+  border-radius: var(--bank-radius);
+  box-shadow: var(--bank-shadow);
+}
+.bank-holidays-page .bank-holidays-calendar-switcher .admin-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--bank-space-2);
+  margin: 0;
+  border: 0;
+}
+.bank-holidays-page .bank-holidays-calendar-switcher .admin-tabs::before,
+.bank-holidays-page .bank-holidays-calendar-switcher .admin-tabs::after {
+  content: none;
+}
+.bank-holidays-page .bank-holidays-calendar-switcher .admin-tabs > li {
+  float: none;
+  margin: 0;
+}
+.bank-holidays-page .bank-holidays-calendar-switcher .admin-tabs > li > a {
+  display: flex;
+  align-items: center;
+  gap: var(--bank-space-2);
+  min-height: 44px;
+  margin: 0;
+  padding: var(--bank-space-2) var(--bank-space-3);
+  overflow-wrap: anywhere;
+  color: var(--color-text);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--bank-control-radius);
+  transition: transform 0.1s ease-out, box-shadow 0.15s ease-out;
+}
+.bank-holidays-page .bank-holidays-calendar-switcher .admin-tabs > li.active > a,
+.bank-holidays-page .bank-holidays-calendar-switcher .admin-tabs > li.active > a:hover,
+.bank-holidays-page .bank-holidays-calendar-switcher .admin-tabs > li.active > a:focus,
+.bank-holidays-page .bank-holidays-calendar-switcher .admin-tabs > li > a[aria-current=page] {
+  color: var(--color-heading-primary);
+  font-weight: 700;
+  background: var(--bank-accent-soft);
+  border-color: var(--bank-accent-edge);
+  box-shadow: inset 3px 0 0 var(--bank-accent-edge);
+}
+.bank-holidays-page .bank-holidays-add-calendar {
+  margin-left: auto !important;
+}
+.bank-holidays-page .bank-holidays-workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(340px, 0.9fr);
+  gap: var(--bank-space-5);
+  align-items: start;
+}
+.bank-holidays-page .surface {
+  min-width: 0;
+  padding: var(--bank-space-5);
+  color: var(--color-text);
+  background: var(--bank-surface);
+  border: 1px solid var(--bank-border);
+  border-top-color: var(--bank-border-subtle);
+  border-radius: var(--bank-radius);
+  box-shadow: var(--bank-shadow);
+}
+.bank-holidays-page .bank-holidays-year-toolbar {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: var(--bank-space-3);
+  align-items: center;
+  margin: 0 0 var(--bank-space-5);
+  padding-bottom: var(--bank-space-4);
+  border-bottom: 1px solid var(--bank-border);
+}
+.bank-holidays-page .bank-holidays-year-toolbar .calendar-section-caption {
+  min-width: 0;
+  text-align: center;
+}
+.bank-holidays-page .bank-holidays-year-toolbar h2,
+.bank-holidays-page .bank-holidays-section-heading h2 {
+  margin: 0;
+  overflow-wrap: anywhere;
+  color: var(--color-heading-primary);
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+}
+.bank-holidays-page .bank-holidays-year-toolbar .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--bank-space-2);
+  min-width: 88px;
+  min-height: 44px;
+  white-space: nowrap;
+}
+.bank-holidays-page .bank-holidays-month-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(170px, 1fr));
+  gap: var(--bank-space-4);
+  min-width: 0;
+}
+.bank-holidays-page .bank-holidays-month-grid .month_container {
+  float: none;
+  width: auto;
+  height: auto;
+  min-width: 0;
+  min-height: 238px;
+  padding: 0;
+}
+.bank-holidays-page .bank-holidays-month-grid .calendar_month {
+  max-width: none;
+  height: 100%;
+}
+.bank-holidays-page .bank-holidays-section-heading {
+  margin-bottom: var(--bank-space-4);
+  padding-bottom: var(--bank-space-3);
+  border-bottom: 1px solid var(--bank-border);
+}
+.bank-holidays-page .bank-holidays-section-heading p {
+  margin: var(--bank-space-2) 0 0;
+  overflow-wrap: anywhere;
+  color: var(--bank-muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.bank-holidays-page .bank-holidays-list {
+  display: grid;
+  gap: var(--bank-space-3);
+}
+.bank-holidays-page .bank-holiday-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 44px;
+  gap: var(--bank-space-3);
+  align-items: end;
+  min-width: 0;
+  margin: 0;
+  padding: var(--bank-space-3);
+  background: var(--bank-surface-raised);
+  border: 1px solid var(--bank-border);
+  border-radius: var(--bank-control-radius);
+  box-shadow: none;
+}
+.bank-holidays-page .bank-holiday-row::before,
+.bank-holidays-page .bank-holiday-row::after {
+  content: none;
+}
+.bank-holidays-page .bank-holiday-field {
+  min-width: 0;
+  grid-column: 1/-1;
+}
+.bank-holidays-page .bank-holiday-field > label,
+.bank-holidays-page .bank-holidays-import-controls label {
+  display: block;
+  margin: 0 0 var(--bank-space-1);
+  color: var(--color-heading-primary);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+.bank-holidays-page .bank-holiday-remove {
+  display: flex;
+  grid-column: 2;
+  justify-content: flex-end;
+}
+.bank-holidays-page .form-control {
+  min-width: 0;
+  min-height: 44px;
+  color: var(--color-text);
+  background: var(--bank-surface-overlay);
+  border-color: var(--bank-border);
+  border-radius: var(--bank-control-radius);
+  box-shadow: none;
+}
+.bank-holidays-page .form-control:focus {
+  border-color: var(--color-focus-ring-strong);
+  box-shadow: 0 0 0 1px var(--color-focus-ring-strong);
+}
+.bank-holidays-page .bank-holiday-row .input-append {
+  display: block;
+}
+.bank-holidays-page .bank-holiday-row .input-append .form-control {
+  width: 100%;
+}
+.bank-holidays-page .bank-holiday-row .add-on {
+  display: none;
+}
+.bank-holidays-page .bank-holidays-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--bank-space-2);
+  margin-top: var(--bank-space-4);
+}
+.bank-holidays-page .bank-holidays-actions .btn,
+.bank-holidays-page .bank-holiday-remove .btn,
+.bank-holidays-page .bank-holidays-danger-action .btn,
+.bank-holidays-page .bank-holidays-import-controls .btn,
+.bank-holidays-page .bank-holidays-import-apply .btn {
+  min-height: 44px;
+  transition: transform 0.1s ease-out, box-shadow 0.15s ease-out;
+}
+.bank-holidays-page .bank-holiday-remove .btn {
+  min-width: 44px;
+}
+.bank-holidays-page .bank-holidays-import {
+  margin-top: var(--bank-space-5);
+}
+.bank-holidays-page .bank-holidays-import-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--bank-space-3);
+  align-items: end;
+  margin-bottom: var(--bank-space-4);
+}
+.bank-holidays-page .bank-holidays-import-controls .form-group {
+  min-width: min(100%, 280px);
+  margin: 0;
+}
+.bank-holidays-page .bank-holidays-import-table {
+  margin-bottom: var(--bank-space-4);
+  border: 1px solid var(--bank-border);
+  border-radius: var(--bank-control-radius);
+}
+.bank-holidays-page .bank-holidays-import-table .table {
+  margin: 0;
+}
+.bank-holidays-page .bank-holidays-import-table th,
+.bank-holidays-page .bank-holidays-import-table td {
+  padding: var(--bank-space-2) var(--bank-space-3);
+  border-color: var(--bank-border);
+}
+.bank-holidays-page .bank-holidays-import-apply {
+  display: flex;
+  justify-content: flex-end;
+}
+.bank-holidays-page .bank-holidays-calendar-switcher a:active,
+.bank-holidays-page .bank-holidays-calendar-switcher a:hover:active,
+.bank-holidays-page .bank-holidays-year-toolbar .btn:active,
+.bank-holidays-page .bank-holidays-year-toolbar .btn:hover:active,
+.bank-holidays-page .bank-holidays-actions .btn:active,
+.bank-holidays-page .bank-holidays-actions .btn:hover:active,
+.bank-holidays-page .bank-holiday-remove .btn:active,
+.bank-holidays-page .bank-holiday-remove .btn:hover:active,
+.bank-holidays-page .bank-holidays-import-controls .btn:active,
+.bank-holidays-page .bank-holidays-import-controls .btn:hover:active,
+.bank-holidays-page .bank-holidays-import-apply .btn:active,
+.bank-holidays-page .bank-holidays-import-apply .btn:hover:active {
+  transform: scale(0.98);
+}
+.bank-holidays-page a:focus-visible,
+.bank-holidays-page button:focus-visible,
+.bank-holidays-page input:focus-visible,
+.bank-holidays-page select:focus-visible,
+.bank-holidays-page [tabindex]:focus-visible {
+  outline: 2px solid var(--color-focus-ring-strong);
+  outline-offset: 2px;
+}
+
+[data-theme=dark] .bank-holidays-page {
+  --bank-surface: #1a1e22;
+  --bank-surface-raised: #20252a;
+  --bank-surface-overlay: #15191d;
+  --bank-border: #343a40;
+  --bank-border-subtle: #2a3035;
+  --bank-shadow: 0 1px 2px rgba(0, 0, 0, 0.32);
+  --bank-shadow-strong: 0 8px 24px rgba(0, 0, 0, 0.4);
+  --bank-muted: #aebdca;
+  --bank-accent-soft: #172c38;
+  --bank-accent-edge: #71b9df;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .bank-holidays-page .bank-holidays-calendar-switcher a:hover,
+  .bank-holidays-page .bank-holidays-year-toolbar .btn:hover,
+  .bank-holidays-page .bank-holidays-actions .btn:hover,
+  .bank-holidays-page .bank-holiday-remove .btn:hover,
+  .bank-holidays-page .bank-holidays-import-controls .btn:hover,
+  .bank-holidays-page .bank-holidays-import-apply .btn:hover {
+    box-shadow: var(--bank-shadow-strong);
+  }
+}
+@media (prefers-contrast: more) {
+  .bank-holidays-page .surface,
+  .bank-holidays-page .bank-holidays-calendar-switcher,
+  .bank-holidays-page .bank-holiday-row,
+  .bank-holidays-page .form-control,
+  .bank-holidays-page .bank-holidays-import-table {
+    border-width: 2px;
+    box-shadow: none;
+  }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .bank-holidays-page .surface,
+  .bank-holidays-page .bank-holidays-calendar-switcher,
+  .bank-holidays-page .form-control {
+    background: var(--bank-surface-overlay);
+    backdrop-filter: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bank-holidays-page *,
+  .bank-holidays-page *::before,
+  .bank-holidays-page *::after {
+    transition: none !important;
+    animation: none !important;
+  }
+  .bank-holidays-page .bank-holidays-calendar-switcher a:active,
+  .bank-holidays-page .bank-holidays-calendar-switcher a:hover:active,
+  .bank-holidays-page .bank-holidays-year-toolbar .btn:active,
+  .bank-holidays-page .bank-holidays-year-toolbar .btn:hover:active,
+  .bank-holidays-page .bank-holidays-actions .btn:active,
+  .bank-holidays-page .bank-holidays-actions .btn:hover:active,
+  .bank-holidays-page .bank-holiday-remove .btn:active,
+  .bank-holidays-page .bank-holiday-remove .btn:hover:active,
+  .bank-holidays-page .bank-holidays-import-controls .btn:active,
+  .bank-holidays-page .bank-holidays-import-controls .btn:hover:active,
+  .bank-holidays-page .bank-holidays-import-apply .btn:active,
+  .bank-holidays-page .bank-holidays-import-apply .btn:hover:active {
+    transform: none;
+  }
+}
+@media (max-width: 1040px) {
+  .bank-holidays-page .bank-holidays-workspace {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .bank-holidays-page .bank-holidays-month-grid {
+    grid-template-columns: repeat(3, minmax(170px, 1fr));
+  }
+}
+@media (max-width: 768px) {
+  .bank-holidays-page .surface {
+    overflow: visible;
+    padding: var(--bank-space-3);
+  }
+  .bank-holidays-page .bank-holidays-calendar-switcher .admin-tabs {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .bank-holidays-page .bank-holidays-calendar-switcher .admin-tabs > li,
+  .bank-holidays-page .bank-holidays-calendar-switcher .admin-tabs > li > a {
+    min-width: 0;
+  }
+  .bank-holidays-page .bank-holidays-add-calendar {
+    margin-left: 0 !important;
+  }
+  .bank-holidays-page .bank-holidays-month-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .bank-holidays-page .bank-holiday-row {
+    display: grid;
+    padding: var(--bank-space-3);
+  }
+  .bank-holidays-page .bank-holidays-actions,
+  .bank-holidays-page .bank-holidays-import-controls,
+  .bank-holidays-page .bank-holidays-import-apply {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .bank-holidays-page .bank-holidays-actions .btn,
+  .bank-holidays-page .bank-holidays-import-controls .btn,
+  .bank-holidays-page .bank-holidays-import-apply .btn {
+    width: 100%;
+    min-width: 44px;
+    white-space: normal;
+  }
+  .bank-holidays-page .bank-holidays-import-controls .form-group {
+    min-width: 0;
+  }
+  .bank-holidays-page .bank-holidays-import-table {
+    overflow: visible;
+    border: 0;
+  }
+  .bank-holidays-page .bank-holidays-preview-table > tbody > tr {
+    overflow: visible;
+    background: var(--bank-surface-raised);
+    border-color: var(--bank-border);
+    border-radius: var(--bank-control-radius);
+    box-shadow: var(--bank-shadow);
+  }
+  .bank-holidays-page .bank-holidays-preview-table.table-hover > tbody > tr:hover,
+  .bank-holidays-page .bank-holidays-preview-table.table-striped > tbody > tr:nth-of-type(odd) {
+    background: var(--bank-surface-raised);
+  }
+  .bank-holidays-page .bank-holidays-preview-table > tbody > tr > td {
+    min-width: 0;
+    border-top-color: var(--bank-border);
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+  .bank-holidays-page .bank-holidays-preview-table > tbody > tr > td[data-label]::before {
+    color: var(--bank-muted);
+  }
+  .bank-holidays-page .bank-holidays-preview-table > tbody > tr > td:first-child {
+    border-top-left-radius: var(--bank-control-radius);
+    border-top-right-radius: var(--bank-control-radius);
+  }
+  .bank-holidays-page .bank-holidays-preview-table > tbody > tr > td:last-child {
+    border-bottom-right-radius: var(--bank-control-radius);
+    border-bottom-left-radius: var(--bank-control-radius);
+  }
+}
+@media (max-width: 520px) {
+  .bank-holidays-page .bank-holidays-month-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .bank-holidays-page .bank-holidays-year-toolbar {
+    grid-template-columns: 1fr 1fr;
+  }
+  .bank-holidays-page .bank-holidays-year-toolbar .calendar-section-caption {
+    grid-column: 1/-1;
+    grid-row: 1;
+  }
+  .bank-holidays-page .bank-holidays-year-toolbar .period-navigation-side {
+    grid-row: 2;
+  }
+  .bank-holidays-page .bank-holidays-year-toolbar .btn {
+    width: 100%;
+    min-width: 0;
+  }
+}
 
 /*# sourceMappingURL=style.css.map */

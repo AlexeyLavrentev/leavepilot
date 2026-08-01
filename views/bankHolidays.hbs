@@ -3,282 +3,250 @@
 
 <a class="sr-only sr-only-focusable" href="#main-content">{{t "nav.skipToMainContent"}}</a>
 
-<main id="main-content" tabindex="-1">
+<main id="main-content" class="bank-holidays-page" tabindex="-1">
 
-<h1>{{t "bankHolidays.title"}}</h1>
+  <div class="page-heading">
+    <div class="page-heading-titles">
+      <h1>{{t "bankHolidays.title"}}</h1>
+      <p class="lead">
+        {{#if selectedWorkCalendar}}
+          {{t "bankHolidays.localDaysForYear" calendar=selectedWorkCalendar.name year=yearCurrent}}
+        {{else}}
+          {{t "bankHolidays.publicHolidaysForYear" company=company.name year=yearCurrent}}
+        {{/if}}
+      </p>
+    </div>
+    {{#if selectedWorkCalendar}}
+    <div class="page-heading-actions bank-holidays-danger-action">
+      <form method="POST" action="/settings/bankholidays/calendars/delete/{{selectedWorkCalendar.id}}/">
+        <input type="hidden" name="_csrf" value="{{csrf_token}}">
+        <button type="submit" class="btn btn-link text-danger"><span class="fa fa-trash" aria-hidden="true"></span> {{t "bankHolidays.removeCalendar"}}</button>
+      </form>
+    </div>
+    {{/if}}
+  </div>
 
-<div class="row">
-  <div class="col-md-12">
+  {{> show_flash_messages }}
+
+  <nav class="bank-holidays-calendar-switcher" aria-label="{{t "bankHolidays.title"}}">
     <ul class="nav nav-tabs admin-tabs">
       <li role="presentation" {{#unless selectedWorkCalendar}}class="active"{{/unless}}>
-        <a href="?year={{yearCurrent}}&week_type={{weekType}}">{{t "bankHolidays.commonCalendar"}}</a>
+        <a href="?year={{yearCurrent}}&week_type={{weekType}}" {{#unless selectedWorkCalendar}}aria-current="page"{{/unless}}>{{t "bankHolidays.commonCalendar"}}</a>
       </li>
       {{#each workCalendars}}
       <li role="presentation" {{#if_equal ../workCalendarId this.id}}class="active"{{/if_equal}}>
-        <a href="?year={{../yearCurrent}}&work_calendar={{this.id}}">{{this.name}}</a>
+        <a href="?year={{../yearCurrent}}&work_calendar={{this.id}}" {{#if_equal ../workCalendarId this.id}}aria-current="page"{{/if_equal}}>{{this.name}}</a>
       </li>
       {{/each}}
       {{#feature_enabled "work_calendars"}}
-        <li role="presentation"><a href="#" data-toggle="modal" data-target="#add_work_calendar_modal"><span class="fa fa-plus" aria-hidden="true"></span> {{t "bankHolidays.addCalendar"}}</a></li>
+      <li role="presentation" class="bank-holidays-add-calendar">
+        <a href="#" data-toggle="modal" data-target="#add_work_calendar_modal"><span class="fa fa-plus" aria-hidden="true"></span> {{t "bankHolidays.addCalendar"}}</a>
+      </li>
       {{/feature_enabled}}
     </ul>
-  </div>
-</div>
+  </nav>
 
-<div class="content-spacer-sm"></div>
+  <div class="bank-holidays-workspace">
+    <section class="surface bank-holidays-calendar-surface" aria-labelledby="bank-holidays-year-heading">
+      <div class="bank-holidays-year-toolbar period-navigation">
+        <div class="period-navigation-side">
+          <a class="btn btn-default" href="?year={{yearPrev}}{{#if workCalendarId}}&work_calendar={{workCalendarId}}{{else}}&week_type={{weekType}}{{/if}}"><span aria-hidden="true" class="fa fa-chevron-left"></span> {{yearPrev}}</a>
+        </div>
+        <div class="calendar-section-caption">
+          <h2 id="bank-holidays-year-heading">{{t "bankHolidays.monthRange" year=yearCurrent}}</h2>
+        </div>
+        <div class="period-navigation-side">
+          <a class="btn btn-default" href="?year={{yearNext}}{{#if workCalendarId}}&work_calendar={{workCalendarId}}{{else}}&week_type={{weekType}}{{/if}}">{{yearNext}} <span aria-hidden="true" class="fa fa-chevron-right"></span></a>
+        </div>
+      </div>
 
-<div class="row admin-page-header">
-  <div class="col-sm-7 lead">
-    {{#if selectedWorkCalendar}}
-      {{t "bankHolidays.localDaysForYear" calendar=selectedWorkCalendar.name year=yearCurrent}}
-    {{else}}
-      {{t "bankHolidays.publicHolidaysForYear" company=company.name year=yearCurrent}}
-    {{/if}}
-  </div>
-  <div class="col-sm-5 admin-page-actions">
-    {{#if selectedWorkCalendar}}
-    <form method="POST" action="/settings/bankholidays/calendars/delete/{{selectedWorkCalendar.id}}/">
-      <input type="hidden" name="_csrf" value="{{csrf_token}}">
-      <button type="submit" class="btn btn-link text-danger"><span class="fa fa-trash" aria-hidden="true"></span> {{t "bankHolidays.removeCalendar"}}</button>
-    </form>
-    {{/if}}
-    <div class="btn-group">
-      <button type="button" class="btn btn-link dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-        <span aria-hidden="true" class="fa fa-plus"></span> {{t "common.addNew"}}
-        <span class="caret" aria-hidden="true"></span>
-        <span class="sr-only">{{t "common.toggleDropdown"}}</span>
-      </button>
-      <ul class="dropdown-menu">
-        <li><a href="#" id="add_new_department" data-toggle="modal" data-target="#add_new_bank_holiday_modal">{{t "bankHolidays.addNew"}}</a></li>
-      </ul>
-    </div>
-  </div>
-</div>
-
-<div class="content-spacer-sm"></div>
-
-{{> show_flash_messages }}
-
-<div class="row period-navigation">
-  <div class="col-xs-2 period-navigation-side">
-    <a class="btn btn-default" href="?year={{yearPrev}}{{#if workCalendarId}}&work_calendar={{workCalendarId}}{{else}}&week_type={{weekType}}{{/if}}"><span aria-hidden="true" class="fa fa-chevron-left"></span> {{yearPrev}} </a>
-  </div>
-  <div class="col-xs-8 calendar-section-caption">
-    <strong>{{t "bankHolidays.monthRange" year=yearCurrent}}</strong>
-  </div>
-  <div class="col-xs-2 period-navigation-side">
-    <a class="btn btn-default pull-right" href="?year={{yearNext}}{{#if workCalendarId}}&work_calendar={{workCalendarId}}{{else}}&week_type={{weekType}}{{/if}}">{{yearNext}} <span aria-hidden="true" class="fa fa-chevron-right"></span></a>
-  </div>
-</div>
-
-<div class="content-spacer-sm"></div>
-
-<div class="row clearfix">
-  <div class="col-md-8">
-    <div class="row">
-      {{# each calendar}}
-      <div class="col-md-4 month_container">
+      <div class="bank-holidays-month-grid">
+        {{# each calendar}}
+        <div class="month_container">
           <table class="calendar_month month_{{ this.month }}">
-          <thead>
-            <tr>
-              <td colspan="14">{{this.month}}</td>
-            </tr>
-            <tr>
-              <td colspan="2">{{t "calendar.weekdayShort.mon"}}</td>
-              <td colspan="2">{{t "calendar.weekdayShort.tue"}}</td>
-              <td colspan="2">{{t "calendar.weekdayShort.wed"}}</td>
-              <td colspan="2">{{t "calendar.weekdayShort.thu"}}</td>
-              <td colspan="2">{{t "calendar.weekdayShort.fri"}}</td>
-              <td colspan="2" class="calendar_weekend_header">{{t "calendar.weekdayShort.sat"}}</td>
-              <td colspan="2" class="calendar_weekend_header">{{t "calendar.weekdayShort.sun"}}</td>
-            </tr>
-          </thead>
-          <tbody>
-            {{#each this.weeks }}
-            <tr>
-              {{#each this}}
-                {{> calendar_cell day = this}}
-              {{/each}}
-            </tr>
-            {{/each}}
-          </tbody>
-        </table>
-      </div>
-      {{/each}}
-    </div>
-  </div>
-
-  <div class="col-md-4">
-
-    <div class="row bank-holiday-list-header">
-      <div class="col-md-4"><label class="control-label">{{t "common.date"}}</label></div>
-      <div class="col-md-4"><label class="control-label">{{t "bankHolidays.holidayName"}}</label></div>
-      <div class="col-md-2"><label class="control-label">{{t "bankHolidays.dayType"}}</label></div>
-    </div>
-
-    <div class="content-spacer-sm"></div>
-
-
-    {{#unless bankHolidays.length }}
-    <div class="row">
-      <div class="col-md-12">
-        <div class="empty-state tst-no-bank-holidays text-center">{{t "bankHolidays.noRecords"}}</div>
-      </div>
-    </div>
-    {{/unless}}
-
-    <form id="delete_bankholiday_form" method="post" action="/settings/bankholidays/delete/"><input type="hidden" name="_csrf" value="{{csrf_token}}">
-      <input name="year" value="{{yearCurrent}}" type="hidden">
-      <input name="work_calendar_id" value="{{workCalendarId}}" type="hidden">
-    </form>
-    <form id="update_bankholiday_form" method="post" action="/settings/bankholidays/?year={{yearCurrent}}">
-      <input type="hidden" name="_csrf" value="{{csrf_token}}">
-    <input name="work_calendar_id" value="{{workCalendarId}}" type="hidden">
-    {{#each bankHolidays}}
-    <div class="row bank-holiday-row">
-      <div class="col-md-4">
-        <div class="input-append date">
-        <input type="text" class="form-control" value="{{as_date date}}" name="date__{{id}}" tom-test-hook="date__{{@index}}" data-date-autoclose="1" data-provide="datepicker" data-date-format="{{#with ../logged_user.company}}{{this.get_default_date_format_for_date_picker}}{{/with}}" data-date-week-start="1">
-        <span class="add-on"><i class="icon-th" aria-hidden="true"></i></span>
-        </div>
-      </div>
-      <div class="col-md-4">
-        <input type="text" class="form-control" value="{{name}}" name="name__{{id}}" tom-test-hook="name__{{@index}}">
-      </div>
-      <div class="col-md-2">
-        <select class="form-control" name="day_type__{{id}}">
-          <option value="{{../dayTypeNonWorking}}" {{#if_equal this.day_type ../dayTypeNonWorking}}selected="selected"{{/if_equal}}>{{t "bankHolidays.dayTypes.nonWorking"}}</option>
-          <option value="{{../dayTypeWorking}}" {{#if_equal this.day_type ../dayTypeWorking}}selected="selected"{{/if_equal}}>{{t "bankHolidays.dayTypes.working"}}</option>
-        </select>
-      </div>
-      <div class="col-md-2">
-        <button class="btn btn-default pull-right bankholiday-remove-btn" type="button" value="{{id}}" tom-test-hook="remove__{{@index}}" data-confirm-message="{{t "common.deleteNamedConfirm" name=name}}" aria-label="{{t "common.remove"}}: {{name}}"><span class="fa fa-remove" aria-hidden="true"></span></button>
-      </div>
-    </div>
-
-    {{/each}}
-
-    <div class="content-spacer-sm"></div>
-
-    <div class="row admin-form-actions">
-      <div class="col-md-12">
-        <div>
-          {{!-- <button id="bankholiday-import-btn" class="btn btn-default" type="button">Import default holidays</button> --}}
-          <button class="btn btn-default" type="button" data-toggle="modal" data-target="#add_new_bank_holiday_modal" id="add_new_bank_holiday_btn">{{t "common.addNew"}}</button>
-          {{#if bankHolidays.length}}
-            <button type="submit" class="btn btn-success single-click">{{t "common.saveChanges"}}</button>
-          {{/if}}
-        </div>
-      </div>
-    </div>
-    </form>
-
-  </div>
-</div>
-
-
-<div class="content-spacer"></div>
-
-{{#feature_enabled "work_calendars"}}
-{{#unless selectedWorkCalendar}}
-<div class="row">
-  <div class="col-md-12">
-    <div class="panel panel-default">
-      <div class="panel-heading">{{t "bankHolidays.importPreviewTitle" year=yearCurrent}}</div>
-      <div class="panel-body">
-        <p>{{t "bankHolidays.importPreviewHelp"}}</p>
-        <form method="GET" action="/settings/bankholidays/" class="form-inline">
-          <input type="hidden" name="year" value="{{yearCurrent}}">
-          <div class="form-group">
-            <label for="bankholiday_week_type">{{t "bankHolidays.weekType"}}</label>
-            <select class="form-control" id="bankholiday_week_type" name="week_type">
-              <option value="{{weekTypeFiveDay}}" {{#if_equal weekType weekTypeFiveDay}}selected="selected"{{/if_equal}}>{{t "bankHolidays.weekTypes.fiveDay"}}</option>
-              <option value="{{weekTypeSixDay}}" {{#if_equal weekType weekTypeSixDay}}selected="selected"{{/if_equal}}>{{t "bankHolidays.weekTypes.sixDay"}}</option>
-            </select>
-          </div>
-          <button class="btn btn-default" type="submit">{{t "bankHolidays.previewImport"}}</button>
-        </form>
-        <div class="content-spacer-sm"></div>
-        {{#unless importPreview.length}}
-        <div class="empty-state">{{t "bankHolidays.importPreviewEmpty"}}</div>
-        {{else}}
-        <div class="table-responsive" role="region" aria-label="{{t "bankHolidays.importPreviewTitle" year=yearCurrent}}" tabindex="0">
-          <table class="table table-condensed">
-            <caption class="sr-only">{{t "bankHolidays.importPreviewTitle" year=yearCurrent}}</caption>
+            <caption class="sr-only">{{this.month}}</caption>
             <thead>
               <tr>
-                <th>{{t "common.date"}}</th>
-                <th>{{t "bankHolidays.holidayName"}}</th>
-                <th>{{t "bankHolidays.importAction"}}</th>
+                <th colspan="14" scope="colgroup">{{this.month}}</th>
+              </tr>
+              <tr>
+                <th colspan="2" scope="col">{{t "calendar.weekdayShort.mon"}}</th>
+                <th colspan="2" scope="col">{{t "calendar.weekdayShort.tue"}}</th>
+                <th colspan="2" scope="col">{{t "calendar.weekdayShort.wed"}}</th>
+                <th colspan="2" scope="col">{{t "calendar.weekdayShort.thu"}}</th>
+                <th colspan="2" scope="col">{{t "calendar.weekdayShort.fri"}}</th>
+                <th colspan="2" scope="col" class="calendar_weekend_header">{{t "calendar.weekdayShort.sat"}}</th>
+                <th colspan="2" scope="col" class="calendar_weekend_header">{{t "calendar.weekdayShort.sun"}}</th>
               </tr>
             </thead>
             <tbody>
-              {{#each importPreview}}
+              {{#each this.weeks }}
               <tr>
-                <td>{{as_date this.date}}</td>
-                <td>{{this.name}}</td>
-                <td>
-                  {{#if_equal this.action "add"}}<span class="label label-success">{{t "bankHolidays.importActions.add"}}</span>{{/if_equal}}
-                  {{#if_equal this.action "update"}}<span class="label label-info">{{t "bankHolidays.importActions.update"}}</span>{{/if_equal}}
-                  {{#if_equal this.action "keep"}}<span class="text-muted">{{t "bankHolidays.importActions.keep"}}</span>{{/if_equal}}
-                </td>
+                {{#each this}}
+                  {{> calendar_cell day = this}}
+                {{/each}}
               </tr>
               {{/each}}
             </tbody>
           </table>
         </div>
-        {{/unless}}
-        <form method="POST" action="/settings/bankholidays/import/?year={{yearCurrent}}">
+        {{/each}}
+      </div>
+    </section>
+
+    <section class="surface bank-holidays-editor" aria-labelledby="bank-holidays-editor-heading">
+      <div class="bank-holidays-section-heading">
+        <h2 id="bank-holidays-editor-heading">{{t "common.configuration"}}</h2>
+      </div>
+
+      {{#unless bankHolidays.length}}
+      <div class="empty-state tst-no-bank-holidays text-center">{{t "bankHolidays.noRecords"}}</div>
+      {{/unless}}
+
+      <form id="delete_bankholiday_form" method="post" action="/settings/bankholidays/delete/">
+        <input type="hidden" name="_csrf" value="{{csrf_token}}">
+        <input name="year" value="{{yearCurrent}}" type="hidden">
+        <input name="work_calendar_id" value="{{workCalendarId}}" type="hidden">
+      </form>
+
+      <form id="update_bankholiday_form" method="post" action="/settings/bankholidays/?year={{yearCurrent}}">
+        <input type="hidden" name="_csrf" value="{{csrf_token}}">
+        <input name="work_calendar_id" value="{{workCalendarId}}" type="hidden">
+
+        <div class="bank-holidays-list">
+        {{#each bankHolidays}}
+          <div class="bank-holiday-row">
+            <div class="bank-holiday-field">
+              <label for="bank_holiday_date_{{id}}" class="control-label">{{t "common.date"}}</label>
+              <div class="input-append date">
+                <input id="bank_holiday_date_{{id}}" type="text" class="form-control" value="{{as_date date}}" name="date__{{id}}" tom-test-hook="date__{{@index}}" data-date-autoclose="1" data-provide="datepicker" data-date-format="{{#with ../logged_user.company}}{{this.get_default_date_format_for_date_picker}}{{/with}}" data-date-week-start="1">
+                <span class="add-on"><i class="icon-th" aria-hidden="true"></i></span>
+              </div>
+            </div>
+            <div class="bank-holiday-field">
+              <label for="bank_holiday_name_{{id}}" class="control-label">{{t "bankHolidays.holidayName"}}</label>
+              <input id="bank_holiday_name_{{id}}" type="text" class="form-control" value="{{name}}" name="name__{{id}}" tom-test-hook="name__{{@index}}">
+            </div>
+            <div class="bank-holiday-field">
+              <label for="bank_holiday_day_type_{{id}}" class="control-label">{{t "bankHolidays.dayType"}}</label>
+              <select id="bank_holiday_day_type_{{id}}" class="form-control" name="day_type__{{id}}">
+                <option value="{{../dayTypeNonWorking}}" {{#if_equal this.day_type ../dayTypeNonWorking}}selected="selected"{{/if_equal}}>{{t "bankHolidays.dayTypes.nonWorking"}}</option>
+                <option value="{{../dayTypeWorking}}" {{#if_equal this.day_type ../dayTypeWorking}}selected="selected"{{/if_equal}}>{{t "bankHolidays.dayTypes.working"}}</option>
+              </select>
+            </div>
+            <div class="bank-holiday-remove">
+              <button class="btn btn-default bankholiday-remove-btn" type="button" value="{{id}}" tom-test-hook="remove__{{@index}}" data-confirm-message="{{t "common.deleteNamedConfirm" name=name}}" aria-label="{{t "common.remove"}}: {{name}}"><span class="fa fa-remove" aria-hidden="true"></span></button>
+            </div>
+          </div>
+        {{/each}}
+        </div>
+
+        <div class="admin-form-actions bank-holidays-actions">
+          <button class="btn btn-default" type="button" data-toggle="modal" data-target="#add_new_bank_holiday_modal" id="add_new_bank_holiday_btn">{{t "common.addNew"}}</button>
+          {{#if bankHolidays.length}}
+            <button type="submit" class="btn btn-success single-click">{{t "common.saveChanges"}}</button>
+          {{/if}}
+        </div>
+      </form>
+    </section>
+  </div>
+
+  {{#feature_enabled "work_calendars"}}
+  {{#unless selectedWorkCalendar}}
+  <section class="surface bank-holidays-import" aria-labelledby="bank-holidays-import-heading">
+    <div class="bank-holidays-section-heading">
+      <h2 id="bank-holidays-import-heading">{{t "bankHolidays.importPreviewTitle" year=yearCurrent}}</h2>
+      <p>{{t "bankHolidays.importPreviewHelp"}}</p>
+    </div>
+
+    <form method="GET" action="/settings/bankholidays/" class="bank-holidays-import-controls">
+      <input type="hidden" name="year" value="{{yearCurrent}}">
+      <div class="form-group">
+        <label for="bankholiday_week_type">{{t "bankHolidays.weekType"}}</label>
+        <select class="form-control" id="bankholiday_week_type" name="week_type">
+          <option value="{{weekTypeFiveDay}}" {{#if_equal weekType weekTypeFiveDay}}selected="selected"{{/if_equal}}>{{t "bankHolidays.weekTypes.fiveDay"}}</option>
+          <option value="{{weekTypeSixDay}}" {{#if_equal weekType weekTypeSixDay}}selected="selected"{{/if_equal}}>{{t "bankHolidays.weekTypes.sixDay"}}</option>
+        </select>
+      </div>
+      <button class="btn btn-default" type="submit">{{t "bankHolidays.previewImport"}}</button>
+    </form>
+
+    {{#unless importPreview.length}}
+    <div class="empty-state">{{t "bankHolidays.importPreviewEmpty"}}</div>
+    {{else}}
+    <div class="table-responsive mobile-card-table-container bank-holidays-import-table" role="region" aria-label="{{t "bankHolidays.importPreviewTitle" year=yearCurrent}}" tabindex="0">
+      <table class="table table-condensed mobile-card-table bank-holidays-preview-table">
+        <caption class="sr-only">{{t "bankHolidays.importPreviewTitle" year=yearCurrent}}</caption>
+        <thead>
+          <tr>
+            <th scope="col">{{t "common.date"}}</th>
+            <th scope="col">{{t "bankHolidays.holidayName"}}</th>
+            <th scope="col">{{t "bankHolidays.importAction"}}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {{#each importPreview}}
+          <tr>
+            <td data-label="{{t "common.date"}}">{{as_date this.date}}</td>
+            <td data-label="{{t "bankHolidays.holidayName"}}">{{this.name}}</td>
+            <td data-label="{{t "bankHolidays.importAction"}}">
+              {{#if_equal this.action "add"}}<span class="label label-success">{{t "bankHolidays.importActions.add"}}</span>{{/if_equal}}
+              {{#if_equal this.action "update"}}<span class="label label-info">{{t "bankHolidays.importActions.update"}}</span>{{/if_equal}}
+              {{#if_equal this.action "keep"}}<span class="text-muted">{{t "bankHolidays.importActions.keep"}}</span>{{/if_equal}}
+            </td>
+          </tr>
+          {{/each}}
+        </tbody>
+      </table>
+    </div>
+    {{/unless}}
+
+    <form method="POST" action="/settings/bankholidays/import/?year={{yearCurrent}}" class="bank-holidays-import-apply">
+      <input type="hidden" name="_csrf" value="{{csrf_token}}">
+      <input type="hidden" name="week_type" value="{{weekType}}">
+      <button class="btn btn-success single-click" type="submit" {{#unless importChangesCount}}disabled="disabled"{{/unless}}>
+        <span class="fa fa-download" aria-hidden="true"></span> {{t "bankHolidays.applyImport"}}
+      </button>
+    </form>
+  </section>
+  {{/unless}}
+  {{/feature_enabled}}
+
+  {{> add_new_bank_holiday_modal
+    container_id='add_new_bank_holiday_modal'
+    form_action='/settings/bankholidays/'
+    startDateOfYearCurrent=startDateOfYearCurrent
+    yearCurrent=yearCurrent
+    workCalendarId=workCalendarId
+    dayTypeNonWorking=dayTypeNonWorking
+    dayTypeWorking=dayTypeWorking
+  }}
+
+  {{#feature_enabled "work_calendars"}}
+  <div class="modal fade" id="add_work_calendar_modal" tabindex="-1" role="dialog" aria-labelledby="add_work_calendar_modal_label" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <form method="POST" action="/settings/bankholidays/calendars/">
           <input type="hidden" name="_csrf" value="{{csrf_token}}">
-          <input type="hidden" name="week_type" value="{{weekType}}">
-          <button class="btn btn-success single-click" type="submit" {{#unless importChangesCount}}disabled="disabled"{{/unless}}>
-            <span class="fa fa-download" aria-hidden="true"></span> {{t "bankHolidays.applyImport"}}
-          </button>
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-label="{{t 'common.close'}}"><span aria-hidden="true">&times;</span></button>
+            <h4 class="modal-title" id="add_work_calendar_modal_label">{{t "bankHolidays.addCalendar"}}</h4>
+          </div>
+          <div class="modal-body">
+            <div class="form-group">
+              <label for="work_calendar_name" class="control-label">{{t "bankHolidays.calendarName"}}</label>
+              <input type="text" class="form-control" id="work_calendar_name" name="name" required>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-link" data-dismiss="modal">{{t "common.cancel"}}</button>
+            <button type="submit" class="btn btn-success single-click">{{t "common.create"}}</button>
+          </div>
         </form>
       </div>
     </div>
   </div>
-</div>
-{{/unless}}
-{{/feature_enabled}}
-
-<div class="content-spacer"></div>
-
-{{> add_new_bank_holiday_modal
-  container_id='add_new_bank_holiday_modal'
-  form_action='/settings/bankholidays/'
-  startDateOfYearCurrent=startDateOfYearCurrent
-  yearCurrent=yearCurrent
-  workCalendarId=workCalendarId
-  dayTypeNonWorking=dayTypeNonWorking
-  dayTypeWorking=dayTypeWorking
-}}
-
-{{#feature_enabled "work_calendars"}}
-<div class="modal fade" id="add_work_calendar_modal" tabindex="-1" role="dialog" aria-labelledby="add_work_calendar_modal_label" aria-hidden="true">
-  <div class="modal-dialog" role="document">
-    <div class="modal-content">
-      <form method="POST" action="/settings/bankholidays/calendars/">
-        <input type="hidden" name="_csrf" value="{{csrf_token}}">
-        <div class="modal-header">
-          <button type="button" class="close" data-dismiss="modal" aria-label="{{t 'common.close'}}"><span aria-hidden="true">&times;</span></button>
-          <h4 class="modal-title" id="add_work_calendar_modal_label">{{t "bankHolidays.addCalendar"}}</h4>
-        </div>
-        <div class="modal-body">
-          <div class="form-group">
-            <label for="work_calendar_name" class="control-label">{{t "bankHolidays.calendarName"}}</label>
-            <input type="text" class="form-control" id="work_calendar_name" name="name" required>
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-link" data-dismiss="modal">{{t "common.cancel"}}</button>
-          <button type="submit" class="btn btn-success single-click">{{t "common.create"}}</button>
-        </div>
-      </form>
-    </div>
-  </div>
-</div>
-{{/feature_enabled}}
+  {{/feature_enabled}}
 
 </main>
 
