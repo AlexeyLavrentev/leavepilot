@@ -1,128 +1,119 @@
-
 {{> header }}
 
 <a class="sr-only sr-only-focusable" href="#main-content">{{t "nav.skipToMainContent"}}</a>
-<main id="main-content" tabindex="-1">
-<h1>{{t "reportsAllowanceByTime.title"}}</h1>
 
-<div class="row">
-  <div class="col-md-6 lead">{{t "reportsAllowanceByTime.subtitle"}} {{> reports/date_range_pretty same_month=same_month start_date=start_date_obj end_date=end_date_obj}}</div>
-</div>
+<main id="main-content" class="report-detail-page report-allowance-page" tabindex="-1">
+  <div class="page-heading">
+    <div class="page-heading-titles">
+      <h1>{{t "reportsAllowanceByTime.title"}}</h1>
+      <p class="lead">{{t "reportsAllowanceByTime.subtitle"}} {{> reports/date_range_pretty same_month=same_month start_date=start_date_obj end_date=end_date_obj}}</p>
+    </div>
+  </div>
 
-{{> show_flash_messages }}
+  <nav aria-label="{{t "reportsAllowanceByTime.breadcrumbCurrent"}}">
+    <ol class="breadcrumb report-detail-breadcrumb">
+      <li><a href="/reports/">{{t "reportsPage.allReports"}}</a></li>
+      <li class="active" aria-current="page">{{t "reportsAllowanceByTime.breadcrumbCurrent"}}</li>
+    </ol>
+  </nav>
 
-<ol class="breadcrumb">
-  <li><a href="/reports/">{{t "reportsPage.allReports"}}</a></li>
-  <li class="active">{{t "reportsAllowanceByTime.breadcrumbCurrent"}}</li>
-</ol>
+  {{> show_flash_messages }}
 
-<div class="row main-row_header">
-  <span class="col-md-12">{{t "reportsAllowanceByTime.filterTitle"}}</span>
-</div>
+  <section class="surface report-filter-surface" aria-labelledby="allowance-report-filter-heading">
+    <div class="report-section-heading">
+      <h2 id="allowance-report-filter-heading">{{t "reportsAllowanceByTime.filterTitle"}}</h2>
+    </div>
 
-<form action="" method="GET">
-<div class="row">
-  <div class="col-md-12">
+    <form action="" method="GET" class="report-filter-form">
+      <div class="report-filter-grid report-allowance-filter-grid">
+        <div class="form-group">
+          <label for="department_id">{{t "requests.department"}}</label>
+          <select class="form-control" id="department_id" name="department">
+            <option value="">{{t "common.all"}}</option>
+            {{#each related_departments}}
+            <option value="{{this.id}}" {{#if_equal this.id ../current_department.id}} selected {{/if_equal}}>{{this.name}}</option>
+            {{/each}}
+          </select>
+        </div>
 
-    <div class="panel panel-default">
-      <div class="panel-body">
-
-        <div class="row">
-
-          <div class="col-md-3">
+        <fieldset class="report-date-range">
+          <legend>{{t "reportsAllowanceByTime.dateRangeLabel"}}</legend>
+          <div class="report-date-range-fields">
             <div class="form-group">
-              <label for="department_id">{{t "requests.department"}}</label>
-              <select class="form-control" id="department_id" name="department">
-                <option>{{t "common.all"}}</option>
-                {{#each related_departments}}
-                <option value="{{this.id}}" {{#if_equal this.id ../current_department.id}} selected {{/if_equal}}>{{this.name}}</option>
-                {{/each}}
-              </select>
-            </div>
-          </div>
-
-          <div class="col-md-5 col-md-offset-1">
-            <div class="form-group">
-              <label>{{t "reportsAllowanceByTime.dateRangeLabel"}}</label>
-              <div class="input-group">
-                <span class="input-group-addon"><i class="fa fa-calendar" aria-hidden="true"></i></span>
+              <label for="start_date">{{t "reportsAllowanceByTime.fromMonth"}}</label>
+              <div class="report-date-input">
+                <span class="fa fa-calendar" aria-hidden="true"></span>
                 <input type="text" name="start_date" class="form-control" id="start_date" placeholder="{{t "reportsAllowanceByTime.fromMonth"}}"
                   data-provide="datepicker" data-date-format="yyyy-mm" data-date-autoclose="1" data-date-min-view-mode="months"
                   value="{{start_date_str}}"
                 >
-                <span class="input-group-addon">{{t "reports.dateFormatMonthHint"}}</span>
-                <span class="input-group-addon"><i class="fa fa-long-arrow-right" aria-hidden="true"></i></span>
+                <span class="report-date-format" aria-hidden="true">{{t "reports.dateFormatMonthHint"}}</span>
+              </div>
+            </div>
+            <span class="report-date-range-separator fa fa-long-arrow-right" aria-hidden="true"></span>
+            <div class="form-group">
+              <label for="end_date">{{t "reportsAllowanceByTime.toMonth"}}</label>
+              <div class="report-date-input">
+                <span class="fa fa-calendar" aria-hidden="true"></span>
                 <input type="text" name="end_date" class="form-control" id="end_date" placeholder="{{t "reportsAllowanceByTime.toMonth"}}"
                   data-provide="datepicker" data-date-format="yyyy-mm" data-date-autoclose="1" data-date-min-view-mode="months"
                   value="{{end_date_str}}"
                 >
-                <span class="input-group-addon">{{t "reports.dateFormatMonthHint"}}</span>
+                <span class="report-date-format" aria-hidden="true">{{t "reports.dateFormatMonthHint"}}</span>
               </div>
-              <span class="help-block">{{t "reportsAllowanceByTime.dateRangeHelp"}}</span>
             </div>
           </div>
-
-        </div>
-
-        <div class="row">
-          <div class="col-md-12">
-            <div class="form-group pull-right">
-              <button class="btn btn-link" type="submit" name="as-csv" value="1"
-                data-content="{{t "reportsPage.downloadCsvTooltip"}}"
-                data-placement="top"
-                data-toggle="popover"
-                data-trigger="focus hover"
-              ><i class="fa fa-download" aria-hidden="true"></i> {{t "reports.csvSuffix"}}</button>
-              <button class="btn btn-success" type="submit">{{t "reportsPage.updateResults"}}</button>
-            </div>
-          </div>
-        </div>
-
+          <p class="help-block">{{t "reportsAllowanceByTime.dateRangeHelp"}}</p>
+        </fieldset>
       </div>
+
+      <div class="report-filter-actions">
+        <button class="btn btn-default" type="submit" name="as-csv" value="1"
+          data-content="{{t "reportsPage.downloadCsvTooltip"}}"
+          data-placement="top"
+          data-toggle="popover"
+          data-trigger="focus hover"
+        ><i class="fa fa-download" aria-hidden="true"></i> {{t "reports.csvSuffix"}}</button>
+        <button class="btn btn-success" type="submit">{{t "reportsPage.updateResults"}}</button>
+      </div>
+    </form>
+  </section>
+
+  <section class="surface report-results-surface" aria-labelledby="allowance-report-results-heading">
+    <div class="report-section-heading report-results-heading">
+      <h2 id="allowance-report-results-heading">{{t "reportsAllowanceByTime.reportTitle"}}</h2>
     </div>
-  </div>
-</div>
-</form>
 
-<div class="row main-row_header">
-  <span class="col-md-12">{{t "reportsAllowanceByTime.reportTitle"}}</span>
-</div>
-
-<div class="row">
-
-  {{# unless users_and_leaves }}
-  <div class="col-md-12 text-muted">
-    {{t "reportsAllowanceByTime.noUsers"}}
-  </div>
-  {{else}}
-
-  <div class="col-md-12">
-    <div class="table-responsive" role="region" aria-label="{{t "reportsAllowanceByTime.reportTitle"}}" tabindex="0">
-    <table class="table table-hover">
-      <caption class="sr-only">{{t "reportsAllowanceByTime.reportTitle"}}</caption>
-      <thead>
-        <tr>
-          <th>{{t "reportsAllowanceByTime.employeeFullName"}}</th>
-          {{# each users_and_leaves.0.statistics.leave_type_break_down.pretty_version}}
-          <th>{{this.name}}</th>
-          {{/each}}
-          <th>{{t "reportsAllowanceByTime.deductedDaysPrefix"}}<br>{{> reports/date_range_pretty same_month=same_month start_date=start_date_obj end_date=end_date_obj}}</th>
-        </tr>
-      </thead>
-      {{# each users_and_leaves}}
-        <tr data-vpp-user-list-row={{this.user.id}}>
-          <td>{{#with this.user }}<a href="/users/edit/{{this.id}}/">{{ this.full_name }}</a>{{/with}}</td>
-          {{#each statistics.leave_type_break_down.pretty_version }}
-          <td data-vpp-leave-type-id="{{this.id}}">{{this.stat}}</td>
-          {{/each}}
-          <td data-vpp-deducted-days="1">{{ statistics.deducted_days }}</td>
-        </tr>
-      {{/each}}
-    </table>
+    {{# unless users_and_leaves }}
+    <div class="empty-state report-empty-state">{{t "reportsAllowanceByTime.noUsers"}}</div>
+    {{else}}
+    <div class="table-responsive mobile-card-table-container report-results-table-container" role="region" aria-label="{{t "reportsAllowanceByTime.reportTitle"}}" tabindex="0">
+      <table class="table table-hover mobile-card-table report-results-table report-allowance-table">
+        <caption class="sr-only">{{t "reportsAllowanceByTime.reportTitle"}}</caption>
+        <thead>
+          <tr>
+            <th scope="col">{{t "reportsAllowanceByTime.employeeFullName"}}</th>
+            {{# each users_and_leaves.0.statistics.leave_type_break_down.pretty_version}}
+            <th scope="col">{{this.name}}</th>
+            {{/each}}
+            <th scope="col">{{t "reportsAllowanceByTime.deductedDaysPrefix"}}<br>{{> reports/date_range_pretty same_month=same_month start_date=start_date_obj end_date=end_date_obj}}</th>
+          </tr>
+        </thead>
+        <tbody>
+        {{# each users_and_leaves}}
+          <tr data-vpp-user-list-row={{this.user.id}}>
+            <td data-label="{{t "reportsAllowanceByTime.employeeFullName"}}">{{#with this.user }}<a href="/users/edit/{{this.id}}/">{{ this.full_name }}</a>{{/with}}</td>
+            {{#each statistics.leave_type_break_down.pretty_version }}
+            <td data-label="{{this.name}}" data-vpp-leave-type-id="{{this.id}}"><span class="report-numeric-value">{{this.stat}}</span></td>
+            {{/each}}
+            <td data-label="{{t "reportsAllowanceByTime.deductedDaysPrefix"}}" data-vpp-deducted-days="1"><span class="report-numeric-value">{{ statistics.deducted_days }}</span></td>
+          </tr>
+        {{/each}}
+        </tbody>
+      </table>
     </div>
-  </div>
-  {{/ unless}}
-</div>
-
+    {{/ unless}}
+  </section>
 </main>
+
 {{> footer }}
