@@ -2,20 +2,17 @@
 <form method="POST" action="/settings/departments/edit/{{ department.id }}/" id="department_edit_form">
   <input type="hidden" name="_csrf" value="{{csrf_token}}">
 
-<div class="admin-form-card">
+<section class="surface department-details-surface" aria-labelledby="department-settings-heading">
+  <div class="department-details-section-heading">
+    <h2 id="department-settings-heading">{{t "departments.generalDetails"}}</h2>
+  </div>
 
-  <ol class="breadcrumb">
-    <li><a href="/settings/departments/" data-vpp-all-departments-link="1">{{t "departments.allDepartments"}}</a></li>
-    <li class="active">{{ department.name }}</li>
-  </ol>
-
-  <div class="form-group">
+  <div class="form-group department-details-field">
     <label for="name" class="control-label">{{t "common.name"}}</label>
     <input class="form-control" id="name" name="name" required value="{{department.name}}">
   </div>
 
-
-  <div class="form-group">
+  <div class="form-group department-details-field">
     <label for="manager_id" class="control-label">{{t "departments.manager"}}</label>
     <select class="form-control" name="boss_id" id="manager_id">
     {{#each company.users}}
@@ -25,35 +22,33 @@
     <span class="help-block">{{t "departments.managerHelp" department=department.name}} <a href="/users/edit/{{department.bossId}}/">{{t "common.moreDetails"}} <i class="fa fa-angle-double-right" aria-hidden="true"></i></a></span>
   </div>
 
-  <div class="form-group">
-    <label class="control-label">{{t "departments.secondarySupervisors"}}</label>
-    <ul class="list-group no-bottom-space">
+  <div class="form-group department-details-field department-supervisors-field">
+    <div class="department-supervisors-heading">
+      <h3 class="control-label">{{t "departments.secondarySupervisors"}}</h3>
+      <a href="#" class="btn btn-link"
+        data-vpp-add-new-secondary-supervisor="1"
+        data-toggle="modal"
+        data-target="#add_secondary_supervisers_modal"
+        data-department_id="{{department.id}}"
+        data-department_name="{{department.name}}"
+      >
+        <i class="fa fa-plus" aria-hidden="true"></i> {{t "departments.addSecondarySupervisor"}}
+      </a>
+    </div>
+    <ul class="list-group no-bottom-space department-supervisors-list">
       {{# each department.supervisors }}
 
       <li class="list-group-item">
-        <span><a href='/users/edit/{{ this.id }}/'>{{ this.full_name }}</a> <button type="submit" name="remove_supervisor_id" value="{{this.id}}" class="pull-right btn btn-link btn-xs"><i class="fa fa-trash" aria-hidden="true"></i> {{t "common.remove"}}</button><span>
+        <a href='/users/edit/{{ this.id }}/'>{{ this.full_name }}</a>
+        <button type="submit" name="remove_supervisor_id" value="{{this.id}}" class="btn btn-link btn-xs"><i class="fa fa-trash" aria-hidden="true"></i> {{t "common.remove"}}</button>
       </li>
       {{/ each }}
-
-      <li class="list-group-item">
-        <span>&nbsp;
-        <a class="pull-right btn btn-link btn-xs"
-          data-vpp-add-new-secondary-supervisor="1"
-          data-toggle="modal"
-          data-target="#add_secondary_supervisers_modal"
-          data-department_id="{{department.id}}"
-          data-department_name="{{department.name}}"
-        >
-          <i class="fa fa-plus" aria-hidden="true"></i> {{t "departments.addSecondarySupervisor"}}
-        </a>
-        <span>
-      </li>
     </ul>
     <span class="help-block">{{t "departments.secondarySupervisorsHelp" department=department.name}}</span>
   </div>
 
-
-  <div class="form-group">
+  <div class="department-details-policy-grid">
+  <div class="form-group department-details-field">
     <label for="allowance_select">{{t "departments.allowance"}}</label>
 
     <select class="form-control" name="allowance" id="allowance_select">
@@ -63,8 +58,8 @@
     </select>
   </div>
 
-  <div class="form-group">
-    <label for="use_bank_holidays_inp" class="control-label">
+  <div class="form-group department-details-field department-details-choice">
+    <label for="use_bank_holidays_inp" class="control-label department-choice-label">
       <input class="" id="use_bank_holidays_inp" name="include_public_holidays" type="checkbox" {{# if department.include_public_holidays}} checked="checked"  {{/if}} >
       {{t "departments.includePublicHolidays"}}
     </label>
@@ -72,7 +67,7 @@
   </div>
 
   {{#feature_enabled "work_calendars"}}
-    <div class="form-group">
+    <div class="form-group department-details-field">
       <label for="work_calendar_id" class="control-label">{{t "departments.workCalendar"}}</label>
       <select class="form-control" name="work_calendar_id" id="work_calendar_id">
         <option value="">{{t "departments.commonCalendarOnly"}}</option>
@@ -84,17 +79,18 @@
     </div>
   {{/feature_enabled}}
 
-  <div class="form-group">
-    <label for="is_accrued_allowance_inp" class="control-label">
+  <div class="form-group department-details-field department-details-choice">
+    <label for="is_accrued_allowance_inp" class="control-label department-choice-label">
       <input class="" id="is_accrued_allowance_inp" name="is_accrued_allowance" type="checkbox" {{# if department.is_accrued_allowance}} checked="checked" {{/if}} >
       {{t "departments.accruedAllowance"}}
     </label>
     <span class="help-block">{{t "departments.accruedAllowanceHelp"}}</span>
   </div>
+  </div>
 
-</div>
+</section>
 
-<div class="admin-form-actions">
+<div class="admin-form-actions department-details-actions">
   <a class="btn btn-link" href="/settings/departments/">{{t "common.cancel"}}</a>
   <button id="save_changes_btn" type="submit" class="btn btn-success single-click">{{t "departments.saveChanges"}}</button>
 </div>
