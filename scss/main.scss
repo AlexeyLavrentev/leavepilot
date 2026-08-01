@@ -7350,3 +7350,388 @@ td.current_day_cell.half_2nd {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+
+
+/* ============================================================
+ * Stage 8G — Department Details workspace
+ * Completes the path from the redesigned department catalogue
+ * with a scoped, predictable editor. Existing form names, modal
+ * hooks, feature gates and routes remain unchanged.
+ * ============================================================ */
+.department-details-page {
+  --department-surface: #{$surface-color};
+  --department-surface-raised: #{$surface-subtle};
+  --department-surface-overlay: #ffffff;
+  --department-border: #{$border-color};
+  --department-border-subtle: #{color.adjust($surface-color, $lightness: -3%)};
+  --department-shadow: #{$shadow-sm};
+  --department-shadow-strong: #{$shadow-md};
+  --department-muted: #586b7d;
+  --department-accent-soft: #eaf4fb;
+  --department-accent-edge: #2b7da8;
+  --department-danger: #b42318;
+  --department-radius: 10px;
+  --department-control-radius: #{$radius-md};
+  --department-space-1: #{$space-1};
+  --department-space-2: #{$space-2};
+  --department-space-3: #{$space-3};
+  --department-space-4: #{$space-4};
+  --department-space-5: #{$space-5};
+
+  max-width: 1180px;
+  margin-inline: auto;
+
+  .page-heading h1 {
+    overflow-wrap: anywhere;
+    color: var(--color-heading-primary);
+    font-weight: 700;
+    line-height: 1.1;
+    letter-spacing: -0.01em;
+  }
+
+  .page-heading .lead {
+    color: var(--department-muted);
+    font-weight: 500;
+    line-height: 1.45;
+  }
+
+  .department-details-breadcrumb {
+    margin: 0 0 var(--department-space-4);
+    padding: 0;
+    overflow-wrap: anywhere;
+    background: transparent;
+  }
+
+  .department-details-layout {
+    display: grid;
+    grid-template-columns: minmax(200px, 240px) minmax(0, 1fr);
+    gap: var(--department-space-5);
+    align-items: start;
+  }
+
+  .department-details-nav {
+    display: grid;
+    gap: var(--department-space-2);
+    min-width: 0;
+  }
+
+  .department-details-nav .list-group-item {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+    padding: var(--department-space-3);
+    overflow-wrap: anywhere;
+    color: var(--color-text);
+    background: var(--department-surface);
+    border: 1px solid var(--department-border);
+    border-radius: var(--department-control-radius);
+    box-shadow: none;
+    transition: transform 0.1s ease-out, box-shadow 0.15s ease-out;
+  }
+
+  .department-details-nav .list-group-item.selected-item,
+  .department-details-nav .list-group-item[aria-current="page"] {
+    padding-left: calc(var(--department-space-3) - 3px);
+    color: var(--color-heading-primary);
+    font-weight: 700;
+    background: var(--department-accent-soft);
+    border-left: 4px solid var(--department-accent-edge);
+  }
+
+  .department-details-content,
+  .department-details-content form {
+    min-width: 0;
+  }
+
+  .surface {
+    min-width: 0;
+    padding: var(--department-space-5);
+    color: var(--color-text);
+    background: var(--department-surface);
+    border: 1px solid var(--department-border);
+    border-top-color: var(--department-border-subtle);
+    border-radius: var(--department-radius);
+    box-shadow: var(--department-shadow);
+  }
+
+  .department-details-section-heading {
+    margin: 0 0 var(--department-space-4);
+    padding-bottom: var(--department-space-3);
+    border-bottom: 1px solid var(--department-border);
+  }
+
+  .department-details-section-heading h2 {
+    margin: 0;
+    overflow-wrap: anywhere;
+    color: var(--color-heading-primary);
+    font-size: 20px;
+    font-weight: 700;
+    line-height: 1.25;
+    letter-spacing: -0.01em;
+  }
+
+  .department-details-field {
+    min-width: 0;
+    margin-bottom: var(--department-space-5);
+  }
+
+  .department-details-field > label,
+  .department-supervisors-heading > .control-label {
+    display: block;
+    margin-bottom: var(--department-space-1);
+    color: var(--color-heading-primary);
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1.35;
+  }
+
+  .form-control {
+    min-width: 0;
+    min-height: 44px;
+    color: var(--color-text);
+    background: var(--department-surface-overlay);
+    border-color: var(--department-border);
+    border-radius: var(--department-control-radius);
+    box-shadow: none;
+  }
+
+  .form-control:focus {
+    border-color: var(--color-focus-ring-strong);
+    box-shadow: 0 0 0 1px var(--color-focus-ring-strong);
+  }
+
+  .help-block {
+    margin-top: var(--department-space-2);
+    overflow-wrap: anywhere;
+    color: var(--department-muted);
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  .department-supervisors-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--department-space-3);
+    margin-bottom: var(--department-space-2);
+  }
+
+  .department-supervisors-heading > .control-label {
+    margin: 0;
+  }
+
+  .department-supervisors-heading .btn {
+    min-height: 44px;
+    white-space: normal;
+  }
+
+  .department-supervisors-list {
+    display: grid;
+    gap: var(--department-space-2);
+  }
+
+  .department-supervisors-list .list-group-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--department-space-3);
+    min-width: 0;
+    padding: var(--department-space-2) var(--department-space-3);
+    background: var(--department-surface-raised);
+    border: 1px solid var(--department-border);
+    border-radius: var(--department-control-radius);
+  }
+
+  .department-supervisors-list .list-group-item > a {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .department-supervisors-list .btn {
+    flex: 0 0 auto;
+    min-height: 44px;
+  }
+
+  .department-details-policy-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0 var(--department-space-5);
+    padding-top: var(--department-space-4);
+    border-top: 1px solid var(--department-border);
+  }
+
+  .department-choice-label {
+    display: flex !important;
+    align-items: center;
+    gap: var(--department-space-2);
+    min-height: 44px;
+    margin: 0 !important;
+    cursor: pointer;
+  }
+
+  .department-choice-label input {
+    flex: 0 0 auto;
+    width: 18px;
+    height: 18px;
+    margin: 0;
+  }
+
+  .department-details-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: var(--department-space-2);
+    margin-top: var(--department-space-4);
+  }
+
+  .department-details-actions .btn,
+  .department-details-danger-action .btn,
+  .department-supervisors-heading .btn,
+  .department-supervisors-list .btn {
+    min-height: 44px;
+    transition: transform 0.1s ease-out, box-shadow 0.15s ease-out;
+  }
+
+  .department-details-actions .btn:active,
+  .department-details-actions .btn:hover:active,
+  .department-details-danger-action .btn:active,
+  .department-details-danger-action .btn:hover:active,
+  .department-details-nav .list-group-item:active,
+  .department-details-nav .list-group-item:hover:active,
+  .department-supervisors-heading .btn:active,
+  .department-supervisors-heading .btn:hover:active,
+  .department-supervisors-list .btn:active,
+  .department-supervisors-list .btn:hover:active {
+    transform: scale(0.98);
+  }
+
+  a:focus-visible,
+  button:focus-visible,
+  input:focus-visible,
+  select:focus-visible,
+  [tabindex]:focus-visible {
+    outline: 2px solid var(--color-focus-ring-strong);
+    outline-offset: 2px;
+  }
+}
+
+[data-theme="dark"] .department-details-page {
+  --department-surface: #1a1e22;
+  --department-surface-raised: #20252a;
+  --department-surface-overlay: #15191d;
+  --department-border: #343a40;
+  --department-border-subtle: #2a3035;
+  --department-shadow: 0 1px 2px rgba(0, 0, 0, 0.32);
+  --department-shadow-strong: 0 8px 24px rgba(0, 0, 0, 0.4);
+  --department-muted: #aebdca;
+  --department-accent-soft: #172c38;
+  --department-accent-edge: #71b9df;
+  --department-danger: #ff9b91;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .department-details-page .department-details-nav .list-group-item:hover,
+  .department-details-page .department-details-actions .btn:hover,
+  .department-details-page .department-supervisors-heading .btn:hover,
+  .department-details-page .department-supervisors-list .btn:hover {
+    box-shadow: var(--department-shadow-strong);
+  }
+}
+
+@media (prefers-contrast: more) {
+  .department-details-page .surface,
+  .department-details-page .department-details-nav .list-group-item,
+  .department-details-page .department-supervisors-list .list-group-item,
+  .department-details-page .form-control {
+    border-width: 2px;
+    box-shadow: none;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .department-details-page .surface,
+  .department-details-page .department-details-nav .list-group-item,
+  .department-details-page .form-control {
+    background: var(--department-surface-overlay);
+    backdrop-filter: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .department-details-page *,
+  .department-details-page *::before,
+  .department-details-page *::after {
+    transition: none !important;
+    animation: none !important;
+  }
+
+  .department-details-page .department-details-actions .btn:active,
+  .department-details-page .department-details-actions .btn:hover:active,
+  .department-details-page .department-details-danger-action .btn:active,
+  .department-details-page .department-details-danger-action .btn:hover:active,
+  .department-details-page .department-details-nav .list-group-item:active,
+  .department-details-page .department-details-nav .list-group-item:hover:active,
+  .department-details-page .department-supervisors-heading .btn:active,
+  .department-details-page .department-supervisors-heading .btn:hover:active,
+  .department-details-page .department-supervisors-list .btn:active,
+  .department-details-page .department-supervisors-list .btn:hover:active {
+    transform: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .department-details-page .department-details-layout,
+  .department-details-page .department-details-policy-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .department-details-page .department-details-nav {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .department-details-page .department-details-nav .list-group-item {
+    min-width: 0;
+    white-space: normal;
+  }
+
+  .department-details-page .surface {
+    overflow: visible;
+    padding: var(--department-space-3);
+  }
+
+  .department-details-page .department-supervisors-heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .department-details-page .department-supervisors-heading .btn,
+  .department-details-page .department-supervisors-list .btn {
+    align-self: flex-start;
+  }
+
+  .department-details-page .department-supervisors-heading .btn {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: var(--department-space-2);
+    width: 100%;
+    text-align: left;
+  }
+
+  .department-details-page .department-supervisors-list .list-group-item {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .department-details-page .department-details-actions .btn,
+  .department-details-page .department-details-danger-action .btn {
+    min-width: 44px;
+  }
+
+  .department-details-page .department-details-content a,
+  .department-details-page .department-details-content label,
+  .department-details-page .department-details-content .help-block {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+}
