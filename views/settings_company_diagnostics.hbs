@@ -1,138 +1,179 @@
 {{> header }}
 
 <a class="sr-only sr-only-focusable" href="#main-content">{{t "nav.skipToMainContent"}}</a>
-<main id="main-content" tabindex="-1">
-<h1>{{t "diagnostics.title"}}</h1>
-<p class="lead">{{t "diagnostics.subtitle"}}</p>
 
-{{> show_flash_messages }}
+<main id="main-content" class="diagnostics-page" tabindex="-1">
+  <div class="page-heading">
+    <div class="page-heading-titles">
+      <h1>{{t "diagnostics.title"}}</h1>
+      <p class="lead">{{t "diagnostics.subtitle"}}</p>
+    </div>
+    <p class="diagnostics-generated-at">
+      <span class="fa fa-clock-o" aria-hidden="true"></span>
+      <span>{{t "diagnostics.generatedAt"}}</span>
+      <time>{{diagnostics.generatedAt}}</time>
+    </p>
+  </div>
 
-<div class="row main-row_header">
-  <p class="col-md-12">{{t "diagnostics.licenseSection"}}</p>
-</div>
+  {{> show_flash_messages }}
 
-<div class="row">
-  <div class="col-md-10 col-md-offset-1">
-    <table class="table table-striped">
-      <caption class="sr-only">{{t "diagnostics.licenseSection"}}</caption>
-      <tbody>
-        <tr>
-          <th>{{t "diagnostics.fields.valid"}}</th>
-          <td>{{#if diagnostics.license.valid}}{{t "common.yes"}}{{else}}{{t "common.no"}}{{/if}}</td>
-        </tr>
-        <tr>
-          <th>{{t "diagnostics.fields.reason"}}</th>
-          <td><code>{{diagnostics.license.reason}}</code></td>
-        </tr>
-        <tr>
-          <th>{{t "diagnostics.fields.customer"}}</th>
-          <td>{{diagnostics.license.customer}}</td>
-        </tr>
-        <tr>
-          <th>{{t "diagnostics.fields.features"}}</th>
-          <td>
+  <div class="diagnostics-workspace">
+    <section class="surface diagnostics-card diagnostics-license" aria-labelledby="diagnostics-license-heading">
+      <div class="diagnostics-section-heading">
+        <span class="diagnostics-section-icon fa fa-certificate" aria-hidden="true"></span>
+        <div>
+          <h2 id="diagnostics-license-heading">{{t "diagnostics.licenseSection"}}</h2>
+          <span class="diagnostics-status {{#if diagnostics.license.valid}}is-positive{{else}}is-negative{{/if}}">
+            <span class="diagnostics-status-dot" aria-hidden="true"></span>
+            {{#if diagnostics.license.valid}}{{t "diagnostics.statusValid"}}{{else}}{{t "diagnostics.statusInvalid"}}{{/if}}
+          </span>
+        </div>
+      </div>
+
+      <dl class="diagnostics-detail-list">
+        <div>
+          <dt>{{t "diagnostics.fields.reason"}}</dt>
+          <dd><code>{{diagnostics.license.reason}}</code></dd>
+        </div>
+        <div>
+          <dt>{{t "diagnostics.fields.customer"}}</dt>
+          <dd>{{diagnostics.license.customer}}</dd>
+        </div>
+        <div>
+          <dt>{{t "diagnostics.fields.features"}}</dt>
+          <dd class="diagnostics-code-list">
             {{#each diagnostics.license.features}}
               <code>{{this}}</code>
             {{else}}
-              {{t "diagnostics.empty"}}
+              <span>{{t "diagnostics.empty"}}</span>
             {{/each}}
-          </td>
-        </tr>
-        <tr>
-          <th>{{t "diagnostics.fields.expires"}}</th>
-          <td>{{diagnostics.license.expires}}</td>
-        </tr>
-        <tr>
-          <th>{{t "diagnostics.fields.licenseId"}}</th>
-          <td><code>{{diagnostics.license.licenseId}}</code></td>
-        </tr>
-        <tr>
-          <th>{{t "diagnostics.fields.graceEndsAt"}}</th>
-          <td>{{diagnostics.license.graceEndsAt}}</td>
-        </tr>
-        <tr>
-          <th>{{t "diagnostics.fields.maxActiveUsers"}}</th>
-          <td>{{diagnostics.license.maxActiveUsers}}</td>
-        </tr>
-        <tr>
-          <th>{{t "diagnostics.fields.maintenanceUntil"}}</th>
-          <td>{{diagnostics.license.maintenanceUntil}}</td>
-        </tr>
-        <tr>
-          <th>{{t "diagnostics.fields.revocationListExpiresAt"}}</th>
-          <td>{{diagnostics.license.revocationListExpiresAt}}</td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-</div>
+          </dd>
+        </div>
+        <div>
+          <dt>{{t "diagnostics.fields.expires"}}</dt>
+          <dd>{{diagnostics.license.expires}}</dd>
+        </div>
+        <div>
+          <dt>{{t "diagnostics.fields.licenseId"}}</dt>
+          <dd>
+            {{#if diagnostics.license.licenseId}}
+              <code>{{diagnostics.license.licenseId}}</code>
+            {{else}}
+              <span>{{t "diagnostics.empty"}}</span>
+            {{/if}}
+          </dd>
+        </div>
+        <div>
+          <dt>{{t "diagnostics.fields.graceEndsAt"}}</dt>
+          <dd>{{diagnostics.license.graceEndsAt}}</dd>
+        </div>
+        <div>
+          <dt>{{t "diagnostics.fields.maxActiveUsers"}}</dt>
+          <dd>{{diagnostics.license.maxActiveUsers}}</dd>
+        </div>
+        <div>
+          <dt>{{t "diagnostics.fields.maintenanceUntil"}}</dt>
+          <dd>{{diagnostics.license.maintenanceUntil}}</dd>
+        </div>
+        <div>
+          <dt>{{t "diagnostics.fields.revocationListExpiresAt"}}</dt>
+          <dd>{{diagnostics.license.revocationListExpiresAt}}</dd>
+        </div>
+      </dl>
+    </section>
 
-<div class="row main-row_header">
-  <p class="col-md-12">{{t "diagnostics.premiumSection"}}</p>
-</div>
+    <section class="surface diagnostics-card diagnostics-premium" aria-labelledby="diagnostics-premium-heading">
+      <div class="diagnostics-section-heading">
+        <span class="diagnostics-section-icon fa fa-diamond" aria-hidden="true"></span>
+        <div>
+          <h2 id="diagnostics-premium-heading">{{t "diagnostics.premiumSection"}}</h2>
+          <span class="diagnostics-status {{#if diagnostics.edition.premium.loaded}}is-positive{{else}}is-neutral{{/if}}">
+            <span class="diagnostics-status-dot" aria-hidden="true"></span>
+            {{#if diagnostics.edition.premium.loaded}}{{t "diagnostics.statusLoaded"}}{{else}}{{t "diagnostics.statusNotLoaded"}}{{/if}}
+          </span>
+        </div>
+      </div>
 
-<div class="row">
-  <div class="col-md-10 col-md-offset-1">
-    <table class="table table-striped">
-      <caption class="sr-only">{{t "diagnostics.premiumSection"}}</caption>
-      <tbody>
-        <tr>
-          <th>{{t "diagnostics.fields.loaded"}}</th>
-          <td>{{#if diagnostics.edition.premium.loaded}}{{t "common.yes"}}{{else}}{{t "common.no"}}{{/if}}</td>
-        </tr>
-        <tr>
-          <th>{{t "diagnostics.fields.required"}}</th>
-          <td>{{#if diagnostics.edition.premium.required}}{{t "common.yes"}}{{else}}{{t "common.no"}}{{/if}}</td>
-        </tr>
-        <tr>
-          <th>{{t "diagnostics.fields.moduleName"}}</th>
-          <td><code>{{diagnostics.edition.premium.moduleName}}</code></td>
-        </tr>
-        <tr>
-          <th>{{t "diagnostics.fields.routes"}}</th>
-          <td>{{diagnostics.edition.counts.routes}}</td>
-        </tr>
-        <tr>
-          <th>{{t "diagnostics.fields.migrations"}}</th>
-          <td>{{diagnostics.edition.counts.migrationPaths}}</td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-</div>
+      <dl class="diagnostics-detail-list">
+        <div>
+          <dt>{{t "diagnostics.fields.required"}}</dt>
+          <dd>{{#if diagnostics.edition.premium.required}}{{t "diagnostics.statusRequired"}}{{else}}{{t "diagnostics.statusOptional"}}{{/if}}</dd>
+        </div>
+        <div>
+          <dt>{{t "diagnostics.fields.moduleName"}}</dt>
+          <dd>
+            {{#if diagnostics.edition.premium.moduleName}}
+              <code>{{diagnostics.edition.premium.moduleName}}</code>
+            {{else}}
+              <span>{{t "diagnostics.empty"}}</span>
+            {{/if}}
+          </dd>
+        </div>
+        <div>
+          <dt>{{t "diagnostics.fields.routes"}}</dt>
+          <dd class="diagnostics-number">{{diagnostics.edition.counts.routes}}</dd>
+        </div>
+        <div>
+          <dt>{{t "diagnostics.fields.migrations"}}</dt>
+          <dd class="diagnostics-number">{{diagnostics.edition.counts.migrationPaths}}</dd>
+        </div>
+      </dl>
+    </section>
 
-<div class="row main-row_header">
-  <p class="col-md-12">{{t "diagnostics.featuresSection"}}</p>
-</div>
+    <section class="surface diagnostics-card diagnostics-features" aria-labelledby="diagnostics-features-heading">
+      <div class="diagnostics-section-heading">
+        <span class="diagnostics-section-icon fa fa-toggle-on" aria-hidden="true"></span>
+        <div>
+          <h2 id="diagnostics-features-heading">{{t "diagnostics.featuresSection"}}</h2>
+          <p>{{t "diagnostics.featuresHelp"}}</p>
+        </div>
+      </div>
 
-<div class="row">
-  <div class="col-md-10 col-md-offset-1">
-    <table class="table table-striped">
-      <caption class="sr-only">{{t "diagnostics.featuresSection"}}</caption>
-      <tbody>
+      <ul class="diagnostics-feature-list">
         {{#each enabledFeatureRows}}
-          <tr>
-            <th><code>{{name}}</code></th>
-            <td>{{#if enabled}}{{t "common.yes"}}{{else}}{{t "common.no"}}{{/if}}</td>
-          </tr>
+          <li>
+            <code>{{name}}</code>
+            <span class="diagnostics-status {{#if enabled}}is-positive{{else}}is-neutral{{/if}}">
+              <span class="diagnostics-status-dot" aria-hidden="true"></span>
+              {{#if enabled}}{{t "diagnostics.statusEnabled"}}{{else}}{{t "diagnostics.statusDisabled"}}{{/if}}
+            </span>
+          </li>
         {{/each}}
-      </tbody>
-    </table>
+      </ul>
+    </section>
+
+    <section class="surface diagnostics-card diagnostics-snapshot" aria-labelledby="diagnostics-snapshot-heading">
+      <div class="diagnostics-snapshot-header">
+        <div class="diagnostics-section-heading">
+          <span class="diagnostics-section-icon fa fa-life-ring" aria-hidden="true"></span>
+          <div>
+            <h2 id="diagnostics-snapshot-heading">{{t "diagnostics.snapshotSection"}}</h2>
+            <p>{{t "diagnostics.snapshotHelp"}}</p>
+          </div>
+        </div>
+        <a class="btn btn-primary diagnostics-download" href="/settings/company/diagnostics.json" download>
+          <span class="fa fa-download" aria-hidden="true"></span>
+          {{t "diagnostics.download"}}
+        </a>
+      </div>
+
+      <div class="diagnostics-privacy-note" role="note">
+        <span class="fa fa-shield" aria-hidden="true"></span>
+        <div>
+          <strong>{{t "diagnostics.privacyTitle"}}</strong>
+          <p>{{t "diagnostics.supportHelp"}}</p>
+        </div>
+      </div>
+
+      <details class="diagnostics-preview">
+        <summary id="diagnostics_preview_toggle">
+          <span>{{t "diagnostics.preview"}}</span>
+          <span class="fa fa-chevron-down" aria-hidden="true"></span>
+        </summary>
+        <pre id="diagnostics_json_preview" tabindex="0"><code>{{diagnosticsJson}}</code></pre>
+      </details>
+    </section>
   </div>
-</div>
-
-<div class="row main-row_header">
-  <p class="col-md-12">{{t "diagnostics.snapshotSection"}}</p>
-</div>
-
-<div class="row">
-  <div class="col-md-10 col-md-offset-1">
-    <p>{{t "diagnostics.snapshotHelp"}}</p>
-    <p><a class="btn btn-primary" href="/settings/company/diagnostics.json">{{t "diagnostics.download"}}</a></p>
-    <p>{{t "diagnostics.supportHelp"}}</p>
-    <pre><code>{{diagnosticsJson}}</code></pre>
-  </div>
-</div>
-
 </main>
+
 {{> footer }}
