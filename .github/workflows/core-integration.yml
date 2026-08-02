@@ -62,3 +62,7 @@ jobs:
         env:
           NODE_ENV: test
           TEST_DB_STORAGE: /tmp/integration-test.sqlite
+          # Smaller batches than the local default: eight specs sharing one
+          # server and one headless browser on a two-core runner produced
+          # 60-second timeouts that moved between files from run to run.
+          TEST_INTEGRATION_BATCH_SIZE: '4'

@@ -58,12 +58,41 @@ const collectJavaScriptFiles = directory => fs.readdirSync(directory, {withFileT
       : files;
   }, []);
 
+const quarantine = require('../t/integration_quarantine');
+
+const quarantinedPaths = new Set(
+  quarantine.map(entry => path.join('t', 'integration', entry.file))
+);
+
+const reportQuarantine = () => {
+  if (!quarantine.length) return;
+
+  console.log(`Quarantined integration specs (${quarantine.length}), not run:`);
+  quarantine.forEach(entry => {
+    console.log(`  - t/integration/${entry.file}: ${entry.reason}`);
+  });
+};
+
 const runMochaSuite = () => {
   if (mochaArgs.length) {
     return run(node, ['node_modules/mocha/bin/mocha', '--recursive', 't'].concat(mochaArgs));
   }
 
-  const integrationFiles = collectJavaScriptFiles(path.join('t', 'integration'));
+  const allIntegrationFiles = collectJavaScriptFiles(path.join('t', 'integration'));
+  const unknownQuarantine = Array.from(quarantinedPaths)
+    .filter(file => !allIntegrationFiles.includes(file));
+
+  if (unknownQuarantine.length) {
+    return Promise.reject(new Error(
+      'Quarantine lists specs that do not exist: ' + unknownQuarantine.join(', ')
+    ));
+  }
+
+  reportQuarantine();
+
+  const integrationFiles = includeQuarantined
+    ? allIntegrationFiles
+    : allIntegrationFiles.filter(file => !quarantinedPaths.has(file));
   const configuredBatchSize = Number(process.env.TEST_INTEGRATION_BATCH_SIZE);
   const batchSize = Number.isInteger(configuredBatchSize) && configuredBatchSize > 0
     ? configuredBatchSize
@@ -156,9 +185,13 @@ const integrationOnly = rawArgs.includes('--integration-only');
 // Report every failing batch instead of stopping at the first one. Locally the
 // early stop is the faster feedback; on CI one red batch used to hide the rest.
 const keepGoing = rawArgs.includes('--keep-going');
-const mochaArgs = rawArgs.filter(
-  arg => arg !== '--integration-only' && arg !== '--keep-going'
-);
+// Run the quarantined specs too, to check whether one is ready to come back.
+const includeQuarantined = rawArgs.includes('--include-quarantined');
+const mochaArgs = rawArgs.filter(arg => ![
+  '--integration-only',
+  '--keep-going',
+  '--include-quarantined',
+].includes(arg));
 
 let server;
 
