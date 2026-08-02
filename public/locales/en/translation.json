@@ -587,7 +587,18 @@
     "tokenHidden": "Stored securely. Regenerate it to obtain a new token.",
     "tokenShownOnce": "Copy it now. It will not be shown again.",
     "regenerate": "Regenerate token",
-    "save": "Save integration API configuration"
+    "save": "Save integration API configuration",
+    "statusEnabled": "API access enabled",
+    "statusDisabled": "API access disabled",
+    "securityNotice": "Only administrators can change this configuration. Access tokens are stored as a secure hash and are shown only once after regeneration.",
+    "enableHelp": "Controls whether valid tokens can access integration endpoints.",
+    "credentialHeading": "Access credential",
+    "privateCredential": "Private credential",
+    "copyToken": "Copy token",
+    "copied": "Token copied",
+    "copyFailed": "Could not copy the token",
+    "regenerateWarning": "Regenerating immediately invalidates the current token. Connected integrations must be updated with the new token.",
+    "regenerateConfirm": "Regenerate the API token? The current token will stop working immediately."
   },
   "emails": {
     "greeting": "Hello {{name}},",

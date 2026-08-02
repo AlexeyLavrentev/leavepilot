@@ -78,6 +78,431 @@ $leave_cell_font_color : #61686b;
   --color-skip-link-text: #1f5f99;
 }
 
+/* Stage 8O: Integration API Security Workspace */
+.integration-api-page {
+  --integration-api-surface: #ffffff;
+  --integration-api-surface-subtle: #f6f8fb;
+  --integration-api-border: #d8dee8;
+  --integration-api-text: #344054;
+  --integration-api-heading: #172033;
+  --integration-api-muted: #5f6c80;
+  --integration-api-accent: #176b87;
+  --integration-api-focus: #176b87;
+  --integration-api-enabled-bg: #e6f4ec;
+  --integration-api-enabled-text: #17613b;
+  --integration-api-disabled-bg: #edf0f4;
+  --integration-api-disabled-text: #475467;
+  --integration-api-warning-bg: #fff7e6;
+  --integration-api-warning-border: #d89b28;
+  --integration-api-warning-text: #704b00;
+  --integration-api-shadow: 0 10px 28px rgba(28, 39, 58, 0.08);
+  max-width: 1120px;
+  margin: 0 auto;
+  padding-bottom: 44px;
+  color: var(--integration-api-text);
+}
+
+[data-theme="dark"] .integration-api-page {
+  --integration-api-surface: #202936;
+  --integration-api-surface-subtle: #18212d;
+  --integration-api-border: #465366;
+  --integration-api-text: #e5eaf2;
+  --integration-api-heading: #f7f9fc;
+  --integration-api-muted: #bcc6d5;
+  --integration-api-accent: #71c4df;
+  --integration-api-focus: #71c4df;
+  --integration-api-enabled-bg: #173f31;
+  --integration-api-enabled-text: #9fe3be;
+  --integration-api-disabled-bg: #323d4d;
+  --integration-api-disabled-text: #d4dbe6;
+  --integration-api-warning-bg: #3c301b;
+  --integration-api-warning-border: #c79436;
+  --integration-api-warning-text: #f5d78d;
+  --integration-api-shadow: 0 12px 32px rgba(0, 0, 0, 0.28);
+}
+
+.integration-api-page .page-heading {
+  align-items: flex-start;
+  gap: 18px;
+}
+
+.integration-api-page .page-heading-titles {
+  min-width: 0;
+}
+
+.integration-api-page .page-heading .lead {
+  color: var(--integration-api-muted);
+}
+
+.integration-api-page .integration-api-status {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 8px;
+  min-height: 34px;
+  margin-top: 4px;
+  padding: 6px 11px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 650;
+  line-height: 1.3;
+}
+
+.integration-api-page .integration-api-status.is-enabled {
+  color: var(--integration-api-enabled-text);
+  background: var(--integration-api-enabled-bg);
+}
+
+.integration-api-page .integration-api-status.is-disabled {
+  color: var(--integration-api-disabled-text);
+  background: var(--integration-api-disabled-bg);
+}
+
+.integration-api-page .integration-api-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.integration-api-page .integration-api-workspace {
+  display: grid;
+  grid-template-columns: minmax(250px, 0.72fr) minmax(0, 1.45fr);
+  gap: 22px;
+  align-items: start;
+}
+
+.integration-api-page .surface {
+  min-width: 0;
+  padding: 24px;
+  color: var(--integration-api-text);
+  background: var(--integration-api-surface);
+  border: 1px solid var(--integration-api-border);
+  border-radius: 15px;
+  box-shadow: var(--integration-api-shadow);
+}
+
+.integration-api-page .integration-api-section-heading {
+  display: flex;
+  align-items: flex-start;
+  gap: 13px;
+  min-width: 0;
+}
+
+.integration-api-page .integration-api-section-heading h2,
+.integration-api-page .integration-api-credential-heading h3 {
+  margin: 0;
+  color: var(--integration-api-heading);
+  overflow-wrap: anywhere;
+}
+
+.integration-api-page .integration-api-section-heading h2 {
+  font-size: 19px;
+  line-height: 1.35;
+}
+
+.integration-api-page .integration-api-credential-heading h3 {
+  font-size: 16px;
+  line-height: 1.4;
+}
+
+.integration-api-page .integration-api-section-heading p,
+.integration-api-page .integration-api-credential-heading p {
+  margin: 5px 0 0;
+  color: var(--integration-api-muted);
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+
+.integration-api-page .integration-api-section-icon {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  color: var(--integration-api-accent);
+  background: var(--integration-api-surface-subtle);
+  border: 1px solid var(--integration-api-border);
+  border-radius: 10px;
+}
+
+.integration-api-page .integration-api-note,
+.integration-api-page .integration-api-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-top: 22px;
+  padding: 14px;
+  border-radius: 10px;
+}
+
+.integration-api-page .integration-api-note {
+  color: var(--integration-api-muted);
+  background: var(--integration-api-surface-subtle);
+  border: 1px solid var(--integration-api-border);
+}
+
+.integration-api-page .integration-api-warning {
+  color: var(--integration-api-warning-text);
+  background: var(--integration-api-warning-bg);
+  border: 1px solid var(--integration-api-warning-border);
+}
+
+.integration-api-page .integration-api-note .fa,
+.integration-api-page .integration-api-warning .fa {
+  flex: 0 0 auto;
+  margin-top: 2px;
+}
+
+.integration-api-page .integration-api-note p,
+.integration-api-page .integration-api-warning p {
+  margin: 0;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.integration-api-page .integration-api-form {
+  margin-top: 22px;
+}
+
+.integration-api-page .integration-api-toggle-row {
+  padding: 4px 0 20px;
+  border-bottom: 1px solid var(--integration-api-border);
+}
+
+.integration-api-page .integration-api-toggle-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  min-height: 44px;
+  margin: 0;
+  cursor: pointer;
+}
+
+.integration-api-page .integration-api-toggle-label input {
+  flex: 0 0 auto;
+  width: 20px;
+  height: 20px;
+  margin: 2px 0 0;
+  accent-color: var(--integration-api-accent);
+}
+
+.integration-api-page .integration-api-toggle-label strong,
+.integration-api-page .integration-api-toggle-label small {
+  display: block;
+}
+
+.integration-api-page .integration-api-toggle-label strong {
+  color: var(--integration-api-heading);
+  font-size: 15px;
+}
+
+.integration-api-page .integration-api-toggle-label small {
+  margin-top: 4px;
+  color: var(--integration-api-muted);
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.45;
+}
+
+.integration-api-page .integration-api-credential {
+  min-width: 0;
+  margin-top: 22px;
+  padding: 18px;
+  background: var(--integration-api-surface-subtle);
+  border: 1px solid var(--integration-api-border);
+  border-radius: 12px;
+}
+
+.integration-api-page .integration-api-credential-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.integration-api-page .integration-api-private-label {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 6px;
+  min-height: 28px;
+  padding: 4px 8px;
+  color: var(--integration-api-muted);
+  background: var(--integration-api-surface);
+  border: 1px solid var(--integration-api-border);
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.integration-api-page .integration-api-credential > .control-label {
+  display: block;
+  margin-bottom: 7px;
+  color: var(--integration-api-heading);
+  text-align: left;
+}
+
+.integration-api-page .integration-api-token-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+}
+
+.integration-api-page .integration-api-token-value {
+  min-width: 0;
+  min-height: 44px;
+  color: var(--integration-api-text);
+  background: var(--integration-api-surface);
+  border-color: var(--integration-api-border);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 13px;
+}
+
+.integration-api-page .integration-api-token-hidden {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 44px;
+  margin: 0;
+  padding: 10px 12px;
+  color: var(--integration-api-muted);
+  background: var(--integration-api-surface);
+  border: 1px solid var(--integration-api-border);
+  border-radius: 7px;
+  line-height: 1.45;
+}
+
+.integration-api-page .integration-api-token-hidden .fa {
+  color: var(--integration-api-enabled-text);
+}
+
+.integration-api-page .help-block {
+  margin: 8px 0 0;
+  color: var(--integration-api-muted);
+  line-height: 1.45;
+}
+
+.integration-api-page .integration-api-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 9px;
+  margin-top: 22px;
+}
+
+.integration-api-page .integration-api-actions .btn,
+.integration-api-page #copy_token_btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 44px;
+  white-space: normal;
+}
+
+.integration-api-page .btn:active,
+.integration-api-page .btn:hover:active,
+.integration-api-page .integration-api-toggle-label:active,
+.integration-api-page .integration-api-toggle-label:hover:active {
+  transform: scale(0.98);
+  transition: transform 100ms ease-out;
+}
+
+.integration-api-page a:focus-visible,
+.integration-api-page button:focus-visible,
+.integration-api-page input:focus-visible,
+.integration-api-page [tabindex]:focus-visible {
+  outline: 2px solid var(--integration-api-focus);
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .integration-api-page *,
+  .integration-api-page *::before,
+  .integration-api-page *::after {
+    animation-duration: 0.01ms;
+    animation-iteration-count: 1;
+    scroll-behavior: auto;
+    transition-duration: 0.01ms;
+  }
+
+  .integration-api-page .btn:active,
+  .integration-api-page .btn:hover:active,
+  .integration-api-page .integration-api-toggle-label:active,
+  .integration-api-page .integration-api-toggle-label:hover:active {
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .integration-api-page .surface,
+  .integration-api-page .integration-api-credential {
+    backdrop-filter: none;
+  }
+}
+
+@media (prefers-contrast: more) {
+  .integration-api-page .surface,
+  .integration-api-page .integration-api-note,
+  .integration-api-page .integration-api-warning,
+  .integration-api-page .integration-api-credential,
+  .integration-api-page .form-control,
+  .integration-api-page .integration-api-token-hidden {
+    border-color: currentColor;
+  }
+}
+
+@media (max-width: 768px) {
+  .integration-api-page {
+    padding-bottom: 28px;
+  }
+
+  .integration-api-page .page-heading {
+    align-items: stretch;
+  }
+
+  .integration-api-page .integration-api-status {
+    align-self: flex-start;
+    margin-top: 0;
+  }
+
+  .integration-api-page .integration-api-workspace {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 18px;
+  }
+
+  .integration-api-page .surface {
+    padding: 18px 16px;
+    border-radius: 13px;
+  }
+
+  .integration-api-page .integration-api-credential {
+    padding: 16px 14px;
+  }
+
+  .integration-api-page .integration-api-credential-heading {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .integration-api-page .integration-api-token-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .integration-api-page #copy_token_btn,
+  .integration-api-page .integration-api-actions,
+  .integration-api-page .integration-api-actions .btn {
+    width: 100%;
+  }
+
+  .integration-api-page .integration-api-actions {
+    flex-direction: column-reverse;
+  }
+}
+
 /* Stage 8J — Employee onboarding workspace (single employee + CSV import). */
 .employee-onboarding-page {
   --onboarding-surface: #ffffff;
