@@ -3,86 +3,108 @@
 
 <a class="sr-only sr-only-focusable" href="#main-content">{{t "nav.skipToMainContent"}}</a>
 
-<main id="main-content" tabindex="-1">
+<main id="main-content" class="workspace-page departments-bulk-page" tabindex="-1">
 
-<h1>{{t "departments.title"}}</h1>
-
-{{> show_flash_messages }}
-
-<div class="row admin-page-header">
-  <div class="col-sm-7 lead">{{t "departments.bulkEditTitle"}}</div>
-  <div class="col-sm-5 admin-page-actions">
+<div class="page-heading">
+  <div>
+    <p class="page-eyebrow">{{t "nav.departments"}}</p>
+    <h1>{{t "departments.title"}}</h1>
+    <p class="lead">{{t "departments.bulkEditTitle"}}</p>
+  </div>
+  <div class="workspace-heading-actions">
     <a href='/settings/departments/' class="btn btn-link">{{t "departments.overviewLink"}}</a>
     <button class="btn btn-info" data-toggle="modal" data-target="#add_new_department_modal" type="button" id="add_new_department_btn">{{t "departments.addNew"}}</button>
   </div>
 </div>
 
-<div class="content-spacer-sm"></div>
-
-<div class="row departments-bulk-header">
-    <div class="col-md-4"><label class="control-label">{{t "common.name"}}</label></div>
-    <div class="col-md-3"><label class="control-label">{{t "departments.allowance"}}</label></div>
-    <div class="col-md-3"><label class="control-label">{{t "departments.manager"}}</label></div>
-    <div class="col-md-2"><label class="control-label">{{t "departments.numberEmployees"}}</label></div>
-</div>
-
-<div class="content-spacer-sm"></div>
+{{> show_flash_messages }}
 
 <form id="delete_form" method="post" action="/settings/departments/delete/"><input type="hidden" name="_csrf" value="{{csrf_token}}"></form>
 
 <form method="post" action="/settings/departments-bulk-update/" id="edit_department_form">
   <input type="hidden" name="_csrf" value="{{csrf_token}}">
 
-{{# unless departments.length }}
-<div class="row">
-    <div class="col-md-12"><div class="empty-state">{{t "departments.noDepartments"}}</div></div>
-</div>
-{{/unless}}
-
-{{#each departments}}
-<div class="row departments-bulk-row">
-
-    <div class="col-md-4">
-        <input type="text" class="form-control" value="{{name}}" name="name__{{@index}}">
+  <section class="workspace-surface workspace-surface--flush" aria-labelledby="departments-bulk-heading">
+    <div class="workspace-section-heading">
+      <span class="workspace-section-icon"><i class="fa fa-sitemap" aria-hidden="true"></i></span>
+      <div class="workspace-section-heading-text">
+        <h2 id="departments-bulk-heading">{{t "departments.bulkEditTitle"}}</h2>
+      </div>
+      {{#if departments.length}}
+      <div class="workspace-section-heading-actions">
+        <span class="workspace-count">{{departments.length}}</span>
+      </div>
+      {{/if}}
     </div>
 
-    <div class="col-md-1">
-        <select class="form-control" name="allowance__{{@index}}">
-            {{#each ../allowance_options}}
-            <option value="{{value}}" {{#if_equal this.value ../allowance}} selected="selected"{{/if_equal}}>{{caption}}</option>
-            {{/each}}
-        </select>
+    {{# unless departments.length }}
+    <div class="workspace-empty">
+      <span class="workspace-empty-icon"><i class="fa fa-sitemap" aria-hidden="true"></i></span>
+      <p>{{t "departments.noDepartments"}}</p>
     </div>
-
-    <div class="col-md-2">
-        <input name="include_public_holidays__{{@index}}" id="include_public_holidays__{{@index}}" type="checkbox" {{#if include_public_holidays}}checked="checked"{{/if}}>
-        <label for="include_public_holidays__{{@index}}" class="control-label">{{t "departments.publicHolidays"}}</label>
+    {{else}}
+    <div class="workspace-table-scroll" role="region" aria-label="{{t "departments.bulkEditTitle"}}" tabindex="0">
+      <table class="table workspace-table mobile-card-table departments-bulk-table">
+        <caption class="sr-only">{{t "departments.bulkEditTitle"}}</caption>
+        <thead>
+          <tr>
+            <th>{{t "common.name"}}</th>
+            <th>{{t "departments.allowance"}}</th>
+            <th>{{t "departments.publicHolidays"}}</th>
+            <th>{{t "departments.manager"}}</th>
+            <th>{{t "departments.numberEmployees"}}</th>
+            <th><span class="sr-only">{{t "common.remove"}}</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          {{#each departments}}
+          <tr>
+            <td data-label="{{t 'common.name'}}">
+              <label class="sr-only" for="department_name__{{@index}}">{{t "common.name"}}</label>
+              <input type="text" class="form-control" id="department_name__{{@index}}" value="{{name}}" name="name__{{@index}}">
+            </td>
+            <td data-label="{{t 'departments.allowance'}}">
+              <label class="sr-only" for="department_allowance__{{@index}}">{{t "departments.allowance"}}</label>
+              <select class="form-control" id="department_allowance__{{@index}}" name="allowance__{{@index}}">
+                {{#each ../allowance_options}}
+                <option value="{{value}}" {{#if_equal this.value ../allowance}} selected="selected"{{/if_equal}}>{{caption}}</option>
+                {{/each}}
+              </select>
+            </td>
+            <td data-label="{{t 'departments.publicHolidays'}}">
+              <label class="workspace-checkbox" for="include_public_holidays__{{@index}}">
+                <input name="include_public_holidays__{{@index}}" id="include_public_holidays__{{@index}}" type="checkbox" {{#if include_public_holidays}}checked="checked"{{/if}}>
+                <span>{{t "departments.publicHolidays"}}</span>
+              </label>
+            </td>
+            <td data-label="{{t 'departments.manager'}}">
+              <label class="sr-only" for="department_boss__{{@index}}">{{t "departments.manager"}}</label>
+              <select class="form-control" id="department_boss__{{@index}}" name="boss_id__{{@index}}">
+              {{#each ../company.users}}
+                <option value="{{this.id}}" {{#if_equal this.id ../bossId}} selected="selected"{{/if_equal}}>{{this.full_name}}</option>
+              {{/each}}
+              </select>
+            </td>
+            <td class="workspace-cell-numeric" data-label="{{t 'departments.numberEmployees'}}">
+              <a href="/users/?department={{ this.id }}">{{this.users.length}}</a>
+            </td>
+            <td class="workspace-cell-actions">
+              <div class="workspace-actions workspace-actions--end">
+                <button type="button" class="btn btn-default departments-remove-btn" data-vpp="{{ @index }}" value="{{ this.id }}" aria-label="{{t "common.remove"}}: {{name}}"><span class="fa fa-remove" aria-hidden="true"></span></button>
+              </div>
+            </td>
+          </tr>
+          {{/each}}
+        </tbody>
+      </table>
     </div>
+    {{/unless}}
+  </section>
 
-    <div class="col-md-3">
-        <select class="form-control" name="boss_id__{{@index}}">
-        {{#each ../company.users}}
-            <option value="{{this.id}}" {{#if_equal this.id ../bossId}} selected="selected"{{/if_equal}}>{{this.full_name}}</option>
-        {{/each}}
-        </select>
-
-   </div>
-
-    <div class="col-md-1"><a class="" href="/users/?department={{ this.id }}">{{this.users.length}}</a></div>
-
-    <div class="col-md-1">
-        <button type="button" class="btn btn-default pull-right departments-remove-btn" data-vpp="{{ @index }}" value="{{ this.id }}" aria-label="{{t "common.remove"}}"><span class="fa fa-remove" aria-hidden="true"></span></button>
-    </div>
-</div>
-
-{{/each}}
-
-<div class="row admin-form-actions">
-  <div class="col-md-12">
+  <div class="workspace-actions workspace-actions--end admin-form-actions">
     <a href='/settings/departments-bulk-update/' class="btn btn-link">{{t "common.cancel"}}</a>
     <button type="submit" class="btn btn-success single-click">{{t "common.saveChanges"}}</button>
   </div>
-</div>
 
 </form>
 

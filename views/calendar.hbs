@@ -2,7 +2,7 @@
 {{> header }}
 
 <a class="sr-only sr-only-focusable" href="#main-content">{{t "nav.skipToMainContent"}}</a>
-<main id="main-content" tabindex="-1">
+<main id="main-content" class="workspace-page workspace-page--calendar employee-calendar-page" tabindex="-1">
 <div class="page-heading calendar-page-heading">
   <div>
     <p class="page-eyebrow">{{t "calendar.calendarTitle"}}</p>
@@ -145,11 +145,16 @@
 
 {{# unless show_full_year}}
 
-  <div class="row main-row_header">
-    <p class="col-md-12">{{t "calendar.allAbsencesInYear" year=current_year}}</p>
-  </div>
+  <section class="calendar-absences" aria-labelledby="calendar-absences-title">
+    <div class="section-heading">
+      <div>
+        <p class="page-eyebrow">{{t "calendar.employeeCalendar"}}</p>
+        <h2 id="calendar-absences-title">{{t "calendar.allAbsencesInYear" year=current_year}}</h2>
+      </div>
+    </div>
 
-  {{> user_requests leaves=current_user.my_leaves table_label=(t "calendar.allAbsencesInYear" year=current_year) }}
+    {{> user_requests leaves=current_user.my_leaves table_label=(t "calendar.allAbsencesInYear" year=current_year) }}
+  </section>
 
 {{/unless}}
 

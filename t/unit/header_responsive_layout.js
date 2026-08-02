@@ -27,7 +27,7 @@ function blockBody(source, marker) {
 }
 
 describe('Responsive application header', function() {
-  it('moves utility navigation below primary navigation before they overlap', function() {
+  it('keeps utility navigation on the primary row and shrinks the nav instead', function() {
     const intermediate = blockBody(
       stylesheet,
       '@media (min-width: 769px) and (max-width: 1719px)'
@@ -36,9 +36,14 @@ describe('Responsive application header', function() {
     const primary = blockBody(intermediate, '.navbar-default .primary-navigation');
     const utility = blockBody(intermediate, '.navbar-default .navbar-right');
 
-    expect(collapse).to.match(/flex-wrap:\s*wrap/);
-    expect(primary).to.match(/flex:\s*1 1 100%/);
-    expect(utility).to.match(/flex:\s*0 0 100%/);
+    // Overlap is prevented by letting the primary track shrink and scroll, not
+    // by dropping the utility cluster onto a second row: below 1720px that is
+    // every ordinary laptop, and the bar arrived split on the default window.
+    expect(collapse).to.match(/flex-wrap:\s*nowrap/);
+    expect(primary).to.match(/flex:\s*1 1 auto/);
+    expect(primary).to.match(/min-width:\s*0/);
+    expect(primary).to.match(/overflow-x:\s*auto/);
+    expect(utility).to.match(/flex:\s*0 0 auto/);
     expect(utility).to.match(/justify-content:\s*flex-end/);
   });
 

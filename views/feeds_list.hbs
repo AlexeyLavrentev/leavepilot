@@ -2,31 +2,45 @@
 
 <a class="sr-only sr-only-focusable" href="#main-content">{{t "nav.skipToMainContent"}}</a>
 
-<main id="main-content" tabindex="-1">
+<main id="main-content" class="workspace-page feeds-page" tabindex="-1">
 
-<h1>{{t "feeds.title"}}</h1>
-
-<p class="lead">{{t "feeds.subtitle"}}</p>
+<div class="page-heading">
+  <div>
+    <p class="page-eyebrow">{{t "nav.feeds"}}</p>
+    <h1>{{t "feeds.title"}}</h1>
+    <p class="lead">{{t "feeds.subtitle"}}</p>
+  </div>
+</div>
 
 {{> show_flash_messages }}
 
-<div class="feeds-intro">
-  <p>{{t "feeds.description"}}</p>
-  <p class="feeds-intro-title">{{t "feeds.streamsFrom"}}</p>
-  <ul>
+<section class="workspace-surface feeds-intro" aria-labelledby="feeds-intro-heading">
+  <div class="workspace-section-heading">
+    <span class="workspace-section-icon"><i class="fa fa-rss" aria-hidden="true"></i></span>
+    <div class="workspace-section-heading-text">
+      <h2 id="feeds-intro-heading">{{t "feeds.streamsFrom"}}</h2>
+      <p>{{t "feeds.description"}}</p>
+    </div>
+  </div>
+
+  <ul class="feeds-source-list">
     <li><a href="/calendar/">{{t "feeds.myCalendar"}}</a> {{t "feeds.myCalendarDescription"}}</li>
     {{# unless keep_team_view_hidden}}
     <li><a href="/calendar/teamview/">{{t "feeds.teamView"}}</a> {{t "feeds.teamViewDescription"}}</li>
     {{/ unless}}
   </ul>
-  <p>{{t "feeds.exportHint"}} {{t "feeds.copyHint"}}</p>
-</div>
+  <p class="workspace-field-help">{{t "feeds.exportHint"}} {{t "feeds.copyHint"}}</p>
+</section>
 
-<div class="feeds-grid">
-  <article class="feed-card">
-    <div class="feed-card-icon" aria-hidden="true"><span class="fa fa-calendar"></span></div>
+<div class="workspace-grid feeds-grid">
+  <article class="workspace-surface feed-card">
+    <div class="workspace-section-heading">
+      <span class="workspace-section-icon feed-card-icon"><span class="fa fa-calendar" aria-hidden="true"></span></span>
+      <div class="workspace-section-heading-text">
+        <h2>{{t "feeds.myCalendarFeed"}}</h2>
+      </div>
+    </div>
     <div class="feed-card-content">
-      <h2>{{t "feeds.myCalendarFeed"}}</h2>
       <a class="feed-card-link" href="webcal://{{current_host}}/feed/{{calendar_feed.feed_token}}/ical.ics"><span class="fa fa-rss" aria-hidden="true"></span> {{t "feeds.openFeed"}}</a>
       <div class="feed-card-url">
         <code id="calendar-feed-url">{{current_protocol}}://{{current_host}}/feed/{{calendar_feed.feed_token}}/ical.ics</code>
@@ -34,9 +48,9 @@
           data-clipboard-target="#calendar-feed-url" data-copy-success="{{t "feeds.copied"}}"
           data-copy-failure="{{t "feeds.copyFailed"}}"><span class="fa fa-clipboard" aria-hidden="true"></span> {{t "feeds.copyUrl"}}</button>
       </div>
-      <p class="help-block">{{t "feeds.regenerateHelp"}}</p>
+      <p class="workspace-field-help">{{t "feeds.regenerateHelp"}}</p>
     </div>
-    <form method="POST" action="/calendar/feeds/regenerate/" class="feed-card-action">
+    <form method="POST" action="/calendar/feeds/regenerate/" class="workspace-actions workspace-actions--footer feed-card-action">
       <input type="hidden" name="_csrf" value="{{csrf_token}}">
       <input type="hidden" name="token" value="{{calendar_feed.feed_token}}">
       <button type="submit" class="btn btn-default single-click"><span class="fa fa-refresh" aria-hidden="true"></span> {{t "feeds.regenerate"}}</button>
@@ -44,10 +58,14 @@
   </article>
 
   {{# unless keep_team_view_hidden }}
-  <article class="feed-card">
-    <div class="feed-card-icon" aria-hidden="true"><span class="fa fa-users"></span></div>
+  <article class="workspace-surface feed-card">
+    <div class="workspace-section-heading">
+      <span class="workspace-section-icon feed-card-icon"><span class="fa fa-users" aria-hidden="true"></span></span>
+      <div class="workspace-section-heading-text">
+        <h2>{{t "feeds.teamViewFeed"}}</h2>
+      </div>
+    </div>
     <div class="feed-card-content">
-      <h2>{{t "feeds.teamViewFeed"}}</h2>
       <a class="feed-card-link" href="webcal://{{current_host}}/feed/{{team_view_feed.feed_token}}/ical.ics"><span class="fa fa-rss" aria-hidden="true"></span> {{t "feeds.openFeed"}}</a>
       <div class="feed-card-url">
         <code id="teamview-feed-url">{{current_protocol}}://{{current_host}}/feed/{{team_view_feed.feed_token}}/ical.ics</code>
@@ -55,9 +73,9 @@
           data-clipboard-target="#teamview-feed-url" data-copy-success="{{t "feeds.copied"}}"
           data-copy-failure="{{t "feeds.copyFailed"}}"><span class="fa fa-clipboard" aria-hidden="true"></span> {{t "feeds.copyUrl"}}</button>
       </div>
-      <p class="help-block">{{t "feeds.regenerateHelp"}}</p>
+      <p class="workspace-field-help">{{t "feeds.regenerateHelp"}}</p>
     </div>
-    <form method="POST" action="/calendar/feeds/regenerate/" class="feed-card-action">
+    <form method="POST" action="/calendar/feeds/regenerate/" class="workspace-actions workspace-actions--footer feed-card-action">
       <input type="hidden" name="_csrf" value="{{csrf_token}}">
       <input type="hidden" name="token" value="{{team_view_feed.feed_token}}">
       <button type="submit" class="btn btn-default single-click"><span class="fa fa-refresh" aria-hidden="true"></span> {{t "feeds.regenerate"}}</button>
@@ -66,36 +84,43 @@
   {{/ unless }}
 </div>
 
-<section class="feeds-instructions">
-  <h2>{{t "feeds.instructionsTitle"}}</h2>
-  <p class="help-block">{{t "feeds.instructionsHelp"}}</p>
-
-  <div class="feeds-instructions-group">
-    <h3><span class="fa fa-yahoo" aria-hidden="true"></span> {{t "feeds.yandexTitle"}}</h3>
-    <ol>
-      <li>{{t "feeds.yandexStep1"}}</li>
-      <li>{{t "feeds.yandexStep2"}}</li>
-      <li>{{t "feeds.yandexStep3"}}</li>
-      <li>{{t "feeds.yandexStep4"}}</li>
-    </ol>
+<section class="workspace-surface feeds-instructions" aria-labelledby="feeds-instructions-heading">
+  <div class="workspace-section-heading">
+    <span class="workspace-section-icon"><i class="fa fa-question-circle-o" aria-hidden="true"></i></span>
+    <div class="workspace-section-heading-text">
+      <h2 id="feeds-instructions-heading">{{t "feeds.instructionsTitle"}}</h2>
+      <p>{{t "feeds.instructionsHelp"}}</p>
+    </div>
   </div>
 
-  <div class="feeds-instructions-group">
-    <h3><span class="fa fa-google" aria-hidden="true"></span> {{t "feeds.googleTitle"}}</h3>
-    <ol>
-      <li>{{t "feeds.googleStep1"}}</li>
-      <li>{{t "feeds.googleStep2"}}</li>
-      <li>{{t "feeds.googleStep3"}}</li>
-    </ol>
-  </div>
+  <div class="feeds-instructions-grid">
+    <div class="feeds-instructions-group">
+      <h3><span class="fa fa-yahoo" aria-hidden="true"></span> {{t "feeds.yandexTitle"}}</h3>
+      <ol>
+        <li>{{t "feeds.yandexStep1"}}</li>
+        <li>{{t "feeds.yandexStep2"}}</li>
+        <li>{{t "feeds.yandexStep3"}}</li>
+        <li>{{t "feeds.yandexStep4"}}</li>
+      </ol>
+    </div>
 
-  <div class="feeds-instructions-group">
-    <h3><span class="fa fa-windows" aria-hidden="true"></span> {{t "feeds.outlookTitle"}}</h3>
-    <ol>
-      <li>{{t "feeds.outlookStep1"}}</li>
-      <li>{{t "feeds.outlookStep2"}}</li>
-      <li>{{t "feeds.outlookStep3"}}</li>
-    </ol>
+    <div class="feeds-instructions-group">
+      <h3><span class="fa fa-google" aria-hidden="true"></span> {{t "feeds.googleTitle"}}</h3>
+      <ol>
+        <li>{{t "feeds.googleStep1"}}</li>
+        <li>{{t "feeds.googleStep2"}}</li>
+        <li>{{t "feeds.googleStep3"}}</li>
+      </ol>
+    </div>
+
+    <div class="feeds-instructions-group">
+      <h3><span class="fa fa-windows" aria-hidden="true"></span> {{t "feeds.outlookTitle"}}</h3>
+      <ol>
+        <li>{{t "feeds.outlookStep1"}}</li>
+        <li>{{t "feeds.outlookStep2"}}</li>
+        <li>{{t "feeds.outlookStep3"}}</li>
+      </ol>
+    </div>
   </div>
 </section>
 
