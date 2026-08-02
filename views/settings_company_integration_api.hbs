@@ -3,66 +3,77 @@
 
 <a class="sr-only sr-only-focusable" href="#main-content">{{t "nav.skipToMainContent"}}</a>
 
-<main id="main-content" tabindex="-1">
+<main id="main-content" class="workspace-page integration-api-page" tabindex="-1">
 
-<h1>{{t "integrationApi.title"}}</h1>
-
-<p class="lead">{{t "integrationApi.subtitle"}}</p>
-
-{{> show_flash_messages }}
-
-<div class="row main-row_header">
-  <p class="col-md-12">{{t "common.description"}}</p>
-</div>
-
-<div class="row">
-  <div class="col-md-8">
-    <p>{{t "integrationApi.description" company=company.name}}</p>
-    <p>{{# if company.integration_api_enabled }}{{t "integrationApi.toggleDisable"}}{{else}}{{t "integrationApi.toggleEnable"}}{{/if}}</p>
+<div class="page-heading">
+  <div>
+    <p class="page-eyebrow">{{t "nav.settings"}}</p>
+    <h1>{{t "integrationApi.title"}}</h1>
+    <p class="lead">{{t "integrationApi.subtitle"}}</p>
   </div>
 </div>
 
-<div class="row main-row_header">
-  <p class="col-md-12">{{t "common.configuration"}}</p>
-</div>
+{{> show_flash_messages }}
 
-<div class="row">
-  <div class="col-md-9">
-    <form class="form-horizontal admin-form-card" action="" method="post">
+<div class="workspace-narrow">
+  <section class="workspace-surface" aria-labelledby="integration-api-about-heading">
+    <div class="workspace-section-heading">
+      <span class="workspace-section-icon"><i class="fa fa-plug" aria-hidden="true"></i></span>
+      <div class="workspace-section-heading-text">
+        <h2 id="integration-api-about-heading">{{t "common.description"}}</h2>
+      </div>
+      <div class="workspace-section-heading-actions">
+        {{# if company.integration_api_enabled }}
+        <span class="workspace-status workspace-status--ok">{{t "common.yes"}}</span>
+        {{else}}
+        <span class="workspace-status workspace-status--neutral">{{t "common.no"}}</span>
+        {{/if}}
+      </div>
+    </div>
+
+    <p>{{t "integrationApi.description" company=company.name}}</p>
+    <p class="workspace-field-help">{{# if company.integration_api_enabled }}{{t "integrationApi.toggleDisable"}}{{else}}{{t "integrationApi.toggleEnable"}}{{/if}}</p>
+  </section>
+
+  <section class="workspace-surface" aria-labelledby="integration-api-config-heading">
+    <div class="workspace-section-heading">
+      <span class="workspace-section-icon"><i class="fa fa-key" aria-hidden="true"></i></span>
+      <div class="workspace-section-heading-text">
+        <h2 id="integration-api-config-heading">{{t "common.configuration"}}</h2>
+      </div>
+    </div>
+
+    <form class="workspace-form" action="" method="post">
       <input type="hidden" name="_csrf" value="{{csrf_token}}">
+
       <div class="form-group">
-        <div class="col-md-9 col-md-offset-3">
-        <label for="integration_api_enabled" class="control-label">
+        <label for="integration_api_enabled" class="workspace-checkbox">
           <input
             id="integration_api_enabled"
             type="checkbox"
             {{# if company.integration_api_enabled }} checked="checked" {{/if}}
             name="integration_api_enabled"
-           />&nbsp;
-           {{t "integrationApi.enable"}}
-          </label>
-        </div>
+           />
+           <span>{{t "integrationApi.enable"}}</span>
+        </label>
       </div>
-      <hr/>
+
       <div class="form-group">
-        <label for="token" class="col-md-3 control-label">{{t "integrationApi.accessKey"}}</label>
-        <div class="col-md-5">
-          {{#if accessToken}}
-            <input class="form-control" readonly value="{{accessToken}}" aria-describedby="token_help" type="text" id="token-value">
-          {{else}}
-            <p class="form-control-static" id="token-value-hidden">{{t "integrationApi.tokenHidden"}}</p>
-          {{/if}}
-        </div>
-        <div class="col-md-4">
-          <span id="token_help" class="help-block">{{t "integrationApi.tokenHelp" company=company.name}} <span class="danger">{{#if accessToken}}{{t "integrationApi.tokenShownOnce"}}{{else}}{{t "integrationApi.keepSecret"}}{{/if}}</span></span>
-        </div>
+        <label for="token-value" class="control-label">{{t "integrationApi.accessKey"}}</label>
+        {{#if accessToken}}
+          <input class="form-control" readonly value="{{accessToken}}" aria-describedby="token_help" type="text" id="token-value">
+        {{else}}
+          <p class="form-control-static" id="token-value-hidden">{{t "integrationApi.tokenHidden"}}</p>
+        {{/if}}
+        <p id="token_help" class="workspace-field-help">{{t "integrationApi.tokenHelp" company=company.name}} <span class="danger">{{#if accessToken}}{{t "integrationApi.tokenShownOnce"}}{{else}}{{t "integrationApi.keepSecret"}}{{/if}}</span></p>
       </div>
-      <div class="admin-form-actions">
+
+      <div class="workspace-actions workspace-actions--footer workspace-actions--end">
         <button type="submit" class="btn btn-default single-click" id="regenerate_token_btn" name="regenerate_token" value=1>{{t "integrationApi.regenerate"}}</button>
         <button type="submit" class="btn btn-success single-click" id="save_settings_btn">{{t "integrationApi.save"}}</button>
       </div>
     </form>
-  </div>
+  </section>
 </div>
 
 </main>

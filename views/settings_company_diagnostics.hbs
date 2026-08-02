@@ -1,36 +1,55 @@
 {{> header }}
 
 <a class="sr-only sr-only-focusable" href="#main-content">{{t "nav.skipToMainContent"}}</a>
-<main id="main-content" tabindex="-1">
-<h1>{{t "diagnostics.title"}}</h1>
-<p class="lead">{{t "diagnostics.subtitle"}}</p>
+<main id="main-content" class="workspace-page diagnostics-page" tabindex="-1">
+
+<div class="page-heading">
+  <div>
+    <p class="page-eyebrow">{{t "nav.settings"}}</p>
+    <h1>{{t "diagnostics.title"}}</h1>
+    <p class="lead">{{t "diagnostics.subtitle"}}</p>
+  </div>
+  <div class="workspace-heading-actions">
+    <a class="btn btn-primary" href="/settings/company/diagnostics.json">{{t "diagnostics.download"}}</a>
+  </div>
+</div>
 
 {{> show_flash_messages }}
 
-<div class="row main-row_header">
-  <p class="col-md-12">{{t "diagnostics.licenseSection"}}</p>
-</div>
+<section class="workspace-surface workspace-surface--flush" aria-labelledby="diagnostics-license-heading">
+  <div class="workspace-section-heading">
+    <span class="workspace-section-icon"><i class="fa fa-certificate" aria-hidden="true"></i></span>
+    <div class="workspace-section-heading-text">
+      <h2 id="diagnostics-license-heading">{{t "diagnostics.licenseSection"}}</h2>
+    </div>
+    <div class="workspace-section-heading-actions">
+      {{#if diagnostics.license.valid}}
+      <span class="workspace-status workspace-status--ok">{{t "common.yes"}}</span>
+      {{else}}
+      <span class="workspace-status workspace-status--fail">{{t "common.no"}}</span>
+      {{/if}}
+    </div>
+  </div>
 
-<div class="row">
-  <div class="col-md-10 col-md-offset-1">
-    <table class="table table-striped">
+  <div class="workspace-table-scroll" role="region" aria-label="{{t "diagnostics.licenseSection"}}" tabindex="0">
+    <table class="table table-hover workspace-table mobile-card-table diagnostics-table">
       <caption class="sr-only">{{t "diagnostics.licenseSection"}}</caption>
       <tbody>
         <tr>
-          <th>{{t "diagnostics.fields.valid"}}</th>
-          <td>{{#if diagnostics.license.valid}}{{t "common.yes"}}{{else}}{{t "common.no"}}{{/if}}</td>
+          <th data-label="{{t 'diagnostics.fields.valid'}}">{{t "diagnostics.fields.valid"}}</th>
+          <td data-label="{{t 'diagnostics.fields.valid'}}">{{#if diagnostics.license.valid}}{{t "common.yes"}}{{else}}{{t "common.no"}}{{/if}}</td>
         </tr>
         <tr>
-          <th>{{t "diagnostics.fields.reason"}}</th>
-          <td><code>{{diagnostics.license.reason}}</code></td>
+          <th data-label="{{t 'diagnostics.fields.reason'}}">{{t "diagnostics.fields.reason"}}</th>
+          <td data-label="{{t 'diagnostics.fields.reason'}}"><code>{{diagnostics.license.reason}}</code></td>
         </tr>
         <tr>
-          <th>{{t "diagnostics.fields.customer"}}</th>
-          <td>{{diagnostics.license.customer}}</td>
+          <th data-label="{{t 'diagnostics.fields.customer'}}">{{t "diagnostics.fields.customer"}}</th>
+          <td data-label="{{t 'diagnostics.fields.customer'}}">{{diagnostics.license.customer}}</td>
         </tr>
         <tr>
-          <th>{{t "diagnostics.fields.features"}}</th>
-          <td>
+          <th data-label="{{t 'diagnostics.fields.features'}}">{{t "diagnostics.fields.features"}}</th>
+          <td data-label="{{t 'diagnostics.fields.features'}}">
             {{#each diagnostics.license.features}}
               <code>{{this}}</code>
             {{else}}
@@ -39,100 +58,115 @@
           </td>
         </tr>
         <tr>
-          <th>{{t "diagnostics.fields.expires"}}</th>
-          <td>{{diagnostics.license.expires}}</td>
+          <th data-label="{{t 'diagnostics.fields.expires'}}">{{t "diagnostics.fields.expires"}}</th>
+          <td data-label="{{t 'diagnostics.fields.expires'}}">{{diagnostics.license.expires}}</td>
         </tr>
         <tr>
-          <th>{{t "diagnostics.fields.licenseId"}}</th>
-          <td><code>{{diagnostics.license.licenseId}}</code></td>
+          <th data-label="{{t 'diagnostics.fields.licenseId'}}">{{t "diagnostics.fields.licenseId"}}</th>
+          <td data-label="{{t 'diagnostics.fields.licenseId'}}"><code>{{diagnostics.license.licenseId}}</code></td>
         </tr>
         <tr>
-          <th>{{t "diagnostics.fields.graceEndsAt"}}</th>
-          <td>{{diagnostics.license.graceEndsAt}}</td>
+          <th data-label="{{t 'diagnostics.fields.graceEndsAt'}}">{{t "diagnostics.fields.graceEndsAt"}}</th>
+          <td data-label="{{t 'diagnostics.fields.graceEndsAt'}}">{{diagnostics.license.graceEndsAt}}</td>
         </tr>
         <tr>
-          <th>{{t "diagnostics.fields.maxActiveUsers"}}</th>
-          <td>{{diagnostics.license.maxActiveUsers}}</td>
+          <th data-label="{{t 'diagnostics.fields.maxActiveUsers'}}">{{t "diagnostics.fields.maxActiveUsers"}}</th>
+          <td data-label="{{t 'diagnostics.fields.maxActiveUsers'}}">{{diagnostics.license.maxActiveUsers}}</td>
         </tr>
         <tr>
-          <th>{{t "diagnostics.fields.maintenanceUntil"}}</th>
-          <td>{{diagnostics.license.maintenanceUntil}}</td>
+          <th data-label="{{t 'diagnostics.fields.maintenanceUntil'}}">{{t "diagnostics.fields.maintenanceUntil"}}</th>
+          <td data-label="{{t 'diagnostics.fields.maintenanceUntil'}}">{{diagnostics.license.maintenanceUntil}}</td>
         </tr>
         <tr>
-          <th>{{t "diagnostics.fields.revocationListExpiresAt"}}</th>
-          <td>{{diagnostics.license.revocationListExpiresAt}}</td>
+          <th data-label="{{t 'diagnostics.fields.revocationListExpiresAt'}}">{{t "diagnostics.fields.revocationListExpiresAt"}}</th>
+          <td data-label="{{t 'diagnostics.fields.revocationListExpiresAt'}}">{{diagnostics.license.revocationListExpiresAt}}</td>
         </tr>
       </tbody>
     </table>
   </div>
-</div>
+</section>
 
-<div class="row main-row_header">
-  <p class="col-md-12">{{t "diagnostics.premiumSection"}}</p>
-</div>
+<section class="workspace-surface workspace-surface--flush" aria-labelledby="diagnostics-premium-heading">
+  <div class="workspace-section-heading">
+    <span class="workspace-section-icon"><i class="fa fa-cubes" aria-hidden="true"></i></span>
+    <div class="workspace-section-heading-text">
+      <h2 id="diagnostics-premium-heading">{{t "diagnostics.premiumSection"}}</h2>
+    </div>
+  </div>
 
-<div class="row">
-  <div class="col-md-10 col-md-offset-1">
-    <table class="table table-striped">
+  <div class="workspace-table-scroll" role="region" aria-label="{{t "diagnostics.premiumSection"}}" tabindex="0">
+    <table class="table table-hover workspace-table mobile-card-table diagnostics-table">
       <caption class="sr-only">{{t "diagnostics.premiumSection"}}</caption>
       <tbody>
         <tr>
-          <th>{{t "diagnostics.fields.loaded"}}</th>
-          <td>{{#if diagnostics.edition.premium.loaded}}{{t "common.yes"}}{{else}}{{t "common.no"}}{{/if}}</td>
+          <th data-label="{{t 'diagnostics.fields.loaded'}}">{{t "diagnostics.fields.loaded"}}</th>
+          <td data-label="{{t 'diagnostics.fields.loaded'}}">{{#if diagnostics.edition.premium.loaded}}{{t "common.yes"}}{{else}}{{t "common.no"}}{{/if}}</td>
         </tr>
         <tr>
-          <th>{{t "diagnostics.fields.required"}}</th>
-          <td>{{#if diagnostics.edition.premium.required}}{{t "common.yes"}}{{else}}{{t "common.no"}}{{/if}}</td>
+          <th data-label="{{t 'diagnostics.fields.required'}}">{{t "diagnostics.fields.required"}}</th>
+          <td data-label="{{t 'diagnostics.fields.required'}}">{{#if diagnostics.edition.premium.required}}{{t "common.yes"}}{{else}}{{t "common.no"}}{{/if}}</td>
         </tr>
         <tr>
-          <th>{{t "diagnostics.fields.moduleName"}}</th>
-          <td><code>{{diagnostics.edition.premium.moduleName}}</code></td>
+          <th data-label="{{t 'diagnostics.fields.moduleName'}}">{{t "diagnostics.fields.moduleName"}}</th>
+          <td data-label="{{t 'diagnostics.fields.moduleName'}}"><code>{{diagnostics.edition.premium.moduleName}}</code></td>
         </tr>
         <tr>
-          <th>{{t "diagnostics.fields.routes"}}</th>
-          <td>{{diagnostics.edition.counts.routes}}</td>
+          <th data-label="{{t 'diagnostics.fields.routes'}}">{{t "diagnostics.fields.routes"}}</th>
+          <td class="workspace-cell-numeric" data-label="{{t 'diagnostics.fields.routes'}}">{{diagnostics.edition.counts.routes}}</td>
         </tr>
         <tr>
-          <th>{{t "diagnostics.fields.migrations"}}</th>
-          <td>{{diagnostics.edition.counts.migrationPaths}}</td>
+          <th data-label="{{t 'diagnostics.fields.migrations'}}">{{t "diagnostics.fields.migrations"}}</th>
+          <td class="workspace-cell-numeric" data-label="{{t 'diagnostics.fields.migrations'}}">{{diagnostics.edition.counts.migrationPaths}}</td>
         </tr>
       </tbody>
     </table>
   </div>
-</div>
+</section>
 
-<div class="row main-row_header">
-  <p class="col-md-12">{{t "diagnostics.featuresSection"}}</p>
-</div>
+<section class="workspace-surface workspace-surface--flush" aria-labelledby="diagnostics-features-heading">
+  <div class="workspace-section-heading">
+    <span class="workspace-section-icon"><i class="fa fa-toggle-on" aria-hidden="true"></i></span>
+    <div class="workspace-section-heading-text">
+      <h2 id="diagnostics-features-heading">{{t "diagnostics.featuresSection"}}</h2>
+    </div>
+  </div>
 
-<div class="row">
-  <div class="col-md-10 col-md-offset-1">
-    <table class="table table-striped">
+  <div class="workspace-table-scroll" role="region" aria-label="{{t "diagnostics.featuresSection"}}" tabindex="0">
+    <table class="table table-hover workspace-table mobile-card-table diagnostics-table">
       <caption class="sr-only">{{t "diagnostics.featuresSection"}}</caption>
       <tbody>
         {{#each enabledFeatureRows}}
           <tr>
-            <th><code>{{name}}</code></th>
-            <td>{{#if enabled}}{{t "common.yes"}}{{else}}{{t "common.no"}}{{/if}}</td>
+            <th data-label="{{t 'diagnostics.featuresSection'}}"><code>{{name}}</code></th>
+            <td data-label="{{t 'diagnostics.featuresSection'}}">
+              {{#if enabled}}
+              <span class="workspace-status workspace-status--ok">{{t "common.yes"}}</span>
+              {{else}}
+              <span class="workspace-status workspace-status--neutral">{{t "common.no"}}</span>
+              {{/if}}
+            </td>
           </tr>
         {{/each}}
       </tbody>
     </table>
   </div>
-</div>
+</section>
 
-<div class="row main-row_header">
-  <p class="col-md-12">{{t "diagnostics.snapshotSection"}}</p>
-</div>
-
-<div class="row">
-  <div class="col-md-10 col-md-offset-1">
-    <p>{{t "diagnostics.snapshotHelp"}}</p>
-    <p><a class="btn btn-primary" href="/settings/company/diagnostics.json">{{t "diagnostics.download"}}</a></p>
-    <p>{{t "diagnostics.supportHelp"}}</p>
-    <pre><code>{{diagnosticsJson}}</code></pre>
+<section class="workspace-surface" aria-labelledby="diagnostics-snapshot-heading">
+  <div class="workspace-section-heading">
+    <span class="workspace-section-icon"><i class="fa fa-download" aria-hidden="true"></i></span>
+    <div class="workspace-section-heading-text">
+      <h2 id="diagnostics-snapshot-heading">{{t "diagnostics.snapshotSection"}}</h2>
+      <p>{{t "diagnostics.snapshotHelp"}}</p>
+    </div>
+    <div class="workspace-section-heading-actions">
+      <a class="btn btn-primary" href="/settings/company/diagnostics.json">{{t "diagnostics.download"}}</a>
+    </div>
   </div>
-</div>
+
+  <p class="workspace-field-help">{{t "diagnostics.supportHelp"}}</p>
+  <pre class="workspace-code"><code>{{diagnosticsJson}}</code></pre>
+</section>
 
 </main>
 {{> footer }}

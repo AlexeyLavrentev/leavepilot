@@ -32,6 +32,15 @@ function blockOf(source, selector) {
   return source.slice(begin, index + 1);
 }
 
+function reducedMotionBlocks(source) {
+  const marker = '@media (prefers-reduced-motion: reduce)';
+  const blocks = [];
+  for (let at = source.indexOf(marker); at !== -1; at = source.indexOf(marker, at + 1)) {
+    blocks.push(blockOf(source.slice(at), marker));
+  }
+  return blocks;
+}
+
 describe('Authentication Settings workspace contract (Stage 8L)', function () {
   const view = read('views/settings_company_authentication.hbs');
   const scss = read('scss/main.scss');
@@ -183,8 +192,11 @@ describe('Authentication Settings workspace contract (Stage 8L)', function () {
 
     it('uses immediate press feedback and neutralizes its compound under reduced motion', function () {
       expect(css).to.match(/\.authentication-settings-page[^{}]*:active[^{}]*,[^{}]*\.authentication-settings-page[^{}]*:hover:active[^{}]*\{[^}]*transform:\s*scale\(0\.98\)/);
-      const reduced = css.slice(css.lastIndexOf('@media (prefers-reduced-motion: reduce)'));
-      expect(reduced).to.include('.authentication-settings-page');
+      // Later stages append their own reduced-motion blocks, so pick the one
+      // that actually scopes this page instead of whichever comes last.
+      const reduced = reducedMotionBlocks(css)
+        .find(block => block.includes('.authentication-settings-page'));
+      expect(reduced, 'reduced-motion block scoped to the page').to.be.a('string');
       expect(reduced).to.include(':hover:active');
       expect(reduced).to.match(/transform:\s*none/);
     });

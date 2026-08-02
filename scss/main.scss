@@ -9876,3 +9876,994 @@ td.current_day_cell.half_2nd {
     min-width: 0;
   }
 }
+
+/* ============================================================
+ * Stage 8M — Shared admin & report workspace (.workspace-page)
+ *
+ * The pages left over after Stage 8A–8L (diagnostics, integration
+ * API, calendar feeds, bulk department edit, reminder schedules,
+ * email audit) all share the same shape: a heading, a few surfaces,
+ * a table or a form. Instead of repeating a per-page token block
+ * for each of them, they share one scoped root and add only what is
+ * genuinely page-specific. Pure EOF append — no edits to :root, the
+ * global dark block, the global .mobile-card-table rule, or Bootstrap.
+ * ============================================================ */
+.workspace-page {
+  --workspace-surface: #{$surface-color};
+  --workspace-surface-raised: #{$surface-subtle};
+  --workspace-surface-sunken: #{$surface-muted};
+  --workspace-surface-overlay: #ffffff;
+  --workspace-border: #{$border-color};
+  --workspace-border-hairline: #eef2f6;
+  --workspace-border-strong: #cdd8e2;
+  --workspace-ink: #{$text-strong};
+  --workspace-ink-body: #425466;
+  --workspace-ink-muted: #{$text-muted};
+  --workspace-accent: #{$brand-blue};
+  --workspace-accent-soft: #{$accent-soft};
+  --workspace-positive: #1c6b45;
+  --workspace-positive-soft: #{$success-soft};
+  --workspace-positive-edge: #bfe0cd;
+  --workspace-caution: #7a5200;
+  --workspace-caution-soft: #{$warning-soft};
+  --workspace-caution-edge: #ecd5a6;
+  --workspace-critical: #a13333;
+  --workspace-critical-soft: #{$danger-soft};
+  --workspace-critical-edge: #eec4c4;
+  --workspace-neutral: #55636f;
+  --workspace-neutral-soft: #eef1f4;
+  --workspace-neutral-edge: #d8dee4;
+  --workspace-shadow: #{$shadow-sm};
+  --workspace-shadow-raised: #{$shadow-md};
+  --workspace-radius: 10px;
+  --workspace-radius-control: #{$radius-md};
+  --workspace-space-1: #{$space-1};
+  --workspace-space-2: #{$space-2};
+  --workspace-space-3: #{$space-3};
+  --workspace-space-4: #{$space-4};
+  --workspace-space-5: #{$space-5};
+  --workspace-space-6: #{$space-6};
+
+  width: 100%;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding-bottom: 40px;
+}
+
+/* Heading: hierarchy from size + weight + leading, not size alone. */
+.workspace-page .page-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--workspace-space-4);
+  margin-bottom: var(--workspace-space-5);
+}
+
+.workspace-page .page-heading h1 {
+  margin: 0;
+  color: var(--color-heading-primary);
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1.12;
+  letter-spacing: -0.02em;
+}
+
+.workspace-page .page-eyebrow {
+  margin: 0 0 var(--workspace-space-1);
+  color: var(--workspace-ink-muted);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.workspace-page .page-heading .lead {
+  max-width: 720px;
+  margin: var(--workspace-space-2) 0 0;
+  color: var(--workspace-ink-muted);
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 1.45;
+}
+
+.workspace-page .workspace-heading-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--workspace-space-2);
+}
+
+.workspace-page .workspace-heading-actions form {
+  margin: 0;
+}
+
+/* Surfaces */
+.workspace-page .workspace-surface {
+  min-width: 0;
+  margin: 0 0 var(--workspace-space-5);
+  padding: var(--workspace-space-5);
+  background: var(--workspace-surface);
+  border: 1px solid var(--workspace-border);
+  border-top-color: var(--workspace-border-hairline);
+  border-radius: var(--workspace-radius);
+  box-shadow: var(--workspace-shadow);
+}
+
+.workspace-page .workspace-surface:last-child {
+  margin-bottom: 0;
+}
+
+.workspace-page .workspace-surface--flush {
+  padding: 0;
+  overflow: hidden;
+}
+
+.workspace-page .workspace-surface--flush > .workspace-section-heading {
+  margin-bottom: 0;
+  padding: var(--workspace-space-4) var(--workspace-space-5);
+}
+
+.workspace-page .workspace-surface--flush > .workspace-empty {
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+}
+
+.workspace-page .workspace-section-heading {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--workspace-space-3);
+  margin-bottom: var(--workspace-space-4);
+  padding-bottom: var(--workspace-space-3);
+  border-bottom: 1px solid var(--workspace-border);
+}
+
+.workspace-page .workspace-section-heading h2,
+.workspace-page .workspace-section-heading h3 {
+  margin: 0;
+  color: var(--color-heading-primary);
+  font-size: 19px;
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+}
+
+.workspace-page .workspace-section-heading p {
+  max-width: 640px;
+  margin: var(--workspace-space-1) 0 0;
+  color: var(--workspace-ink-muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.workspace-page .workspace-section-icon {
+  display: inline-flex;
+  flex: 0 0 38px;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  color: var(--workspace-accent);
+  background: var(--workspace-accent-soft);
+  border-radius: 10px;
+  font-size: 16px;
+}
+
+.workspace-page .workspace-section-heading-text {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.workspace-page .workspace-section-heading-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--workspace-space-2);
+  margin-left: auto;
+}
+
+.workspace-page .workspace-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 22px;
+  padding: 0 8px;
+  color: var(--workspace-accent);
+  background: var(--workspace-accent-soft);
+  border-radius: $radius-pill;
+  font-size: 12px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Layout helpers */
+.workspace-page .workspace-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--workspace-space-5);
+}
+
+.workspace-page .workspace-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 340px);
+  gap: var(--workspace-space-5);
+  align-items: start;
+}
+
+.workspace-page .workspace-split > * {
+  min-width: 0;
+}
+
+.workspace-page .workspace-narrow {
+  max-width: 760px;
+}
+
+/* Forms */
+.workspace-page .workspace-form {
+  display: grid;
+  gap: var(--workspace-space-3);
+}
+
+.workspace-page .workspace-form .form-group {
+  min-width: 0;
+  margin: 0;
+}
+
+.workspace-page .workspace-form label,
+.workspace-page .workspace-form .control-label {
+  display: block;
+  margin-bottom: var(--workspace-space-1);
+  color: var(--workspace-ink);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.workspace-page .workspace-field-help {
+  margin: var(--workspace-space-1) 0 0;
+  color: var(--workspace-ink-muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.workspace-page .workspace-field-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--workspace-space-3);
+}
+
+.workspace-page:not(.workspace-page--calendar) .form-control {
+  min-height: 40px;
+  padding: 8px 12px;
+  color: var(--workspace-ink-body);
+  background: var(--workspace-surface);
+  border: 1px solid var(--workspace-border-strong);
+  border-radius: var(--workspace-radius-control);
+  box-shadow: none;
+  font-size: 14px;
+  transition: border-color 180ms ease-out, box-shadow 180ms ease-out;
+}
+
+.workspace-page .form-control:focus {
+  border-color: var(--workspace-accent);
+  box-shadow: 0 0 0 3px var(--color-focus-ring);
+  outline: none;
+}
+
+.workspace-page .workspace-checkbox {
+  display: flex;
+  align-items: center;
+  gap: var(--workspace-space-2);
+  min-height: 32px;
+  margin: 0;
+  padding: 4px 6px;
+  border-radius: 6px;
+  color: var(--workspace-ink-body);
+  font-size: 14px;
+  font-weight: 400;
+  cursor: pointer;
+}
+
+.workspace-page .workspace-checkbox input {
+  margin: 0;
+}
+
+/* Buttons: feedback on press, and only on hover-capable pointers for hover.
+   Calendar-style pages opt out of the control sizing: their toolbars sit
+   directly above dense month grids that a 40px control row would push apart. */
+.workspace-page:not(.workspace-page--calendar) .btn {
+  min-height: 40px;
+  border-radius: var(--workspace-radius-control);
+  font-weight: 600;
+  transition: transform 100ms ease-out, box-shadow 180ms ease-out,
+              background-color 180ms ease-out;
+}
+
+.workspace-page .btn:active {
+  transform: scale(0.97);
+}
+
+.workspace-page .btn-sm,
+.workspace-page .btn-xs {
+  min-height: 32px;
+}
+
+.workspace-page .workspace-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--workspace-space-2);
+}
+
+.workspace-page .workspace-actions form {
+  margin: 0;
+}
+
+.workspace-page .workspace-actions--end {
+  justify-content: flex-end;
+}
+
+.workspace-page .workspace-actions--footer {
+  margin-top: var(--workspace-space-5);
+  padding-top: var(--workspace-space-4);
+  border-top: 1px solid var(--workspace-border);
+}
+
+/* Toolbar (filters above a table) */
+.workspace-page .workspace-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--workspace-space-3);
+  margin-bottom: var(--workspace-space-5);
+  padding: var(--workspace-space-4);
+  background: var(--workspace-surface-sunken);
+  border: 1px solid var(--workspace-border);
+  border-radius: var(--workspace-radius);
+}
+
+.workspace-page .workspace-toolbar .form-group {
+  min-width: 160px;
+  margin: 0;
+}
+
+.workspace-page .workspace-toolbar-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--workspace-space-2);
+  margin-left: auto;
+}
+
+/* Tables */
+.workspace-page .workspace-table-scroll {
+  min-width: 0;
+  margin: 0;
+  border: 0;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.workspace-page .workspace-table {
+  width: 100%;
+  margin: 0;
+  background: var(--workspace-surface);
+  font-size: 14px;
+}
+
+.workspace-page .workspace-table > thead > tr > th {
+  padding: 10px var(--workspace-space-4);
+  color: var(--workspace-ink-muted);
+  background: var(--workspace-surface-sunken);
+  border-bottom: 1px solid var(--workspace-border);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.workspace-page .workspace-table > tbody > tr > td,
+.workspace-page .workspace-table > tbody > tr > th {
+  padding: var(--workspace-space-3) var(--workspace-space-4);
+  color: var(--workspace-ink-body);
+  border-top: 1px solid var(--workspace-border-hairline);
+  vertical-align: middle;
+}
+
+.workspace-page .workspace-table > tbody > tr > th {
+  color: var(--workspace-ink);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.workspace-page .workspace-table > tbody > tr:first-child > td,
+.workspace-page .workspace-table > tbody > tr:first-child > th {
+  border-top: 0;
+}
+
+.workspace-page .workspace-cell-numeric {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.workspace-page .workspace-cell-primary {
+  color: var(--workspace-ink);
+  font-weight: 600;
+}
+
+.workspace-page .workspace-cell-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.workspace-page .workspace-cell-detail {
+  color: var(--workspace-ink-muted);
+  font-size: 12px;
+  font-weight: 400;
+}
+
+@media (hover: hover) {
+  .workspace-page .workspace-table.table-hover > tbody > tr:hover > td,
+  .workspace-page .workspace-table.table-hover > tbody > tr:hover > th {
+    background: var(--workspace-surface-raised);
+  }
+}
+
+/* Empty state */
+.workspace-page .workspace-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--workspace-space-2);
+  padding: var(--workspace-space-6) var(--workspace-space-5);
+  color: var(--workspace-ink-muted);
+  background: var(--workspace-surface-sunken);
+  border: 1px dashed var(--workspace-border-strong);
+  border-radius: var(--workspace-radius);
+  text-align: center;
+}
+
+.workspace-page .workspace-empty-icon {
+  color: var(--workspace-border-strong);
+  font-size: 26px;
+}
+
+.workspace-page .workspace-empty p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* Status chips */
+.workspace-page .workspace-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border: 1px solid transparent;
+  border-radius: $radius-pill;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+
+.workspace-page .workspace-status--ok {
+  color: var(--workspace-positive);
+  background: var(--workspace-positive-soft);
+  border-color: var(--workspace-positive-edge);
+}
+
+.workspace-page .workspace-status--warn {
+  color: var(--workspace-caution);
+  background: var(--workspace-caution-soft);
+  border-color: var(--workspace-caution-edge);
+}
+
+.workspace-page .workspace-status--fail {
+  color: var(--workspace-critical);
+  background: var(--workspace-critical-soft);
+  border-color: var(--workspace-critical-edge);
+}
+
+.workspace-page .workspace-status--neutral {
+  color: var(--workspace-neutral);
+  background: var(--workspace-neutral-soft);
+  border-color: var(--workspace-neutral-edge);
+}
+
+/* Callouts */
+.workspace-page .workspace-callout {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--workspace-space-3);
+  margin: 0 0 var(--workspace-space-5);
+  padding: var(--workspace-space-4);
+  border: 1px solid var(--workspace-border);
+  border-radius: var(--workspace-radius);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.workspace-page .workspace-callout-icon {
+  flex: 0 0 auto;
+  line-height: 1.5;
+}
+
+.workspace-page .workspace-callout--info {
+  color: var(--workspace-accent);
+  background: var(--workspace-accent-soft);
+  border-color: #c9e0ef;
+}
+
+.workspace-page .workspace-callout--warn {
+  color: var(--workspace-caution);
+  background: var(--workspace-caution-soft);
+  border-color: var(--workspace-caution-edge);
+}
+
+/* Monospace payloads (tokens, diagnostics snapshots). */
+.workspace-page .workspace-code {
+  max-height: 420px;
+  margin: 0;
+  padding: var(--workspace-space-4);
+  color: var(--workspace-ink-body);
+  background: var(--workspace-surface-sunken);
+  border: 1px solid var(--workspace-border);
+  border-radius: var(--workspace-radius-control);
+  font-size: 12px;
+  line-height: 1.55;
+  overflow: auto;
+}
+
+.workspace-page code {
+  color: var(--workspace-ink);
+  background: var(--workspace-surface-sunken);
+  border: 1px solid var(--workspace-border);
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+/* Dark appearance: scoped token overrides only. */
+[data-theme="dark"] .workspace-page {
+  --workspace-surface: #1a1e22;
+  --workspace-surface-raised: #20252a;
+  --workspace-surface-sunken: #15181b;
+  --workspace-surface-overlay: #1f2327;
+  --workspace-border: #2a2f34;
+  --workspace-border-hairline: #23282d;
+  --workspace-border-strong: #3a4148;
+  --workspace-ink: #e6ebf0;
+  --workspace-ink-body: #c3ccd4;
+  --workspace-ink-muted: #97a3ad;
+  --workspace-accent: #6cb6e8;
+  --workspace-accent-soft: #1d2c38;
+  --workspace-positive: #7fd49a;
+  --workspace-positive-soft: #1f3a2a;
+  --workspace-positive-edge: #2f5a40;
+  --workspace-caution: #f5d76e;
+  --workspace-caution-soft: #3a3220;
+  --workspace-caution-edge: #5a4d28;
+  --workspace-critical: #e58a8a;
+  --workspace-critical-soft: #3a2222;
+  --workspace-critical-edge: #5a3030;
+  --workspace-neutral: #b3bdc6;
+  --workspace-neutral-soft: #24292e;
+  --workspace-neutral-edge: #363c42;
+  --workspace-shadow: 0 1px 2px rgba(0, 0, 0, 0.32);
+  --workspace-shadow-raised: 0 8px 24px rgba(0, 0, 0, 0.40);
+}
+
+[data-theme="dark"] .workspace-page .workspace-callout--info {
+  border-color: #2b4557;
+}
+
+/* High contrast: thicker borders, drop the shadow. */
+@media (prefers-contrast: more) {
+  .workspace-page .workspace-surface,
+  .workspace-page .workspace-toolbar {
+    border-width: 2px;
+    box-shadow: none;
+  }
+
+  .workspace-page .workspace-table > tbody > tr > td,
+  .workspace-page .workspace-table > tbody > tr > th {
+    border-top-width: 2px;
+    border-top-color: var(--workspace-border);
+  }
+
+  .workspace-page .workspace-status {
+    border-width: 2px;
+  }
+}
+
+/* Reduced transparency: explicit solid surface. */
+@media (prefers-reduced-transparency: reduce) {
+  .workspace-page .workspace-surface {
+    background: var(--workspace-surface-overlay);
+  }
+}
+
+/* Reduced motion: kill transition/animation AND the press transform. */
+@media (prefers-reduced-motion: reduce) {
+  .workspace-page *,
+  .workspace-page *::before,
+  .workspace-page *::after {
+    transition: none !important;
+    animation: none !important;
+  }
+
+  .workspace-page .btn:active,
+  .workspace-page .btn:hover:active,
+  .workspace-page .single-click:active {
+    transform: none;
+  }
+}
+
+/* Touch targets stay finger-sized on coarse pointers. */
+@media (pointer: coarse) {
+  .workspace-page:not(.workspace-page--calendar) .btn,
+  .workspace-page:not(.workspace-page--calendar) .form-control {
+    min-height: 44px;
+  }
+
+  .workspace-page .workspace-checkbox {
+    min-height: 44px;
+  }
+}
+
+@media (max-width: 991px) {
+  .workspace-page .workspace-split {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .workspace-page {
+    padding-bottom: var(--workspace-space-5);
+  }
+
+  .workspace-page .page-heading h1 {
+    font-size: 24px;
+  }
+
+  .workspace-page .page-heading .lead {
+    font-size: 15px;
+  }
+
+  .workspace-page .workspace-surface {
+    padding: var(--workspace-space-4);
+  }
+
+  .workspace-page .workspace-surface--flush {
+    padding: 0;
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+    overflow: visible;
+  }
+
+  .workspace-page .workspace-surface--flush > .workspace-section-heading {
+    padding-inline: 0;
+    background: transparent;
+  }
+
+  .workspace-page .workspace-toolbar-actions {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  /* Tables become one card per row; the head stays clipped, not removed,
+     so the accessibility tree keeps its column semantics. */
+  .workspace-page .workspace-table.mobile-card-table {
+    min-width: 0;
+    background: transparent;
+  }
+
+  .workspace-page .workspace-table.mobile-card-table > tbody > tr {
+    background: var(--workspace-surface);
+    border: 1px solid var(--workspace-border);
+    border-radius: var(--workspace-radius);
+    box-shadow: var(--workspace-shadow);
+  }
+
+  .workspace-page .workspace-table.mobile-card-table > tbody > tr > td,
+  .workspace-page .workspace-table.mobile-card-table > tbody > tr > th {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--workspace-space-3);
+    padding: 6px 0;
+    border: 0;
+    text-align: left;
+  }
+
+  .workspace-page .workspace-table.mobile-card-table > tbody > tr > td[data-label]::before,
+  .workspace-page .workspace-table.mobile-card-table > tbody > tr > th[data-label]::before {
+    content: attr(data-label);
+    flex: 0 0 auto;
+    color: var(--workspace-ink-muted);
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  .workspace-page .workspace-cell-numeric {
+    text-align: left;
+  }
+}
+
+/* ------------------------------------------------------------
+ * Stage 8M — page-specific additions on top of .workspace-page.
+ * Each block only carries what is genuinely unique to the page.
+ * ---------------------------------------------------------- */
+
+/* Grouped controls keep a real fieldset/legend for screen readers without the
+   browser's default box (reminder schedules modal). */
+.workspace-page .workspace-fieldset {
+  min-width: 0;
+  padding: 0;
+  border: 0;
+}
+
+.workspace-page .workspace-fieldset > legend {
+  width: auto;
+  margin-bottom: var(--workspace-space-2);
+  padding: 0;
+  border: 0;
+  color: var(--workspace-ink);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.workspace-page .workspace-modal .modal-content {
+  background: var(--workspace-surface);
+  border: 1px solid var(--workspace-border);
+  border-radius: var(--workspace-radius);
+  box-shadow: var(--workspace-shadow-raised);
+}
+
+.workspace-page .workspace-modal .modal-header,
+.workspace-page .workspace-modal .modal-footer {
+  padding: var(--workspace-space-4) var(--workspace-space-5);
+  border-color: var(--workspace-border);
+}
+
+.workspace-page .workspace-modal .modal-body {
+  padding: var(--workspace-space-5);
+}
+
+/* Calendar feeds: the shared cards now sit on .workspace-surface, so the
+   pre-Stage-8 card chrome is replaced rather than layered on. */
+.feeds-page .feeds-intro {
+  max-width: none;
+  border-left: 0;
+  border-radius: var(--workspace-radius);
+}
+
+.feeds-page .feeds-source-list {
+  margin: 0 0 var(--workspace-space-3);
+  padding-left: 20px;
+  color: var(--workspace-ink-body);
+  line-height: 1.6;
+}
+
+.feeds-page .feeds-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: var(--workspace-space-5);
+  max-width: none;
+  margin-bottom: var(--workspace-space-5);
+}
+
+.feeds-page .feed-card {
+  display: block;
+  padding: var(--workspace-space-5);
+  border-radius: var(--workspace-radius);
+}
+
+.feeds-page .feed-card-icon {
+  width: 38px;
+  height: 38px;
+  font-size: 16px;
+}
+
+.feeds-page .feed-card-action {
+  grid-column: auto;
+}
+
+.feeds-page .feed-card-url code {
+  background: var(--workspace-surface-sunken);
+  border-color: var(--workspace-border);
+  color: var(--workspace-ink);
+}
+
+.feeds-page .feeds-instructions {
+  max-width: none;
+  margin-top: 0;
+  border-radius: var(--workspace-radius);
+}
+
+.feeds-page .feeds-instructions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: var(--workspace-space-5);
+}
+
+.feeds-page .feeds-instructions-group {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
+}
+
+.feeds-page .feeds-instructions-group h3 {
+  margin: 0 0 var(--workspace-space-2);
+  color: var(--color-heading-primary);
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.feeds-page .feeds-instructions-group ol {
+  margin: 0;
+  padding-left: 20px;
+  color: var(--workspace-ink-muted);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+/* Email audit: the expandable body row is a full-width detail, not a cell. */
+.email-audit-page .email-audit-detail-row > td {
+  background: var(--workspace-surface-sunken);
+}
+
+.email-audit-page .email-audit-body {
+  margin: var(--workspace-space-2) 0 0;
+  white-space: pre-wrap;
+}
+
+/* Bulk department editing: inputs sit inside table cells. */
+.departments-bulk-page .workspace-table > tbody > tr > td {
+  vertical-align: top;
+}
+
+.departments-bulk-page .workspace-table .form-control {
+  min-width: 140px;
+}
+
+/* Diagnostics: the row header column carries the field name. */
+.diagnostics-page .workspace-table > tbody > tr > th {
+  width: 34%;
+  white-space: normal;
+}
+
+.diagnostics-page .workspace-table code {
+  word-break: break-all;
+}
+
+@media (max-width: 768px) {
+  .email-audit-page .email-audit-detail-row > td {
+    display: block;
+  }
+
+  .email-audit-page .email-audit-detail-row > td::before {
+    content: none;
+  }
+
+  .departments-bulk-page .workspace-table.mobile-card-table > tbody > tr > td {
+    display: block;
+  }
+
+  .departments-bulk-page .workspace-table.mobile-card-table > tbody > tr > td::before {
+    display: block;
+    margin-bottom: var(--workspace-space-1);
+  }
+
+  .diagnostics-page .workspace-table > tbody > tr > th {
+    width: auto;
+  }
+
+  /* The row-header cell already repeats the field name in the card label. */
+  .diagnostics-page .workspace-table.mobile-card-table > tbody > tr > th {
+    display: none;
+  }
+}
+
+/* ------------------------------------------------------------
+ * Stage 8M — Employee calendar and Team View.
+ *
+ * These two pages already carried a bespoke month-grid layout, so
+ * they adopt the workspace tokens for chrome (heading, summary,
+ * toolbars, table surfaces) and keep their own cell geometry. The
+ * .workspace-page--calendar modifier opts them out of the shared
+ * control sizing so the dense grids do not grow.
+ * ---------------------------------------------------------- */
+.workspace-page--calendar {
+  max-width: none;
+}
+
+.workspace-page--calendar .calendar-summary,
+.workspace-page--calendar .calendar-workspace,
+.workspace-page--calendar .team-toolbar {
+  margin-bottom: var(--workspace-space-5);
+}
+
+.workspace-page--calendar .team-toolbar,
+.workspace-page--calendar .calendar-toolbar {
+  padding: var(--workspace-space-4);
+  background: var(--workspace-surface-sunken);
+  border: 1px solid var(--workspace-border);
+  border-radius: var(--workspace-radius);
+}
+
+.workspace-page--calendar .calendar-toolbar {
+  margin-bottom: var(--workspace-space-4);
+}
+
+.workspace-page--calendar .section-heading h2,
+.workspace-page--calendar .team-view-month-heading h3 {
+  margin: 0;
+  color: var(--color-heading-primary);
+  font-size: 19px;
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+}
+
+.workspace-page--calendar .team-view-month-heading {
+  margin: var(--workspace-space-5) 0 var(--workspace-space-3);
+}
+
+.workspace-page--calendar .month_container .calendar_month {
+  background: var(--workspace-surface);
+  border: 1px solid var(--workspace-border);
+  border-radius: var(--workspace-radius);
+  box-shadow: var(--workspace-shadow);
+  overflow: hidden;
+}
+
+.workspace-page--calendar .team-tables .team-view-table-wrapper,
+.workspace-page--calendar .team-tables .table-responsive {
+  background: var(--workspace-surface);
+  border: 1px solid var(--workspace-border);
+  border-radius: var(--workspace-radius);
+  box-shadow: var(--workspace-shadow);
+}
+
+[data-theme="dark"] .workspace-page--calendar .month_container .calendar_month {
+  background: var(--workspace-surface);
+}
+
+@media (prefers-contrast: more) {
+  .workspace-page--calendar .team-toolbar,
+  .workspace-page--calendar .calendar-toolbar,
+  .workspace-page--calendar .month_container .calendar_month {
+    border-width: 2px;
+    box-shadow: none;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .workspace-page--calendar .month_container .calendar_month {
+    background: var(--workspace-surface-overlay);
+  }
+}
+
+@media (max-width: 768px) {
+  .workspace-page--calendar .team-toolbar,
+  .workspace-page--calendar .calendar-toolbar {
+    padding: var(--workspace-space-3);
+  }
+}
+
+.workspace-page--calendar .calendar-absences {
+  margin-top: var(--workspace-space-6);
+}
+
+.workspace-page--calendar .calendar-absences .section-heading {
+  margin-bottom: var(--workspace-space-4);
+}
