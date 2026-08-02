@@ -1045,6 +1045,7 @@
     "subtitle": "Shows absences in a given period",
     "breadcrumbCurrent": "Absences",
     "filterTitle": "Filter",
+    "sortBy": "Sort by",
     "dateRangeLabel": "Date range",
     "fromDay": "From Day",
     "toDay": "To Day",

@@ -1047,6 +1047,7 @@
     "subtitle": "Показує відсутність за вибраний період",
     "breadcrumbCurrent": "Відсутності",
     "filterTitle": "Фільтр",
+    "sortBy": "Сортувати за",
     "dateRangeLabel": "Діапазон дат",
     "fromDay": "З якого дня",
     "toDay": "По який день",
