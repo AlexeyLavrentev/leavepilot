@@ -64,6 +64,7 @@ describePremium('Enable/disable Integration APIs', function(){
       driver,
       form_params : [],
       submit_button_selector: '#regenerate_token_btn',
+      confirm_dialog: true,
       should_be_successful: true,
       message: /Settings were saved/,
     })
@@ -128,6 +129,7 @@ describePremium('Enable/disable Integration APIs', function(){
       driver,
       form_params : [],
       submit_button_selector: '#regenerate_token_btn',
+      confirm_dialog: true,
       should_be_successful: true,
       message: /Settings were saved/,
     }))
