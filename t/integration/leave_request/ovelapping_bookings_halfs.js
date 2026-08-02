@@ -68,7 +68,8 @@ describe('Overlapping leaverequest (with halfs)', function(){
       application_host : application_host,
       driver           : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Login as non-admin user", function(done){
@@ -77,7 +78,8 @@ describe('Overlapping leaverequest (with halfs)', function(){
       user_email       : non_admin_user_email,
       driver           : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Open calendar page", function(done){
@@ -85,7 +87,8 @@ describe('Overlapping leaverequest (with halfs)', function(){
       url    : application_host + 'calendar/?show_full_year=1&year=2015',
       driver : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("And make sure that it is calendar indeed", function(done){
@@ -120,7 +123,8 @@ describe('Overlapping leaverequest (with halfs)', function(){
           }],
           message : /New leave request was added/,
         })
-        .then(function(){ done() });
+        .then(function(){ done() })
+        .catch(done);
       });
   });
 
@@ -131,7 +135,8 @@ describe('Overlapping leaverequest (with halfs)', function(){
       halfs_1st_days : [moment('2015-06-16')],
       type           : 'pended',
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Try to request overlapping leave request (new request overlaps with half by the full end)", function(done){
@@ -153,7 +158,8 @@ describe('Overlapping leaverequest (with halfs)', function(){
           }],
           message : /Failed to create a leave request/,
         })
-        .then(function(){ done() });
+        .then(function(){ done() })
+        .catch(done);
       });
   });
 
@@ -181,7 +187,8 @@ describe('Overlapping leaverequest (with halfs)', function(){
           }],
           message : /Failed to create a leave request/,
         })
-        .then(function(){ done() });
+        .then(function(){ done() })
+        .catch(done);
       });
   });
 
@@ -208,7 +215,8 @@ describe('Overlapping leaverequest (with halfs)', function(){
           }],
           message : /Failed to create a leave request/,
         })
-        .then(function(){ done() });
+        .then(function(){ done() })
+        .catch(done);
       });
   });
 
@@ -235,7 +243,8 @@ describe('Overlapping leaverequest (with halfs)', function(){
           }],
           message : /New leave request was added/,
         })
-        .then(function(){ done() });
+        .then(function(){ done() })
+        .catch(done);
       });
   });
 
@@ -245,7 +254,8 @@ describe('Overlapping leaverequest (with halfs)', function(){
       full_days : [moment('2015-06-15'),moment('2015-06-16'),moment('2015-06-17')],
       type      : 'pended',
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   after(function(done){
