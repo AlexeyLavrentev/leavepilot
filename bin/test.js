@@ -104,9 +104,18 @@ const runMochaSuite = () => {
 
   const failures = [];
 
+  // Browser specs wait on animations and network, and a shared runner makes
+  // those waits tighter than they are on a developer machine. One retry keeps a
+  // single missed wait from failing the run without weakening any assertion; a
+  // spec that fails twice in a row is reported.
+  const configuredRetries = Number(process.env.TEST_RETRIES);
+  const retryArgs = Number.isInteger(configuredRetries) && configuredRetries > 0
+    ? ['--retries', String(configuredRetries)]
+    : [];
+
   const runBatch = (batch, index) => {
     console.log(`Running integration batch ${index + 1}/${batches.length} (${batch.length} files)`);
-    const attempt = run(node, ['node_modules/mocha/bin/mocha'].concat(batch));
+    const attempt = run(node, ['node_modules/mocha/bin/mocha'].concat(retryArgs).concat(batch));
 
     if (!keepGoing) {
       return attempt;

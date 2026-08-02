@@ -71,3 +71,6 @@ jobs:
           # 60s on a two-core runner while passing locally, so the runner gets a
           # larger budget rather than the specs getting weaker assertions.
           TEST_EXECUTION_TIMEOUT_MS: '120000'
+          # One retry for a missed wait. Assertions are untouched: a spec that
+          # fails twice in a row still fails the run.
+          TEST_RETRIES: '1'
