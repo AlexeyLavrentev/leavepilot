@@ -1,100 +1,114 @@
-
 {{> header }}
 
 <a class="sr-only sr-only-focusable" href="#main-content">{{t "nav.skipToMainContent"}}</a>
-<main id="main-content" tabindex="-1">
-<h1>{{t "register.title"}}</h1>
 
-{{> show_flash_messages }}
-
-<div class="row">
-  <div class="col-md-6 lead">{{t "register.subtitle"}}</div>
-</div>
-
-<div class="auth-shell">
-  <div class="auth-card auth-card-wide">
-    <form class="form-horizontal" action="/register" method="post">
-      <input type="hidden" name="_csrf" value="{{csrf_token}}">
-
-      <div class="form-group">
-        <label for="company_name_inp" class="col-sm-4 control-label">{{t "register.companyName"}}</label>
-        <div class="col-sm-8">
-          <input class="form-control" id="company_name_inp" placeholder="{{t "register.companyNamePlaceholder"}}" name="company_name" autocomplete="organization" required>
+<main id="main-content" class="auth-page account-access-page account-access-register" tabindex="-1">
+  <div class="auth-layout account-access-layout account-access-layout-wide">
+    <section class="auth-intro account-access-intro" aria-labelledby="account-access-title">
+      <div class="auth-intro-content">
+        <div class="auth-product-mark" aria-hidden="true"><span class="fa fa-building-o"></span></div>
+        <p class="auth-eyebrow">{{brand_name}}</p>
+        <h1 id="account-access-title">{{t "register.title"}}</h1>
+        <p class="auth-intro-copy">{{t "register.subtitle"}}</p>
+        <div class="auth-methods" aria-hidden="true">
+          <span><i class="fa fa-building-o"></i>{{t "register.companyName"}}</span>
+          <span><i class="fa fa-globe"></i>{{t "register.country"}}</span>
         </div>
       </div>
+    </section>
 
-      <div class="form-group">
-        <label for="name_inp" class="col-sm-4 control-label">{{t "register.firstName"}}</label>
-        <div class="col-sm-8">
-          <input class="form-control" id="name_inp" placeholder="{{t "register.firstNamePlaceholder"}}" name="name" autocomplete="given-name" required>
-        </div>
+    <section class="auth-panel account-access-panel" aria-labelledby="account-access-form-title">
+      {{> show_flash_messages }}
+
+      <div class="auth-card auth-card-wide account-access-card">
+        <form action="/register" method="post" class="account-access-form account-access-register-form">
+          <input type="hidden" name="_csrf" value="{{csrf_token}}">
+
+          <div class="auth-card-heading">
+            <p class="auth-eyebrow">{{brand_name}}</p>
+            <h2 id="account-access-form-title">{{t "register.title"}}</h2>
+          </div>
+
+          <div class="account-access-field-grid">
+            <div class="form-group account-access-field-wide">
+              <label for="company_name_inp" class="control-label">{{t "register.companyName"}}</label>
+              <div class="auth-input">
+                <span class="fa fa-building-o" aria-hidden="true"></span>
+                <input class="form-control" id="company_name_inp" placeholder="{{t "register.companyNamePlaceholder"}}" name="company_name" autocomplete="organization" required>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="name_inp" class="control-label">{{t "register.firstName"}}</label>
+              <div class="auth-input">
+                <span class="fa fa-user-o" aria-hidden="true"></span>
+                <input class="form-control" id="name_inp" placeholder="{{t "register.firstNamePlaceholder"}}" name="name" autocomplete="given-name" required>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="lastname_inp" class="control-label">{{t "register.lastName"}}</label>
+              <div class="auth-input">
+                <span class="fa fa-user-o" aria-hidden="true"></span>
+                <input class="form-control" id="lastname_inp" placeholder="{{t "register.lastNamePlaceholder"}}" name="lastname" autocomplete="family-name" required>
+              </div>
+            </div>
+
+            <div class="form-group account-access-field-wide">
+              <label for="email_inp" class="control-label">{{t "register.emailAddress"}}</label>
+              <div class="auth-input">
+                <span class="fa fa-envelope-o" aria-hidden="true"></span>
+                <input class="form-control" id="email_inp" type="email" placeholder="{{t "register.emailPlaceholder"}}" name="email" autocomplete="email" required>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="pass_inp" class="control-label">{{t "register.password"}}</label>
+              <div class="auth-input">
+                <span class="fa fa-lock" aria-hidden="true"></span>
+                <input class="form-control" id="pass_inp" type="password" placeholder="{{t "register.passwordPlaceholder"}}" name="password" autocomplete="new-password" required>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="confirm_pass_inp" class="control-label">{{t "register.confirmPassword"}}</label>
+              <div class="auth-input">
+                <span class="fa fa-lock" aria-hidden="true"></span>
+                <input class="form-control" id="confirm_pass_inp" type="password" placeholder="{{t "register.passwordPlaceholder"}}" name="password_confirmed" autocomplete="new-password" required>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="country_inp" class="control-label">{{t "register.country"}} <span class="text-danger" aria-hidden="true">*</span></label>
+              <select class="form-control" id="country_inp" name="country" required aria-describedby="country_help">
+                <option value="">{{t "register.countryPlaceholder"}}</option>
+                {{#each countries}}
+                <option value="{{@key}}" {{#if this.default }} selected="selected" {{/if}}>{{@key}}: {{this.name}}</option>
+                {{/each}}
+              </select>
+              <span class="help-block" id="country_help">{{t "register.countryHelp"}}</span>
+            </div>
+
+            <div class="form-group">
+              <label for="timezone_inp" class="control-label">{{t "register.timezone"}} <span class="text-danger" aria-hidden="true">*</span></label>
+              <select class="form-control" id="timezone_inp" name="timezone" required aria-describedby="timezone_help">
+                <option value="">{{t "register.timezonePlaceholder"}}</option>
+                {{#each timezones_available}}
+                <option value="{{this}}" {{#if_equal this 'Europe/London' }} selected="selected" {{/if_equal}}>{{this}}</option>
+                {{/each}}
+              </select>
+              <span class="help-block" id="timezone_help">{{t "register.timezoneHelp"}}</span>
+            </div>
+          </div>
+
+          <div class="account-access-actions">
+            <button id="submit_registration" type="submit" class="btn btn-success btn-lg single-click auth-submit">{{t "common.create"}}</button>
+            <a href="/login/">{{t "login.backToPasswordLogin"}}</a>
+          </div>
+        </form>
       </div>
-
-      <div class="form-group">
-        <label for="lastname_inp" class="col-sm-4 control-label">{{t "register.lastName"}}</label>
-        <div class="col-sm-8">
-          <input class="form-control" id="lastname_inp" placeholder="{{t "register.lastNamePlaceholder"}}" name="lastname" autocomplete="family-name" required>
-        </div>
-      </div>
-
-      <div class="form-group">
-        <label for="email_inp" class="col-sm-4 control-label">{{t "register.emailAddress"}}</label>
-        <div class="col-sm-8">
-          <input class="form-control" id="email_inp" type="email" placeholder="{{t "register.emailPlaceholder"}}" name="email" autocomplete="email" required>
-        </div>
-      </div>
-
-      <div class="form-group">
-        <label for="pass_inp" class="col-sm-4 control-label">{{t "register.password"}}</label>
-        <div class="col-sm-8">
-          <input class="form-control" id="pass_inp" type="password" placeholder="{{t "register.passwordPlaceholder"}}" name="password" autocomplete="new-password" required>
-        </div>
-      </div>
-
-
-      <div class="form-group">
-        <label for="confirm_pass_inp" class="col-sm-4 control-label">{{t "register.confirmPassword"}}</label>
-        <div class="col-sm-8">
-          <input class="form-control" id="confirm_pass_inp" type="password" placeholder="{{t "register.passwordPlaceholder"}}" name="password_confirmed" autocomplete="new-password" required>
-        </div>
-      </div>
-
-      <div class="form-group">
-        <label for="country_inp" class="col-sm-4 control-label">{{t "register.country"}} <span class="text-danger">*</span></label>
-        <div class="col-sm-8">
-          <select class="form-control" id="country_inp" name="country" required>
-            <option value="">{{t "register.countryPlaceholder"}}</option>
-            {{#each countries}}
-            <option value="{{@key}}" {{#if this.default }} selected="selected" {{/if}}>{{@key}}: {{this.name}}</option>
-            {{/each}}
-          </select>
-          <span class="help-block">{{t "register.countryHelp"}}</span>
-        </div>
-      </div>
-
-      <div class="form-group">
-        <label for="timezone_inp" class="col-sm-4 control-label">{{t "register.timezone"}} <span class="text-danger">*</span></label>
-        <div class="col-sm-8">
-          <select class="form-control" id="timezone_inp" name="timezone" required>
-            <option value="">{{t "register.timezonePlaceholder"}}</option>
-            {{#each timezones_available}}
-            <option value="{{this}}" {{#if_equal this 'Europe/London' }} selected="selected" {{/if_equal}}>{{this}}</option>
-            {{/each}}
-          </select>
-          <span class="help-block">{{t "register.timezoneHelp"}}</span>
-        </div>
-      </div>
-
-      <div class="form-group">
-        <div class="col-sm-offset-4 col-sm-8">
-          <button id="submit_registration" type="submit" class="btn btn-success">{{t "common.create"}}</button>
-        </div>
-      </div>
-
-    </form>
+    </section>
   </div>
-
-</div>
 </main>
 
 {{> footer }}

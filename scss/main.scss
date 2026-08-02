@@ -9251,3 +9251,278 @@ td.current_day_cell.half_2nd {
     display: none;
   }
 }
+
+/* Stage 8K: account access continuity */
+.account-access-page {
+  --account-surface: #ffffff;
+  --account-panel: #f3f6f8;
+  --account-input: #f8fafb;
+  --account-border: #cbd6df;
+  --account-heading: #25364a;
+  --account-text: #40566b;
+  --account-muted: #687d8f;
+  --account-focus: #247fb4;
+  --account-shadow: 0 18px 48px rgba(31, 45, 61, 0.13);
+}
+
+[data-theme="dark"] .account-access-page {
+  --account-surface: #20252a;
+  --account-panel: #161a1e;
+  --account-input: #181c20;
+  --account-border: #3b4650;
+  --account-heading: #f2f5f7;
+  --account-text: #dce5eb;
+  --account-muted: #aebdca;
+  --account-focus: #8fc2dc;
+  --account-shadow: 0 22px 56px rgba(0, 0, 0, 0.34);
+}
+
+.account-access-page .account-access-layout {
+  background: var(--account-surface);
+  border-color: var(--account-border);
+  box-shadow: var(--account-shadow);
+}
+
+.account-access-page .account-access-panel {
+  min-width: 0;
+  background: var(--account-panel);
+}
+
+.account-access-page .account-access-card {
+  min-width: 0;
+  background: var(--account-surface);
+  box-shadow: 0 12px 32px rgba(31, 45, 61, 0.11);
+}
+
+[data-theme="dark"] .account-access-page .account-access-card {
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.3);
+}
+
+.account-access-page .account-access-layout-wide {
+  grid-template-columns: minmax(300px, 0.7fr) minmax(560px, 1.3fr);
+  min-height: 0;
+}
+
+.account-access-register .account-access-intro {
+  align-items: flex-start;
+  min-height: 860px;
+}
+
+.account-access-register .account-access-intro .auth-intro-content {
+  position: sticky;
+  top: 40px;
+}
+
+.account-access-register .account-access-panel {
+  padding: 44px clamp(28px, 4vw, 58px);
+}
+
+.account-access-register .auth-layout .account-access-card {
+  width: min(100%, 760px);
+}
+
+.account-access-page .auth-card-heading h2 {
+  color: var(--account-heading);
+  overflow-wrap: anywhere;
+}
+
+.account-access-page .account-access-field-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 18px;
+}
+
+.account-access-page .account-access-field-wide {
+  grid-column: 1 / -1;
+}
+
+.account-access-page .form-group {
+  min-width: 0;
+}
+
+.account-access-page .control-label {
+  color: var(--account-text);
+}
+
+.account-access-page .form-control,
+.account-access-page .auth-input .form-control,
+.account-access-page .auth-input .form-control:focus {
+  min-width: 0;
+  min-height: 48px;
+  background: var(--account-input);
+  border-color: var(--account-border);
+  color: var(--account-text);
+}
+
+.account-access-page select.form-control {
+  height: 48px;
+}
+
+.account-access-page .form-control:focus,
+.account-access-page .auth-input .form-control:focus {
+  border-color: var(--account-focus);
+  box-shadow: 0 0 0 3px rgba(36, 127, 180, 0.16);
+}
+
+[data-theme="dark"] .account-access-page .form-control:focus,
+[data-theme="dark"] .account-access-page .auth-input .form-control:focus {
+  box-shadow: 0 0 0 3px rgba(143, 194, 220, 0.18);
+}
+
+.account-access-page .help-block {
+  margin-bottom: 0;
+  color: var(--account-muted);
+  font-style: normal;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+
+.account-access-page .account-access-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px 20px;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 24px;
+}
+
+.account-access-page .account-access-actions-centered {
+  justify-content: center;
+  margin-top: 18px;
+}
+
+.account-access-page .account-access-actions .auth-submit {
+  min-width: 180px;
+  margin-top: 0;
+}
+
+.account-access-page .account-access-direct-sso {
+  margin-bottom: 0;
+}
+
+.account-access-page .auth-submit,
+.account-access-page .auth-sso-button {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+}
+
+.account-access-page .btn:active,
+.account-access-page .btn:hover:active {
+  transform: scale(0.98);
+  transition: transform 100ms ease-out;
+}
+
+.account-access-page a:focus-visible,
+.account-access-page button:focus-visible,
+.account-access-page input:focus-visible,
+.account-access-page select:focus-visible {
+  outline: 2px solid var(--account-focus);
+  outline-offset: 3px;
+}
+
+.account-access-page .auth-intro-copy,
+.account-access-page .auth-methods span,
+.account-access-page .alert,
+.account-access-page .account-access-card {
+  overflow-wrap: anywhere;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .account-access-page *,
+  .account-access-page *::before,
+  .account-access-page *::after {
+    animation-duration: 0.01ms;
+    animation-iteration-count: 1;
+    scroll-behavior: auto;
+    transition-duration: 0.01ms;
+  }
+
+  .account-access-page .btn:active,
+  .account-access-page .btn:hover:active {
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .account-access-page .account-access-layout,
+  .account-access-page .account-access-panel,
+  .account-access-page .account-access-card,
+  .account-access-page .auth-methods span {
+    backdrop-filter: none;
+  }
+
+  .account-access-page .auth-methods span {
+    background: #28475f;
+  }
+}
+
+@media (prefers-contrast: more) {
+  .account-access-page .account-access-layout,
+  .account-access-page .account-access-card,
+  .account-access-page .form-control {
+    border-color: currentColor;
+  }
+
+  .account-access-page .auth-methods span {
+    background: #20384c;
+    border-color: #ffffff;
+  }
+}
+
+@media (max-width: 991px) {
+  .account-access-page .account-access-layout-wide {
+    grid-template-columns: minmax(250px, 0.62fr) minmax(480px, 1.38fr);
+  }
+
+  .account-access-register .account-access-panel {
+    padding: 34px 26px;
+  }
+}
+
+@media (max-width: 768px) {
+  .account-access-page .account-access-layout-wide {
+    display: block;
+  }
+
+  .account-access-register .account-access-intro {
+    min-height: 220px;
+  }
+
+  .account-access-register .account-access-intro .auth-intro-content {
+    position: relative;
+    top: auto;
+  }
+
+  .account-access-register .account-access-panel {
+    padding: 18px;
+  }
+
+  .account-access-page .account-access-field-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+  }
+
+  .account-access-page .account-access-field-wide {
+    grid-column: auto;
+  }
+
+  .account-access-page .account-access-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .account-access-page .account-access-actions .auth-submit,
+  .account-access-page .account-access-actions > a {
+    width: 100%;
+    min-height: 44px;
+  }
+
+  .account-access-page .account-access-actions > a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+}

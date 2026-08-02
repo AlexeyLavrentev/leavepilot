@@ -431,12 +431,14 @@
   },
   "forgotPassword": {
     "title": "Forgot password",
+    "subtitle": "Request a secure link to restore access to your account.",
     "employeeEmail": "Employee email:",
     "submit": "Send instructions",
     "ssoHint": "If your company uses SSO, password reset is not available here. Use your company sign-in instead."
   },
   "resetPassword": {
     "title": "Reset password",
+    "subtitle": "Choose a new password to continue securely.",
     "newPassword": "New password:",
     "confirmPassword": "Confirm new password:"
   },
