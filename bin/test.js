@@ -73,11 +73,35 @@ const runMochaSuite = () => {
     batches.push(integrationFiles.slice(offset, offset + batchSize));
   }
 
-  return batches.reduce((sequence, batch, index) => sequence.then(() => {
+  const failures = [];
+
+  const runBatch = (batch, index) => {
     console.log(`Running integration batch ${index + 1}/${batches.length} (${batch.length} files)`);
-    return run(node, ['node_modules/mocha/bin/mocha'].concat(batch));
-  }), Promise.resolve())
-    .then(() => run(node, ['node_modules/mocha/bin/mocha', '--recursive', 't/unit']));
+    const attempt = run(node, ['node_modules/mocha/bin/mocha'].concat(batch));
+
+    if (!keepGoing) {
+      return attempt;
+    }
+
+    return attempt.catch(error => {
+      console.error(`Integration batch ${index + 1} failed: ${error.message}`);
+      failures.push(index + 1);
+    });
+  };
+
+  return batches
+    .reduce(
+      (sequence, batch, index) => sequence.then(() => runBatch(batch, index)),
+      Promise.resolve()
+    )
+    .then(() => (integrationOnly
+      ? null
+      : run(node, ['node_modules/mocha/bin/mocha', '--recursive', 't/unit'])))
+    .then(() => {
+      if (failures.length) {
+        throw new Error('Integration batches failed: ' + failures.join(', '));
+      }
+    });
 };
 
 const waitForServer = server => new Promise((resolve, reject) => {
@@ -125,7 +149,16 @@ const stopServer = server => new Promise(resolve => {
   }, 5000);
 });
 
-const mochaArgs = process.argv.slice(2).filter(arg => arg !== '--');
+const rawArgs = process.argv.slice(2).filter(arg => arg !== '--');
+// Run only the browser suite: the unit tests already have their own CI job, and
+// repeating them here would double a ten-minute run for no extra signal.
+const integrationOnly = rawArgs.includes('--integration-only');
+// Report every failing batch instead of stopping at the first one. Locally the
+// early stop is the faster feedback; on CI one red batch used to hide the rest.
+const keepGoing = rawArgs.includes('--keep-going');
+const mochaArgs = rawArgs.filter(
+  arg => arg !== '--integration-only' && arg !== '--keep-going'
+);
 
 let server;
 
