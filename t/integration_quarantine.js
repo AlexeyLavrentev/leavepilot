@@ -46,6 +46,14 @@ module.exports = [
       + 'in the cue logic.',
   },
   {
+    file: 'leave_type/leave_type_limit_next_year.js',
+    failing: ['And try to request one more day of the type already 100% taken'],
+    reason: 'Hangs on the runner: still open at a two-minute budget where the '
+      + 'sibling limit spec finished once the budget was raised, and the whole '
+      + 'file passes locally. Unlike the rest of this list it has no failing '
+      + 'assertion to chase, so it needs a run with the browser visible.',
+  },
+  {
     file: 'team_view/table_horizontal_navigation.js',
     failing: ['End moves to the right edge and removes can-scroll-right'],
     reason: 'Same right-edge residual as the sticky header, reached through the '
