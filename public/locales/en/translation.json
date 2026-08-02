@@ -783,6 +783,9 @@
     "title": "New employee",
     "subtitle": "Adding new employee account",
     "detailsTitle": "Details of new employee",
+    "identityTitle": "Personal details",
+    "employmentTitle": "Employment and permissions",
+    "accessTitle": "Account access",
     "isAdminLabel": "Is administrator user",
     "autoApproveHelp": "Set the flag ON to streamline leave requests from this employee directly into Approved state.",
     "passwordHelp": "Define employee's password."
@@ -795,6 +798,10 @@
     "stepOneText": "Download example of .CSV file based on employees currently available:",
     "sampleHelp": "The sample file contains information about employees who are already in the system. Extend the file to have records about new employees and upload it using the form on left hand side.",
     "downloadSampleButton": "Download .CSV sample file",
+    "prepareFileTitle": "Prepare the employee list",
+    "uploadFileTitle": "Upload and import",
+    "fileLabel": "CSV file",
+    "fileHelp": "Choose a CSV file up to 2 MB containing no more than 200 employees.",
     "stepTwoText": "Amend .CSV file to contain new employees details.",
     "stepThreeText": "Upload .CSV file:"
   },

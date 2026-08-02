@@ -1,109 +1,117 @@
-
 {{> header }}
 
 <a class="sr-only sr-only-focusable" href="#main-content">{{t "nav.skipToMainContent"}}</a>
 
-<main id="main-content" tabindex="-1">
-
-<h1>{{t "userAdd.title"}}</h1>
-
-<div class="row admin-page-header">
-  <div class="col-sm-7 lead">{{t "userAdd.subtitle"}}</div>
-  <div class="col-sm-5 admin-page-actions">
-    <a class="btn btn-default" href="/users/import/" id="import_users_btn">{{t "users.importEmployees"}} <i class="fa fa-chevron-right" aria-hidden="true"></i></a>
+<main id="main-content" class="employee-onboarding-page employee-onboarding-single" tabindex="-1">
+  <div class="page-heading">
+    <div class="page-heading-titles">
+      <h1>{{t "userAdd.title"}}</h1>
+      <p class="lead">{{t "userAdd.subtitle"}}</p>
+    </div>
+    <div class="page-heading-actions">
+      <a class="btn btn-default employee-onboarding-switch" href="/users/import/" id="import_users_btn">
+        <i class="fa fa-upload" aria-hidden="true"></i> {{t "users.importEmployees"}}
+      </a>
+    </div>
   </div>
-</div>
 
-{{> show_flash_messages }}
+  <nav aria-label="{{t "users.addEmployee"}}">
+    <ol class="breadcrumb employee-onboarding-breadcrumb">
+      <li><a href="/users/">{{t "users.allEmployees"}}</a></li>
+      <li class="active" aria-current="page">{{t "users.addEmployee"}}</li>
+    </ol>
+  </nav>
 
-<div class="content-spacer-sm" aria-hidden="true"></div>
+  {{> show_flash_messages }}
 
-<div class="employee-form-shell">
-  <ol class="breadcrumb">
-    <li><a href="/users/">{{t "users.allEmployees"}}</a></li>
-    <li class="active">{{t "users.addEmployee"}}</li>
-  </ol>
+  <form class="form-horizontal employee-onboarding-form" method="POST" action="/users/add/" id="add_new_user_form">
+    <input type="hidden" name="_csrf" value="{{csrf_token}}">
 
-  <section class="admin-form-card employee-form-card" aria-labelledby="employee-details-heading">
-    <h2 id="employee-details-heading" class="employee-section-title">{{t "userAdd.detailsTitle"}}</h2>
-    <form class="form-horizontal" method="POST" action="/users/add/" id="add_new_user_form">
-      <input type="hidden" name="_csrf" value="{{csrf_token}}">
-      <div class="form-group">
-        <label for="name_inp" class="col-sm-4 control-label">{{t "userDetails.firstName"}}</label>
-        <div class="col-sm-5">
+    <section class="surface employee-onboarding-surface" aria-labelledby="employee-identity-heading">
+      <div class="employee-onboarding-section-heading">
+        <span class="employee-onboarding-section-icon fa fa-user" aria-hidden="true"></span>
+        <div>
+          <h2 id="employee-identity-heading">{{t "userAdd.identityTitle"}}</h2>
+          <p>{{t "userAdd.detailsTitle"}}</p>
+        </div>
+      </div>
+
+      <div class="employee-onboarding-fields employee-onboarding-fields-identity">
+        <div class="form-group">
+          <label for="name_inp" class="control-label">{{t "userDetails.firstName"}}</label>
           <input class="form-control" id="name_inp" name="name" required value="{{employee.name}}">
         </div>
-      </div>
 
-      <div class="form-group">
-        <label for="lastname_inp" class="col-sm-4 control-label">{{t "userDetails.lastName"}}</label>
-        <div class="col-sm-5">
+        <div class="form-group">
+          <label for="lastname_inp" class="control-label">{{t "userDetails.lastName"}}</label>
           <input class="form-control" id="lastname_inp" name="lastname" required value="{{employee.lastname}}">
         </div>
-      </div>
 
-      <div class="form-group">
-        <label for="email_inp" class="col-sm-4 control-label">{{t "userDetails.emailAddress"}}</label>
-        <div class="col-sm-5">
+        <div class="form-group employee-onboarding-field-wide">
+          <label for="email_inp" class="control-label">{{t "userDetails.emailAddress"}}</label>
           <input class="form-control" id="email_inp" type="email" name="email_address" required value="{{employee.email}}" aria-describedby="email_help">
           <span id="email_help" class="help-block">{{t "userDetails.emailHelp"}}</span>
         </div>
       </div>
+    </section>
 
-      <div class="form-group">
-        <label for="select_inp" class="col-sm-4 control-label">{{t "userDetails.department"}}</label>
-        <div class="col-sm-5">
+    <section class="surface employee-onboarding-surface" aria-labelledby="employee-employment-heading">
+      <div class="employee-onboarding-section-heading">
+        <span class="employee-onboarding-section-icon fa fa-briefcase" aria-hidden="true"></span>
+        <div><h2 id="employee-employment-heading">{{t "userAdd.employmentTitle"}}</h2></div>
+      </div>
+
+      <div class="employee-onboarding-fields">
+        <div class="form-group employee-onboarding-field-wide">
+          <label for="select_inp" class="control-label">{{t "userDetails.department"}}</label>
           <select class="form-control" id="select_inp" name="department" aria-describedby="department_help">
             {{#each departments}}
-                <option value="{{this.id}}" data-vpp="{{@index}}">{{this.name}}</option>
+              <option value="{{this.id}}" data-vpp="{{@index}}">{{this.name}}</option>
             {{/each}}
           </select>
           <span id="department_help" class="help-block">{{t "userDetails.departmentHelp"}}</span>
         </div>
-      </div>
 
-      <div class="form-group">
-        <div class="col-sm-5 col-sm-offset-4">
-          <div class="checkbox">
-          <label for="admin_inp">
-            <input id="admin_inp" name="admin" type="checkbox">
-            {{t "userAdd.isAdminLabel"}}
-          </label>
+        <div class="employee-onboarding-options employee-onboarding-field-wide">
+          <div class="checkbox employee-onboarding-option">
+            <label for="admin_inp">
+              <input id="admin_inp" name="admin" type="checkbox">
+              <span>{{t "userAdd.isAdminLabel"}}</span>
+            </label>
+          </div>
+
+          <div class="checkbox employee-onboarding-option">
+            <label for="auto_approve_inp">
+              <input id="auto_approve_inp" name="auto_approve" type="checkbox" aria-describedby="auto_approve_help">
+              <span>{{t "userDetails.autoApprove"}}</span>
+            </label>
+            <span id="auto_approve_help" class="help-block">{{t "userAdd.autoApproveHelp"}}</span>
           </div>
         </div>
-      </div>
 
-      <div class="form-group">
-        <div class="col-sm-5 col-sm-offset-4">
-          <div class="checkbox">
-          <label for="auto_approve_inp">
-            <input id="auto_approve_inp" name="auto_approve" type="checkbox" aria-describedby="auto_approve_help">
-            {{t "userDetails.autoApprove"}}
-          </label>
-          </div>
-          <span id="auto_approve_help" class="help-block">{{t "userAdd.autoApproveHelp"}}</span>
-        </div>
-      </div>
-
-      <div class="form-group">
-        <label for="start_date_inp" class="col-sm-4 control-label">{{t "userDetails.startedOn"}}</label>
-        <div class="col-sm-5 date">
+        <div class="form-group">
+          <label for="start_date_inp" class="control-label">{{t "userDetails.startedOn"}}</label>
           <input class="form-control" id="start_date_inp" type="text" name="start_date" required data-date-autoclose="1" data-provide="datepicker" data-date-format="{{#with logged_user.company }}{{this.get_default_date_format_for_date_picker}}{{/with}}" data-date-week-start="1" value="{{as_date booking_start}}" aria-describedby="start_date_help">
           <span id="start_date_help" class="help-block">{{t "userDetails.startDateHelp"}}</span>
         </div>
-      </div>
 
-      <div class="form-group">
-        <label for="end_date_inp" class="col-sm-4 control-label">{{t "userDetails.endedOn"}}</label>
-        <div class="col-sm-5 date">
+        <div class="form-group">
+          <label for="end_date_inp" class="control-label">{{t "userDetails.endedOn"}}</label>
           <input class="form-control" id="end_date_inp" type="text" name="end_date" data-date-autoclose="1" data-provide="datepicker" data-date-format="{{#with logged_user.company }}{{this.get_default_date_format_for_date_picker}}{{/with}}" data-date-week-start="1" value="{{as_date employee.end_date}}" aria-describedby="end_date_help">
           <span id="end_date_help" class="help-block employee-help-stack"><span>{{t "userDetails.endDateHelp" company=company.name}}</span><span>{{t "userDetails.endDateHelpAccess"}}</span><span>{{t "userDetails.endDateHelpDeactivate"}}</span></span>
         </div>
       </div>
+    </section>
 
-      <div class="form-group">
-        <label for="password_inp" class="col-sm-4 control-label">{{t "userDetails.password"}}</label>
-        <div class="col-sm-5">
+    <section class="surface employee-onboarding-surface" aria-labelledby="employee-access-heading">
+      <div class="employee-onboarding-section-heading">
+        <span class="employee-onboarding-section-icon fa fa-lock" aria-hidden="true"></span>
+        <div><h2 id="employee-access-heading">{{t "userAdd.accessTitle"}}</h2></div>
+      </div>
+
+      <div class="employee-onboarding-fields">
+        <div class="form-group">
+          <label for="password_inp" class="control-label">{{t "userDetails.password"}}</label>
           <input class="form-control" id="password_inp" type="password" name="password_one" required value="" {{#if company.ldap_auth_enabled}} readonly {{/if}} aria-describedby="password_inp_help">
           <span id="password_inp_help" class="help-block">
           {{# if company.ldap_auth_enabled }}
@@ -113,23 +121,19 @@
           {{/ if}}
           </span>
         </div>
-      </div>
 
-      <div class="form-group">
-        <label for="confirm_password_inp" class="col-sm-4 control-label">{{t "userDetails.confirmPassword"}}</label>
-        <div class="col-sm-5">
+        <div class="form-group">
+          <label for="confirm_password_inp" class="control-label">{{t "userDetails.confirmPassword"}}</label>
           <input class="form-control" id="confirm_password_inp" type="password" name="password_confirm" required value="" {{# if company.ldap_auth_enabled}}readonly{{/if}}>
         </div>
       </div>
+    </section>
 
-      <div class="admin-form-actions">
-        <a class="btn btn-link" href="/users/">{{t "common.cancel"}}</a>
-        <button type="submit" id="add_new_user_btn" class="btn btn-success single-click">{{t "users.addEmployee"}}</button>
-      </div>
-    </form>
-  </section>
-</div>
-
+    <div class="employee-onboarding-actions">
+      <a class="btn btn-default" href="/users/">{{t "common.cancel"}}</a>
+      <button type="submit" id="add_new_user_btn" class="btn btn-success single-click">{{t "users.addEmployee"}}</button>
+    </div>
+  </form>
 </main>
 
 {{> footer }}

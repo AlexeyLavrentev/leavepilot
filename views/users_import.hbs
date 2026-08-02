@@ -1,74 +1,82 @@
-
 {{> header }}
 
 <a class="sr-only sr-only-focusable" href="#main-content">{{t "nav.skipToMainContent"}}</a>
-<main id="main-content" tabindex="-1">
-<h1>{{t "usersImport.title"}}</h1>
 
-<div class="row">
-  <div class="col-md-6 lead">{{t "usersImport.subtitle"}}</div>
-  <div class="col-md-6">
-    <a class="btn btn-default pull-right" href="/users/add/" id="add_new_department">{{t "users.addSingleEmployee"}} <i class="fa fa-chevron-right" aria-hidden="true"></i></a>
-  </div>
-
-</div>
-
-{{> show_flash_messages }}
-
-<div class="row">
-  <div class="col-md-6">
-    <ol class="breadcrumb">
-      <li><a href="/users/">{{t "users.allEmployees"}}</a></li>
-      <li class="active">{{t "usersImport.breadcrumbCurrent"}}</li>
-    </ol>
-  </div>
-</div>
-
-<div class="row main-row_header">
-  <p class="col-md-12">{{t "usersImport.stepsTitle"}}</p>
-</div>
-
-<div class="row">
-  <div class="col-md-9 col-md-offset-1">
-
-    <form class="form-horizontal" method="POST" action="/users/import-sample/" id="users_import_sample_form">
-      <input type="hidden" name="_csrf" value="{{csrf_token}}">
-      <p class="text-bigger">
-        <strong>1.</strong> {{t "usersImport.stepOneText"}}
-        <button
-          type  = "submit"
-          id    = "users_import_sample_btn"
-          class = "btn btn-success"
-          data-content   = "{{t "usersImport.sampleHelp"}}"
-          data-placement = "top"
-          data-toggle    = "popover"
-          data-trigger   = "focus hover"
-        ><i class="fa fa-download" aria-hidden="true"></i> {{t "usersImport.downloadSampleButton"}}</button>
-      </p>
-    </form>
-
-    <p class="text-bigger">
-      <strong>2.</strong> {{t "usersImport.stepTwoText"}}
-    </p>
-
-    <div class="text-bigger">
-      <strong>3.</strong> {{t "usersImport.stepThreeText"}}
-
-      <form action="/users/import/" method="post" role="form" enctype="multipart/form-data" class="panel-body">
-        <input type="hidden" name="_csrf" value="{{csrf_token}}">
-        <div class="form-group">
-          <input id="users_input_inp" type="file" name="users_import">
-        </div>
-        <div class="form-group">
-            <button class="btn btn-success single-click" id="submit_users_btn" type="submit"><i class="fa fa-upload" aria-hidden="true"></i> {{t "users.importEmployees"}}</button>
-        </div>
-      </form>
+<main id="main-content" class="employee-onboarding-page employee-onboarding-import" tabindex="-1">
+  <div class="page-heading">
+    <div class="page-heading-titles">
+      <h1>{{t "usersImport.title"}}</h1>
+      <p class="lead">{{t "usersImport.subtitle"}}</p>
+    </div>
+    <div class="page-heading-actions">
+      <a class="btn btn-default employee-onboarding-switch" href="/users/add/" id="add_new_department">
+        <i class="fa fa-user-plus" aria-hidden="true"></i> {{t "users.addSingleEmployee"}}
+      </a>
     </div>
   </div>
-</div>
 
-<div class="content-spacer" aria-hidden="true"></div>
+  <nav aria-label="{{t "usersImport.breadcrumbCurrent"}}">
+    <ol class="breadcrumb employee-onboarding-breadcrumb">
+      <li><a href="/users/">{{t "users.allEmployees"}}</a></li>
+      <li class="active" aria-current="page">{{t "usersImport.breadcrumbCurrent"}}</li>
+    </ol>
+  </nav>
 
+  {{> show_flash_messages }}
+
+  <section class="surface employee-onboarding-surface employee-import-surface" aria-labelledby="employee-import-heading">
+    <div class="employee-onboarding-section-heading">
+      <span class="employee-onboarding-section-icon fa fa-users" aria-hidden="true"></span>
+      <div>
+        <h2 id="employee-import-heading">{{t "usersImport.stepsTitle"}}</h2>
+        <p>{{t "usersImport.subtitle"}}</p>
+      </div>
+    </div>
+
+    <ol class="employee-import-steps">
+      <li class="employee-import-step">
+        <span class="employee-import-step-number" aria-hidden="true">1</span>
+        <div class="employee-import-step-content">
+          <h3>{{t "usersImport.downloadSampleButton"}}</h3>
+          <p>{{t "usersImport.stepOneText"}}</p>
+          <form method="POST" action="/users/import-sample/" id="users_import_sample_form">
+            <input type="hidden" name="_csrf" value="{{csrf_token}}">
+            <button type="submit" id="users_import_sample_btn" class="btn btn-default"
+              data-content="{{t "usersImport.sampleHelp"}}"
+              data-placement="top"
+              data-toggle="popover"
+              data-trigger="focus hover"
+            ><i class="fa fa-download" aria-hidden="true"></i> {{t "usersImport.downloadSampleButton"}}</button>
+          </form>
+        </div>
+      </li>
+
+      <li class="employee-import-step">
+        <span class="employee-import-step-number" aria-hidden="true">2</span>
+        <div class="employee-import-step-content">
+          <h3>{{t "usersImport.prepareFileTitle"}}</h3>
+          <p>{{t "usersImport.stepTwoText"}}</p>
+        </div>
+      </li>
+
+      <li class="employee-import-step">
+        <span class="employee-import-step-number" aria-hidden="true">3</span>
+        <div class="employee-import-step-content">
+          <h3>{{t "usersImport.uploadFileTitle"}}</h3>
+          <p>{{t "usersImport.stepThreeText"}}</p>
+          <form action="/users/import/" method="post" role="form" enctype="multipart/form-data" class="employee-import-upload-form">
+            <input type="hidden" name="_csrf" value="{{csrf_token}}">
+            <div class="form-group employee-import-file-field">
+              <label for="users_input_inp">{{t "usersImport.fileLabel"}}</label>
+              <input id="users_input_inp" type="file" name="users_import" accept=".csv,text/csv" aria-describedby="users_import_file_help">
+              <span id="users_import_file_help" class="help-block">{{t "usersImport.fileHelp"}}</span>
+            </div>
+            <button class="btn btn-success single-click" id="submit_users_btn" type="submit"><i class="fa fa-upload" aria-hidden="true"></i> {{t "users.importEmployees"}}</button>
+          </form>
+        </div>
+      </li>
+    </ol>
+  </section>
 </main>
 
 {{> footer }}
