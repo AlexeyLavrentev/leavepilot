@@ -58,7 +58,7 @@ jobs:
           fi
 
       - name: Run integration suite
-        run: node bin/test.js --integration-only --keep-going --include-quarantined
+        run: node bin/test.js --integration-only --keep-going
         env:
           NODE_ENV: test
           TEST_DB_STORAGE: /tmp/integration-test.sqlite
