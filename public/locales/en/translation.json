@@ -1020,6 +1020,7 @@
     "loadFailed": "Failed to load the email audit.",
     "subtitle": "All emails ever been sent by the system",
     "filterOptions": "Filter options",
+    "resultsTitle": "Sent email history",
     "startDatePlaceholder": "Start Date",
     "endDatePlaceholder": "End Date",
     "employeeFilterPlaceholder": "Employee to filter by",
