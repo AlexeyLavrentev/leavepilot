@@ -2860,15 +2860,31 @@ textarea.form-control {
 
 @media (min-width: 769px) and (max-width: 1719px) {
   .navbar-default .navbar-collapse.collapse {
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
+    align-items: stretch;
   }
 
+  /*
+    The utility cluster used to drop onto its own row here so it could not
+    overlap the primary navigation. Below 1720px that is every ordinary laptop,
+    which left the bar split in two on the default window size. Letting the
+    primary track shrink and scroll removes the overlap without splitting the
+    bar: the utility controls stay pinned to the right on a single row, and the
+    navigation itself becomes horizontally scrollable only when an edition adds
+    enough items to actually run out of room.
+  */
   .navbar-default .primary-navigation {
-    flex: 1 1 100%;
+    flex: 1 1 auto;
+    flex-wrap: nowrap;
+    min-width: 0;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: thin;
   }
 
   .navbar-default .navbar-right {
-    flex: 0 0 100%;
+    flex: 0 0 auto;
+    flex-wrap: nowrap;
     justify-content: flex-end;
   }
 }
@@ -4975,6 +4991,13 @@ td.current_day_cell.half_2nd {
 }
 
 .team-view-table {
+  /*
+    The name column and the deducted column are both frozen, and the second one
+    sticks at the width of the first. Keeping that width in a single custom
+    property stops them drifting apart when the column is resized.
+  */
+  --team-view-name-column: 240px;
+
   min-width: 100%;
   margin: 0;
   border-collapse: separate;
@@ -5057,8 +5080,11 @@ td.current_day_cell.half_2nd {
   background: #edf5f9;
 }
 
+/* Employee names get the room the day columns do not need; the container
+   already scrolls horizontally when a wide month range needs it. */
 .team-view-table .left-column-cell {
-  min-width: 180px;
+  width: var(--team-view-name-column);
+  min-width: var(--team-view-name-column);
   height: 42px;
   padding: 10px 14px;
   background: $surface-color;
@@ -5101,7 +5127,7 @@ td.current_day_cell.half_2nd {
 
 .team-view-table .team-view-deducted-cell {
   position: sticky;
-  left: 180px;
+  left: var(--team-view-name-column);
   z-index: 2;
   background: $surface-color;
   box-shadow: 1px 0 0 $border-color;
@@ -5821,10 +5847,51 @@ td.current_day_cell.half_2nd {
     color: #687986;
   }
 
-  .datepicker {
+  /*
+    bootstrap-datepicker3.standalone.css is pushed into custom_css, so it loads
+    after this stylesheet and its own .datepicker.dropdown-menu rule (same
+    specificity) won the background back. Matching that compound keeps the
+    popup dark instead of leaving light text on a white sheet.
+  */
+  /*
+    The booking modal painted its header, footer and date fieldsets with the
+    light surface tokens directly, so in dark mode they stayed white with dark
+    ink on top — the same fieldsets the datepicker opens from.
+  */
+  .book-leave-modal .modal-header,
+  .book-leave-modal .modal-footer,
+  .book-leave-date-field {
+    background: #1f2327;
+    border-color: #303840;
+  }
+
+  .book-leave-modal .modal-title,
+  .book-leave-date-field legend {
+    color: #e6edf2;
+  }
+
+  .datepicker,
+  .datepicker.dropdown-menu,
+  .datepicker.datepicker-dropdown {
     background: #1f2327;
     border-color: #303840;
     color: #e6edf2;
+  }
+
+  .datepicker.dropdown-menu::before {
+    border-bottom-color: #303840;
+  }
+
+  .datepicker.dropdown-menu::after {
+    border-bottom-color: #1f2327;
+  }
+
+  .datepicker.datepicker-orient-bottom.dropdown-menu::before {
+    border-top-color: #303840;
+  }
+
+  .datepicker.datepicker-orient-bottom.dropdown-menu::after {
+    border-top-color: #1f2327;
   }
 
   .datepicker table tr td,
@@ -5837,8 +5904,25 @@ td.current_day_cell.half_2nd {
   .datepicker table tr td.day:hover,
   .datepicker table tr td.focused,
   .datepicker table tr td span:hover,
-  .datepicker table tr td span.focused {
+  .datepicker table tr td span.focused,
+  .datepicker table tr th.datepicker-switch:hover,
+  .datepicker table tr th.prev:hover,
+  .datepicker table tr th.next:hover {
     background: #303840;
+  }
+
+  .datepicker table tr td.today,
+  .datepicker table tr td.today:hover,
+  .datepicker table tr td.today.disabled,
+  .datepicker table tr td.today.disabled:hover {
+    background: #3a3220;
+    border-color: #5a4d28;
+    color: #f5d76e;
+  }
+
+  .datepicker table tr td.disabled,
+  .datepicker table tr td.disabled:hover {
+    color: #5c6b78;
   }
 
   .datepicker table tr td.old,

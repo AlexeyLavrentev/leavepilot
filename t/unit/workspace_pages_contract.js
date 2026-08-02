@@ -111,6 +111,22 @@ describe('Shared admin workspace contract (Stage 8Q)', function () {
     expect(read('views/team_view.hbs')).to.contain('workspace-page--calendar');
   });
 
+  it('gives Team View employee names room before truncating them', function () {
+    // The name column sat at a fixed 180px and clipped long names while the
+    // day columns still had slack; the container already scrolls when a wide
+    // month range genuinely needs it.
+    expect(css).to.match(/\.team-view-table\s*\{[^}]*--team-view-name-column:\s*240px/);
+    expect(css).to.match(
+      /\.team-view-table \.left-column-cell\s*\{[^}]*width:\s*var\(--team-view-name-column\)/
+    );
+
+    // The deducted column is frozen right after the name column, so it has to
+    // stick at whatever that column is currently worth.
+    expect(css).to.match(
+      /\.team-view-table \.team-view-deducted-cell\s*\{[^}]*left:\s*var\(--team-view-name-column\)/
+    );
+  });
+
   it('leaves no Bootstrap panel chrome on the redesigned pages', function () {
     const offenders = Object.keys(WORKSPACE_VIEWS).filter(file => {
       const view = read(file);
