@@ -69,11 +69,11 @@ async function capture(driver, name) {
 // driver.sendDevToolsCommand(cmd, params). The modern DevTools method is Emulation.setEmulatedMedia
 // with a `features` array (matches puppeteer's EmulationManager). Pass value '' to clear.
 /*
- * Headless Chrome reports no hover-capable pointer, so `@media (hover: hover)`
- * never matches and the card elevation this contract measures cannot appear —
- * however real the synthetic pointer is. Every emulation call therefore states
- * the pointer as well; `setEmulatedMedia` replaces the whole feature list, so
- * they have to travel together.
+ * The harness starts Chrome with a desktop pointer (see t/lib/build_driver.js);
+ * headless otherwise reports none, and every `@media (hover: hover)` rule —
+ * including the card elevation this contract measures — is inert. Because
+ * `setEmulatedMedia` replaces the whole feature list, restating the pointer
+ * here keeps it from being dropped whenever reduced motion is emulated.
  */
 async function setEmulatedMedia(driver, {reducedMotion} = {}) {
   await driver.sendDevToolsCommand('Emulation.setEmulatedMedia', {

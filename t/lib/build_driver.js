@@ -66,6 +66,16 @@ module.exports = function() {
       measures the layout rather than the host's window chrome.
     */
     options.addArguments('--hide-scrollbars');
+    /*
+      Headless reports no hover-capable pointer, so every `@media (hover: hover)`
+      rule is inert and hover styling cannot be tested at all — a contract that
+      measures a hover elevation then fails however real the synthetic pointer
+      is. Present the desktop pointer these contracts describe.
+    */
+    options.addArguments(
+      '--blink-settings=primaryHoverType=2,availableHoverTypes=2,'
+      + 'primaryPointerType=4,availablePointerTypes=4'
+    );
   }
 
   return new webdriver.Builder()
