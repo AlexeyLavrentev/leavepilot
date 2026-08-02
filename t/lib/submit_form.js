@@ -9,6 +9,31 @@ Key            = require('selenium-webdriver').Key,
 
 var DEFAULT_WAIT_TIMEOUT = 5000;
 
+/*
+  Opt-in step tracing. A form submit that wedges shows up as a bare mocha
+  timeout with no indication of which command never came back, and the hang has
+  not reproduced outside CI. With TEST_TRACE_FORMS=1 the last line printed names
+  the step that stuck.
+*/
+var TRACE = process.env.TEST_TRACE_FORMS === '1';
+
+function trace(step, detail) {
+  if (!TRACE) { return; }
+  process.stderr.write(
+    '[form] ' + new Date().toISOString() + ' ' + step
+    + (detail === undefined ? '' : ' ' + detail) + '\n'
+  );
+}
+
+function traced(step, detail, promise) {
+  if (!TRACE) { return promise; }
+  trace(step + ':start', detail);
+  return promise.then(
+    function(value){ trace(step + ':done', detail); return value; },
+    function(err){ trace(step + ':failed', detail + ' ' + (err && err.name)); throw err; }
+  );
+}
+
 function is_stale_element_error(err) {
   return err && (
     err.name === 'StaleElementReferenceError' ||
@@ -107,13 +132,13 @@ function type_element_value(driver, el, value, change_step) {
 
   return flow
     .then(function(){
-      return el.clear();
+      return traced('clear', String(value), el.clear());
     })
     .then(function(){
-      return el.sendKeys(value);
+      return traced('sendKeys', String(value), el.sendKeys(value));
     })
     .then(function(){
-      return el.sendKeys(Key.TAB);
+      return traced('tab', String(value), el.sendKeys(Key.TAB));
     });
 }
 
@@ -124,7 +149,7 @@ function fill_form_field(driver, test_case, attempt) {
     return Promise.resolve(1);
   }
 
-  return find_visible_element(driver, test_case.selector)
+  return traced('find', test_case.selector, find_visible_element(driver, test_case.selector))
     .then(function(el){
       if ( test_case.hasOwnProperty('option_selector') ) {
         if (test_case.hasOwnProperty('value')) {
@@ -197,6 +222,7 @@ function read_alert_texts(driver) {
 }
 
 function wait_for_matching_alert(driver, message, multi_line_message) {
+  trace('waitAlert', String(message));
   return driver.wait(function(){
     return read_alert_texts(driver)
       .then(function(texts){
@@ -296,10 +322,11 @@ function submit_form_func(args) {
         return clear_existing_alerts(driver);
       })
       .then(function(){
-        return find_visible_element(driver, submit_button_selector);
+        return traced('findSubmit', submit_button_selector,
+          find_visible_element(driver, submit_button_selector));
       })
       .then(function(el){
-        return click_element(driver, el);
+        return traced('clickSubmit', submit_button_selector, click_element(driver, el));
       })
       .then(function(){
         if (!should_be_successful) {

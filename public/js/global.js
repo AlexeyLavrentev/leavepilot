@@ -253,18 +253,42 @@ $(document).ready(function(){
       ? container.parentNode : null;
   }
 
+  /*
+    scrollWidth and clientWidth are integers, and on some platforms they
+    disagree with the range the browser will actually scroll: the derived
+    maximum sat a scrollbar's width past the real end, so scrolling all the way
+    right still reported 15px left to go and the right-hand cue never cleared.
+    Measuring how much content is still hidden past each edge answers the same
+    question from the geometry the user can see, in fractional pixels.
+  */
+  function hiddenExtents(container) {
+    var content = container.firstElementChild;
+
+    if (!content) {
+      var derived = container.scrollWidth - container.clientWidth;
+      return {left: container.scrollLeft, right: derived - container.scrollLeft};
+    }
+
+    var containerRect = container.getBoundingClientRect();
+    var contentRect = content.getBoundingClientRect();
+
+    return {
+      left: containerRect.left - contentRect.left,
+      right: contentRect.right - containerRect.right,
+    };
+  }
+
   function maxScrollLeft(container) {
-    return container.scrollWidth - container.clientWidth;
+    return container.scrollLeft + hiddenExtents(container).right;
   }
 
   function refreshContainer(container) {
     var shell = shellOf(container);
     if (!shell) { return; }
-    var max = maxScrollLeft(container);
-    var horizontallyScrollable = max > SCROLL_TOLERANCE_PX;
-    var left = container.scrollLeft;
-    var canLeft = horizontallyScrollable && left > SCROLL_TOLERANCE_PX;
-    var canRight = horizontallyScrollable && (max - left) > SCROLL_TOLERANCE_PX;
+    var hidden = hiddenExtents(container);
+    var horizontallyScrollable = (hidden.left + hidden.right) > SCROLL_TOLERANCE_PX;
+    var canLeft = horizontallyScrollable && hidden.left > SCROLL_TOLERANCE_PX;
+    var canRight = horizontallyScrollable && hidden.right > SCROLL_TOLERANCE_PX;
 
     shell.classList.toggle('is-horizontally-scrollable', horizontallyScrollable);
     shell.classList.toggle('can-scroll-left', canLeft);

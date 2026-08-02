@@ -68,12 +68,27 @@ async function capture(driver, name) {
 // has no top-level driver.setEmulatedMedia; the chromedriver CDP bridge is exposed through
 // driver.sendDevToolsCommand(cmd, params). The modern DevTools method is Emulation.setEmulatedMedia
 // with a `features` array (matches puppeteer's EmulationManager). Pass value '' to clear.
-async function setReducedMotion(driver, enabled /* true | false */) {
+/*
+ * The harness starts Chrome with a desktop pointer (see t/lib/build_driver.js);
+ * headless otherwise reports none, and every `@media (hover: hover)` rule —
+ * including the card elevation this contract measures — is inert. Because
+ * `setEmulatedMedia` replaces the whole feature list, restating the pointer
+ * here keeps it from being dropped whenever reduced motion is emulated.
+ */
+async function setEmulatedMedia(driver, {reducedMotion} = {}) {
   await driver.sendDevToolsCommand('Emulation.setEmulatedMedia', {
-    features: [{ name: 'prefers-reduced-motion', value: enabled ? 'reduce' : '' }]
+    features: [
+      { name: 'prefers-reduced-motion', value: reducedMotion ? 'reduce' : '' },
+      { name: 'hover', value: 'hover' },
+      { name: 'pointer', value: 'fine' },
+    ]
   });
   // Yield so the emulated media propagates to pending media-query recomputations.
   await driver.sleep(80);
+}
+
+async function setReducedMotion(driver, enabled /* true | false */) {
+  await setEmulatedMedia(driver, {reducedMotion: enabled});
 }
 
 describe('Reports Hub interaction & geometry contract (Stage 8B)', function () {
@@ -252,6 +267,7 @@ describe('Reports Hub interaction & geometry contract (Stage 8B)', function () {
 
     // 1) Baseline: under default media, hovering a card lifts it (translateY(-1px)).
     var card = await driver.findElement(By.css('.report-card'));
+    await setEmulatedMedia(driver);
     var body = await driver.findElement(By.css('body'));
     await driver.actions().move({ origin: body }).perform();
     await driver.sleep(150);
@@ -262,10 +278,18 @@ describe('Reports Hub interaction & geometry contract (Stage 8B)', function () {
     await driver.actions().move({ origin: card }).perform();
     await driver.sleep(200);
     var hoverDefault = await driver.executeScript(
-      'var el=arguments[0]; return {transform:getComputedStyle(el).transform, hover:el.matches(":hover")};',
+      'var el=arguments[0]; return {transform:getComputedStyle(el).transform, hover:el.matches(":hover"),'
+      + ' hoverCapable:window.matchMedia("(hover: hover)").matches,'
+      + ' finePointer:window.matchMedia("(pointer: fine)").matches};',
       card
     );
     assert(hoverDefault.hover, 'precondition: pointer should hover the card, got :hover=false');
+    // The elevation lives behind `@media (hover: hover)`, so a browser that
+    // reports no hover-capable pointer produces no transform however real the
+    // pointer is. Name that in the failure rather than leaving it to guesswork.
+    assert(hoverDefault.hoverCapable,
+      'precondition: browser should report a hover-capable pointer, got (hover: hover)=false, '
+      + '(pointer: fine)=' + hoverDefault.finePointer);
     assert(hoverDefault.transform !== 'none' && hoverDefault.transform !== 'matrix(1, 0, 0, 1, 0, 0)',
       'baseline: hovered card should have a non-identity transform under default media, got ' + hoverDefault.transform);
 

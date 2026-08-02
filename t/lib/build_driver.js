@@ -58,10 +58,44 @@ module.exports = function() {
     options.addArguments('--disable-gpu');
     options.addArguments('--no-sandbox');
     options.addArguments('--disable-dev-shm-usage');
+    /*
+      Linux draws a classic 15px scrollbar that eats layout width, macOS draws an
+      overlay one that does not. Geometry contracts written against the latter
+      then measure 15px short on CI. Phones — which the 390px viewport in those
+      contracts emulates — use overlay scrollbars too, so hiding the bar here
+      measures the layout rather than the host's window chrome.
+    */
+    options.addArguments('--hide-scrollbars');
+    /*
+      Headless reports no hover-capable pointer, so every `@media (hover: hover)`
+      rule is inert and hover styling cannot be tested at all — a contract that
+      measures a hover elevation then fails however real the synthetic pointer
+      is. Present the desktop pointer these contracts describe.
+    */
+    options.addArguments(
+      '--blink-settings=primaryHoverType=2,availableHoverTypes=2,'
+      + 'primaryPointerType=4,availablePointerTypes=4'
+    );
   }
 
-  return new webdriver.Builder()
+  var driver = new webdriver.Builder()
     .forBrowser('chrome')
     .setChromeOptions(options)
     .build();
+
+  /*
+    ChromeDriver defaults to a five-minute page-load timeout, which is longer
+    than the budget any spec here gets. A submit whose response never arrives
+    therefore leaves the WebDriver command pending: mocha gives up first and
+    reports a bare timeout, the promise never settles, and even a chain ending
+    in .catch(done) has nothing to catch. Failing inside the spec's own budget
+    turns that into an error that names the page it was loading.
+  */
+  driver.manage().setTimeouts({
+    implicit: 0,
+    pageLoad: 30000,
+    script: 20000,
+  });
+
+  return driver;
 };

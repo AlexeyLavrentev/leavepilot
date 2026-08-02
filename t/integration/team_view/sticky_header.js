@@ -183,6 +183,18 @@ describe('Team View sticky header', function() {
         pageY: window.pageYOffset,
         pageOverflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
         shellClasses: shell.className,
+        // The scroll cue is derived from rounded integers while scrollLeft is
+        // fractional, so a failure here needs the raw numbers to be readable.
+        scrollMetrics: {
+          scrollWidth: container.scrollWidth,
+          clientWidth: container.clientWidth,
+          scrollLeft: Math.round(container.scrollLeft * 100) / 100,
+          derivedMax: container.scrollWidth - container.clientWidth,
+          residual: Math.round(
+            (container.scrollWidth - container.clientWidth - container.scrollLeft) * 100
+          ) / 100,
+          devicePixelRatio: window.devicePixelRatio,
+        },
         alignmentDeltas: {
           overlayContainerLeft: rect(overlay).left - rect(container).left,
           overlayContainerWidth: rect(overlay).width - rect(container).width,
@@ -421,7 +433,10 @@ describe('Team View sticky header', function() {
       if (position === 'left') {
         expect(value.shellClasses).to.contain('can-scroll-right');
       } else if (position === 'right') {
-        expect(value.shellClasses).to.not.contain('can-scroll-right');
+        expect(
+          value.shellClasses,
+          'at the right edge, scroll metrics ' + JSON.stringify(value.scrollMetrics)
+        ).to.not.contain('can-scroll-right');
         expect(value.shellClasses).to.contain('can-scroll-left');
       } else {
         expect(value.shellClasses).to.contain('can-scroll-right');

@@ -74,3 +74,7 @@ jobs:
           # One retry for a missed wait. Assertions are untouched: a spec that
           # fails twice in a row still fails the run.
           TEST_RETRIES: '1'
+          # Trace form steps: a wedged submit otherwise shows up as a bare mocha
+          # timeout with no indication of which command never came back, and the
+          # hang has not reproduced outside this runner.
+          TEST_TRACE_FORMS: '1'

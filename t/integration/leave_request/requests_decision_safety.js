@@ -1,5 +1,7 @@
 'use strict';
 
+const setViewport = require('../../lib/set_viewport');
+
 const config = require('../../lib/config');
 const models = require('../../../lib/model/db');
 const moment = require('moment');
@@ -135,7 +137,7 @@ describe('Requests decision-safety interaction', function() {
   });
 
   it('provides a full-width mobile selection target and keeps actions in view', async function() {
-    await driver.manage().window().setRect({width: 390, height: 844});
+    await setViewport(driver, {width: 390, height: 844});
     await openPage({url: `${applicationHost}requests/`, driver});
 
     const selector = await driver.findElement(By.css('.bulk-request-selector'));
@@ -225,7 +227,7 @@ describe('Requests decision-safety interaction', function() {
   });
 
   it('guards submit, preserves request inputs and announces processing', async function() {
-    await driver.manage().window().setRect({width: 1024, height: 768});
+    await setViewport(driver, {width: 1024, height: 768});
     await openPage({url: `${applicationHost}requests/`, driver});
 
     const checkbox = await driver.findElement(By.css('.bulk-request-checkbox'));

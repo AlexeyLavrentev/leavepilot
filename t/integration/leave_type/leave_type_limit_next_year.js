@@ -90,7 +90,8 @@ describe('Leave type limits for next year: ' + next_year, function(){
       user_email       : non_admin_user_email,
       driver           : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Open calendar page", function(done){
@@ -98,7 +99,8 @@ describe('Leave type limits for next year: ' + next_year, function(){
       url    : application_host + 'calendar/?year='+next_year+'&show_full_year=1',
       driver : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Add a request that fits under the limit", function(done){
@@ -125,7 +127,8 @@ describe('Leave type limits for next year: ' + next_year, function(){
             full_days : [moment(next_year + '-05-10')],
             type      : 'pended',
           })
-          .then(function(){ done() });
+          .then(function(){ done() })
+          .catch(done);
         });
       });
   });
@@ -135,7 +138,8 @@ describe('Leave type limits for next year: ' + next_year, function(){
       application_host : application_host,
       driver           : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Login as Admin", function(done){
@@ -144,7 +148,8 @@ describe('Leave type limits for next year: ' + next_year, function(){
       user_email       : admin_user_email,
       driver           : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   })
 
   it("Open requests page", function(done){
@@ -152,7 +157,8 @@ describe('Leave type limits for next year: ' + next_year, function(){
       url    : application_host + 'requests/',
       driver : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Approve newly added leave request", function(done){
@@ -165,7 +171,8 @@ describe('Leave type limits for next year: ' + next_year, function(){
         // Wait until page properly is reloaded
         return driver.wait(until.elementLocated(By.css('h1')), 1000);
       })
-      .then(function(){ done() });
+      .then(function(){ done() })
+      .catch(done);
   });
 
   it("Logout from admin account", function(done){
@@ -173,7 +180,8 @@ describe('Leave type limits for next year: ' + next_year, function(){
       application_host : application_host,
       driver           : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Login as non-admin user", function(done){
@@ -182,7 +190,8 @@ describe('Leave type limits for next year: ' + next_year, function(){
       user_email       : non_admin_user_email,
       driver           : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Open calendar page", function(done){
@@ -190,7 +199,8 @@ describe('Leave type limits for next year: ' + next_year, function(){
       url    : application_host + 'calendar/?year='+ next_year +'&show_full_year=1',
       driver : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("And try to request one more day of the type already 100% taken", function(done){
@@ -210,7 +220,8 @@ describe('Leave type limits for next year: ' + next_year, function(){
           }],
           message : /Failed to create a leave request/,
         })
-        .then(function(){ done() });
+        .then(function(){ done() })
+        .catch(done);
       });
   });
 
