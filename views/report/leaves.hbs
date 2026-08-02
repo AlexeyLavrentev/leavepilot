@@ -1,139 +1,153 @@
 {{> header }}
 
 <a class="sr-only sr-only-focusable" href="#main-content">{{t "nav.skipToMainContent"}}</a>
-<main id="main-content" tabindex="-1">
-<h1>{{t "reportsLeaves.title"}}</h1>
 
-<div class="row">
-  <div class="col-md-6 lead">{{t "reportsLeaves.subtitle"}}</div>
-</div>
+<main id="main-content" class="report-detail-page report-leaves-page" tabindex="-1">
+  <div class="page-heading">
+    <div class="page-heading-titles">
+      <h1>{{t "reportsLeaves.title"}}</h1>
+      <p class="lead">{{t "reportsLeaves.subtitle"}}</p>
+    </div>
+  </div>
 
-{{> show_flash_messages }}
+  <nav aria-label="{{t "reportsLeaves.breadcrumbCurrent"}}">
+    <ol class="breadcrumb report-detail-breadcrumb">
+      <li><a href="/reports/">{{t "reportsPage.allReports"}}</a></li>
+      <li class="active" aria-current="page">{{t "reportsLeaves.breadcrumbCurrent"}}</li>
+    </ol>
+  </nav>
 
-<ol class="breadcrumb">
-  <li><a href="/reports/">{{t "reportsPage.allReports"}}</a></li>
-  <li class="active">{{t "reportsLeaves.breadcrumbCurrent"}}</li>
-</ol>
-<div class="row main-row_header">
-  <span class="col-md-12">{{t "reportsLeaves.filterTitle"}}</span>
-</div>
-<form action="" method="GET">
-<div class="row">
-  <div class="col-md-12">
-    <div class="panel panel-default">
-      <div class="panel-body">
-        <div class="row">
-          <div class="col-md-6">
+  {{> show_flash_messages }}
+
+  <form action="" method="GET" class="report-detail-form">
+    <section class="surface report-filter-surface" aria-labelledby="leaves-report-filter-heading">
+      <div class="report-section-heading">
+        <h2 id="leaves-report-filter-heading">{{t "reportsLeaves.filterTitle"}}</h2>
+      </div>
+
+      <div class="report-filter-grid report-leaves-filter-grid">
+        <fieldset class="report-date-range">
+          <legend>{{t "reportsLeaves.dateRangeLabel"}}</legend>
+          <div class="report-date-range-fields">
             <div class="form-group">
-              <label>{{t "reportsLeaves.dateRangeLabel"}}</label>
-              <div class="input-group">
-                <span class="input-group-addon"><i class="fa fa-calendar" aria-hidden="true"></i></span>
+              <label for="start_date">{{t "reportsLeaves.fromDay"}}</label>
+              <div class="report-date-input">
+                <span class="fa fa-calendar" aria-hidden="true"></span>
                 <input type="text" name="start_date" class="form-control" id="start_date" placeholder="{{t "reportsLeaves.fromDay"}}"
                   data-provide="datepicker" data-date-format="yyyy-mm-dd" data-date-autoclose="1"
                   value="{{startDateStr}}"
                 >
-                <span class="input-group-addon">{{t "reports.dateFormatDayHint"}}</span>
-                <span class="input-group-addon"><i class="fa fa-long-arrow-right" aria-hidden="true"></i></span>
+                <span class="report-date-format" aria-hidden="true">{{t "reports.dateFormatDayHint"}}</span>
+              </div>
+            </div>
+            <span class="report-date-range-separator fa fa-long-arrow-right" aria-hidden="true"></span>
+            <div class="form-group">
+              <label for="end_date">{{t "reportsLeaves.toDay"}}</label>
+              <div class="report-date-input">
+                <span class="fa fa-calendar" aria-hidden="true"></span>
                 <input type="text" name="end_date" class="form-control" id="end_date" placeholder="{{t "reportsLeaves.toDay"}}"
                   data-provide="datepicker" data-date-format="yyyy-mm-dd" data-date-autoclose="1"
                   value="{{endDateStr}}"
                 >
-                <span class="input-group-addon">{{t "reports.dateFormatDayHint"}}</span>
+                <span class="report-date-format" aria-hidden="true">{{t "reports.dateFormatDayHint"}}</span>
               </div>
-              <span class="help-block">{{t "reportsLeaves.dateRangeHelp"}}</span>
             </div>
           </div>
-          <div class="col-md-3">
-            <div class="form-group">
-              <label for="department_id">{{t "requests.department"}}</label>
-              <select class="form-control" id="department_id" name="department">
-                <option>{{t "common.all"}}</option>
-                {{#each departments}}
-                <option value="{{this.id}}" {{#if_equal this.id ../departmentId}} selected="selected" {{/if_equal}}>{{this.name}}</option>
-                {{/each}}
-              </select>
-            </div>
-          </div>
-          <div class="col-md-3">
-            <div class="form-group">
-              <label for="leave_type_id">{{t "reportsLeaves.leaveTypeLabel"}}</label>
-              <select class="form-control" id="leave_type_id" name="leave_type">
-                <option>{{t "common.all"}}</option>
-                {{#each leaveTypes}}
-                <option value="{{this.id}}" {{#if_equal this.id ../leaveTypeId}} selected="selected" {{/if_equal}}>{{this.name}}</option>
-                {{/each}}
-              </select>
-            </div>
-          </div>
-        </div>
-        <div class="row">
-          <div class="col-md-12">
-            <div class="form-group pull-right">
-              <button class="btn btn-link" type="submit" name="as-csv" value="1"
-                data-content="{{t "reportsLeaves.downloadCsvTooltip"}}"
-                data-placement="top"
-                data-toggle="popover"
-                data-trigger="focus hover"
-              ><i class="fa fa-download" aria-hidden="true"></i> {{t "reports.csvSuffix"}}</button>
-              <button class="btn btn-success single-click" type="submit">{{t "reportsLeaves.updateResults"}}</button>
-            </div>
-          </div>
+          <p class="help-block">{{t "reportsLeaves.dateRangeHelp"}}</p>
+        </fieldset>
+
+        <div class="form-group">
+          <label for="department_id">{{t "requests.department"}}</label>
+          <select class="form-control" id="department_id" name="department">
+            <option value="">{{t "common.all"}}</option>
+            {{#each departments}}
+            <option value="{{this.id}}" {{#if_equal this.id ../departmentId}} selected="selected" {{/if_equal}}>{{this.name}}</option>
+            {{/each}}
+          </select>
         </div>
 
+        <div class="form-group">
+          <label for="leave_type_id">{{t "reportsLeaves.leaveTypeLabel"}}</label>
+          <select class="form-control" id="leave_type_id" name="leave_type">
+            <option value="">{{t "common.all"}}</option>
+            {{#each leaveTypes}}
+            <option value="{{this.id}}" {{#if_equal this.id ../leaveTypeId}} selected="selected" {{/if_equal}}>{{this.name}}</option>
+            {{/each}}
+          </select>
+        </div>
       </div>
-    </div>
-  </div>
-</div>
-<div class="row main-row_header">
-  <span class="col-md-12">{{t "reportsLeaves.resultsTitle"}}</span>
-</div>
-<div class="row">
-  {{#unless leaves}}
-  <div class="col-md-12 text-muted">
-    {{t "requests.noLeaveRequests"}}
-  </div>
-  {{else}}
-  <div class="col-md-12">
-    <p class="visible-xs-block"><em class="text-muted">{{t "requests.scrollTable"}}</em></p>
-    <div class="table-responsive" role="region" aria-label="{{t "reportsLeaves.resultsTitle"}}" tabindex="0">
-    <table class="table table-hover user-requests-table">
-      <caption class="sr-only">{{t "reportsLeaves.resultsTitle"}}</caption>
-      <thead>
-        <tr>
-          <th class="col-xs-2">{{t "requests.employee"}} {{#if_equal sortBy 'employeeFullName'}}<i class="fa fa-sort-alpha-asc" aria-hidden="true"></i>{{else}}<button class="btn btn-link btn-xs" name="sort_by" type="submit" value="employeeFullName" aria-label="{{t "requests.employee"}}"><i class="fa fa-sort-asc" aria-hidden="true"></i></button>{{/if_equal}}</th>
-          <th class="col-xs-2">{{t "requests.department"}} {{#if_equal sortBy 'departmentName'}}<i class="fa fa-sort-alpha-asc" aria-hidden="true"></i>{{else}}<button class="btn btn-link btn-xs" name="sort_by" type="submit" value="departmentName" aria-label="{{t "requests.department"}}"><i class="fa fa-sort-asc" aria-hidden="true"></i></button>{{/if_equal}}</th>
-          <th class="col-xs-1">{{t "requests.type"}} {{#if_equal sortBy 'type'}}<i class="fa fa-sort-alpha-asc" aria-hidden="true"></i>{{else}}<button class="btn btn-link btn-xs" name="sort_by" type="submit" value="type" aria-label="{{t "requests.type"}}"><i class="fa fa-sort-asc" aria-hidden="true"></i></button>{{/if_equal}}</th>
-          <th class="_col-xs-1">{{t "requests.days"}}</th>
-          <th class="col-xs-1">{{t "common.from"}} {{#if_equal sortBy 'startDate'}}<i class="fa fa-sort-alpha-asc" aria-hidden="true"></i>{{else}}<button class="btn btn-link btn-xs" name="sort_by" type="submit" value="startDate" aria-label="{{t "common.from"}}"><i class="fa fa-sort-asc" aria-hidden="true"></i></button>{{/if_equal}}</th>
-          <th class="col-xs-1">{{t "common.to"}} {{#if_equal sortBy 'endDate'}}<i class="fa fa-sort-alpha-asc" aria-hidden="true"></i>{{else}}<button class="btn btn-link btn-xs" name="sort_by" type="submit" value="endDate" aria-label="{{t "common.to"}}"><i class="fa fa-sort-asc" aria-hidden="true"></i></button>{{/if_equal}}</th>
-          <th class="col-xs-1">{{t "requests.status"}} {{#if_equal sortBy 'status'}}<i class="fa fa-sort-alpha-asc" aria-hidden="true"></i>{{else}}<button class="btn btn-link btn-xs" name="sort_by" type="submit" value="status" aria-label="{{t "requests.status"}}"><i class="fa fa-sort-asc" aria-hidden="true"></i></button>{{/if_equal}}</th>
-          <th class="col-xs-1">{{t "reportsLeaves.added"}} {{#if_equal sortBy 'createdAt'}}<i class="fa fa-sort-alpha-asc" aria-hidden="true"></i>{{else}}<button class="btn btn-link btn-xs" name="sort_by" type="submit" value="createdAt" aria-label="{{t "reportsLeaves.added"}}"><i class="fa fa-sort-asc" aria-hidden="true"></i></button>{{/if_equal}}</th>
-          <th class="col-xs-2">{{t "reportsLeaves.approver"}} {{#if_equal sortBy 'approver'}}<i class="fa fa-sort-alpha-asc" aria-hidden="true"></i>{{else}}<button class="btn btn-link btn-xs" name="sort_by" type="submit" value="approver" aria-label="{{t "reportsLeaves.approver"}}"><i class="fa fa-sort-asc" aria-hidden="true"></i></button>{{/if_equal}}</th>
-          <th class="col-xs-2">{{t "requests.comment"}}</th>
-        </tr>
-      </thead>
-      <tbody>
-      {{#each leaves }}
-        <tr class="leave-request-row">
-          <td>{{ this.employeeFullName }}</td>
-          <td>{{ this.departmentName}}</td>
-          <td>{{ this.type }}</td>
-          <td>{{ this.deductedDays }}</td>
-          <td>{{as_date this.startDate }}</td>
-          <td>{{as_date this.endDate}}</td>
-          <td>{{ this.status }}</td>
-          <td>{{as_date_from_timestamp this.createdAt}}</td>
-          <td>{{ this.approver }}</td>
-          <td>{{ this.comment }}</td>
-        </tr>
-      {{/each }}
-      </tbody>
-    </table>
-    </div>
-  </div>
-  {{/unless}}
-</div>
-</form>
 
+      <div class="report-filter-actions">
+        <button class="btn btn-default" type="submit" name="as-csv" value="1"
+          data-content="{{t "reportsLeaves.downloadCsvTooltip"}}"
+          data-placement="top"
+          data-toggle="popover"
+          data-trigger="focus hover"
+        ><i class="fa fa-download" aria-hidden="true"></i> {{t "reports.csvSuffix"}}</button>
+        <button class="btn btn-success single-click" type="submit">{{t "reportsLeaves.updateResults"}}</button>
+      </div>
+    </section>
+
+    <section class="surface report-results-surface" aria-labelledby="leaves-report-results-heading">
+      <div class="report-section-heading report-results-heading">
+        <h2 id="leaves-report-results-heading">{{t "reportsLeaves.resultsTitle"}}</h2>
+      </div>
+
+      {{#unless leaves}}
+      <div class="empty-state report-empty-state">{{t "requests.noLeaveRequests"}}</div>
+      {{else}}
+      <details class="reports-mobile-sort">
+        <summary>{{t "reportsLeaves.sortBy"}}</summary>
+        <div class="reports-mobile-sort-options">
+          <button class="btn btn-default {{#if_equal sortBy 'employeeFullName'}}selected-item{{/if_equal}}" name="sort_by" type="submit" value="employeeFullName" {{#if_equal sortBy 'employeeFullName'}}aria-current="true"{{/if_equal}}>{{t "requests.employee"}}</button>
+          <button class="btn btn-default {{#if_equal sortBy 'departmentName'}}selected-item{{/if_equal}}" name="sort_by" type="submit" value="departmentName" {{#if_equal sortBy 'departmentName'}}aria-current="true"{{/if_equal}}>{{t "requests.department"}}</button>
+          <button class="btn btn-default {{#if_equal sortBy 'type'}}selected-item{{/if_equal}}" name="sort_by" type="submit" value="type" {{#if_equal sortBy 'type'}}aria-current="true"{{/if_equal}}>{{t "requests.type"}}</button>
+          <button class="btn btn-default {{#if_equal sortBy 'startDate'}}selected-item{{/if_equal}}" name="sort_by" type="submit" value="startDate" {{#if_equal sortBy 'startDate'}}aria-current="true"{{/if_equal}}>{{t "common.from"}}</button>
+          <button class="btn btn-default {{#if_equal sortBy 'endDate'}}selected-item{{/if_equal}}" name="sort_by" type="submit" value="endDate" {{#if_equal sortBy 'endDate'}}aria-current="true"{{/if_equal}}>{{t "common.to"}}</button>
+          <button class="btn btn-default {{#if_equal sortBy 'status'}}selected-item{{/if_equal}}" name="sort_by" type="submit" value="status" {{#if_equal sortBy 'status'}}aria-current="true"{{/if_equal}}>{{t "requests.status"}}</button>
+          <button class="btn btn-default {{#if_equal sortBy 'createdAt'}}selected-item{{/if_equal}}" name="sort_by" type="submit" value="createdAt" {{#if_equal sortBy 'createdAt'}}aria-current="true"{{/if_equal}}>{{t "reportsLeaves.added"}}</button>
+          <button class="btn btn-default {{#if_equal sortBy 'approver'}}selected-item{{/if_equal}}" name="sort_by" type="submit" value="approver" {{#if_equal sortBy 'approver'}}aria-current="true"{{/if_equal}}>{{t "reportsLeaves.approver"}}</button>
+        </div>
+      </details>
+
+      <div class="table-responsive mobile-card-table-container report-results-table-container" role="region" aria-label="{{t "reportsLeaves.resultsTitle"}}" tabindex="0">
+        <table class="table table-hover mobile-card-table report-results-table report-leaves-table user-requests-table">
+          <caption class="sr-only">{{t "reportsLeaves.resultsTitle"}}</caption>
+          <thead>
+            <tr>
+              <th scope="col">{{t "requests.employee"}} {{#if_equal sortBy 'employeeFullName'}}<i class="fa fa-sort-alpha-asc" aria-hidden="true"></i>{{else}}<button class="btn btn-link btn-xs reports-desktop-sort-control" name="sort_by" type="submit" value="employeeFullName" aria-label="{{t "requests.employee"}}"><i class="fa fa-sort-asc" aria-hidden="true"></i></button>{{/if_equal}}</th>
+              <th scope="col">{{t "requests.department"}} {{#if_equal sortBy 'departmentName'}}<i class="fa fa-sort-alpha-asc" aria-hidden="true"></i>{{else}}<button class="btn btn-link btn-xs reports-desktop-sort-control" name="sort_by" type="submit" value="departmentName" aria-label="{{t "requests.department"}}"><i class="fa fa-sort-asc" aria-hidden="true"></i></button>{{/if_equal}}</th>
+              <th scope="col">{{t "requests.type"}} {{#if_equal sortBy 'type'}}<i class="fa fa-sort-alpha-asc" aria-hidden="true"></i>{{else}}<button class="btn btn-link btn-xs reports-desktop-sort-control" name="sort_by" type="submit" value="type" aria-label="{{t "requests.type"}}"><i class="fa fa-sort-asc" aria-hidden="true"></i></button>{{/if_equal}}</th>
+              <th scope="col">{{t "requests.days"}}</th>
+              <th scope="col">{{t "common.from"}} {{#if_equal sortBy 'startDate'}}<i class="fa fa-sort-alpha-asc" aria-hidden="true"></i>{{else}}<button class="btn btn-link btn-xs reports-desktop-sort-control" name="sort_by" type="submit" value="startDate" aria-label="{{t "common.from"}}"><i class="fa fa-sort-asc" aria-hidden="true"></i></button>{{/if_equal}}</th>
+              <th scope="col">{{t "common.to"}} {{#if_equal sortBy 'endDate'}}<i class="fa fa-sort-alpha-asc" aria-hidden="true"></i>{{else}}<button class="btn btn-link btn-xs reports-desktop-sort-control" name="sort_by" type="submit" value="endDate" aria-label="{{t "common.to"}}"><i class="fa fa-sort-asc" aria-hidden="true"></i></button>{{/if_equal}}</th>
+              <th scope="col">{{t "requests.status"}} {{#if_equal sortBy 'status'}}<i class="fa fa-sort-alpha-asc" aria-hidden="true"></i>{{else}}<button class="btn btn-link btn-xs reports-desktop-sort-control" name="sort_by" type="submit" value="status" aria-label="{{t "requests.status"}}"><i class="fa fa-sort-asc" aria-hidden="true"></i></button>{{/if_equal}}</th>
+              <th scope="col">{{t "reportsLeaves.added"}} {{#if_equal sortBy 'createdAt'}}<i class="fa fa-sort-alpha-asc" aria-hidden="true"></i>{{else}}<button class="btn btn-link btn-xs reports-desktop-sort-control" name="sort_by" type="submit" value="createdAt" aria-label="{{t "reportsLeaves.added"}}"><i class="fa fa-sort-asc" aria-hidden="true"></i></button>{{/if_equal}}</th>
+              <th scope="col">{{t "reportsLeaves.approver"}} {{#if_equal sortBy 'approver'}}<i class="fa fa-sort-alpha-asc" aria-hidden="true"></i>{{else}}<button class="btn btn-link btn-xs reports-desktop-sort-control" name="sort_by" type="submit" value="approver" aria-label="{{t "reportsLeaves.approver"}}"><i class="fa fa-sort-asc" aria-hidden="true"></i></button>{{/if_equal}}</th>
+              <th scope="col">{{t "requests.comment"}}</th>
+            </tr>
+          </thead>
+          <tbody>
+          {{#each leaves }}
+            <tr class="leave-request-row">
+              <td data-label="{{t "requests.employee"}}">{{ this.employeeFullName }}</td>
+              <td data-label="{{t "requests.department"}}">{{ this.departmentName}}</td>
+              <td data-label="{{t "requests.type"}}">{{ this.type }}</td>
+              <td data-label="{{t "requests.days"}}"><span class="report-numeric-value">{{ this.deductedDays }}</span></td>
+              <td data-label="{{t "common.from"}}">{{as_date this.startDate }}</td>
+              <td data-label="{{t "common.to"}}">{{as_date this.endDate}}</td>
+              <td data-label="{{t "requests.status"}}"><span class="report-status-value">{{ this.status }}</span></td>
+              <td data-label="{{t "reportsLeaves.added"}}">{{as_date_from_timestamp this.createdAt}}</td>
+              <td data-label="{{t "reportsLeaves.approver"}}">{{ this.approver }}</td>
+              <td data-label="{{t "requests.comment"}}">{{ this.comment }}</td>
+            </tr>
+          {{/each }}
+          </tbody>
+        </table>
+      </div>
+      {{/unless}}
+    </section>
+  </form>
 </main>
+
 {{> footer }}

@@ -431,12 +431,14 @@
   },
   "forgotPassword": {
     "title": "Forgot password",
+    "subtitle": "Request a secure link to restore access to your account.",
     "employeeEmail": "Employee email:",
     "submit": "Send instructions",
     "ssoHint": "If your company uses SSO, password reset is not available here. Use your company sign-in instead."
   },
   "resetPassword": {
     "title": "Reset password",
+    "subtitle": "Choose a new password to continue securely.",
     "newPassword": "New password:",
     "confirmPassword": "Confirm new password:"
   },
@@ -783,6 +785,9 @@
     "title": "New employee",
     "subtitle": "Adding new employee account",
     "detailsTitle": "Details of new employee",
+    "identityTitle": "Personal details",
+    "employmentTitle": "Employment and permissions",
+    "accessTitle": "Account access",
     "isAdminLabel": "Is administrator user",
     "autoApproveHelp": "Set the flag ON to streamline leave requests from this employee directly into Approved state.",
     "passwordHelp": "Define employee's password."
@@ -795,6 +800,10 @@
     "stepOneText": "Download example of .CSV file based on employees currently available:",
     "sampleHelp": "The sample file contains information about employees who are already in the system. Extend the file to have records about new employees and upload it using the form on left hand side.",
     "downloadSampleButton": "Download .CSV sample file",
+    "prepareFileTitle": "Prepare the employee list",
+    "uploadFileTitle": "Upload and import",
+    "fileLabel": "CSV file",
+    "fileHelp": "Choose a CSV file up to 2 MB containing no more than 200 employees.",
     "stepTwoText": "Amend .CSV file to contain new employees details.",
     "stepThreeText": "Upload .CSV file:"
   },
@@ -991,6 +1000,7 @@
     "urlLabel": "URL to LDAP server",
     "urlHelp": "The URL must contain the protocol and port parts",
     "allowUnauthorizedCert": "Allow unauthorized SSL certificate (if LDAPS is used)",
+    "allowUnauthorizedCertHelp": "Use only in a controlled environment. Disabling certificate verification weakens connection security.",
     "bindDnLabel": "BindDN",
     "bindCredentialsLabel": "Bind Credentials",
     "bindCredentialsHelp": "Password used for dealing with LDAP queries",
@@ -1045,6 +1055,7 @@
     "subtitle": "Shows absences in a given period",
     "breadcrumbCurrent": "Absences",
     "filterTitle": "Filter",
+    "sortBy": "Sort by",
     "dateRangeLabel": "Date range",
     "fromDay": "From Day",
     "toDay": "To Day",
@@ -1167,6 +1178,7 @@
     "ldapSubtitle": "Configure LDAP authentication for your company.",
     "ldapSectionTitle": "LDAP Configuration",
     "ssoSectionTitle": "SSO Configuration",
+    "mutuallyExclusiveHelp": "LDAP and SSO cannot be enabled at the same time.",
     "enableSsoLabel": "Enable SSO",
     "providerLabel": "SSO provider",
     "oidcIssuerLabel": "OIDC issuer URL",

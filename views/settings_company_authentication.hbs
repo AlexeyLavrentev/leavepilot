@@ -1,266 +1,239 @@
-
 {{> header }}
 
 <a class="sr-only sr-only-focusable" href="#main-content">{{t "nav.skipToMainContent"}}</a>
-<main id="main-content" tabindex="-1">
-<h1>{{t "authConfig.title"}}</h1>
-<p class="lead">{{#if sso_available}}{{t "authConfig.subtitle"}}{{else}}{{t "authConfig.ldapSubtitle"}}{{/if}}</p>
 
-{{> show_flash_messages }}
+<main id="main-content" class="authentication-settings-page" tabindex="-1">
+  <div class="page-heading">
+    <div class="page-heading-titles">
+      <h1>{{t "authConfig.title"}}</h1>
+      <p class="lead">{{#if sso_available}}{{t "authConfig.subtitle"}}{{else}}{{t "authConfig.ldapSubtitle"}}{{/if}}</p>
+    </div>
+  </div>
 
-<div class="row main-row_header">
-  <p class="col-md-12">{{t "authConfig.ldapSectionTitle"}}</p>
-</div>
+  {{> show_flash_messages }}
 
-<div class="row">
-  <div class="col-md-12">
-    <form class="form-horizontal" action="" method="post">
-      <input type="hidden" name="_csrf" value="{{csrf_token}}">
+  <form class="authentication-settings-form" action="" method="post" id="authentication_settings_form">
+    <input type="hidden" name="_csrf" value="{{csrf_token}}">
 
-      <div class="form-group">
-        <div class="col-md-9 col-md-offset-3">
-          <label for="ldap_auth_enabled" class="control-label">
-            <input id="ldap_auth_enabled" type="checkbox" {{#if company.ldap_auth_enabled}}checked="checked"{{/if}} name="ldap_auth_enabled" />&nbsp;
-            {{t "ldapAuth.enableLabel"}}
-          </label>
+    <section class="surface authentication-settings-section authentication-settings-ldap" aria-labelledby="ldap-settings-heading">
+      <div class="authentication-settings-section-heading">
+        <span class="authentication-settings-section-icon fa fa-lock" aria-hidden="true"></span>
+        <div>
+          <h2 id="ldap-settings-heading">{{t "authConfig.ldapSectionTitle"}}</h2>
+          <p>{{t "ldapAuth.subtitle"}}</p>
         </div>
       </div>
 
-      <div class="form-group">
-        <label for="ldap_url" class="col-md-3 control-label">{{t "ldapAuth.urlLabel"}}</label>
-        <div class="col-md-5">
-          <input class="form-control" id="ldap_url" placeholder="ldap://ldap.forumsys.com:389" name="url" value="{{ldap_config.url}}" aria-describedby="ldap_url_help" >
-        </div>
-        <span id="ldap_url_help" class="help-block">{{t "ldapAuth.urlHelp"}}</span>
+      <div class="authentication-settings-method-toggle">
+        <label for="ldap_auth_enabled" class="authentication-settings-toggle-label">
+          <input id="ldap_auth_enabled" type="checkbox" {{#if company.ldap_auth_enabled}}checked="checked"{{/if}} name="ldap_auth_enabled">
+          <span>{{t "ldapAuth.enableLabel"}}</span>
+        </label>
+        {{#if sso_available}}<p class="help-block">{{t "authConfig.mutuallyExclusiveHelp"}}</p>{{/if}}
       </div>
 
-      <div class="form-group">
-        <div class="col-md-9 col-md-offset-3">
-          <label for="allow_unauthorized_cert" class="control-label">
-            <input id="allow_unauthorized_cert" type="checkbox" {{#if ldap_config.allow_unauthorized_cert}}checked="checked"{{/if}} name="allow_unauthorized_cert" />&nbsp;
-            {{t "ldapAuth.allowUnauthorizedCert"}}
-          </label>
+      <div class="authentication-settings-fields">
+        <div class="form-group authentication-settings-field-wide">
+          <label for="ldap_url" class="control-label">{{t "ldapAuth.urlLabel"}}</label>
+          <input class="form-control" id="ldap_url" placeholder="ldap://ldap.forumsys.com:389" name="url" value="{{ldap_config.url}}" aria-describedby="ldap_url_help">
+          <span id="ldap_url_help" class="help-block">{{t "ldapAuth.urlHelp"}}</span>
         </div>
-      </div>
 
-      <div class="form-group">
-        <label for="ldap_bindn" class="col-md-3 control-label">{{t "ldapAuth.bindDnLabel"}}</label>
-        <div class="col-md-5">
+        <div class="form-group">
+          <label for="ldap_bindn" class="control-label">{{t "ldapAuth.bindDnLabel"}}</label>
           <input class="form-control" id="ldap_bindn" placeholder="cn=read-only-admin,dc=example,dc=com" name="binddn" value="{{ldap_config.binddn}}">
         </div>
-      </div>
 
-      <div class="form-group">
-        <label for="ldap_password" class="col-md-3 control-label">{{t "ldapAuth.bindCredentialsLabel"}}</label>
-        <div class="col-md-5">
+        <div class="form-group">
+          <label for="ldap_password" class="control-label">{{t "ldapAuth.bindCredentialsLabel"}}</label>
           <input class="form-control" id="ldap_password" name="bindcredentials" value="{{ldap_config.bindcredentials}}" type="password" aria-describedby="ldap_password_help">
+          <span id="ldap_password_help" class="help-block">{{t "ldapAuth.bindCredentialsHelp"}}</span>
         </div>
-        <span id="ldap_password_help" class="help-block">{{t "ldapAuth.bindCredentialsHelp"}}</span>
-      </div>
 
-      <div class="form-group">
-        <label for="ldap_search_base" class="col-md-3 control-label">{{t "ldapAuth.searchBaseLabel"}}</label>
-        <div class="col-md-5">
+        <div class="form-group">
+          <label for="ldap_search_base" class="control-label">{{t "ldapAuth.searchBaseLabel"}}</label>
           <input class="form-control" id="ldap_search_base" placeholder="dc=example,dc=com" name="searchbase" value="{{ldap_config.searchbase}}">
         </div>
-      </div>
 
-      <div class="form-group">
-        <label for="current_user_password" class="col-md-3 control-label">{{t "ldapAuth.currentPasswordLabel"}}</label>
-        <div class="col-md-5">
+        <div class="form-group">
+          <label for="current_user_password" class="control-label">{{t "ldapAuth.currentPasswordLabel"}}</label>
           <input class="form-control" id="current_user_password" name="password_to_check" value="" type="password" aria-describedby="current_user_password_help">
+          <span id="current_user_password_help" class="help-block">{{t "ldapAuth.currentPasswordHelpPrefix"}} <strong>{{#with logged_user}}{{this.full_name}}{{/with}}</strong> {{t "ldapAuth.currentPasswordHelpSuffix"}}</span>
         </div>
-        <span id="current_user_password_help" class="help-block">{{t "ldapAuth.currentPasswordHelpPrefix"}} <strong>{{#with logged_user}}{{this.full_name}}{{/with}}</strong> {{t "ldapAuth.currentPasswordHelpSuffix"}}</span>
-      </div>
 
-      {{#if sso_available}}
-      <hr/>
-
-      <div class="row main-row_header">
-        <p class="col-md-12">{{t "authConfig.ssoSectionTitle"}}</p>
-      </div>
-
-      <div class="form-group">
-        <div class="col-md-9 col-md-offset-3">
-          <label for="sso_auth_enabled" class="control-label">
-            <input id="sso_auth_enabled" type="checkbox" {{#if company.sso_auth_enabled}}checked="checked"{{/if}} name="sso_auth_enabled" />&nbsp;
-            {{t "authConfig.enableSsoLabel"}}
-          </label>
+        <div class="authentication-settings-security-warning authentication-settings-field-wide" role="note">
+          <span class="fa fa-exclamation-triangle" aria-hidden="true"></span>
+          <div>
+            <label for="allow_unauthorized_cert" class="authentication-settings-toggle-label">
+              <input id="allow_unauthorized_cert" type="checkbox" {{#if ldap_config.allow_unauthorized_cert}}checked="checked"{{/if}} name="allow_unauthorized_cert">
+              <span>{{t "ldapAuth.allowUnauthorizedCert"}}</span>
+            </label>
+            <p class="help-block">{{t "ldapAuth.allowUnauthorizedCertHelp"}}</p>
+          </div>
         </div>
       </div>
+    </section>
 
-      <div class="form-group">
-        <label for="sso_auth_provider" class="col-md-3 control-label">{{t "authConfig.providerLabel"}}</label>
-        <div class="col-md-5">
-          <select class="form-control" id="sso_auth_provider" name="sso_auth_provider">
+    {{#if sso_available}}
+    <section class="surface authentication-settings-section authentication-settings-sso" aria-labelledby="sso-settings-heading">
+      <div class="authentication-settings-section-heading">
+        <span class="authentication-settings-section-icon fa fa-building-o" aria-hidden="true"></span>
+        <div>
+          <h2 id="sso-settings-heading">{{t "authConfig.ssoSectionTitle"}}</h2>
+          <p>{{t "login.ssoSubtitle"}}</p>
+        </div>
+      </div>
+
+      <div class="authentication-settings-method-toggle">
+        <label for="sso_auth_enabled" class="authentication-settings-toggle-label">
+          <input id="sso_auth_enabled" type="checkbox" {{#if company.sso_auth_enabled}}checked="checked"{{/if}} name="sso_auth_enabled">
+          <span>{{t "authConfig.enableSsoLabel"}}</span>
+        </label>
+        <p class="help-block">{{t "authConfig.mutuallyExclusiveHelp"}}</p>
+      </div>
+
+      <div class="authentication-settings-fields">
+        <div class="form-group">
+          <label for="sso_auth_provider" class="control-label">{{t "authConfig.providerLabel"}}</label>
+          <select class="form-control" id="sso_auth_provider" name="sso_auth_provider" aria-describedby="sso_provider_help">
             <option value="oidc" {{#if_equal sso.provider "oidc"}}selected{{/if_equal}}>OIDC</option>
             <option value="saml" {{#if_equal sso.provider "saml"}}selected{{/if_equal}}>SAML 2.0</option>
           </select>
-          <span class="help-block">{{t "authConfig.providerHelp"}}</span>
+          <span class="help-block" id="sso_provider_help">{{t "authConfig.providerHelp"}}</span>
         </div>
-      </div>
 
-      <div class="form-group">
-        <label for="sso_login_alias" class="col-md-3 control-label">{{t "authConfig.loginAliasLabel"}}</label>
-        <div class="col-md-5">
-          <input class="form-control" id="sso_login_alias" name="sso_login_alias" value="{{sso.config.login_alias}}" placeholder="acme">
-          <span class="help-block">{{t "authConfig.loginAliasHelp"}}</span>
+        <div class="form-group">
+          <label for="sso_login_alias" class="control-label">{{t "authConfig.loginAliasLabel"}}</label>
+          <input class="form-control" id="sso_login_alias" name="sso_login_alias" value="{{sso.config.login_alias}}" placeholder="acme" aria-describedby="sso_login_alias_help">
+          <span class="help-block" id="sso_login_alias_help">{{t "authConfig.loginAliasHelp"}}</span>
         </div>
-      </div>
 
-      {{#if sso.tenant_login_url}}
-      <div class="form-group">
-        <label class="col-md-3 control-label">{{t "authConfig.tenantLoginUrlLabel"}}</label>
-        <div class="col-md-5">
-          <p class="form-control-static"><code>{{sso.tenant_login_url}}</code></p>
+        {{#if sso.tenant_login_url}}
+        <div class="form-group authentication-settings-field-wide">
+          <span class="control-label authentication-settings-static-label">{{t "authConfig.tenantLoginUrlLabel"}}</span>
+          <p class="form-control-static authentication-settings-code"><code>{{sso.tenant_login_url}}</code></p>
         </div>
-      </div>
-      {{/if}}
+        {{/if}}
 
-      <div class="form-group">
-        <label for="sso_email_domains" class="col-md-3 control-label">{{t "authConfig.emailDomainsLabel"}}</label>
-        <div class="col-md-5">
-          <textarea class="form-control" id="sso_email_domains" name="sso_email_domains" rows="3" placeholder="example.com
+        <div class="form-group authentication-settings-field-wide">
+          <label for="sso_email_domains" class="control-label">{{t "authConfig.emailDomainsLabel"}}</label>
+          <textarea class="form-control" id="sso_email_domains" name="sso_email_domains" rows="3" aria-describedby="sso_email_domains_help" placeholder="example.com
 subsidiary.example.com">{{sso.config.email_domains}}</textarea>
-          <span class="help-block">{{t "authConfig.emailDomainsHelp"}}</span>
+          <span class="help-block" id="sso_email_domains_help">{{t "authConfig.emailDomainsHelp"}}</span>
         </div>
-      </div>
 
-      <div class="form-group">
-        <div class="col-md-9 col-md-offset-3">
-          <label for="sso_auto_create_users" class="control-label">
-            <input id="sso_auto_create_users" type="checkbox" {{#if sso.config.auto_create_users}}checked="checked"{{/if}} name="sso_auto_create_users" />&nbsp;
-            {{t "authConfig.autoCreateUsersLabel"}}
+        <div class="form-group authentication-settings-field-wide authentication-settings-option">
+          <label for="sso_auto_create_users" class="authentication-settings-toggle-label">
+            <input id="sso_auto_create_users" type="checkbox" {{#if sso.config.auto_create_users}}checked="checked"{{/if}} name="sso_auto_create_users">
+            <span>{{t "authConfig.autoCreateUsersLabel"}}</span>
           </label>
           <p class="help-block">{{t "authConfig.autoCreateUsersHelp"}}</p>
         </div>
       </div>
+    </section>
 
-      <div class="form-group" data-sso-provider-section="oidc">
-        <div class="col-md-9 col-md-offset-3">
-          <p class="help-block">{{t "authConfig.oidcSectionHelp"}}</p>
+    <section class="surface authentication-settings-section authentication-settings-provider" aria-labelledby="provider-settings-heading">
+      <h2 class="sr-only" id="provider-settings-heading">{{t "authConfig.providerLabel"}}</h2>
+
+      <div class="authentication-settings-provider-heading" data-sso-provider-section="oidc">
+        <span class="authentication-settings-section-icon fa fa-id-card-o" aria-hidden="true"></span>
+        <div>
+          <h3>OpenID Connect</h3>
+          <p>{{t "authConfig.oidcSectionHelp"}}</p>
         </div>
       </div>
 
-      <div class="form-group" data-sso-provider-section="oidc">
-        <label for="sso_issuer_url" class="col-md-3 control-label">{{t "authConfig.oidcIssuerLabel"}}</label>
-        <div class="col-md-5">
+      <div class="authentication-settings-fields" data-sso-provider-section="oidc">
+        <div class="form-group authentication-settings-field-wide">
+          <label for="sso_issuer_url" class="control-label">{{t "authConfig.oidcIssuerLabel"}}</label>
           <input class="form-control" id="sso_issuer_url" name="sso_issuer_url" value="{{sso.config.issuer_url}}" placeholder="https://keycloak.example.com/realms/myrealm">
         </div>
-      </div>
 
-      <div class="form-group" data-sso-provider-section="oidc">
-        <label for="sso_client_id" class="col-md-3 control-label">{{t "authConfig.oidcClientIdLabel"}}</label>
-        <div class="col-md-5">
+        <div class="form-group">
+          <label for="sso_client_id" class="control-label">{{t "authConfig.oidcClientIdLabel"}}</label>
           <input class="form-control" id="sso_client_id" name="sso_client_id" value="{{sso.config.client_id}}" placeholder="timeoff-management">
         </div>
-      </div>
 
-      <div class="form-group" data-sso-provider-section="oidc">
-        <label for="sso_client_secret" class="col-md-3 control-label">{{t "authConfig.oidcClientSecretLabel"}}</label>
-        <div class="col-md-5">
+        <div class="form-group">
+          <label for="sso_client_secret" class="control-label">{{t "authConfig.oidcClientSecretLabel"}}</label>
           <input class="form-control" id="sso_client_secret" name="sso_client_secret" type="password" autocomplete="new-password">
         </div>
-      </div>
 
-      <div class="form-group" data-sso-provider-section="oidc">
-        <label for="sso_scope" class="col-md-3 control-label">{{t "authConfig.oidcScopeLabel"}}</label>
-        <div class="col-md-5">
+        <div class="form-group">
+          <label for="sso_scope" class="control-label">{{t "authConfig.oidcScopeLabel"}}</label>
           <input class="form-control" id="sso_scope" name="sso_scope" value="{{sso.config.scope}}" placeholder="openid profile email">
         </div>
-      </div>
 
-      <div class="form-group" data-sso-provider-section="oidc">
-        <label for="sso_email_claim" class="col-md-3 control-label">{{t "authConfig.oidcEmailClaimLabel"}}</label>
-        <div class="col-md-5">
+        <div class="form-group">
+          <label for="sso_email_claim" class="control-label">{{t "authConfig.oidcEmailClaimLabel"}}</label>
           <input class="form-control" id="sso_email_claim" name="sso_email_claim" value="{{sso.config.email_claim}}" placeholder="email">
         </div>
-      </div>
 
-      <div class="form-group" data-sso-provider-section="oidc">
-        <div class="col-md-9 col-md-offset-3">
-          <label for="sso_require_verified_email" class="control-label">
-            <input id="sso_require_verified_email" type="checkbox" {{#if sso.config.require_verified_email}}checked="checked"{{/if}} name="sso_require_verified_email" />&nbsp;
-            {{t "authConfig.oidcRequireVerifiedEmailLabel"}}
+        <div class="form-group authentication-settings-field-wide authentication-settings-option">
+          <label for="sso_require_verified_email" class="authentication-settings-toggle-label">
+            <input id="sso_require_verified_email" type="checkbox" {{#if sso.config.require_verified_email}}checked="checked"{{/if}} name="sso_require_verified_email">
+            <span>{{t "authConfig.oidcRequireVerifiedEmailLabel"}}</span>
           </label>
         </div>
-      </div>
 
-      <div class="form-group" data-sso-provider-section="oidc">
-        <label class="col-md-3 control-label">{{t "authConfig.oidcCallbackLabel"}}</label>
-        <div class="col-md-5">
-          <p class="form-control-static"><code>{{sso.oidc_callback_url}}</code></p>
+        <div class="form-group authentication-settings-field-wide">
+          <span class="control-label authentication-settings-static-label">{{t "authConfig.oidcCallbackLabel"}}</span>
+          <p class="form-control-static authentication-settings-code"><code>{{sso.oidc_callback_url}}</code></p>
         </div>
       </div>
 
-      <hr data-sso-provider-section="saml"/>
-
-      <div class="form-group" data-sso-provider-section="saml">
-        <div class="col-md-9 col-md-offset-3">
-          <p class="help-block">{{t "authConfig.samlSectionHelp"}}</p>
+      <div class="authentication-settings-provider-heading" data-sso-provider-section="saml">
+        <span class="authentication-settings-section-icon fa fa-exchange" aria-hidden="true"></span>
+        <div>
+          <h3>SAML 2.0</h3>
+          <p>{{t "authConfig.samlSectionHelp"}}</p>
         </div>
       </div>
 
-      <div class="form-group" data-sso-provider-section="saml">
-        <label for="sso_entry_point" class="col-md-3 control-label">{{t "authConfig.samlEntryPointLabel"}}</label>
-        <div class="col-md-5">
+      <div class="authentication-settings-fields" data-sso-provider-section="saml">
+        <div class="form-group authentication-settings-field-wide">
+          <label for="sso_entry_point" class="control-label">{{t "authConfig.samlEntryPointLabel"}}</label>
           <input class="form-control" id="sso_entry_point" name="sso_entry_point" value="{{sso.config.entry_point}}" placeholder="https://keycloak.example.com/realms/myrealm/protocol/saml">
         </div>
-      </div>
 
-      <div class="form-group" data-sso-provider-section="saml">
-        <label for="sso_idp_cert" class="col-md-3 control-label">{{t "authConfig.samlIdpCertLabel"}}</label>
-        <div class="col-md-5">
-          <textarea class="form-control" id="sso_idp_cert" name="sso_idp_cert" rows="6" placeholder="-----BEGIN CERTIFICATE-----">{{sso.config.idp_cert}}</textarea>
+        <div class="form-group authentication-settings-field-wide">
+          <label for="sso_idp_cert" class="control-label">{{t "authConfig.samlIdpCertLabel"}}</label>
+          <textarea class="form-control authentication-settings-certificate" id="sso_idp_cert" name="sso_idp_cert" rows="6" placeholder="-----BEGIN CERTIFICATE-----">{{sso.config.idp_cert}}</textarea>
         </div>
-      </div>
 
-      <div class="form-group" data-sso-provider-section="saml">
-        <label for="sso_identifier_format" class="col-md-3 control-label">{{t "authConfig.samlIdentifierFormatLabel"}}</label>
-        <div class="col-md-5">
+        <div class="form-group">
+          <label for="sso_identifier_format" class="control-label">{{t "authConfig.samlIdentifierFormatLabel"}}</label>
           <input class="form-control" id="sso_identifier_format" name="sso_identifier_format" value="{{sso.config.identifier_format}}" placeholder="urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress">
         </div>
-      </div>
 
-      <div class="form-group" data-sso-provider-section="saml">
-        <label for="sso_email_attribute" class="col-md-3 control-label">{{t "authConfig.samlEmailAttributeLabel"}}</label>
-        <div class="col-md-5">
+        <div class="form-group">
+          <label for="sso_email_attribute" class="control-label">{{t "authConfig.samlEmailAttributeLabel"}}</label>
           <input class="form-control" id="sso_email_attribute" name="sso_email_attribute" value="{{sso.config.email_attribute}}" placeholder="email">
         </div>
-      </div>
 
-      <div class="form-group" data-sso-provider-section="saml">
-        <label for="sso_sp_entity_id" class="col-md-3 control-label">{{t "authConfig.samlEntityIdLabel"}}</label>
-        <div class="col-md-5">
-          <input class="form-control" id="sso_sp_entity_id" name="sso_sp_entity_id" value="{{sso.config.sp_entity_id}}" placeholder="{{sso.saml_entity_id}}">
-          <span class="help-block">{{t "authConfig.samlEntityIdHelp"}}</span>
+        <div class="form-group authentication-settings-field-wide">
+          <label for="sso_sp_entity_id" class="control-label">{{t "authConfig.samlEntityIdLabel"}}</label>
+          <input class="form-control" id="sso_sp_entity_id" name="sso_sp_entity_id" value="{{sso.config.sp_entity_id}}" placeholder="{{sso.saml_entity_id}}" aria-describedby="sso_sp_entity_id_help">
+          <span class="help-block" id="sso_sp_entity_id_help">{{t "authConfig.samlEntityIdHelp"}}</span>
+        </div>
+
+        <div class="form-group">
+          <span class="control-label authentication-settings-static-label">{{t "authConfig.samlCallbackLabel"}}</span>
+          <p class="form-control-static authentication-settings-code"><code>{{sso.saml_callback_url}}</code></p>
+        </div>
+
+        <div class="form-group">
+          <span class="control-label authentication-settings-static-label">{{t "authConfig.samlMetadataLabel"}}</span>
+          <p class="form-control-static authentication-settings-code"><code>{{sso.saml_metadata_url}}</code></p>
         </div>
       </div>
+    </section>
+    {{/if}}
 
-      <div class="form-group" data-sso-provider-section="saml">
-        <label class="col-md-3 control-label">{{t "authConfig.samlCallbackLabel"}}</label>
-        <div class="col-md-5">
-          <p class="form-control-static"><code>{{sso.saml_callback_url}}</code></p>
-        </div>
-      </div>
-
-      <div class="form-group" data-sso-provider-section="saml">
-        <label class="col-md-3 control-label">{{t "authConfig.samlMetadataLabel"}}</label>
-        <div class="col-md-5">
-          <p class="form-control-static"><code>{{sso.saml_metadata_url}}</code></p>
-        </div>
-      </div>
-      {{/if}}
-
-      <div class="form-group">
-        <div class="col-md-offset-3 col-md-5">
-          <button id="submit_registration" type="submit" class="pull-right btn btn-success single-click">{{t "authConfig.saveButton"}}</button>
-        </div>
-      </div>
-
-    </form>
-  </div>
-</div>
-
+    <div class="authentication-settings-actions">
+      <button id="submit_registration" type="submit" class="btn btn-success single-click">{{t "authConfig.saveButton"}}</button>
+    </div>
+  </form>
 </main>
+
 {{> footer }}
