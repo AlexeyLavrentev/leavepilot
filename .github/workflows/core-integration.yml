@@ -66,3 +66,8 @@ jobs:
           # server and one headless browser on a two-core runner produced
           # 60-second timeouts that moved between files from run to run.
           TEST_INTEGRATION_BATCH_SIZE: '4'
+          # The per-spec budget is tuned for a developer machine. The leave-type
+          # limit specs drive several bookings through the browser and overran
+          # 60s on a two-core runner while passing locally, so the runner gets a
+          # larger budget rather than the specs getting weaker assertions.
+          TEST_EXECUTION_TIMEOUT_MS: '120000'
