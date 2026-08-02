@@ -1,12 +1,13 @@
 'use strict';
 
 /*
- * Stage 8M — shared admin/report workspace contract.
+ * Stage 8Q — shared admin/report workspace contract.
  *
- * The pages left over after Stage 8A–8L share one scoped root
- * (.workspace-page) instead of repeating a token block each. These checks
- * pin that the styles stay scoped, the views opt in, and the accessibility
- * modes (dark, contrast, reduced transparency, reduced motion) are covered.
+ * Calendar feeds, bulk department editing, Team View and the employee
+ * calendar share one scoped root (.workspace-page) instead of repeating a
+ * token block each. These checks pin that the styles stay scoped, the views
+ * opt in, and the accessibility modes (dark, contrast, reduced transparency,
+ * reduced motion) are covered.
  */
 
 const fs = require('fs');
@@ -43,17 +44,13 @@ function mediaBlocks(source, marker) {
 
 // view file -> the page-specific class it carries alongside .workspace-page
 const WORKSPACE_VIEWS = {
-  'views/settings_company_diagnostics.hbs': 'diagnostics-page',
-  'views/settings_company_integration_api.hbs': 'integration-api-page',
   'views/feeds_list.hbs': 'feeds-page',
   'views/departments_bulk_update.hbs': 'departments-bulk-page',
-  'views/reminder_schedules_settings.hbs': 'reminder-schedules-page',
-  'views/audit/emails.hbs': 'email-audit-page',
   'views/team_view.hbs': 'team-view-page',
   'views/calendar.hbs': 'employee-calendar-page',
 };
 
-describe('Shared admin workspace contract (Stage 8M)', function () {
+describe('Shared admin workspace contract (Stage 8Q)', function () {
   const scss = read('scss/main.scss');
   const css = read('public/css/style.css');
 

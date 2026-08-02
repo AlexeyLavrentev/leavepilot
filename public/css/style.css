@@ -27,6 +27,417 @@
   --color-skip-link-text: #1f5f99;
 }
 
+/* Stage 8O: Integration API Security Workspace */
+.integration-api-page {
+  --integration-api-surface: #ffffff;
+  --integration-api-surface-subtle: #f6f8fb;
+  --integration-api-border: #d8dee8;
+  --integration-api-text: #344054;
+  --integration-api-heading: #172033;
+  --integration-api-muted: #5f6c80;
+  --integration-api-accent: #176b87;
+  --integration-api-focus: #176b87;
+  --integration-api-enabled-bg: #e6f4ec;
+  --integration-api-enabled-text: #17613b;
+  --integration-api-disabled-bg: #edf0f4;
+  --integration-api-disabled-text: #475467;
+  --integration-api-warning-bg: #fff7e6;
+  --integration-api-warning-border: #d89b28;
+  --integration-api-warning-text: #704b00;
+  --integration-api-shadow: 0 10px 28px rgba(28, 39, 58, 0.08);
+  max-width: 1120px;
+  margin: 0 auto;
+  padding-bottom: 44px;
+  color: var(--integration-api-text);
+}
+
+[data-theme=dark] .integration-api-page {
+  --integration-api-surface: #202936;
+  --integration-api-surface-subtle: #18212d;
+  --integration-api-border: #465366;
+  --integration-api-text: #e5eaf2;
+  --integration-api-heading: #f7f9fc;
+  --integration-api-muted: #bcc6d5;
+  --integration-api-accent: #71c4df;
+  --integration-api-focus: #71c4df;
+  --integration-api-enabled-bg: #173f31;
+  --integration-api-enabled-text: #9fe3be;
+  --integration-api-disabled-bg: #323d4d;
+  --integration-api-disabled-text: #d4dbe6;
+  --integration-api-warning-bg: #3c301b;
+  --integration-api-warning-border: #c79436;
+  --integration-api-warning-text: #f5d78d;
+  --integration-api-shadow: 0 12px 32px rgba(0, 0, 0, 0.28);
+}
+
+.integration-api-page .page-heading {
+  align-items: flex-start;
+  gap: 18px;
+}
+
+.integration-api-page .page-heading-titles {
+  min-width: 0;
+}
+
+.integration-api-page .page-heading .lead {
+  color: var(--integration-api-muted);
+}
+
+.integration-api-page .integration-api-status {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 8px;
+  min-height: 34px;
+  margin-top: 4px;
+  padding: 6px 11px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 650;
+  line-height: 1.3;
+}
+
+.integration-api-page .integration-api-status.is-enabled {
+  color: var(--integration-api-enabled-text);
+  background: var(--integration-api-enabled-bg);
+}
+
+.integration-api-page .integration-api-status.is-disabled {
+  color: var(--integration-api-disabled-text);
+  background: var(--integration-api-disabled-bg);
+}
+
+.integration-api-page .integration-api-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.integration-api-page .integration-api-workspace {
+  display: grid;
+  grid-template-columns: minmax(250px, 0.72fr) minmax(0, 1.45fr);
+  gap: 22px;
+  align-items: start;
+}
+
+.integration-api-page .surface {
+  min-width: 0;
+  padding: 24px;
+  color: var(--integration-api-text);
+  background: var(--integration-api-surface);
+  border: 1px solid var(--integration-api-border);
+  border-radius: 15px;
+  box-shadow: var(--integration-api-shadow);
+}
+
+.integration-api-page .integration-api-section-heading {
+  display: flex;
+  align-items: flex-start;
+  gap: 13px;
+  min-width: 0;
+}
+
+.integration-api-page .integration-api-section-heading h2,
+.integration-api-page .integration-api-credential-heading h3 {
+  margin: 0;
+  color: var(--integration-api-heading);
+  overflow-wrap: anywhere;
+}
+
+.integration-api-page .integration-api-section-heading h2 {
+  font-size: 19px;
+  line-height: 1.35;
+}
+
+.integration-api-page .integration-api-credential-heading h3 {
+  font-size: 16px;
+  line-height: 1.4;
+}
+
+.integration-api-page .integration-api-section-heading p,
+.integration-api-page .integration-api-credential-heading p {
+  margin: 5px 0 0;
+  color: var(--integration-api-muted);
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+
+.integration-api-page .integration-api-section-icon {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  color: var(--integration-api-accent);
+  background: var(--integration-api-surface-subtle);
+  border: 1px solid var(--integration-api-border);
+  border-radius: 10px;
+}
+
+.integration-api-page .integration-api-note,
+.integration-api-page .integration-api-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-top: 22px;
+  padding: 14px;
+  border-radius: 10px;
+}
+
+.integration-api-page .integration-api-note {
+  color: var(--integration-api-muted);
+  background: var(--integration-api-surface-subtle);
+  border: 1px solid var(--integration-api-border);
+}
+
+.integration-api-page .integration-api-warning {
+  color: var(--integration-api-warning-text);
+  background: var(--integration-api-warning-bg);
+  border: 1px solid var(--integration-api-warning-border);
+}
+
+.integration-api-page .integration-api-note .fa,
+.integration-api-page .integration-api-warning .fa {
+  flex: 0 0 auto;
+  margin-top: 2px;
+}
+
+.integration-api-page .integration-api-note p,
+.integration-api-page .integration-api-warning p {
+  margin: 0;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.integration-api-page .integration-api-form {
+  margin-top: 22px;
+}
+
+.integration-api-page .integration-api-toggle-row {
+  padding: 4px 0 20px;
+  border-bottom: 1px solid var(--integration-api-border);
+}
+
+.integration-api-page .integration-api-toggle-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  min-height: 44px;
+  margin: 0;
+  cursor: pointer;
+}
+
+.integration-api-page .integration-api-toggle-label input {
+  flex: 0 0 auto;
+  width: 20px;
+  height: 20px;
+  margin: 2px 0 0;
+  accent-color: var(--integration-api-accent);
+}
+
+.integration-api-page .integration-api-toggle-label strong,
+.integration-api-page .integration-api-toggle-label small {
+  display: block;
+}
+
+.integration-api-page .integration-api-toggle-label strong {
+  color: var(--integration-api-heading);
+  font-size: 15px;
+}
+
+.integration-api-page .integration-api-toggle-label small {
+  margin-top: 4px;
+  color: var(--integration-api-muted);
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.45;
+}
+
+.integration-api-page .integration-api-credential {
+  min-width: 0;
+  margin-top: 22px;
+  padding: 18px;
+  background: var(--integration-api-surface-subtle);
+  border: 1px solid var(--integration-api-border);
+  border-radius: 12px;
+}
+
+.integration-api-page .integration-api-credential-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.integration-api-page .integration-api-private-label {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 6px;
+  min-height: 28px;
+  padding: 4px 8px;
+  color: var(--integration-api-muted);
+  background: var(--integration-api-surface);
+  border: 1px solid var(--integration-api-border);
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.integration-api-page .integration-api-credential > .control-label {
+  display: block;
+  margin-bottom: 7px;
+  color: var(--integration-api-heading);
+  text-align: left;
+}
+
+.integration-api-page .integration-api-token-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+}
+
+.integration-api-page .integration-api-token-value {
+  min-width: 0;
+  min-height: 44px;
+  color: var(--integration-api-text);
+  background: var(--integration-api-surface);
+  border-color: var(--integration-api-border);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 13px;
+}
+
+.integration-api-page .integration-api-token-hidden {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 44px;
+  margin: 0;
+  padding: 10px 12px;
+  color: var(--integration-api-muted);
+  background: var(--integration-api-surface);
+  border: 1px solid var(--integration-api-border);
+  border-radius: 7px;
+  line-height: 1.45;
+}
+
+.integration-api-page .integration-api-token-hidden .fa {
+  color: var(--integration-api-enabled-text);
+}
+
+.integration-api-page .help-block {
+  margin: 8px 0 0;
+  color: var(--integration-api-muted);
+  line-height: 1.45;
+}
+
+.integration-api-page .integration-api-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 9px;
+  margin-top: 22px;
+}
+
+.integration-api-page .integration-api-actions .btn,
+.integration-api-page #copy_token_btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 44px;
+  white-space: normal;
+}
+
+.integration-api-page .btn:active,
+.integration-api-page .btn:hover:active,
+.integration-api-page .integration-api-toggle-label:active,
+.integration-api-page .integration-api-toggle-label:hover:active {
+  transform: scale(0.98);
+  transition: transform 100ms ease-out;
+}
+
+.integration-api-page a:focus-visible,
+.integration-api-page button:focus-visible,
+.integration-api-page input:focus-visible,
+.integration-api-page [tabindex]:focus-visible {
+  outline: 2px solid var(--integration-api-focus);
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .integration-api-page *,
+  .integration-api-page *::before,
+  .integration-api-page *::after {
+    animation-duration: 0.01ms;
+    animation-iteration-count: 1;
+    scroll-behavior: auto;
+    transition-duration: 0.01ms;
+  }
+  .integration-api-page .btn:active,
+  .integration-api-page .btn:hover:active,
+  .integration-api-page .integration-api-toggle-label:active,
+  .integration-api-page .integration-api-toggle-label:hover:active {
+    transform: none;
+  }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .integration-api-page .surface,
+  .integration-api-page .integration-api-credential {
+    backdrop-filter: none;
+  }
+}
+@media (prefers-contrast: more) {
+  .integration-api-page .surface,
+  .integration-api-page .integration-api-note,
+  .integration-api-page .integration-api-warning,
+  .integration-api-page .integration-api-credential,
+  .integration-api-page .form-control,
+  .integration-api-page .integration-api-token-hidden {
+    border-color: currentColor;
+  }
+}
+@media (max-width: 768px) {
+  .integration-api-page {
+    padding-bottom: 28px;
+  }
+  .integration-api-page .page-heading {
+    align-items: stretch;
+  }
+  .integration-api-page .integration-api-status {
+    align-self: flex-start;
+    margin-top: 0;
+  }
+  .integration-api-page .integration-api-workspace {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 18px;
+  }
+  .integration-api-page .surface {
+    padding: 18px 16px;
+    border-radius: 13px;
+  }
+  .integration-api-page .integration-api-credential {
+    padding: 16px 14px;
+  }
+  .integration-api-page .integration-api-credential-heading {
+    flex-direction: column;
+    gap: 10px;
+  }
+  .integration-api-page .integration-api-token-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .integration-api-page #copy_token_btn,
+  .integration-api-page .integration-api-actions,
+  .integration-api-page .integration-api-actions .btn {
+    width: 100%;
+  }
+  .integration-api-page .integration-api-actions {
+    flex-direction: column-reverse;
+  }
+}
 /* Stage 8J — Employee onboarding workspace (single employee + CSV import). */
 .employee-onboarding-page {
   --onboarding-surface: #ffffff;
@@ -9122,8 +9533,1539 @@ td.current_day_cell.half_2nd {
     min-width: 0;
   }
 }
+/* Stage 8M: Reminder Schedules Workspace */
+.reminder-schedules-page {
+  --reminder-surface: #ffffff;
+  --reminder-surface-subtle: #f5f8fa;
+  --reminder-border: #d8e0e6;
+  --reminder-border-strong: #aebbc5;
+  --reminder-text: #27323b;
+  --reminder-muted: #60717e;
+  --reminder-heading: #17242e;
+  --reminder-accent: #247fb4;
+  --reminder-focus: #116c9e;
+  --reminder-active-bg: #e3f3e8;
+  --reminder-active-text: #27613b;
+  --reminder-inactive-bg: #edf1f4;
+  --reminder-inactive-text: #52626e;
+  --reminder-danger: #a92f3b;
+  --reminder-shadow: 0 10px 28px rgba(30, 49, 64, 0.08);
+  width: 100%;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding-bottom: 44px;
+  color: var(--reminder-text);
+}
+
+[data-theme=dark] .reminder-schedules-page {
+  --reminder-surface: #202a32;
+  --reminder-surface-subtle: #182128;
+  --reminder-border: #52626e;
+  --reminder-border-strong: #768995;
+  --reminder-text: #e8edf0;
+  --reminder-muted: #bdc8ce;
+  --reminder-heading: #ffffff;
+  --reminder-accent: #8fc2dc;
+  --reminder-focus: #9bd4ef;
+  --reminder-active-bg: #193b29;
+  --reminder-active-text: #a9e4bd;
+  --reminder-inactive-bg: #303b43;
+  --reminder-inactive-text: #d1d9de;
+  --reminder-danger: #ffb0b8;
+  --reminder-shadow: 0 12px 34px rgba(0, 0, 0, 0.24);
+}
+
+.reminder-schedules-page .page-heading {
+  margin-bottom: 24px;
+}
+
+.reminder-schedules-page .page-heading h1 {
+  color: var(--reminder-heading);
+}
+
+.reminder-schedules-page .page-heading .lead {
+  max-width: 760px;
+  margin-bottom: 0;
+  color: var(--reminder-muted);
+  font-size: 16px;
+  line-height: 1.55;
+}
+
+.reminder-schedules-page .page-heading-actions .btn,
+.reminder-schedules-page .reminder-schedules-empty .btn {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+}
+
+.reminder-schedules-page .reminder-schedules-feedback {
+  margin-bottom: 20px;
+  border-radius: 12px;
+}
+
+.reminder-schedules-page .reminder-schedules-workspace {
+  display: grid;
+  gap: 20px;
+}
+
+.reminder-schedules-page .surface {
+  margin: 0;
+  padding: 28px;
+  background: var(--reminder-surface);
+  border: 1px solid var(--reminder-border);
+  border-radius: 16px;
+  box-shadow: var(--reminder-shadow);
+}
+
+.reminder-schedules-page .reminder-schedules-section-heading,
+.reminder-schedules-page .reminder-schedule-modal-heading {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+}
+
+.reminder-schedules-page .reminder-schedules-section-heading {
+  margin-bottom: 22px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--reminder-border);
+}
+
+.reminder-schedules-page .reminder-schedules-section-icon {
+  display: inline-flex;
+  flex: 0 0 42px;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  color: var(--reminder-accent);
+  background: var(--reminder-surface-subtle);
+  border: 1px solid var(--reminder-border);
+  border-radius: 12px;
+  font-size: 18px;
+}
+
+.reminder-schedules-page .reminder-schedules-section-heading h2,
+.reminder-schedules-page .reminder-schedule-modal-heading h2 {
+  margin: 0 0 5px;
+  color: var(--reminder-heading);
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.reminder-schedules-page .reminder-schedules-section-heading p,
+.reminder-schedules-page .reminder-schedule-modal-heading p {
+  margin: 0;
+  color: var(--reminder-muted);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.reminder-schedules-page .reminder-schedules-table-container {
+  overflow-x: auto;
+  border: 1px solid var(--reminder-border);
+  border-radius: 12px;
+}
+
+.reminder-schedules-page .reminder-schedules-table {
+  margin-bottom: 0;
+  background: var(--reminder-surface);
+}
+
+.reminder-schedules-page .reminder-schedules-table > thead > tr > th {
+  padding: 12px 14px;
+  color: var(--reminder-muted);
+  background: var(--reminder-surface-subtle);
+  border-bottom: 1px solid var(--reminder-border);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.reminder-schedules-page .reminder-schedules-table > tbody > tr > td {
+  padding: 14px;
+  vertical-align: middle;
+  border-color: var(--reminder-border);
+  color: var(--reminder-text);
+}
+
+.reminder-schedules-page .reminder-schedules-table.table-hover > tbody > tr:hover,
+.reminder-schedules-page .reminder-schedules-table.table-hover > tbody > tr:focus-within {
+  background: var(--reminder-surface-subtle);
+}
+
+.reminder-schedules-page .reminder-schedule-days {
+  color: var(--reminder-heading);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+
+.reminder-schedules-page .reminder-schedule-leave-type {
+  color: var(--reminder-heading);
+  font-weight: 600;
+}
+
+.reminder-schedules-page .reminder-schedule-row-inactive .reminder-schedule-days,
+.reminder-schedules-page .reminder-schedule-row-inactive .reminder-schedule-leave-type,
+.reminder-schedules-page .reminder-schedule-row-inactive .reminder-schedule-recipients {
+  color: var(--reminder-muted);
+}
+
+.reminder-schedules-page .reminder-status-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.25;
+  white-space: nowrap;
+}
+
+.reminder-schedules-page .reminder-status-active {
+  color: var(--reminder-active-text);
+  background: var(--reminder-active-bg);
+}
+
+.reminder-schedules-page .reminder-status-inactive {
+  color: var(--reminder-inactive-text);
+  background: var(--reminder-inactive-bg);
+}
+
+.reminder-schedules-page .reminder-schedule-action-group {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.reminder-schedules-page .reminder-schedule-action-group .btn {
+  min-height: 36px;
+  padding: 7px 10px;
+  border-radius: 8px;
+  font-size: 13px;
+}
+
+.reminder-schedules-page .reminder-schedule-action-group .text-danger {
+  color: var(--reminder-danger);
+}
+
+.reminder-schedules-page .reminder-schedules-empty {
+  max-width: 540px;
+  margin: 8px auto;
+  padding: 32px 20px;
+  color: var(--reminder-muted);
+  text-align: center;
+}
+
+.reminder-schedules-page .reminder-schedules-empty > .fa {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 54px;
+  height: 54px;
+  margin-bottom: 12px;
+  color: var(--reminder-accent);
+  background: var(--reminder-surface-subtle);
+  border: 1px solid var(--reminder-border);
+  border-radius: 16px;
+  font-size: 21px;
+}
+
+.reminder-schedules-page .reminder-schedules-empty h3 {
+  margin: 0 0 7px;
+  color: var(--reminder-heading);
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.reminder-schedules-page .reminder-schedules-empty p {
+  margin: 0 0 18px;
+  line-height: 1.55;
+}
+
+.reminder-schedules-page .reminder-test-form {
+  display: grid;
+  grid-template-columns: minmax(260px, 1fr) minmax(150px, 0.28fr) auto;
+  gap: 16px;
+  align-items: end;
+}
+
+.reminder-schedules-page .reminder-test-form .form-group {
+  min-width: 0;
+  margin-bottom: 0;
+}
+
+.reminder-schedules-page .reminder-test-form label,
+.reminder-schedules-page .reminder-schedule-modal label,
+.reminder-schedules-page .reminder-schedule-options legend {
+  margin-bottom: 7px;
+  color: var(--reminder-heading);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.reminder-schedules-page .form-control {
+  min-width: 0;
+  min-height: 44px;
+  color: var(--reminder-text);
+  background: var(--reminder-surface);
+  border-color: var(--reminder-border-strong);
+  border-radius: 8px;
+}
+
+.reminder-schedules-page textarea.form-control {
+  min-height: 104px;
+  resize: vertical;
+}
+
+.reminder-schedules-page .form-control:focus {
+  border-color: var(--reminder-focus);
+  box-shadow: 0 0 0 3px rgba(36, 127, 180, 0.18);
+}
+
+.reminder-schedules-page .reminder-days-input {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr);
+  align-items: center;
+  min-width: 0;
+  color: var(--reminder-muted);
+  background: var(--reminder-surface-subtle);
+  border: 1px solid var(--reminder-border-strong);
+  border-radius: 8px;
+}
+
+.reminder-schedules-page .reminder-days-input > span {
+  text-align: center;
+  font-weight: 700;
+}
+
+.reminder-schedules-page .reminder-days-input .form-control {
+  border: 0;
+  border-left: 1px solid var(--reminder-border-strong);
+  border-radius: 0 8px 8px 0;
+  box-shadow: none;
+}
+
+.reminder-schedules-page .reminder-test-submit {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+}
+
+.reminder-schedules-page .reminder-schedule-modal .modal-dialog {
+  width: auto;
+  max-width: 720px;
+}
+
+.reminder-schedules-page .reminder-schedule-modal .modal-content {
+  color: var(--reminder-text);
+  background: var(--reminder-surface);
+  border: 1px solid var(--reminder-border);
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(18, 29, 37, 0.28);
+  overflow: hidden;
+}
+
+.reminder-schedules-page .reminder-schedule-modal .modal-header,
+.reminder-schedules-page .reminder-schedule-modal .modal-footer {
+  background: var(--reminder-surface);
+  border-color: var(--reminder-border);
+}
+
+.reminder-schedules-page .reminder-schedule-modal .modal-header {
+  padding: 22px 24px 18px;
+}
+
+.reminder-schedules-page .reminder-schedule-modal .modal-header .close {
+  min-width: 44px;
+  min-height: 44px;
+  margin-top: -8px;
+  margin-right: -10px;
+  color: var(--reminder-heading);
+  opacity: 0.72;
+}
+
+.reminder-schedules-page .reminder-schedule-modal .modal-body {
+  display: grid;
+  gap: 20px;
+  padding: 22px 24px;
+}
+
+.reminder-schedules-page .reminder-schedule-core-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.reminder-schedules-page .reminder-schedule-core-fields .form-group,
+.reminder-schedules-page .reminder-schedule-template-fields .form-group {
+  min-width: 0;
+  margin-bottom: 0;
+}
+
+.reminder-schedules-page .reminder-schedule-options {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.reminder-schedules-page .reminder-schedule-options legend {
+  width: auto;
+  border: 0;
+}
+
+.reminder-schedules-page .reminder-schedule-option-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.reminder-schedules-page .reminder-schedule-option,
+.reminder-schedules-page .reminder-schedule-active-option label {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  min-height: 48px;
+  margin: 0;
+  padding: 10px 12px;
+  color: var(--reminder-heading);
+  background: var(--reminder-surface-subtle);
+  border: 1px solid var(--reminder-border);
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.reminder-schedules-page .reminder-schedule-option input,
+.reminder-schedules-page .reminder-schedule-active-option input {
+  flex: 0 0 auto;
+  width: 20px;
+  height: 20px;
+  margin: 0;
+}
+
+.reminder-schedules-page .reminder-schedule-option .fa {
+  color: var(--reminder-accent);
+}
+
+.reminder-schedules-page .reminder-schedule-active-option {
+  max-width: 250px;
+}
+
+.reminder-schedules-page .reminder-schedule-template-fields {
+  display: grid;
+  gap: 16px;
+  padding: 18px;
+  background: var(--reminder-surface-subtle);
+  border: 1px solid var(--reminder-border);
+  border-radius: 12px;
+}
+
+.reminder-schedules-page .reminder-schedule-template-heading h3 {
+  margin: 0 0 6px;
+  color: var(--reminder-heading);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.reminder-schedules-page .reminder-schedule-template-heading p,
+.reminder-schedules-page .help-block {
+  margin: 0;
+  color: var(--reminder-muted);
+  font-size: 13px;
+  font-style: normal;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+
+.reminder-schedules-page .reminder-schedule-template-heading code {
+  color: var(--reminder-text);
+  background: var(--reminder-surface);
+  white-space: normal;
+}
+
+.reminder-schedules-page .reminder-schedule-modal .modal-footer {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  padding: 16px 24px;
+}
+
+.reminder-schedules-page .reminder-schedule-modal .modal-footer .btn {
+  min-width: 120px;
+  min-height: 44px;
+}
+
+.reminder-schedules-page .btn:active,
+.reminder-schedules-page .btn:hover:active {
+  transform: scale(0.98);
+  transition: transform 100ms ease-out;
+}
+
+.reminder-schedules-page a:focus-visible,
+.reminder-schedules-page button:focus-visible,
+.reminder-schedules-page input:focus-visible,
+.reminder-schedules-page select:focus-visible,
+.reminder-schedules-page textarea:focus-visible,
+.reminder-schedules-page [tabindex]:focus-visible {
+  outline: 2px solid var(--reminder-focus);
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reminder-schedules-page *,
+  .reminder-schedules-page *::before,
+  .reminder-schedules-page *::after {
+    animation-duration: 0.01ms;
+    animation-iteration-count: 1;
+    scroll-behavior: auto;
+    transition-duration: 0.01ms;
+  }
+  .reminder-schedules-page .btn:active,
+  .reminder-schedules-page .btn:hover:active {
+    transform: none;
+  }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .reminder-schedules-page .surface,
+  .reminder-schedules-page .reminder-schedule-modal .modal-content,
+  .reminder-schedules-page .reminder-schedule-template-fields {
+    backdrop-filter: none;
+  }
+}
+@media (prefers-contrast: more) {
+  .reminder-schedules-page .surface,
+  .reminder-schedules-page .reminder-schedules-table-container,
+  .reminder-schedules-page .form-control,
+  .reminder-schedules-page .reminder-schedule-option,
+  .reminder-schedules-page .reminder-schedule-active-option label,
+  .reminder-schedules-page .reminder-schedule-template-fields {
+    border-color: currentColor;
+  }
+  .reminder-schedules-page .reminder-status-chip {
+    outline: 1px solid currentColor;
+  }
+}
+@media (max-width: 768px) {
+  .reminder-schedules-page {
+    padding-bottom: 28px;
+  }
+  .reminder-schedules-page .page-heading {
+    align-items: stretch;
+  }
+  .reminder-schedules-page .page-heading-actions,
+  .reminder-schedules-page .page-heading-actions .btn {
+    width: 100%;
+  }
+  .reminder-schedules-page .surface {
+    padding: 20px 16px;
+    border-radius: 13px;
+  }
+  .reminder-schedules-page .reminder-schedules-section-heading {
+    gap: 12px;
+  }
+  .reminder-schedules-page .reminder-test-form,
+  .reminder-schedules-page .reminder-schedule-core-fields,
+  .reminder-schedules-page .reminder-schedule-option-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .reminder-schedules-page .reminder-test-submit {
+    width: 100%;
+  }
+  .reminder-schedules-page .reminder-schedules-table-container {
+    overflow: visible;
+    border: 0;
+    background: transparent;
+  }
+  .reminder-schedules-page .reminder-schedules-table > tbody > tr,
+  .reminder-schedules-page .reminder-schedules-table.table-hover > tbody > tr:hover,
+  .reminder-schedules-page .reminder-schedules-table.table-hover > tbody > tr:focus-within {
+    overflow: visible;
+    background: var(--reminder-surface);
+    border-color: var(--reminder-border);
+    box-shadow: var(--reminder-shadow);
+  }
+  .reminder-schedules-page .reminder-schedules-table > tbody > tr > td {
+    color: var(--reminder-text);
+    border-color: var(--reminder-border);
+    white-space: normal;
+  }
+  .reminder-schedules-page .reminder-schedules-table > tbody > tr > td::before {
+    color: var(--reminder-muted);
+  }
+  .reminder-schedules-page .reminder-schedule-action-group {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+  .reminder-schedules-page .reminder-schedule-action-group .btn {
+    width: 100%;
+    min-height: 44px;
+  }
+  .reminder-schedules-page .reminder-schedule-modal .modal-dialog {
+    margin: 12px;
+  }
+  .reminder-schedules-page .reminder-schedule-modal .modal-header,
+  .reminder-schedules-page .reminder-schedule-modal .modal-body,
+  .reminder-schedules-page .reminder-schedule-modal .modal-footer {
+    padding-right: 16px;
+    padding-left: 16px;
+  }
+  .reminder-schedules-page .reminder-schedule-modal .modal-footer {
+    flex-direction: column-reverse;
+  }
+  .reminder-schedules-page .reminder-schedule-modal .modal-footer .btn {
+    width: 100%;
+  }
+  .reminder-schedules-page .reminder-schedule-active-option {
+    max-width: none;
+  }
+}
+/* Stage 8N: Email Audit Workspace */
+.email-audit-page {
+  --email-audit-surface: #ffffff;
+  --email-audit-surface-subtle: #f5f8fb;
+  --email-audit-text: #263746;
+  --email-audit-heading: #172736;
+  --email-audit-muted: #5d7082;
+  --email-audit-border: #d2dce5;
+  --email-audit-accent: #1677b8;
+  --email-audit-focus: #126aa5;
+  --email-audit-shadow: 0 10px 28px rgba(30, 53, 73, 0.08);
+  max-width: 1240px;
+  margin-inline: auto;
+  padding-bottom: 40px;
+  color: var(--email-audit-text);
+}
+
+[data-theme=dark] .email-audit-page {
+  --email-audit-surface: #202c35;
+  --email-audit-surface-subtle: #18232b;
+  --email-audit-text: #d7e1e8;
+  --email-audit-heading: #f4f7f9;
+  --email-audit-muted: #b5c4ce;
+  --email-audit-border: #506675;
+  --email-audit-accent: #78c7f3;
+  --email-audit-focus: #8bd3f8;
+  --email-audit-shadow: 0 14px 34px rgba(0, 0, 0, 0.26);
+}
+
+.email-audit-page .page-heading {
+  margin-bottom: 24px;
+}
+
+.email-audit-page .page-heading h1 {
+  overflow-wrap: anywhere;
+  color: var(--email-audit-heading);
+  font-weight: 700;
+  line-height: 1.12;
+  letter-spacing: -0.015em;
+}
+
+.email-audit-page .page-heading .lead {
+  max-width: 720px;
+  margin-bottom: 0;
+  color: var(--email-audit-muted);
+  font-size: 15px;
+  line-height: 1.55;
+}
+
+.email-audit-page .email-audit-workspace {
+  display: grid;
+  grid-template-columns: minmax(240px, 290px) minmax(0, 1fr);
+  gap: 22px;
+  align-items: start;
+}
+
+.email-audit-page .email-audit-filter-column,
+.email-audit-page .email-audit-results {
+  min-width: 0;
+}
+
+.email-audit-page .surface {
+  padding: 22px;
+  background: var(--email-audit-surface);
+  border: 1px solid var(--email-audit-border);
+  border-radius: 14px;
+  box-shadow: var(--email-audit-shadow);
+}
+
+.email-audit-page .audit-filter {
+  position: sticky;
+  top: 18px;
+  margin: 0;
+}
+
+.email-audit-page .email-audit-section-heading {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  min-width: 0;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--email-audit-border);
+}
+
+.email-audit-page .email-audit-section-icon {
+  display: inline-flex;
+  flex: 0 0 42px;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  color: var(--email-audit-accent);
+  background: var(--email-audit-surface-subtle);
+  border: 1px solid var(--email-audit-border);
+  border-radius: 11px;
+  font-size: 17px;
+}
+
+.email-audit-page .email-audit-section-heading h2 {
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+  color: var(--email-audit-heading);
+  font-size: 19px;
+  font-weight: 700;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+}
+
+.email-audit-page .form-group {
+  margin-bottom: 18px;
+}
+
+.email-audit-page .form-group > label {
+  display: block;
+  margin-bottom: 7px;
+  color: var(--email-audit-heading);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.email-audit-page .form-control,
+.email-audit-page .input-group-addon {
+  min-height: 44px;
+  color: var(--email-audit-text);
+  background: var(--email-audit-surface);
+  border-color: var(--email-audit-border);
+}
+
+.email-audit-page .input-group-addon {
+  min-width: 44px;
+  color: var(--email-audit-muted);
+}
+
+.email-audit-page .audit-filter-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.email-audit-page .audit-filter-actions .btn {
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  white-space: normal;
+}
+
+.email-audit-page .email-audit-table-container {
+  min-width: 0;
+  overflow-x: auto;
+  background: var(--email-audit-surface);
+  border: 1px solid var(--email-audit-border);
+  border-radius: 12px;
+}
+
+.email-audit-page .email-audit-table {
+  width: 100%;
+  min-width: 640px;
+  margin: 0;
+  table-layout: fixed;
+  background: var(--email-audit-surface);
+}
+
+.email-audit-page .email-audit-table > thead > tr > th {
+  padding: 12px 14px;
+  color: var(--email-audit-muted);
+  background: var(--email-audit-surface-subtle);
+  border-color: var(--email-audit-border);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.035em;
+  line-height: 1.35;
+  text-transform: uppercase;
+}
+
+.email-audit-page .email-audit-table > thead > tr > th:first-child {
+  width: 26%;
+}
+
+.email-audit-page .email-audit-table > thead > tr > th:nth-child(2) {
+  width: 49%;
+}
+
+.email-audit-page .email-audit-table > thead > tr > th:last-child {
+  width: 25%;
+}
+
+.email-audit-page .email-audit-table > tbody > tr > td {
+  padding: 12px 14px;
+  color: var(--email-audit-text);
+  border-color: var(--email-audit-border);
+  vertical-align: middle;
+  overflow-wrap: anywhere;
+}
+
+.email-audit-page .email-audit-table.table-hover > tbody > .vpp-email-audit-entry-header:hover,
+.email-audit-page .email-audit-table.table-hover > tbody > .vpp-email-audit-entry-header:focus-within {
+  background: var(--email-audit-surface-subtle);
+}
+
+.email-audit-page .user-link-cell a,
+.email-audit-page .email-audit-subject {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  overflow-wrap: anywhere;
+}
+
+.email-audit-page .user-link-cell a {
+  color: var(--email-audit-accent);
+  font-weight: 600;
+}
+
+.email-audit-page .email-audit-subject {
+  gap: 10px;
+  max-width: 100%;
+  color: var(--email-audit-heading);
+  font-weight: 650;
+  line-height: 1.4;
+}
+
+.email-audit-page .email-audit-subject-text {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.email-audit-page .email-audit-subject .fa {
+  flex: 0 0 auto;
+  color: var(--email-audit-muted);
+  transition: transform 140ms ease-out;
+}
+
+.email-audit-page .email-audit-subject[aria-expanded=true] .fa {
+  transform: rotate(180deg);
+}
+
+.email-audit-page .email-audit-timestamp {
+  color: var(--email-audit-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.email-audit-page .email-audit-detail-row > td {
+  padding: 0 14px 16px;
+  background: var(--email-audit-surface-subtle);
+}
+
+.email-audit-page .email-audit-detail {
+  min-width: 0;
+  padding: 16px;
+  text-align: left;
+  background: var(--email-audit-surface);
+  border: 1px solid var(--email-audit-border);
+  border-radius: 10px;
+}
+
+.email-audit-page .email-audit-detail address {
+  margin: 0 0 12px;
+  overflow-wrap: anywhere;
+  color: var(--email-audit-text);
+  text-align: left;
+}
+
+.email-audit-page .email-audit-detail address a {
+  color: var(--email-audit-accent);
+  overflow-wrap: anywhere;
+}
+
+.email-audit-page .email-audit-body {
+  max-width: 100%;
+  max-height: 360px;
+  margin: 0;
+  padding: 16px;
+  overflow: auto;
+  color: var(--email-audit-text);
+  background: var(--email-audit-surface-subtle);
+  border: 1px solid var(--email-audit-border);
+  border-radius: 8px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 12px;
+  line-height: 1.55;
+  text-align: left;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.email-audit-page .email-audit-empty-row > td {
+  padding: 28px 16px;
+}
+
+.email-audit-page .email-audit-pagination {
+  display: flex;
+  justify-content: center;
+  margin-top: 18px;
+}
+
+.email-audit-page .email-audit-pagination .pagination {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+}
+
+.email-audit-page .email-audit-pagination .pagination > li > span,
+.email-audit-page .email-audit-pagination .pagination > li > span > a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
+
+.email-audit-page .btn:active,
+.email-audit-page .btn:hover:active,
+.email-audit-page .email-audit-subject:active,
+.email-audit-page .email-audit-subject:hover:active {
+  transform: scale(0.985);
+  transition: transform 100ms ease-out;
+}
+
+.email-audit-page a:focus-visible,
+.email-audit-page button:focus-visible,
+.email-audit-page input:focus-visible,
+.email-audit-page select:focus-visible,
+.email-audit-page [tabindex]:focus-visible {
+  outline: 2px solid var(--email-audit-focus);
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .email-audit-page *,
+  .email-audit-page *::before,
+  .email-audit-page *::after {
+    animation-duration: 0.01ms;
+    animation-iteration-count: 1;
+    scroll-behavior: auto;
+    transition-duration: 0.01ms;
+  }
+  .email-audit-page .btn:active,
+  .email-audit-page .btn:hover:active,
+  .email-audit-page .email-audit-subject:active,
+  .email-audit-page .email-audit-subject:hover:active {
+    transform: none;
+  }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .email-audit-page .surface,
+  .email-audit-page .email-audit-table-container,
+  .email-audit-page .email-audit-detail {
+    backdrop-filter: none;
+  }
+}
+@media (prefers-contrast: more) {
+  .email-audit-page .surface,
+  .email-audit-page .email-audit-table-container,
+  .email-audit-page .form-control,
+  .email-audit-page .input-group-addon,
+  .email-audit-page .email-audit-detail,
+  .email-audit-page .email-audit-body {
+    border-color: currentColor;
+  }
+}
+@media (max-width: 768px) {
+  .email-audit-page {
+    padding-bottom: 28px;
+  }
+  .email-audit-page .email-audit-workspace {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 18px;
+  }
+  .email-audit-page .surface {
+    padding: 18px 16px;
+    border-radius: 13px;
+  }
+  .email-audit-page .audit-filter {
+    position: static;
+  }
+  .email-audit-page .audit-filter-actions {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .email-audit-page .email-audit-table-container {
+    overflow: visible;
+    border: 0;
+    background: transparent;
+  }
+  .email-audit-page .email-audit-table {
+    min-width: 0;
+    background: transparent;
+  }
+  .email-audit-page .email-audit-table > tbody > .vpp-email-audit-entry-header,
+  .email-audit-page .email-audit-table.table-hover > tbody > .vpp-email-audit-entry-header:hover,
+  .email-audit-page .email-audit-table.table-hover > tbody > .vpp-email-audit-entry-header:focus-within {
+    overflow: visible;
+    background: var(--email-audit-surface);
+    border-color: var(--email-audit-border);
+    box-shadow: var(--email-audit-shadow);
+  }
+  .email-audit-page .email-audit-table > tbody > .vpp-email-audit-entry-header > td {
+    color: var(--email-audit-text);
+    border-color: var(--email-audit-border);
+    white-space: normal;
+  }
+  .email-audit-page .email-audit-table > tbody > .vpp-email-audit-entry-header > td::before {
+    color: var(--email-audit-muted);
+  }
+  .email-audit-page .user-link-cell a,
+  .email-audit-page .email-audit-subject {
+    width: 100%;
+    min-width: 0;
+    white-space: normal;
+  }
+  .email-audit-page .email-audit-subject {
+    justify-content: space-between;
+  }
+  .email-audit-page .email-audit-detail-row.collapse:not(.in) {
+    display: none;
+  }
+  .email-audit-page .email-audit-detail-row.collapse.in {
+    display: block;
+    margin-top: -16px;
+    margin-bottom: 16px;
+    overflow: visible;
+    background: var(--email-audit-surface);
+    border-color: var(--email-audit-border);
+    border-top: 0;
+    border-radius: 0 0 12px 12px;
+    box-shadow: var(--email-audit-shadow);
+  }
+  .email-audit-page .email-audit-detail-row > td {
+    display: block;
+    width: 100%;
+    padding: 0 12px 12px;
+    background: transparent;
+    border: 0;
+    text-align: left;
+  }
+  .email-audit-page .email-audit-detail {
+    padding: 14px;
+  }
+  .email-audit-page .email-audit-body {
+    max-height: 300px;
+    padding: 12px;
+  }
+  .email-audit-page .email-audit-empty-row,
+  .email-audit-page .email-audit-empty-row > td {
+    display: block;
+    width: 100%;
+  }
+  .email-audit-page .email-audit-pagination .pagination {
+    width: 100%;
+    justify-content: center;
+  }
+}
+/* Stage 8P: Diagnostics Support Workspace */
+.diagnostics-page {
+  --diagnostics-surface: #ffffff;
+  --diagnostics-surface-subtle: #f5f8fb;
+  --diagnostics-text: #344457;
+  --diagnostics-heading: #172736;
+  --diagnostics-muted: #5f7183;
+  --diagnostics-border: #d5dee7;
+  --diagnostics-accent: #176f9c;
+  --diagnostics-focus: #176f9c;
+  --diagnostics-positive-bg: #e7f4ec;
+  --diagnostics-positive-text: #17613b;
+  --diagnostics-negative-bg: #fbecec;
+  --diagnostics-negative-text: #9b2f35;
+  --diagnostics-neutral-bg: #edf1f5;
+  --diagnostics-neutral-text: #47576a;
+  --diagnostics-note-bg: #eef6fb;
+  --diagnostics-note-border: #bad6e6;
+  --diagnostics-note-text: #385c71;
+  --diagnostics-shadow: 0 10px 28px rgba(28, 49, 67, 0.08);
+  max-width: 1180px;
+  margin: 0 auto;
+  padding-bottom: 44px;
+  color: var(--diagnostics-text);
+}
+
+[data-theme=dark] .diagnostics-page {
+  --diagnostics-surface: #202c35;
+  --diagnostics-surface-subtle: #18232b;
+  --diagnostics-text: #dce5eb;
+  --diagnostics-heading: #f5f8fa;
+  --diagnostics-muted: #b9c7d0;
+  --diagnostics-border: #4c6271;
+  --diagnostics-accent: #78c7f3;
+  --diagnostics-focus: #8bd3f8;
+  --diagnostics-positive-bg: #173f31;
+  --diagnostics-positive-text: #a3e4c0;
+  --diagnostics-negative-bg: #4b282c;
+  --diagnostics-negative-text: #ffb4ba;
+  --diagnostics-neutral-bg: #323f4a;
+  --diagnostics-neutral-text: #d5dfe6;
+  --diagnostics-note-bg: #1b3442;
+  --diagnostics-note-border: #426b80;
+  --diagnostics-note-text: #c7e2ef;
+  --diagnostics-shadow: 0 14px 34px rgba(0, 0, 0, 0.28);
+}
+
+.diagnostics-page .page-heading {
+  align-items: flex-start;
+  gap: 18px;
+  margin-bottom: 24px;
+}
+
+.diagnostics-page .page-heading-titles {
+  min-width: 0;
+}
+
+.diagnostics-page .page-heading .lead {
+  max-width: 700px;
+  margin-bottom: 0;
+  color: var(--diagnostics-muted);
+}
+
+.diagnostics-page .diagnostics-generated-at {
+  display: flex;
+  flex: 0 1 auto;
+  align-items: center;
+  gap: 7px;
+  min-height: 34px;
+  margin: 4px 0 0;
+  padding: 6px 10px;
+  color: var(--diagnostics-muted);
+  background: var(--diagnostics-surface-subtle);
+  border: 1px solid var(--diagnostics-border);
+  border-radius: 999px;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.diagnostics-page .diagnostics-generated-at time {
+  color: var(--diagnostics-heading);
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.diagnostics-page .diagnostics-workspace {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 22px;
+  align-items: start;
+}
+
+.diagnostics-page .surface {
+  min-width: 0;
+  padding: 22px;
+  color: var(--diagnostics-text);
+  background: var(--diagnostics-surface);
+  border: 1px solid var(--diagnostics-border);
+  border-radius: 15px;
+  box-shadow: var(--diagnostics-shadow);
+}
+
+.diagnostics-page .diagnostics-features,
+.diagnostics-page .diagnostics-snapshot {
+  grid-column: 1/-1;
+}
+
+.diagnostics-page .diagnostics-section-heading {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  min-width: 0;
+}
+
+.diagnostics-page .diagnostics-section-icon {
+  display: inline-flex;
+  flex: 0 0 40px;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  color: var(--diagnostics-accent);
+  background: var(--diagnostics-surface-subtle);
+  border: 1px solid var(--diagnostics-border);
+  border-radius: 10px;
+  font-size: 16px;
+}
+
+.diagnostics-page .diagnostics-section-heading > div {
+  min-width: 0;
+}
+
+.diagnostics-page .diagnostics-section-heading h2 {
+  margin: 0;
+  color: var(--diagnostics-heading);
+  font-size: 19px;
+  font-weight: 700;
+  line-height: 1.35;
+  letter-spacing: -0.01em;
+  overflow-wrap: anywhere;
+}
+
+.diagnostics-page .diagnostics-section-heading p {
+  margin: 5px 0 0;
+  color: var(--diagnostics-muted);
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.diagnostics-page .diagnostics-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 28px;
+  margin-top: 8px;
+  padding: 4px 9px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 1.35;
+}
+
+.diagnostics-page .diagnostics-status.is-positive {
+  color: var(--diagnostics-positive-text);
+  background: var(--diagnostics-positive-bg);
+}
+
+.diagnostics-page .diagnostics-status.is-negative {
+  color: var(--diagnostics-negative-text);
+  background: var(--diagnostics-negative-bg);
+}
+
+.diagnostics-page .diagnostics-status.is-neutral {
+  color: var(--diagnostics-neutral-text);
+  background: var(--diagnostics-neutral-bg);
+}
+
+.diagnostics-page .diagnostics-status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.diagnostics-page .diagnostics-detail-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0;
+  margin: 20px 0 0;
+  border-top: 1px solid var(--diagnostics-border);
+}
+
+.diagnostics-page .diagnostics-detail-list > div {
+  min-width: 0;
+  padding: 13px 0;
+  border-bottom: 1px solid var(--diagnostics-border);
+}
+
+.diagnostics-page .diagnostics-detail-list > div:nth-child(odd) {
+  padding-right: 14px;
+}
+
+.diagnostics-page .diagnostics-detail-list > div:nth-child(even) {
+  padding-left: 14px;
+  border-left: 1px solid var(--diagnostics-border);
+}
+
+.diagnostics-page .diagnostics-detail-list dt,
+.diagnostics-page .diagnostics-detail-list dd {
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.diagnostics-page .diagnostics-detail-list dt {
+  margin-bottom: 5px;
+  color: var(--diagnostics-muted);
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 1.4;
+}
+
+.diagnostics-page .diagnostics-detail-list dd {
+  color: var(--diagnostics-heading);
+  line-height: 1.45;
+}
+
+.diagnostics-page code {
+  max-width: 100%;
+  color: var(--diagnostics-text);
+  background: var(--diagnostics-surface-subtle);
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.diagnostics-page .diagnostics-code-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.diagnostics-page .diagnostics-number {
+  font-variant-numeric: tabular-nums;
+  font-weight: 650;
+}
+
+.diagnostics-page .diagnostics-feature-list {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin: 20px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.diagnostics-page .diagnostics-feature-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-width: 0;
+  min-height: 48px;
+  padding: 9px 11px;
+  background: var(--diagnostics-surface-subtle);
+  border: 1px solid var(--diagnostics-border);
+  border-radius: 10px;
+}
+
+.diagnostics-page .diagnostics-feature-list code {
+  min-width: 0;
+}
+
+.diagnostics-page .diagnostics-feature-list .diagnostics-status {
+  flex: 0 0 auto;
+  margin: 0;
+}
+
+.diagnostics-page .diagnostics-snapshot-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.diagnostics-page .diagnostics-download {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 44px;
+  white-space: normal;
+}
+
+.diagnostics-page .diagnostics-privacy-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  margin-top: 20px;
+  padding: 14px;
+  color: var(--diagnostics-note-text);
+  background: var(--diagnostics-note-bg);
+  border: 1px solid var(--diagnostics-note-border);
+  border-radius: 10px;
+}
+
+.diagnostics-page .diagnostics-privacy-note > .fa {
+  flex: 0 0 auto;
+  margin-top: 2px;
+}
+
+.diagnostics-page .diagnostics-privacy-note strong,
+.diagnostics-page .diagnostics-privacy-note p {
+  display: block;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.diagnostics-page .diagnostics-privacy-note strong {
+  color: var(--diagnostics-heading);
+}
+
+.diagnostics-page .diagnostics-privacy-note p {
+  margin-top: 3px;
+  line-height: 1.5;
+}
+
+.diagnostics-page .diagnostics-preview {
+  margin-top: 16px;
+  border: 1px solid var(--diagnostics-border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.diagnostics-page .diagnostics-preview summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 44px;
+  padding: 10px 13px;
+  color: var(--diagnostics-heading);
+  background: var(--diagnostics-surface-subtle);
+  font-weight: 650;
+  cursor: pointer;
+  list-style: none;
+}
+
+.diagnostics-page .diagnostics-preview summary::-webkit-details-marker {
+  display: none;
+}
+
+.diagnostics-page .diagnostics-preview summary .fa {
+  color: var(--diagnostics-muted);
+  transition: transform 140ms ease-out;
+}
+
+.diagnostics-page .diagnostics-preview[open] summary .fa {
+  transform: rotate(180deg);
+}
+
+.diagnostics-page .diagnostics-preview pre {
+  max-width: 100%;
+  max-height: 420px;
+  margin: 0;
+  padding: 16px;
+  overflow: auto;
+  color: var(--diagnostics-text);
+  background: var(--diagnostics-surface);
+  border: 0;
+  border-top: 1px solid var(--diagnostics-border);
+  border-radius: 0;
+  font-size: 12px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.diagnostics-page .diagnostics-preview pre code {
+  padding: 0;
+  color: inherit;
+  background: transparent;
+  white-space: inherit;
+}
+
+.diagnostics-page .btn:active,
+.diagnostics-page .btn:hover:active,
+.diagnostics-page .diagnostics-preview summary:active,
+.diagnostics-page .diagnostics-preview summary:hover:active {
+  transform: scale(0.985);
+  transition: transform 100ms ease-out;
+}
+
+.diagnostics-page a:focus-visible,
+.diagnostics-page summary:focus-visible,
+.diagnostics-page pre:focus-visible,
+.diagnostics-page [tabindex]:focus-visible {
+  outline: 2px solid var(--diagnostics-focus);
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .diagnostics-page *,
+  .diagnostics-page *::before,
+  .diagnostics-page *::after {
+    animation-duration: 0.01ms;
+    animation-iteration-count: 1;
+    scroll-behavior: auto;
+    transition-duration: 0.01ms;
+  }
+  .diagnostics-page .btn:active,
+  .diagnostics-page .btn:hover:active,
+  .diagnostics-page .diagnostics-preview summary:active,
+  .diagnostics-page .diagnostics-preview summary:hover:active {
+    transform: none;
+  }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .diagnostics-page .surface,
+  .diagnostics-page .diagnostics-preview,
+  .diagnostics-page .diagnostics-privacy-note {
+    backdrop-filter: none;
+  }
+}
+@media (prefers-contrast: more) {
+  .diagnostics-page .surface,
+  .diagnostics-page .diagnostics-generated-at,
+  .diagnostics-page .diagnostics-feature-list li,
+  .diagnostics-page .diagnostics-privacy-note,
+  .diagnostics-page .diagnostics-preview {
+    border-color: currentColor;
+  }
+  .diagnostics-page .diagnostics-status {
+    outline: 1px solid currentColor;
+  }
+}
+@media (max-width: 768px) {
+  .diagnostics-page {
+    padding-bottom: 28px;
+  }
+  .diagnostics-page .page-heading {
+    align-items: stretch;
+  }
+  .diagnostics-page .diagnostics-generated-at {
+    align-self: flex-start;
+    border-radius: 10px;
+  }
+  .diagnostics-page .diagnostics-workspace {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 18px;
+  }
+  .diagnostics-page .surface,
+  .diagnostics-page .diagnostics-features,
+  .diagnostics-page .diagnostics-snapshot {
+    grid-column: auto;
+  }
+  .diagnostics-page .surface {
+    padding: 18px 16px;
+    border-radius: 13px;
+  }
+  .diagnostics-page .diagnostics-detail-list,
+  .diagnostics-page .diagnostics-feature-list {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .diagnostics-page .diagnostics-detail-list > div:nth-child(odd),
+  .diagnostics-page .diagnostics-detail-list > div:nth-child(even) {
+    padding-right: 0;
+    padding-left: 0;
+    border-left: 0;
+  }
+  .diagnostics-page .diagnostics-snapshot-header {
+    flex-direction: column;
+  }
+  .diagnostics-page .diagnostics-download {
+    width: 100%;
+  }
+  .diagnostics-page .diagnostics-preview pre {
+    max-height: 320px;
+    padding: 13px;
+  }
+}
 /* ============================================================
- * Stage 8M — Shared admin & report workspace (.workspace-page)
+ * Stage 8Q — Shared admin & report workspace (.workspace-page)
  *
  * The pages left over after Stage 8A–8L (diagnostics, integration
  * API, calendar feeds, bulk department edit, reminder schedules,
@@ -9819,45 +11761,9 @@ td.current_day_cell.half_2nd {
   }
 }
 /* ------------------------------------------------------------
- * Stage 8M — page-specific additions on top of .workspace-page.
+ * Stage 8Q — page-specific additions on top of .workspace-page.
  * Each block only carries what is genuinely unique to the page.
  * ---------------------------------------------------------- */
-/* Grouped controls keep a real fieldset/legend for screen readers without the
-   browser's default box (reminder schedules modal). */
-.workspace-page .workspace-fieldset {
-  min-width: 0;
-  padding: 0;
-  border: 0;
-}
-
-.workspace-page .workspace-fieldset > legend {
-  width: auto;
-  margin-bottom: var(--workspace-space-2);
-  padding: 0;
-  border: 0;
-  color: var(--workspace-ink);
-  font-size: 13px;
-  font-weight: 600;
-  line-height: 1.35;
-}
-
-.workspace-page .workspace-modal .modal-content {
-  background: var(--workspace-surface);
-  border: 1px solid var(--workspace-border);
-  border-radius: var(--workspace-radius);
-  box-shadow: var(--workspace-shadow-raised);
-}
-
-.workspace-page .workspace-modal .modal-header,
-.workspace-page .workspace-modal .modal-footer {
-  padding: var(--workspace-space-4) var(--workspace-space-5);
-  border-color: var(--workspace-border);
-}
-
-.workspace-page .workspace-modal .modal-body {
-  padding: var(--workspace-space-5);
-}
-
 /* Calendar feeds: the shared cards now sit on .workspace-surface, so the
    pre-Stage-8 card chrome is replaced rather than layered on. */
 .feeds-page .feeds-intro {
@@ -9936,16 +11842,6 @@ td.current_day_cell.half_2nd {
   line-height: 1.6;
 }
 
-/* Email audit: the expandable body row is a full-width detail, not a cell. */
-.email-audit-page .email-audit-detail-row > td {
-  background: var(--workspace-surface-sunken);
-}
-
-.email-audit-page .email-audit-body {
-  margin: var(--workspace-space-2) 0 0;
-  white-space: pre-wrap;
-}
-
 /* Bulk department editing: inputs sit inside table cells. */
 .departments-bulk-page .workspace-table > tbody > tr > td {
   vertical-align: top;
@@ -9955,23 +11851,7 @@ td.current_day_cell.half_2nd {
   min-width: 140px;
 }
 
-/* Diagnostics: the row header column carries the field name. */
-.diagnostics-page .workspace-table > tbody > tr > th {
-  width: 34%;
-  white-space: normal;
-}
-
-.diagnostics-page .workspace-table code {
-  word-break: break-all;
-}
-
 @media (max-width: 768px) {
-  .email-audit-page .email-audit-detail-row > td {
-    display: block;
-  }
-  .email-audit-page .email-audit-detail-row > td::before {
-    content: none;
-  }
   .departments-bulk-page .workspace-table.mobile-card-table > tbody > tr > td {
     display: block;
   }
@@ -9979,16 +11859,9 @@ td.current_day_cell.half_2nd {
     display: block;
     margin-bottom: var(--workspace-space-1);
   }
-  .diagnostics-page .workspace-table > tbody > tr > th {
-    width: auto;
-  }
-  /* The row-header cell already repeats the field name in the card label. */
-  .diagnostics-page .workspace-table.mobile-card-table > tbody > tr > th {
-    display: none;
-  }
 }
 /* ------------------------------------------------------------
- * Stage 8M — Employee calendar and Team View.
+ * Stage 8Q — Employee calendar and Team View.
  *
  * These two pages already carried a bespoke month-grid layout, so
  * they adopt the workspace tokens for chrome (heading, summary,

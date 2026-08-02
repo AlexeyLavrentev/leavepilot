@@ -2,93 +2,24 @@
 
 <a class="sr-only sr-only-focusable" href="#main-content">{{t "nav.skipToMainContent"}}</a>
 
-<main id="main-content" class="workspace-page email-audit-page" tabindex="-1">
-
-<div class="page-heading">
-  <div>
-    <p class="page-eyebrow">{{t "nav.settings"}}</p>
-    <h1>{{t "emailAudit.title"}}</h1>
-    <p class="lead">{{t "emailAudit.subtitle"}}</p>
-  </div>
-</div>
-
-{{> show_flash_messages }}
-
-<div class="workspace-split audit-layout">
-  <div>
-    <section class="workspace-surface workspace-surface--flush" aria-labelledby="email-audit-list-heading">
-      <div class="workspace-section-heading">
-        <span class="workspace-section-icon"><i class="fa fa-envelope-o" aria-hidden="true"></i></span>
-        <div class="workspace-section-heading-text">
-          <h2 id="email-audit-list-heading">{{t "emailAudit.title"}}</h2>
-        </div>
-      </div>
-
-      <div class="workspace-table-scroll" role="region" aria-label="{{t "emailAudit.title"}}" tabindex="0">
-        <table class="table table-hover workspace-table mobile-card-table" id="email_list">
-          <caption class="sr-only">{{t "emailAudit.title"}}</caption>
-          <thead>
-            <tr>
-              <th>{{t "emailAudit.toEmployee"}}</th>
-              <th>{{t "emailAudit.subject"}}</th>
-              <th>{{t "emailAudit.dateAndTime"}}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {{# each audit_emails }}
-            <tr id="heading_{{ this.id }}" class="vpp-email-audit-entry-header">
-              <td class="user-link-cell workspace-cell-primary" data-label="{{t 'emailAudit.toEmployee'}}">
-                <a href="/audit/email/?user_id={{ this.user_id}}">{{# with this.user }}{{this.full_name}}{{/with}}</a>
-              </td>
-              <td data-label="{{t 'emailAudit.subject'}}">
-                <a class="collapsed email-audit-subject" data-toggle="collapse" data-parent="#email_list" href="#collapse_{{ this.id }}" aria-expanded="false" aria-controls="collapse_{{ this.id }}">
-                  {{ this.subject }}
-                  <span class="fa fa-chevron-down" aria-hidden="true"></span>
-                </a>
-              </td>
-              <td data-label="{{t 'emailAudit.dateAndTime'}}">{{as_datetime_from_timestamp this.created_at}}</td>
-            </tr>
-            <tr id="collapse_{{ this.id }}" class="collapse email-audit-detail-row">
-              <td colspan="3" data-label="{{t 'emailAudit.subject'}}">
-                <address>
-                  <strong>{{t "emailAudit.toEmail"}}:</strong>
-                  <a href="mailto:{{this.email}}">{{this.email}}</a>
-                </address>
-                <pre class="workspace-code email-audit-body">{{this.body_as_text}}</pre>
-              </td>
-            </tr>
-            {{else}}
-            <tr>
-              <td colspan="3" data-label="{{t 'emailAudit.title'}}">
-                <div class="workspace-empty">
-                  <span class="workspace-empty-icon"><i class="fa fa-envelope-o" aria-hidden="true"></i></span>
-                  <p>{{t "emailAudit.noEmails"}}</p>
-                </div>
-              </td>
-            </tr>
-            {{/each}}
-          </tbody>
-        </table>
-      </div>
-    </section>
-
-    <div class="text-center">
-      {{# if audit_emails}}
-        {{> pager pager=pager }}
-      {{/if}}
+<main id="main-content" class="email-audit-page" tabindex="-1">
+  <div class="page-heading">
+    <div class="page-heading-titles">
+      <h1>{{t "emailAudit.title"}}</h1>
+      <p class="lead">{{t "emailAudit.subtitle"}}</p>
     </div>
   </div>
 
-  <aside>
-    <form action="/audit/email/" method="GET" class="workspace-surface audit-filter" aria-labelledby="email-audit-filter-heading">
-      <div class="workspace-section-heading">
-        <span class="workspace-section-icon"><i class="fa fa-filter" aria-hidden="true"></i></span>
-        <div class="workspace-section-heading-text">
+  {{> show_flash_messages }}
+
+  <div class="email-audit-workspace">
+    <aside class="email-audit-filter-column">
+      <form action="/audit/email/" method="GET" class="surface audit-filter" aria-labelledby="email-audit-filter-heading">
+        <div class="email-audit-section-heading">
+          <span class="email-audit-section-icon fa fa-sliders" aria-hidden="true"></span>
           <h2 id="email-audit-filter-heading">{{t "emailAudit.filterOptions"}}</h2>
         </div>
-      </div>
 
-      <div class="workspace-form">
         <div class="form-group">
           <label for="start_date">{{t "emailAudit.startDatePlaceholder"}}</label>
           <div class="input-group">
@@ -118,18 +49,71 @@
             {{/each}}
           </select>
         </div>
+
+        <div class="audit-filter-actions">
+          <button type="submit" class="btn btn-info single-click">{{t "emailAudit.filterButton"}}</button>
+          {{# if show_reset_button }}
+          <a href="/audit/email/" class="btn btn-default">{{t "emailAudit.resetButton"}}</a>
+          {{/if}}
+        </div>
+      </form>
+    </aside>
+
+    <section class="surface email-audit-results" aria-labelledby="email-audit-results-heading">
+      <div class="email-audit-section-heading">
+        <span class="email-audit-section-icon fa fa-envelope-o" aria-hidden="true"></span>
+        <h2 id="email-audit-results-heading">{{t "emailAudit.resultsTitle"}}</h2>
       </div>
 
-      <div class="workspace-actions workspace-actions--footer audit-filter-actions">
-        <button type="submit" class="btn btn-info single-click">{{t "emailAudit.filterButton"}}</button>
-        {{# if show_reset_button }}
-        <a href="/audit/email/" class="btn btn-default">{{t "emailAudit.resetButton"}}</a>
-        {{/if}}
+      <div class="mobile-card-table-container email-audit-table-container" role="region" aria-label="{{t "emailAudit.resultsTitle"}}" tabindex="0">
+        <table class="table table-hover mobile-card-table email-audit-table" id="email_list">
+          <caption class="sr-only">{{t "emailAudit.title"}}</caption>
+          <thead>
+            <tr>
+              <th scope="col">{{t "emailAudit.toEmployee"}}</th>
+              <th scope="col">{{t "emailAudit.subject"}}</th>
+              <th scope="col">{{t "emailAudit.dateAndTime"}}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {{# each audit_emails }}
+            <tr id="heading_{{ this.id }}" class="vpp-email-audit-entry-header" data-email-audit-entry="{{this.id}}">
+              <td class="user-link-cell" data-label="{{t "emailAudit.toEmployee"}}">
+                <a href="/audit/email/?user_id={{ this.user_id}}">{{# with this.user }}{{this.full_name}}{{/with}}</a>
+              </td>
+              <td data-label="{{t "emailAudit.subject"}}">
+                <a class="collapsed email-audit-subject" data-toggle="collapse" data-parent="#email_list" href="#collapse_{{ this.id }}" aria-expanded="false" aria-controls="collapse_{{ this.id }}">
+                  <span class="email-audit-subject-text">{{ this.subject }}</span>
+                  <span class="fa fa-chevron-down" aria-hidden="true"></span>
+                </a>
+              </td>
+              <td class="email-audit-timestamp" data-label="{{t "emailAudit.dateAndTime"}}">{{as_datetime_from_timestamp this.created_at}}</td>
+            </tr>
+            <tr id="collapse_{{ this.id }}" class="collapse email-audit-detail-row">
+              <td colspan="3">
+                <div class="email-audit-detail">
+                  <address>
+                    <strong>{{t "emailAudit.toEmail"}}:</strong>
+                    <a href="mailto:{{this.email}}">{{this.email}}</a>
+                  </address>
+                  <pre class="email-audit-body">{{this.body_as_text}}</pre>
+                </div>
+              </td>
+            </tr>
+            {{else}}
+            <tr class="email-audit-empty-row"><td colspan="3"><div class="empty-state">{{t "emailAudit.noEmails"}}</div></td></tr>
+            {{/each}}
+          </tbody>
+        </table>
       </div>
-    </form>
-  </aside>
-</div>
 
+      {{# if audit_emails}}
+      <nav class="email-audit-pagination" aria-label="{{t "emailAudit.resultsTitle"}}">
+        {{> pager pager=pager }}
+      </nav>
+      {{/if}}
+    </section>
+  </div>
 </main>
 
 {{> footer }}
