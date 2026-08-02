@@ -9122,5 +9122,600 @@ td.current_day_cell.half_2nd {
     min-width: 0;
   }
 }
+/* Stage 8M: Reminder Schedules Workspace */
+.reminder-schedules-page {
+  --reminder-surface: #ffffff;
+  --reminder-surface-subtle: #f5f8fa;
+  --reminder-border: #d8e0e6;
+  --reminder-border-strong: #aebbc5;
+  --reminder-text: #27323b;
+  --reminder-muted: #60717e;
+  --reminder-heading: #17242e;
+  --reminder-accent: #247fb4;
+  --reminder-focus: #116c9e;
+  --reminder-active-bg: #e3f3e8;
+  --reminder-active-text: #27613b;
+  --reminder-inactive-bg: #edf1f4;
+  --reminder-inactive-text: #52626e;
+  --reminder-danger: #a92f3b;
+  --reminder-shadow: 0 10px 28px rgba(30, 49, 64, 0.08);
+  width: 100%;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding-bottom: 44px;
+  color: var(--reminder-text);
+}
+
+[data-theme=dark] .reminder-schedules-page {
+  --reminder-surface: #202a32;
+  --reminder-surface-subtle: #182128;
+  --reminder-border: #52626e;
+  --reminder-border-strong: #768995;
+  --reminder-text: #e8edf0;
+  --reminder-muted: #bdc8ce;
+  --reminder-heading: #ffffff;
+  --reminder-accent: #8fc2dc;
+  --reminder-focus: #9bd4ef;
+  --reminder-active-bg: #193b29;
+  --reminder-active-text: #a9e4bd;
+  --reminder-inactive-bg: #303b43;
+  --reminder-inactive-text: #d1d9de;
+  --reminder-danger: #ffb0b8;
+  --reminder-shadow: 0 12px 34px rgba(0, 0, 0, 0.24);
+}
+
+.reminder-schedules-page .page-heading {
+  margin-bottom: 24px;
+}
+
+.reminder-schedules-page .page-heading h1 {
+  color: var(--reminder-heading);
+}
+
+.reminder-schedules-page .page-heading .lead {
+  max-width: 760px;
+  margin-bottom: 0;
+  color: var(--reminder-muted);
+  font-size: 16px;
+  line-height: 1.55;
+}
+
+.reminder-schedules-page .page-heading-actions .btn,
+.reminder-schedules-page .reminder-schedules-empty .btn {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+}
+
+.reminder-schedules-page .reminder-schedules-feedback {
+  margin-bottom: 20px;
+  border-radius: 12px;
+}
+
+.reminder-schedules-page .reminder-schedules-workspace {
+  display: grid;
+  gap: 20px;
+}
+
+.reminder-schedules-page .surface {
+  margin: 0;
+  padding: 28px;
+  background: var(--reminder-surface);
+  border: 1px solid var(--reminder-border);
+  border-radius: 16px;
+  box-shadow: var(--reminder-shadow);
+}
+
+.reminder-schedules-page .reminder-schedules-section-heading,
+.reminder-schedules-page .reminder-schedule-modal-heading {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+}
+
+.reminder-schedules-page .reminder-schedules-section-heading {
+  margin-bottom: 22px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--reminder-border);
+}
+
+.reminder-schedules-page .reminder-schedules-section-icon {
+  display: inline-flex;
+  flex: 0 0 42px;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  color: var(--reminder-accent);
+  background: var(--reminder-surface-subtle);
+  border: 1px solid var(--reminder-border);
+  border-radius: 12px;
+  font-size: 18px;
+}
+
+.reminder-schedules-page .reminder-schedules-section-heading h2,
+.reminder-schedules-page .reminder-schedule-modal-heading h2 {
+  margin: 0 0 5px;
+  color: var(--reminder-heading);
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.reminder-schedules-page .reminder-schedules-section-heading p,
+.reminder-schedules-page .reminder-schedule-modal-heading p {
+  margin: 0;
+  color: var(--reminder-muted);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.reminder-schedules-page .reminder-schedules-table-container {
+  overflow-x: auto;
+  border: 1px solid var(--reminder-border);
+  border-radius: 12px;
+}
+
+.reminder-schedules-page .reminder-schedules-table {
+  margin-bottom: 0;
+  background: var(--reminder-surface);
+}
+
+.reminder-schedules-page .reminder-schedules-table > thead > tr > th {
+  padding: 12px 14px;
+  color: var(--reminder-muted);
+  background: var(--reminder-surface-subtle);
+  border-bottom: 1px solid var(--reminder-border);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.reminder-schedules-page .reminder-schedules-table > tbody > tr > td {
+  padding: 14px;
+  vertical-align: middle;
+  border-color: var(--reminder-border);
+  color: var(--reminder-text);
+}
+
+.reminder-schedules-page .reminder-schedules-table.table-hover > tbody > tr:hover,
+.reminder-schedules-page .reminder-schedules-table.table-hover > tbody > tr:focus-within {
+  background: var(--reminder-surface-subtle);
+}
+
+.reminder-schedules-page .reminder-schedule-days {
+  color: var(--reminder-heading);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+
+.reminder-schedules-page .reminder-schedule-leave-type {
+  color: var(--reminder-heading);
+  font-weight: 600;
+}
+
+.reminder-schedules-page .reminder-schedule-row-inactive .reminder-schedule-days,
+.reminder-schedules-page .reminder-schedule-row-inactive .reminder-schedule-leave-type,
+.reminder-schedules-page .reminder-schedule-row-inactive .reminder-schedule-recipients {
+  color: var(--reminder-muted);
+}
+
+.reminder-schedules-page .reminder-status-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.25;
+  white-space: nowrap;
+}
+
+.reminder-schedules-page .reminder-status-active {
+  color: var(--reminder-active-text);
+  background: var(--reminder-active-bg);
+}
+
+.reminder-schedules-page .reminder-status-inactive {
+  color: var(--reminder-inactive-text);
+  background: var(--reminder-inactive-bg);
+}
+
+.reminder-schedules-page .reminder-schedule-action-group {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.reminder-schedules-page .reminder-schedule-action-group .btn {
+  min-height: 36px;
+  padding: 7px 10px;
+  border-radius: 8px;
+  font-size: 13px;
+}
+
+.reminder-schedules-page .reminder-schedule-action-group .text-danger {
+  color: var(--reminder-danger);
+}
+
+.reminder-schedules-page .reminder-schedules-empty {
+  max-width: 540px;
+  margin: 8px auto;
+  padding: 32px 20px;
+  color: var(--reminder-muted);
+  text-align: center;
+}
+
+.reminder-schedules-page .reminder-schedules-empty > .fa {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 54px;
+  height: 54px;
+  margin-bottom: 12px;
+  color: var(--reminder-accent);
+  background: var(--reminder-surface-subtle);
+  border: 1px solid var(--reminder-border);
+  border-radius: 16px;
+  font-size: 21px;
+}
+
+.reminder-schedules-page .reminder-schedules-empty h3 {
+  margin: 0 0 7px;
+  color: var(--reminder-heading);
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.reminder-schedules-page .reminder-schedules-empty p {
+  margin: 0 0 18px;
+  line-height: 1.55;
+}
+
+.reminder-schedules-page .reminder-test-form {
+  display: grid;
+  grid-template-columns: minmax(260px, 1fr) minmax(150px, 0.28fr) auto;
+  gap: 16px;
+  align-items: end;
+}
+
+.reminder-schedules-page .reminder-test-form .form-group {
+  min-width: 0;
+  margin-bottom: 0;
+}
+
+.reminder-schedules-page .reminder-test-form label,
+.reminder-schedules-page .reminder-schedule-modal label,
+.reminder-schedules-page .reminder-schedule-options legend {
+  margin-bottom: 7px;
+  color: var(--reminder-heading);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.reminder-schedules-page .form-control {
+  min-width: 0;
+  min-height: 44px;
+  color: var(--reminder-text);
+  background: var(--reminder-surface);
+  border-color: var(--reminder-border-strong);
+  border-radius: 8px;
+}
+
+.reminder-schedules-page textarea.form-control {
+  min-height: 104px;
+  resize: vertical;
+}
+
+.reminder-schedules-page .form-control:focus {
+  border-color: var(--reminder-focus);
+  box-shadow: 0 0 0 3px rgba(36, 127, 180, 0.18);
+}
+
+.reminder-schedules-page .reminder-days-input {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr);
+  align-items: center;
+  min-width: 0;
+  color: var(--reminder-muted);
+  background: var(--reminder-surface-subtle);
+  border: 1px solid var(--reminder-border-strong);
+  border-radius: 8px;
+}
+
+.reminder-schedules-page .reminder-days-input > span {
+  text-align: center;
+  font-weight: 700;
+}
+
+.reminder-schedules-page .reminder-days-input .form-control {
+  border: 0;
+  border-left: 1px solid var(--reminder-border-strong);
+  border-radius: 0 8px 8px 0;
+  box-shadow: none;
+}
+
+.reminder-schedules-page .reminder-test-submit {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+}
+
+.reminder-schedules-page .reminder-schedule-modal .modal-dialog {
+  width: auto;
+  max-width: 720px;
+}
+
+.reminder-schedules-page .reminder-schedule-modal .modal-content {
+  color: var(--reminder-text);
+  background: var(--reminder-surface);
+  border: 1px solid var(--reminder-border);
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(18, 29, 37, 0.28);
+  overflow: hidden;
+}
+
+.reminder-schedules-page .reminder-schedule-modal .modal-header,
+.reminder-schedules-page .reminder-schedule-modal .modal-footer {
+  background: var(--reminder-surface);
+  border-color: var(--reminder-border);
+}
+
+.reminder-schedules-page .reminder-schedule-modal .modal-header {
+  padding: 22px 24px 18px;
+}
+
+.reminder-schedules-page .reminder-schedule-modal .modal-header .close {
+  min-width: 44px;
+  min-height: 44px;
+  margin-top: -8px;
+  margin-right: -10px;
+  color: var(--reminder-heading);
+  opacity: 0.72;
+}
+
+.reminder-schedules-page .reminder-schedule-modal .modal-body {
+  display: grid;
+  gap: 20px;
+  padding: 22px 24px;
+}
+
+.reminder-schedules-page .reminder-schedule-core-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.reminder-schedules-page .reminder-schedule-core-fields .form-group,
+.reminder-schedules-page .reminder-schedule-template-fields .form-group {
+  min-width: 0;
+  margin-bottom: 0;
+}
+
+.reminder-schedules-page .reminder-schedule-options {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.reminder-schedules-page .reminder-schedule-options legend {
+  width: auto;
+  border: 0;
+}
+
+.reminder-schedules-page .reminder-schedule-option-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.reminder-schedules-page .reminder-schedule-option,
+.reminder-schedules-page .reminder-schedule-active-option label {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  min-height: 48px;
+  margin: 0;
+  padding: 10px 12px;
+  color: var(--reminder-heading);
+  background: var(--reminder-surface-subtle);
+  border: 1px solid var(--reminder-border);
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.reminder-schedules-page .reminder-schedule-option input,
+.reminder-schedules-page .reminder-schedule-active-option input {
+  flex: 0 0 auto;
+  width: 20px;
+  height: 20px;
+  margin: 0;
+}
+
+.reminder-schedules-page .reminder-schedule-option .fa {
+  color: var(--reminder-accent);
+}
+
+.reminder-schedules-page .reminder-schedule-active-option {
+  max-width: 250px;
+}
+
+.reminder-schedules-page .reminder-schedule-template-fields {
+  display: grid;
+  gap: 16px;
+  padding: 18px;
+  background: var(--reminder-surface-subtle);
+  border: 1px solid var(--reminder-border);
+  border-radius: 12px;
+}
+
+.reminder-schedules-page .reminder-schedule-template-heading h3 {
+  margin: 0 0 6px;
+  color: var(--reminder-heading);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.reminder-schedules-page .reminder-schedule-template-heading p,
+.reminder-schedules-page .help-block {
+  margin: 0;
+  color: var(--reminder-muted);
+  font-size: 13px;
+  font-style: normal;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+
+.reminder-schedules-page .reminder-schedule-template-heading code {
+  color: var(--reminder-text);
+  background: var(--reminder-surface);
+  white-space: normal;
+}
+
+.reminder-schedules-page .reminder-schedule-modal .modal-footer {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  padding: 16px 24px;
+}
+
+.reminder-schedules-page .reminder-schedule-modal .modal-footer .btn {
+  min-width: 120px;
+  min-height: 44px;
+}
+
+.reminder-schedules-page .btn:active,
+.reminder-schedules-page .btn:hover:active {
+  transform: scale(0.98);
+  transition: transform 100ms ease-out;
+}
+
+.reminder-schedules-page a:focus-visible,
+.reminder-schedules-page button:focus-visible,
+.reminder-schedules-page input:focus-visible,
+.reminder-schedules-page select:focus-visible,
+.reminder-schedules-page textarea:focus-visible,
+.reminder-schedules-page [tabindex]:focus-visible {
+  outline: 2px solid var(--reminder-focus);
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reminder-schedules-page *,
+  .reminder-schedules-page *::before,
+  .reminder-schedules-page *::after {
+    animation-duration: 0.01ms;
+    animation-iteration-count: 1;
+    scroll-behavior: auto;
+    transition-duration: 0.01ms;
+  }
+  .reminder-schedules-page .btn:active,
+  .reminder-schedules-page .btn:hover:active {
+    transform: none;
+  }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .reminder-schedules-page .surface,
+  .reminder-schedules-page .reminder-schedule-modal .modal-content,
+  .reminder-schedules-page .reminder-schedule-template-fields {
+    backdrop-filter: none;
+  }
+}
+@media (prefers-contrast: more) {
+  .reminder-schedules-page .surface,
+  .reminder-schedules-page .reminder-schedules-table-container,
+  .reminder-schedules-page .form-control,
+  .reminder-schedules-page .reminder-schedule-option,
+  .reminder-schedules-page .reminder-schedule-active-option label,
+  .reminder-schedules-page .reminder-schedule-template-fields {
+    border-color: currentColor;
+  }
+  .reminder-schedules-page .reminder-status-chip {
+    outline: 1px solid currentColor;
+  }
+}
+@media (max-width: 768px) {
+  .reminder-schedules-page {
+    padding-bottom: 28px;
+  }
+  .reminder-schedules-page .page-heading {
+    align-items: stretch;
+  }
+  .reminder-schedules-page .page-heading-actions,
+  .reminder-schedules-page .page-heading-actions .btn {
+    width: 100%;
+  }
+  .reminder-schedules-page .surface {
+    padding: 20px 16px;
+    border-radius: 13px;
+  }
+  .reminder-schedules-page .reminder-schedules-section-heading {
+    gap: 12px;
+  }
+  .reminder-schedules-page .reminder-test-form,
+  .reminder-schedules-page .reminder-schedule-core-fields,
+  .reminder-schedules-page .reminder-schedule-option-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .reminder-schedules-page .reminder-test-submit {
+    width: 100%;
+  }
+  .reminder-schedules-page .reminder-schedules-table-container {
+    overflow: visible;
+    border: 0;
+    background: transparent;
+  }
+  .reminder-schedules-page .reminder-schedules-table > tbody > tr,
+  .reminder-schedules-page .reminder-schedules-table.table-hover > tbody > tr:hover,
+  .reminder-schedules-page .reminder-schedules-table.table-hover > tbody > tr:focus-within {
+    overflow: visible;
+    background: var(--reminder-surface);
+    border-color: var(--reminder-border);
+    box-shadow: var(--reminder-shadow);
+  }
+  .reminder-schedules-page .reminder-schedules-table > tbody > tr > td {
+    color: var(--reminder-text);
+    border-color: var(--reminder-border);
+    white-space: normal;
+  }
+  .reminder-schedules-page .reminder-schedules-table > tbody > tr > td::before {
+    color: var(--reminder-muted);
+  }
+  .reminder-schedules-page .reminder-schedule-action-group {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+  .reminder-schedules-page .reminder-schedule-action-group .btn {
+    width: 100%;
+    min-height: 44px;
+  }
+  .reminder-schedules-page .reminder-schedule-modal .modal-dialog {
+    margin: 12px;
+  }
+  .reminder-schedules-page .reminder-schedule-modal .modal-header,
+  .reminder-schedules-page .reminder-schedule-modal .modal-body,
+  .reminder-schedules-page .reminder-schedule-modal .modal-footer {
+    padding-right: 16px;
+    padding-left: 16px;
+  }
+  .reminder-schedules-page .reminder-schedule-modal .modal-footer {
+    flex-direction: column-reverse;
+  }
+  .reminder-schedules-page .reminder-schedule-modal .modal-footer .btn {
+    width: 100%;
+  }
+  .reminder-schedules-page .reminder-schedule-active-option {
+    max-width: none;
+  }
+}
 
 /*# sourceMappingURL=style.css.map */

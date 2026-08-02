@@ -183,7 +183,11 @@ describe('Authentication Settings workspace contract (Stage 8L)', function () {
 
     it('uses immediate press feedback and neutralizes its compound under reduced motion', function () {
       expect(css).to.match(/\.authentication-settings-page[^{}]*:active[^{}]*,[^{}]*\.authentication-settings-page[^{}]*:hover:active[^{}]*\{[^}]*transform:\s*scale\(0\.98\)/);
-      const reduced = css.slice(css.lastIndexOf('@media (prefers-reduced-motion: reduce)'));
+      const authenticationStage = css.slice(
+        css.indexOf('.authentication-settings-page'),
+        css.indexOf('/* Stage 8M: Reminder Schedules Workspace */')
+      );
+      const reduced = authenticationStage.slice(authenticationStage.lastIndexOf('@media (prefers-reduced-motion: reduce)'));
       expect(reduced).to.include('.authentication-settings-page');
       expect(reduced).to.include(':hover:active');
       expect(reduced).to.match(/transform:\s*none/);
