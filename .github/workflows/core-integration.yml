@@ -1,0 +1,76 @@
+name: Core integration
+
+# The browser suite covers what unit tests cannot: real layout geometry, sticky
+# headers, WCAG contrast of rendered pixels, keyboard and pointer behaviour.
+# Until now it ran on nobody's machine automatically, so a stylesheet change
+# could break it silently — Core CI only runs the unit tests.
+
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+      - main
+      - "release/**"
+      - "inf/**"
+
+jobs:
+  integration:
+    name: Browser suite (Selenium)
+    runs-on: ubuntu-24.04
+    # A full pass is around ten minutes; the cap leaves room for a slow runner
+    # without letting a wedged browser hold a runner for hours.
+    timeout-minutes: 40
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+        env:
+          # The runner ships Google Chrome, so neither package needs to pull
+          # its own ~150MB browser; the driver itself comes from Selenium
+          # Manager at run time.
+          CHROMEDRIVER_SKIP_DOWNLOAD: 'true'
+          PUPPETEER_SKIP_DOWNLOAD: 'true'
+
+      - name: Record browser version
+        run: |
+          google-chrome --version
+          echo "CHROME_BIN=$(command -v google-chrome)" >> "$GITHUB_ENV"
+
+      - name: Verify the committed stylesheet is current
+        # Several suites assert against compiled CSS. Recompiling silently would
+        # hide a stale checked-in build, so compare instead of overwrite.
+        run: |
+          npm run build-css
+          if ! git diff --quiet -- public/css/style.css; then
+            echo "public/css/style.css is stale: run 'npm run build-css' and commit the result."
+            git --no-pager diff --stat -- public/css/style.css
+            exit 1
+          fi
+
+      - name: Run integration suite
+        run: node bin/test.js --integration-only --keep-going
+        env:
+          NODE_ENV: test
+          TEST_DB_STORAGE: /tmp/integration-test.sqlite
+          # Smaller batches than the local default: eight specs sharing one
+          # server and one headless browser on a two-core runner produced
+          # 60-second timeouts that moved between files from run to run.
+          TEST_INTEGRATION_BATCH_SIZE: '4'
+          # The per-spec budget is tuned for a developer machine. The leave-type
+          # limit specs drive several bookings through the browser and overran
+          # 60s on a two-core runner while passing locally, so the runner gets a
+          # larger budget rather than the specs getting weaker assertions.
+          TEST_EXECUTION_TIMEOUT_MS: '120000'
+          # One retry for a missed wait. Assertions are untouched: a spec that
+          # fails twice in a row still fails the run.
+          TEST_RETRIES: '1'
