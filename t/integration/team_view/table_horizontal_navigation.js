@@ -1,5 +1,7 @@
 'use strict';
 
+const setViewport = require('../../lib/set_viewport');
+
 var config           = require('../../lib/config'),
     application_host = config.get_application_host(),
     By               = require('selenium-webdriver').By,
@@ -311,7 +313,7 @@ describe('Team View horizontal table navigation', function(){
 
   it('Mobile (390px) period navigation lays out without page overflow', function(done){
     // Switch to a mobile viewport and verify computed geometry.
-    driver.manage().window().setRect({width: 390, height: 844})
+    setViewport(driver, {width: 390, height: 844})
       .then(function(){ return open_page_func({ url: application_host + 'calendar/teamview/?months=1', driver: driver }); })
       .then(function(){ return driver.wait(until.elementLocated(By.css('.team-view-table')), 5000); })
       .then(function(){ return driver.sleep(400); })
@@ -360,7 +362,7 @@ describe('Team View horizontal table navigation', function(){
         expect(g.chevronVisible, 'chevron should remain visible').to.equal(true);
       })
       // Restore the default window size for any following scenarios.
-      .then(function(){ return driver.manage().window().setRect({width: 1024, height: 768}); })
+      .then(function(){ return setViewport(driver, {width: 1024, height: 768}); })
       .then(function(){ done(); })
       .catch(function(err){ done(err); });
   });

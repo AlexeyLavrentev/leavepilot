@@ -1,6 +1,7 @@
 'use strict';
 
 const childProcess = require('child_process');
+const setViewport = require('../../lib/set_viewport');
 const fs = require('fs');
 const path = require('path');
 const moment = require('moment-timezone');
@@ -211,7 +212,7 @@ describe('Team View sticky header', function() {
   }
 
   async function captureVisualCase(testCase) {
-    await driver.manage().window().setRect({width: testCase.width, height: testCase.height});
+    await setViewport(driver, {width: testCase.width, height: testCase.height});
     await openAndInflate(testCase.months);
     await applyTheme(testCase.theme);
 
@@ -303,7 +304,7 @@ describe('Team View sticky header', function() {
     const capabilities = await driver.getCapabilities();
     browserName = capabilities.get('browserName');
     browserVersion = capabilities.get('browserVersion');
-    await driver.manage().window().setRect({width: 1024, height: 768});
+    await setViewport(driver, {width: 1024, height: 768});
     await openAndInflate(12);
   });
 
@@ -544,7 +545,7 @@ describe('Team View sticky header', function() {
       {width: 768, height: 900},
       {width: 390, height: 844},
     ]) {
-      await driver.manage().window().setRect(viewport);
+      await setViewport(driver, viewport);
       await driver.executeScript('window.scrollTo(0, 0);');
       await driver.sleep(80);
       const pageOverflowBeforeSticky = await driver.executeScript(
@@ -591,7 +592,7 @@ describe('Team View sticky header', function() {
   });
 
   it('verifies mobile wheel/pointer input without CDP touch emulation', async function() {
-    await driver.manage().window().setRect({width: 390, height: 844});
+    await setViewport(driver, {width: 390, height: 844});
     await openAndInflate(12);
     await applyTheme('light');
     await driver.executeScript(function() {

@@ -1,6 +1,7 @@
 'use strict';
 
 const config = require('../../lib/config');
+const setViewport = require('../../lib/set_viewport');
 const models = require('../../../lib/model/db');
 const moment = require('moment-timezone');
 const fs = require('fs');
@@ -561,7 +562,7 @@ describe('Interactive leave details popover — all first-party surfaces', funct
     fs.mkdirSync(directory, {recursive: true});
 
     for (const viewport of matrix) {
-      await driver.manage().window().setRect({
+      await setViewport(driver, {
         width: viewport.width,
         height: viewport.height,
       });
@@ -672,7 +673,7 @@ describe('Interactive leave details popover — all first-party surfaces', funct
 
   it('captures loading, error, and loaded live-region states outside the repository', async function() {
     const directory = '/tmp/timeoff-stage6a-leave-popover';
-    await driver.manage().window().setRect({width: 390, height: 844});
+    await setViewport(driver, {width: 390, height: 844});
     await openPage({url: `${applicationHost}requests/`, driver});
     await applyTheme('light');
     await installAjaxHarness();
@@ -716,7 +717,7 @@ describe('Interactive leave details popover — all first-party surfaces', funct
   });
 
   it('validates mobile pointer proxy, page scroll, outside toggle, and Team View table scroll', async function() {
-    await driver.manage().window().setRect({width: 390, height: 844});
+    await setViewport(driver, {width: 390, height: 844});
     const surfaces = [
       {
         url: `${applicationHost}calendar/?show_full_year=1&year=${testYear}`,

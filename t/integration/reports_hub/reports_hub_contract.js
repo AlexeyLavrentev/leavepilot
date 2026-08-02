@@ -68,12 +68,27 @@ async function capture(driver, name) {
 // has no top-level driver.setEmulatedMedia; the chromedriver CDP bridge is exposed through
 // driver.sendDevToolsCommand(cmd, params). The modern DevTools method is Emulation.setEmulatedMedia
 // with a `features` array (matches puppeteer's EmulationManager). Pass value '' to clear.
-async function setReducedMotion(driver, enabled /* true | false */) {
+/*
+ * Headless Chrome reports no hover-capable pointer, so `@media (hover: hover)`
+ * never matches and the card elevation this contract measures cannot appear —
+ * however real the synthetic pointer is. Every emulation call therefore states
+ * the pointer as well; `setEmulatedMedia` replaces the whole feature list, so
+ * they have to travel together.
+ */
+async function setEmulatedMedia(driver, {reducedMotion} = {}) {
   await driver.sendDevToolsCommand('Emulation.setEmulatedMedia', {
-    features: [{ name: 'prefers-reduced-motion', value: enabled ? 'reduce' : '' }]
+    features: [
+      { name: 'prefers-reduced-motion', value: reducedMotion ? 'reduce' : '' },
+      { name: 'hover', value: 'hover' },
+      { name: 'pointer', value: 'fine' },
+    ]
   });
   // Yield so the emulated media propagates to pending media-query recomputations.
   await driver.sleep(80);
+}
+
+async function setReducedMotion(driver, enabled /* true | false */) {
+  await setEmulatedMedia(driver, {reducedMotion: enabled});
 }
 
 describe('Reports Hub interaction & geometry contract (Stage 8B)', function () {
@@ -252,6 +267,7 @@ describe('Reports Hub interaction & geometry contract (Stage 8B)', function () {
 
     // 1) Baseline: under default media, hovering a card lifts it (translateY(-1px)).
     var card = await driver.findElement(By.css('.report-card'));
+    await setEmulatedMedia(driver);
     var body = await driver.findElement(By.css('body'));
     await driver.actions().move({ origin: body }).perform();
     await driver.sleep(150);
