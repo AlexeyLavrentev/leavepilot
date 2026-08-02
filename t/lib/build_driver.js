@@ -78,8 +78,24 @@ module.exports = function() {
     );
   }
 
-  return new webdriver.Builder()
+  var driver = new webdriver.Builder()
     .forBrowser('chrome')
     .setChromeOptions(options)
     .build();
+
+  /*
+    ChromeDriver defaults to a five-minute page-load timeout, which is longer
+    than the budget any spec here gets. A submit whose response never arrives
+    therefore leaves the WebDriver command pending: mocha gives up first and
+    reports a bare timeout, the promise never settles, and even a chain ending
+    in .catch(done) has nothing to catch. Failing inside the spec's own budget
+    turns that into an error that names the page it was loading.
+  */
+  driver.manage().setTimeouts({
+    implicit: 0,
+    pageLoad: 30000,
+    script: 20000,
+  });
+
+  return driver;
 };
