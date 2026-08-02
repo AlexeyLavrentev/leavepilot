@@ -84,6 +84,7 @@ describe('Integration API Security Workspace contract (Stage 8O)', function () {
       expect(route).to.include('const accessToken = req.session.integration_api_token_once || null');
       expect(route).to.include('delete req.session.integration_api_token_once');
       expect(route).to.include('req.session.integration_api_token_once = result.token');
+      expect(route).to.include("res.set('Cache-Control', 'no-store')");
     });
 
     it('marks the token readonly and private without placing it in logs or scripts', function () {

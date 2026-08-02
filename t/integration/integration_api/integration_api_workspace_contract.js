@@ -202,6 +202,12 @@ describe('Integration API Security Workspace interaction contract (Stage 8O)', f
       tokenShown: false,
       tokenHidden: true
     });
+    var cacheControl = await driver.executeAsyncScript(function (done) {
+      fetch(location.pathname, { credentials: 'same-origin' })
+        .then(function (response) { done(response.headers.get('cache-control')); })
+        .catch(function (error) { done('error:' + error.name); });
+    });
+    assert.strictEqual(cacheControl, 'no-store');
   });
 
   it('persists the existing enable checkbox through the existing save action', async function () {
