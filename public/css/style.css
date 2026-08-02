@@ -1075,10 +1075,19 @@ label.label-plain {
   color: var(--color-link-hover);
 }
 
+/*
+  The 24px touch target is taken out of the line box. As an inline-level box it
+  sat on the text baseline, and the parent font's descender space was added
+  underneath: a day with a leave pushed its calendar row to 42px against the
+  31px of every other row, past the 38px the layout contract allows. Taking it
+  out of flow keeps the target size and the horizontal nudge while the row keeps
+  the height of its text.
+*/
 .calendar-leave-details-trigger {
-  position: relative;
+  position: absolute;
   left: 3px;
-  top: -1px;
+  top: 50%;
+  transform: translateY(-50%);
   z-index: 10;
   display: inline-flex;
   align-items: center;
@@ -4415,7 +4424,8 @@ td.calendar_cell span {
 }
 
 td.calendar_cell .calendar-leave-details-trigger {
-  top: 0;
+  /* Keeps the out-of-flow trigger centred; the digit styling matches the span. */
+  top: 50%;
   font-size: 12px;
   font-weight: 600;
 }

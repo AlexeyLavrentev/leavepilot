@@ -329,6 +329,19 @@ describe('Interactive leave details popover — all first-party surfaces', funct
 
   it('Team View honors the 700ms hover delay and keeps the tip hoverable', async function() {
     const trigger = await driver.findElement(By.css('.team-view-leave-details-trigger'));
+    // The preceding test ends on a Tab, which focuses the next trigger and opens
+    // its popover. That popover covers the trigger this test wants to hover, so
+    // the synthetic pointer move lands on the popover and the trigger never sees
+    // mouseenter. Start from a closed state instead of inheriting one.
+    await driver.executeScript(function() {
+      if (document.activeElement && document.activeElement.blur) {
+        document.activeElement.blur();
+      }
+    });
+    await driver.actions().move({origin: await driver.findElement(By.css('h1'))}).perform();
+    await driver.wait(async function() {
+      return (await visibleLeavePopoverCount()) === 0;
+    }, 3000, 'a popover from the previous test stayed open');
     await driver.actions().move({origin: trigger}).perform();
     await driver.sleep(300);
     expect(await triggerVisible(trigger)).to.equal(false);

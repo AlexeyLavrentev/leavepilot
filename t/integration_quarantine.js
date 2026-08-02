@@ -19,15 +19,6 @@
 
 module.exports = [
   {
-    file: 'calendar/leave_details_popover.js',
-    failing: [
-      'Team View honors the 700ms hover delay and keeps the tip hoverable',
-      'captures the required responsive/theme matrix with geometry evidence',
-    ],
-    reason: 'Hover-delay wait times out, and the popover measures 42.34px tall '
-      + 'where the contract allows at most 38.',
-  },
-  {
     file: 'leave_request/requests_decision_safety.js',
     failing: ['provides a full-width mobile selection target and keeps actions in view'],
     reason: 'Mobile selection target measures 293px wide against a 300px floor.',
