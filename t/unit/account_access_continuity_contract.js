@@ -151,7 +151,11 @@ describe('Account access continuity contract (Stage 8K)', function () {
     it('provides 48px fields/actions and collapses registration at 768px', function () {
       expect(css).to.match(/\.account-access-page \.form-control[^}]*\{[^}]*min-height:\s*48px/);
       expect(css).to.match(/\.account-access-page \.auth-submit[^}]*\{[^}]*min-height:\s*48px/);
-      const mobile = css.slice(css.lastIndexOf('@media (max-width: 768px)'));
+      const accountStage = css.slice(
+        css.indexOf('/* Stage 8K: account access continuity */'),
+        css.indexOf('.authentication-settings-page')
+      );
+      const mobile = accountStage.slice(accountStage.lastIndexOf('@media (max-width: 768px)'));
       expect(mobile).to.include('.account-access-page .account-access-field-grid');
       expect(mobile).to.include('grid-template-columns: minmax(0, 1fr)');
       expect(mobile).to.include('min-height: 44px');
@@ -159,7 +163,11 @@ describe('Account access continuity contract (Stage 8K)', function () {
 
     it('supports press feedback and neutralizes the compound under reduced motion', function () {
       expect(css).to.match(/\.account-access-page \.btn:hover:active[^{}]*\{[^}]*transform:\s*scale\(0\.98\)/);
-      const reduced = css.slice(css.lastIndexOf('@media (prefers-reduced-motion: reduce)'));
+      const accountStage = css.slice(
+        css.indexOf('/* Stage 8K: account access continuity */'),
+        css.indexOf('.authentication-settings-page')
+      );
+      const reduced = accountStage.slice(accountStage.lastIndexOf('@media (prefers-reduced-motion: reduce)'));
       expect(reduced).to.include('.account-access-page .btn:hover:active');
       expect(reduced).to.match(/transform:\s*none/);
     });
