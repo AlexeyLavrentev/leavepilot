@@ -58,6 +58,14 @@ module.exports = function() {
     options.addArguments('--disable-gpu');
     options.addArguments('--no-sandbox');
     options.addArguments('--disable-dev-shm-usage');
+    /*
+      Linux draws a classic 15px scrollbar that eats layout width, macOS draws an
+      overlay one that does not. Geometry contracts written against the latter
+      then measure 15px short on CI. Phones — which the 390px viewport in those
+      contracts emulates — use overlay scrollbars too, so hiding the bar here
+      measures the layout rather than the host's window chrome.
+    */
+    options.addArguments('--hide-scrollbars');
   }
 
   return new webdriver.Builder()

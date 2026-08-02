@@ -262,10 +262,18 @@ describe('Reports Hub interaction & geometry contract (Stage 8B)', function () {
     await driver.actions().move({ origin: card }).perform();
     await driver.sleep(200);
     var hoverDefault = await driver.executeScript(
-      'var el=arguments[0]; return {transform:getComputedStyle(el).transform, hover:el.matches(":hover")};',
+      'var el=arguments[0]; return {transform:getComputedStyle(el).transform, hover:el.matches(":hover"),'
+      + ' hoverCapable:window.matchMedia("(hover: hover)").matches,'
+      + ' finePointer:window.matchMedia("(pointer: fine)").matches};',
       card
     );
     assert(hoverDefault.hover, 'precondition: pointer should hover the card, got :hover=false');
+    // The elevation lives behind `@media (hover: hover)`, so a browser that
+    // reports no hover-capable pointer produces no transform however real the
+    // pointer is. Name that in the failure rather than leaving it to guesswork.
+    assert(hoverDefault.hoverCapable,
+      'precondition: browser should report a hover-capable pointer, got (hover: hover)=false, '
+      + '(pointer: fine)=' + hoverDefault.finePointer);
     assert(hoverDefault.transform !== 'none' && hoverDefault.transform !== 'matrix(1, 0, 0, 1, 0, 0)',
       'baseline: hovered card should have a non-identity transform under default media, got ' + hoverDefault.transform);
 
