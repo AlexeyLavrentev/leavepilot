@@ -7285,10 +7285,19 @@ td.current_day_cell.half_2nd {
      .mobile-card-action rule, which the grid td otherwise overrides via higher specificity)
      that contains the float, and let the button fill the row on mobile. */
   .requests-page .mobile-card-table > tbody > tr > td.mobile-card-action {
-    display: block;
+    /* A flex column rather than a block. The cell holds core's revoke form and,
+       in the premium edition, a bare <a> filling the leave_order_actions slot.
+       bootstrap's .pull-right{float:right!important} beats any float:none we
+       write, so the only reliable containment is to stop the children being
+       floats at all - a flex item ignores float. Block containment worked for
+       the form only because the form below is itself flex; a bare anchor stayed
+       a float and left the cell short of its own content. */
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
     overflow: visible;
     /* The grid td defaults to align-items:start with a label track; an action cell has no
-       label, so reset padding/height so the block button defines the cell height. */
+       label, so reset padding/height so the buttons define the cell height. */
     padding: var(--space-2) var(--space-3);
     min-height: 0;
   }
@@ -7308,11 +7317,17 @@ td.current_day_cell.half_2nd {
     display: block;
     text-align: center;
   }
-  /* Restore the >=44px tap-target contract for the mobile revoke/cancel controls. On
-     desktop they stay compact (min-height:28px) for table density, but on mobile each
-     is a full-width primary destructive action and must meet the 44px minimum; the flex
-     action cell now has room to contain it. */
-  .requests-page .mobile-card-table .mobile-card-action .revoke-btn {
+  /* Restore the >=44px tap-target contract for every control in the mobile action
+     cell. On desktop they stay compact (min-height:28px) for table density, but on
+     mobile each is a full-width primary action and must meet the 44px minimum; the
+     flex action cell now has room to contain it.
+
+     Matched on .btn rather than .revoke-btn: the cell is an edition extension point
+     (see the leave_order_actions slot in views/partials/user_requests.hbs), so a
+     control an edition adds here is the same full-width row and owes the same
+     contract. Naming core's own class instead left the premium edition's button at
+     28px directly beneath a 44px sibling. */
+  .requests-page .mobile-card-table .mobile-card-action .btn {
     min-height: 44px;
     min-width: 44px;
   }
