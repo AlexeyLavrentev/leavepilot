@@ -90,9 +90,22 @@ const runMochaSuite = () => {
 
   reportQuarantine();
 
-  const integrationFiles = includeQuarantined
+  const selectedFiles = includeQuarantined
     ? allIntegrationFiles
     : allIntegrationFiles.filter(file => !quarantinedPaths.has(file));
+
+  // Deal the files round-robin so every shard gets a mix of fast and slow specs
+  // rather than one shard inheriting a whole slow directory.
+  const integrationFiles = shard
+    ? selectedFiles.filter((_, position) => (position % shard.total) === (shard.index - 1))
+    : selectedFiles;
+
+  if (shard) {
+    console.log(
+      `Shard ${shard.index}/${shard.total}: ${integrationFiles.length}`
+      + ` of ${selectedFiles.length} integration specs`
+    );
+  }
   const configuredBatchSize = Number(process.env.TEST_INTEGRATION_BATCH_SIZE);
   const batchSize = Number.isInteger(configuredBatchSize) && configuredBatchSize > 0
     ? configuredBatchSize
@@ -191,6 +204,23 @@ const rawArgs = process.argv.slice(2).filter(arg => arg !== '--');
 // Run only the browser suite: the unit tests already have their own CI job, and
 // repeating them here would double a ten-minute run for no extra signal.
 const integrationOnly = rawArgs.includes('--integration-only');
+/*
+  Split the browser suite across several runners. Every hang traced so far ends
+  the same way: a poll returns in milliseconds, the next step is scheduled, and
+  the process does not get back to it for two minutes. That is a starved
+  machine, not a decision any wait makes, so the work is spread instead of being
+  packed onto one two-core runner.
+*/
+const shardArg = rawArgs.find(arg => arg.startsWith('--shard='));
+const shard = shardArg
+  ? (function(){
+      const [index, total] = shardArg.slice('--shard='.length).split('/').map(Number);
+      if (!Number.isInteger(index) || !Number.isInteger(total) || index < 1 || index > total) {
+        throw new Error('--shard expects index/total, for example --shard=2/4');
+      }
+      return {index, total};
+    })()
+  : null;
 // Report every failing batch instead of stopping at the first one. Locally the
 // early stop is the faster feedback; on CI one red batch used to hide the rest.
 const keepGoing = rawArgs.includes('--keep-going');
@@ -200,7 +230,7 @@ const mochaArgs = rawArgs.filter(arg => ![
   '--integration-only',
   '--keep-going',
   '--include-quarantined',
-].includes(arg));
+].includes(arg) && !arg.startsWith('--shard='));
 
 let server;
 

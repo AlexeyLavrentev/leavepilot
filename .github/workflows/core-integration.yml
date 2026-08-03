@@ -16,11 +16,16 @@ on:
 
 jobs:
   integration:
-    name: Browser suite (Selenium)
+    name: Browser suite ${{ matrix.shard }}/4
     runs-on: ubuntu-24.04
-    # A full pass is around ten minutes; the cap leaves room for a slow runner
-    # without letting a wedged browser hold a runner for hours.
-    timeout-minutes: 40
+    # Each shard is a quarter of the suite, so the cap is generous for one.
+    timeout-minutes: 30
+
+    strategy:
+      # A red shard should not hide the state of the other three.
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
 
     steps:
       - name: Checkout
@@ -58,16 +63,15 @@ jobs:
           fi
 
       - name: Run integration suite
-        run: node bin/test.js --integration-only --keep-going
+        run: node bin/test.js --integration-only --keep-going --shard=${{ matrix.shard }}/4
         env:
           NODE_ENV: test
-          TEST_DB_STORAGE: /tmp/integration-test.sqlite
-          # Smaller batches than the local default: specs sharing one server and
-          # one headless browser on a two-core runner produced timeouts that
-          # moved between files from run to run. The trace narrowed those to a
-          # 50ms timer inside the poll loop failing to fire for two minutes,
-          # which is a starved process rather than anything the suite decides,
-          # so the runner gets fewer browsers alive at once.
+          TEST_DB_STORAGE: /tmp/integration-test-${{ matrix.shard }}.sqlite
+          # Every hang traced so far ends the same way: a poll returns in
+          # milliseconds, the next step is scheduled, and the process does not
+          # get back to it for two minutes. That is a starved machine rather
+          # than anything a wait decides. Sharding across runners is the main
+          # answer; small batches keep few browsers alive within one.
           TEST_INTEGRATION_BATCH_SIZE: '2'
           # The per-spec budget is tuned for a developer machine. The leave-type
           # limit specs drive several bookings through the browser and overran
