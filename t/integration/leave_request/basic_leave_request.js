@@ -48,7 +48,8 @@ describe('Basic leave request', function(){
       new_user_email = data.email;
       driver = data.driver;
       done();
-    });
+    })
+    .catch(done);
   });
 
   it("Create new non-admin user", function(done){
@@ -59,7 +60,8 @@ describe('Basic leave request', function(){
     .then(function(data){
       non_admin_user_email = data.new_user_email;
       done();
-    });
+    })
+    .catch(done);
   });
 
   it("Logout from admin account", function(done){
@@ -67,7 +69,8 @@ describe('Basic leave request', function(){
       application_host : application_host,
       driver           : driver,
     })
-    .then(function(){done()});
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Login as non-admin user", function(done){
@@ -76,7 +79,8 @@ describe('Basic leave request', function(){
       user_email       : non_admin_user_email,
       driver           : driver,
     })
-    .then(function(){done()});
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Open calendar page", function(done){
@@ -84,7 +88,8 @@ describe('Basic leave request', function(){
       url    : application_host + 'calendar/?year=2015&show_full_year=1',
       driver : driver,
     })
-    .then(function(){done()});
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("And make sure that it is calendar indeed", function(done){
@@ -92,7 +97,8 @@ describe('Basic leave request', function(){
       .then(function(title){
           expect(title).to.be.equal('Calendar');
           done();
-      });
+      })
+      .catch(done);
   });
 
   it("Open Book leave popup window", function(done){
@@ -102,7 +108,8 @@ describe('Basic leave request', function(){
         // This is very important line when working with Bootstrap modals!
         return driver.sleep(1000);
       })
-      .then(function(){ done() });
+      .then(function(){ done() })
+      .catch(done);
   });
 
   it("Following code is to ensure that non admin user can request leave only for herself", function(done){
@@ -110,7 +117,8 @@ describe('Basic leave request', function(){
       .then(function(elements){
         expect(elements.length).to.be.equal(0);
         done();
-      });
+      })
+      .catch(done);
   });
 
   it("Submit new leave request", function(done){
@@ -130,7 +138,8 @@ describe('Basic leave request', function(){
       }],
       message : /New leave request was added/,
     })
-    .then(function(){done()});
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Check that all days are marked as pended", function(done){
@@ -140,7 +149,8 @@ describe('Basic leave request', function(){
       halfs_1st_days : [moment('2015-06-15')],
       type           : 'pended',
     })
-    .then(function(){done()});
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Logout from non-admin acount", function(done){
@@ -148,7 +158,8 @@ describe('Basic leave request', function(){
       application_host : application_host,
       driver           : driver,
     })
-    .then(function(){done()});
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Login as admin user", function(done){
@@ -157,7 +168,8 @@ describe('Basic leave request', function(){
       user_email       : new_user_email,
       driver           : driver,
     })
-    .then(function(){done()});
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Open requests page", function(done){
@@ -165,7 +177,8 @@ describe('Basic leave request', function(){
       url    : application_host + 'requests/',
       driver : driver,
     })
-    .then(function(){done()});
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Make sure newly created request is shown for approval", function(done){
@@ -176,7 +189,8 @@ describe('Basic leave request', function(){
         value    : "Reject",
       }],
     })
-    .then(function(){done()});
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Approve newly added leave request", function(done){
@@ -188,7 +202,8 @@ describe('Basic leave request', function(){
       // Wait until page properly is reloaded
       return driver.wait(until.elementLocated(By.css('h1')), 1000);
     })
-    .then(function(){done()});
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Logout from admin acount", function(done){
@@ -196,7 +211,8 @@ describe('Basic leave request', function(){
       application_host : application_host,
       driver           : driver,
     })
-    .then(function(){done()});
+    .then(function(){ done() })
+    .catch(done);
   })
 
   it("Login as non-admin user", function(done){
@@ -205,7 +221,8 @@ describe('Basic leave request', function(){
       user_email       : non_admin_user_email,
       driver           : driver,
     })
-    .then(function(){done()});
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Open calendar page (in full year mode)", function(done){
@@ -213,7 +230,8 @@ describe('Basic leave request', function(){
       url    : application_host + 'calendar/?year=2015&show_full_year=1',
       driver : driver,
     })
-    .then(function(){done()});
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("And make sure that it is calendar indeed", function(done){
@@ -221,7 +239,8 @@ describe('Basic leave request', function(){
       .then(function(title){
         expect(title).to.be.equal('Calendar');
         done();
-      });
+      })
+      .catch(done);
   });
 
   it("Check that all days are marked as pended", function(done){
@@ -231,7 +250,8 @@ describe('Basic leave request', function(){
       halfs_1st_days : [moment('2015-06-15')],
       type           : 'approved',
     })
-    .then(function(){done()});
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Open calendar page (short version)", function(done){
@@ -239,7 +259,8 @@ describe('Basic leave request', function(){
       url    : application_host + 'requests/',
       driver : driver,
     })
-    .then(function(){done()});
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Make sure that requests have approver been populated", function(done){
@@ -250,7 +271,8 @@ describe('Basic leave request', function(){
       .then(function(text){
         expect(text).to.be.not.empty;
         done();
-      });
+      })
+      .catch(done);
   });
 
   after(function(done){
@@ -273,7 +295,8 @@ describe("Use problematic date with non default date format", function(){
     .then((data) => {
       ({email, driver} = data);
       done();
-    });
+    })
+    .catch(done);
   });
 
   it("Ensure user starts at the very beginning of current year", done =>{
@@ -294,7 +317,8 @@ describe("Use problematic date with non default date format", function(){
       .then(function(el){ return el.click() })
       // This is very important line when working with Bootstrap modals!
       .then(function(){ return driver.sleep(1000) })
-      .then(function(){ done() });
+      .then(function(){ done() })
+      .catch(done);
   });
 
   it("Make sure it is possible to place an leave request for date that was reported to be problematic", function(done){
@@ -315,7 +339,8 @@ describe("Use problematic date with non default date format", function(){
       }],
       message : /New leave request was added/,
     })
-    .then(function(){ done(); });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   after(function(done){
@@ -337,7 +362,8 @@ describe("Book the very last day of year to be a holiday", function(){
     .then(function(data){
       ({driver, email} = data);
       done();
-    });
+    })
+    .catch(done);
   });
 
   it("Ensure user starts at the very beginning of current year", done =>{

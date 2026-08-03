@@ -40,7 +40,8 @@ describe('System prevent revoking admin rights from very last admin within compa
       driver      = data.driver;
       email_admin = data.email;
       done();
-    });
+    })
+    .catch(done);
   });
 
   it("Create second user", function(done){
@@ -51,7 +52,8 @@ describe('System prevent revoking admin rights from very last admin within compa
     .then(function(data){
       secondary_user = data.new_user_email,
       done();
-    });
+    })
+    .catch(done);
   });
 
   it('Open Admin user edit details page', function(done){
@@ -65,7 +67,8 @@ describe('System prevent revoking admin rights from very last admin within compa
           url    : application_host + 'users/edit/'+data.user.id+'/',
         });
     })
-    .then(function(){done()});
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it('Ensure that Admin tickbox is checked', function(done){
@@ -77,7 +80,8 @@ describe('System prevent revoking admin rights from very last admin within compa
         value    : 'on',
       }],
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it('Try to untick the Is Admin flag and make sure system prevent from doing it', function(done){
@@ -91,7 +95,8 @@ describe('System prevent revoking admin rights from very last admin within compa
       submit_button_selector : 'button#save_changes_btn',
       message: /This is last admin within company. Cannot revoke admin rights./,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it('Open detail page for second employee', function(done){
@@ -105,7 +110,8 @@ describe('System prevent revoking admin rights from very last admin within compa
         url : application_host + 'users/edit/'+data.user.id+'/',
       });
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it('Ensure that Admin tickbox is not checked', function(done){
@@ -117,7 +123,8 @@ describe('System prevent revoking admin rights from very last admin within compa
         value    : 'off',
       }],
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it('Make secondary user to be admin', function(done){
@@ -131,7 +138,8 @@ describe('System prevent revoking admin rights from very last admin within compa
       submit_button_selector : 'button#save_changes_btn',
       message: /Details for .* were updated/,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it('Ensure that secondary user bacame admin', function(done){
@@ -143,7 +151,8 @@ describe('System prevent revoking admin rights from very last admin within compa
         value    : 'on',
       }],
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it('Revoke admin rights from secondary user', function(done){
@@ -157,7 +166,8 @@ describe('System prevent revoking admin rights from very last admin within compa
       submit_button_selector : 'button#save_changes_btn',
       message: /Details for .* were updated/,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   after(function(done){

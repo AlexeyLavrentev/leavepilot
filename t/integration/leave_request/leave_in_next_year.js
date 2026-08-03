@@ -41,7 +41,8 @@ describe(`Leave in the next year (${nextYear}) when no allowance in the current 
       .then(data => {
         ({driver,email} = data);
         done();
-      });
+      })
+      .catch(done);
   });
 
   it("Update user to start at the very end of current year: 20 Dec", done =>{

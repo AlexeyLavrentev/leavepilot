@@ -40,7 +40,8 @@ describe('Cross linking on Teamview page', function(){
       driver = data.driver;
       user_A = data.email;
       done();
-    });
+    })
+    .catch(done);
   });
 
   it("Create new user B", function(done){
@@ -51,7 +52,8 @@ describe('Cross linking on Teamview page', function(){
     .then(function(data){
       user_B = data.new_user_email;
       done();
-    });
+    })
+    .catch(done);
   });
 
   it("Make sure that both users are shown on Team view page", function(done){
@@ -60,7 +62,8 @@ describe('Cross linking on Teamview page', function(){
       emails: [user_A, user_B],
       is_link : true
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Logout from A account", function(done){
@@ -68,7 +71,8 @@ describe('Cross linking on Teamview page', function(){
       application_host : application_host,
       driver           : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Login as user B", function(done){
@@ -77,7 +81,8 @@ describe('Cross linking on Teamview page', function(){
       user_email       : user_B,
       driver           : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Make sure that only user A and B are presented", function(done){
@@ -86,7 +91,8 @@ describe('Cross linking on Teamview page', function(){
       emails: [user_A, user_B],
       is_link: false
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   after(function(done){

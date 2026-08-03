@@ -67,7 +67,8 @@ describe('Team View employee summary popover (separated trigger)', function(){
           driver: driver, application_host: application_host, email: employeeEmail,
         });
       })
-      .then(function(){ done(); });
+      .then(function(){ done() })
+      .catch(done);
   });
 
   it('Opens Team View with at least two employee rows', function(done){
@@ -78,7 +79,8 @@ describe('Team View employee summary popover (separated trigger)', function(){
         // admin + employee = 2 rows with summary buttons
         expect(n, 'expected at least two Team View summary buttons').to.be.at.least(2);
       })
-      .then(function(){ done(); });
+      .then(function(){ done() })
+      .catch(done);
   });
 
   it('Employee cell contains a separate admin edit link and summary button', function(done){
@@ -102,7 +104,8 @@ describe('Team View employee summary popover (separated trigger)', function(){
         expect(info.buttonIsButton).to.equal(true);
         expect(info.tdHasTriggerClass, 'td must not carry user-details-summary-trigger').to.equal(false);
       })
-      .then(function(){ done(); });
+      .then(function(){ done() })
+      .catch(done);
   });
 
   it('The <td> itself has no Bootstrap popover instance', function(done){
@@ -113,7 +116,8 @@ describe('Team View employee summary popover (separated trigger)', function(){
       .then(function(hasPopover){
         expect(hasPopover, 'td must not have a popover instance').to.equal(false);
       })
-      .then(function(){ done(); });
+      .then(function(){ done() })
+      .catch(done);
   });
 
   it('The summary button has a manual Bootstrap popover', function(done){
@@ -125,7 +129,8 @@ describe('Team View employee summary popover (separated trigger)', function(){
       .then(function(triggerOpt){
         expect(triggerOpt, 'button popover must be manual').to.equal('manual');
       })
-      .then(function(){ done(); });
+      .then(function(){ done() })
+      .catch(done);
   });
 
   it('Keyboard focus shows the popover immediately', function(done){
@@ -133,7 +138,8 @@ describe('Team View employee summary popover (separated trigger)', function(){
       document.querySelectorAll('.team-view-user-details-summary-trigger')[0].focus();
     })
       .then(function(){ return driver.wait(function(){ return isVisibleViaState(0); }, 1500); })
-      .then(function(){ done(); });
+      .then(function(){ done() })
+      .catch(done);
   });
 
   it('aria-describedby points at a visible .popover[role=tooltip]', function(done){
@@ -148,7 +154,8 @@ describe('Team View employee summary popover (separated trigger)', function(){
         expect(info.exists).to.equal(true);
         expect(info.role).to.equal('tooltip');
       })
-      .then(function(){ done(); });
+      .then(function(){ done() })
+      .catch(done);
   });
 
   it('Replaces AJAX loading text with real summary content', function(done){
@@ -162,7 +169,8 @@ describe('Team View employee summary popover (separated trigger)', function(){
           return txt.length > 0 && !/loading/i.test(txt);
         });
       }, 4000)
-      .then(function(){ done(); });
+      .then(function(){ done() })
+      .catch(done);
   });
 
   it('Escape closes the popover and leaves focus on the button', function(done){
@@ -178,7 +186,8 @@ describe('Team View employee summary popover (separated trigger)', function(){
         });
       })
       .then(function(onBtn){ expect(onBtn).to.equal(true); })
-      .then(function(){ done(); });
+      .then(function(){ done() })
+      .catch(done);
   });
 
   it('Enter re-opens the popover after Escape', function(done){
@@ -187,7 +196,8 @@ describe('Team View employee summary popover (separated trigger)', function(){
       .then(function(){ return driver.sleep(200); })
       .then(function(){ return isVisibleViaState(0); })
       .then(function(v){ expect(v, 'popover should re-open on Enter').to.equal(true); })
-      .then(function(){ done(); });
+      .then(function(){ done() })
+      .catch(done);
   });
 
   it('A real Selenium click on the button opens then closes the popover', function(done){
@@ -216,7 +226,8 @@ describe('Team View employee summary popover (separated trigger)', function(){
       .then(function(){ return driver.sleep(250); })
       .then(function(){ return isVisibleViaState(0); })
       .then(function(v){ expect(v, 'second click closes').to.equal(false); })
-      .then(function(){ done(); });
+      .then(function(){ done() })
+      .catch(done);
   });
 
   it('Click outside closes a pinned popover', function(done){
@@ -235,7 +246,8 @@ describe('Team View employee summary popover (separated trigger)', function(){
       .then(function(){ return driver.sleep(250); })
       .then(function(){ return isVisibleViaState(0); })
       .then(function(v){ expect(v, 'click outside closes').to.equal(false); })
-      .then(function(){ done(); });
+      .then(function(){ done() })
+      .catch(done);
   });
 
   it('Single-open: opening button #1 hides button #0 popover', function(done){
@@ -264,7 +276,8 @@ describe('Team View employee summary popover (separated trigger)', function(){
       .then(function(id0After){ expect(id0After, '#0 aria-describedby removed').to.equal(''); })
       .then(visibleTeamViewPopoverCount)
       .then(function(n){ expect(n, 'exactly one popover visible').to.equal(1); })
-      .then(function(){ done(); });
+      .then(function(){ done() })
+      .catch(done);
   });
 
   it('Summary button click does not navigate to /users/edit/', function(done){
@@ -283,7 +296,8 @@ describe('Team View employee summary popover (separated trigger)', function(){
         expect(url, 'summary click must not navigate').to.match(/\/calendar\/teamview\/?(\?.*)?$/);
         expect(url).to.not.contain('/users/edit/');
       })
-      .then(function(){ done(); });
+      .then(function(){ done() })
+      .catch(done);
   });
 
   it('Admin link click navigates to /users/edit/:id/ without opening summary', function(done){

@@ -40,7 +40,8 @@ describe('Try to manage Bank holidays with non-default date format', function(){
     .then(function(data){
       driver = data.driver;
       done();
-    });
+    })
+    .catch(done);
   });
 
   it("Open page with bank holidays", function(done){
@@ -208,7 +209,8 @@ describe("Try to use DD/MM/YY and some missleading date", function(){
     .then(function(data){
       driver = data.driver;
       done();
-    });
+    })
+    .catch(done);
   });
 
   it("Open page with bank holidays", function(done){

@@ -41,7 +41,8 @@ describe('No negative allowanca is carried overs', function(){
       .then(data => {
         ({driver, email} = data);
         done();
-      });
+      })
+      .catch(done);
   });
 
   it("Obtain information about admin user", done => {
@@ -49,7 +50,8 @@ describe('No negative allowanca is carried overs', function(){
       .then(data => {
         userId = data.user.id;
         done();
-      });
+      })
+      .catch(done);
   });
 
   it("Amend its user to started at the very begining of last year", done =>{
@@ -169,7 +171,8 @@ describe('No negative allowanca is carried overs', function(){
     .then(text => {
       expect( text ).to.be.eq('0');
       done();
-    });
+    })
+    .catch(done);
   });
 
   after(done => {

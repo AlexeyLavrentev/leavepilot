@@ -44,7 +44,8 @@ describe('Leave type limits in actoion', function(){
     .then(function(data){
       driver = data.driver;
       done();
-    });
+    })
+    .catch(done);
   });
 
   it("Open page with leave types", function(done){
@@ -52,7 +53,8 @@ describe('Leave type limits in actoion', function(){
       url    : application_host + 'settings/general/',
       driver : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Check that it is possible to update Limits", function(done){
@@ -66,7 +68,8 @@ describe('Leave type limits in actoion', function(){
       should_be_successful : true,
       message : /Changes to leave types were saved/,
     })
-   .then(function(){ done() });
+   .then(function(){ done() })
+   .catch(done);
   });
 
   it("Create new non-admin user", function(done){
@@ -77,7 +80,8 @@ describe('Leave type limits in actoion', function(){
     .then(function(data){
       non_admin_user_email = data.new_user_email;
       done();
-    });
+    })
+    .catch(done);
   });
 
   it("Logout from admin account", function(done){
@@ -85,7 +89,8 @@ describe('Leave type limits in actoion', function(){
       application_host : application_host,
       driver           : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Login as non-admin user", function(done){
@@ -94,7 +99,8 @@ describe('Leave type limits in actoion', function(){
       user_email       : non_admin_user_email,
       driver           : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Open calendar page", function(done){
@@ -102,7 +108,8 @@ describe('Leave type limits in actoion', function(){
       url    : application_host + 'calendar/?year=2015&show_full_year=1',
       driver : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("And make sure that it is calendar indeed", function(done){
@@ -110,7 +117,8 @@ describe('Leave type limits in actoion', function(){
       .then(function(title){
         expect(title).to.be.equal('Calendar');
         done();
-      });
+      })
+      .catch(done);
   });
 
   it("Try to request new leave that exceed the limit", function(done){
@@ -130,7 +138,8 @@ describe('Leave type limits in actoion', function(){
           message : /Adding requested .* absence would exceed maximum allowed for such type by 1/,
           multi_line_message : true,
         })
-        .then(function(){ done() });
+        .then(function(){ done() })
+        .catch(done);
       });
   });
 
@@ -158,7 +167,8 @@ describe('Leave type limits in actoion', function(){
             full_days : [moment('2015-06-16'),moment('2015-06-16'),moment('2015-06-17')],
             type      : 'pended',
           })
-          .then(function(){ done() });
+          .then(function(){ done() })
+          .catch(done);
         });
       });
   });

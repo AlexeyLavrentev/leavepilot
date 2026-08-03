@@ -61,7 +61,8 @@ describe('Leave request cancelation', function(){
       driver  = data.driver;
       email_A = data.email;
       done();
-    });
+    })
+    .catch(done);
   });
 
   it("Obtain information about admin user A", function(done){
@@ -72,7 +73,8 @@ describe('Leave request cancelation', function(){
     .then(function(data){
       user_id_A = data.user.id;
       done();
-    });
+    })
+    .catch(done);
   });
 
   it("Update admin details to have start date at very beginig of this year", done =>{
@@ -90,7 +92,8 @@ describe('Leave request cancelation', function(){
         // This is very important line when working with Bootstrap modals!
         return driver.sleep(1000);
       })
-      .then(function(){ done() });
+      .then(function(){ done() })
+      .catch(done);
   });
 
   it("Submit new leave request for user A one weekday", function(done){
@@ -106,7 +109,8 @@ describe('Leave request cancelation', function(){
       }],
       message : /New leave request was added/,
     })
-    .then(function(){done()});
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Open requests page", function( done ){
@@ -114,7 +118,8 @@ describe('Leave request cancelation', function(){
       url    : application_host + 'requests/',
       driver : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Approve new leave request", function(done){
@@ -134,7 +139,8 @@ describe('Leave request cancelation', function(){
       url    : application_host + 'users/edit/'+user_id_A+'/absences/',
       driver : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it('Check that allowance section of user details page shows "15 out of 20"', function(done){
@@ -154,7 +160,8 @@ describe('Leave request cancelation', function(){
       url    : application_host + 'users',
       driver : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it('Ensure "remaining" 15', function(done){
@@ -182,7 +189,8 @@ describe('Leave request cancelation', function(){
       url    : application_host + 'requests/',
       driver : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it('Initiate revoke procedure (but not finish)', function(done){
@@ -203,7 +211,8 @@ describe('Leave request cancelation', function(){
       url    : application_host + 'users/edit/'+user_id_A+'/absences/',
       driver : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it('Check that allowance section of user details page shows "15 out of 20"', function(done){
@@ -223,7 +232,8 @@ describe('Leave request cancelation', function(){
       url    : application_host + 'users',
       driver : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it('Ensure "remaining" 15', function(done){

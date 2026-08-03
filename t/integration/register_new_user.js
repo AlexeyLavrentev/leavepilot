@@ -25,7 +25,8 @@ describe('Register new user', function(){
     .then(function(data){
       driver = data.driver;
       done();
-    });
+    })
+    .catch(done);
   });
 
   it('Navigate to current uer details', done => {
@@ -73,7 +74,8 @@ describe('Register new user', function(){
       expect(days, 'Ensure that reported total days in allowance is correct')
         .to.be.equal('12');
       done();
-    });
+    })
+    .catch(done);
   });
 
   it('Navigate to current uer details', done => {
@@ -121,7 +123,8 @@ describe('Register new user', function(){
       expect(days, 'Ensure that reported total days in allowance is correct')
         .to.be.equal('20');
       done();
-    });
+    })
+    .catch(done);
   });
 
   after(function(done){

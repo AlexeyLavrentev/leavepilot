@@ -101,7 +101,8 @@ describe('Check basic scenario for Team view page', function(){
       driver = data.driver;
       user_A = data.email;
       done();
-    });
+    })
+    .catch(done);
   });
 
   it("Create new user B", function(done){
@@ -114,12 +115,14 @@ describe('Check basic scenario for Team view page', function(){
     .then(function(data){
       user_B = data.new_user_email;
       done();
-    });
+    })
+    .catch(done);
   });
 
   it("Make sure that both users are shown on Team view page", function(done){
     check_teamview({driver : driver}, [user_A, user_B])
-      .then(function(){ done() });
+      .then(function(){ done() })
+      .catch(done);
   });
 
   it('Create new department: "IT"', function(done){
@@ -127,7 +130,8 @@ describe('Check basic scenario for Team view page', function(){
       url    : application_host + 'settings/departments/',
       driver : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("... open new department popup and submit form", function(done){
@@ -151,7 +155,8 @@ describe('Check basic scenario for Team view page', function(){
           submit_button_selector : new_department_form_id+' button[type="submit"]',
           message : /Changes to departments were saved/,
         })
-        .then(function(){done()});
+        .then(function(){ done() })
+        .catch(done);
       });
   });
 
@@ -166,7 +171,8 @@ describe('Check basic scenario for Team view page', function(){
     .then(function(data){
       user_C = data.new_user_email;
       done();
-    });
+    })
+    .catch(done);
   });
 
   it("Make sure user C is superviser of IT department", function(done){
@@ -197,7 +203,8 @@ describe('Check basic scenario for Team view page', function(){
       application_host : application_host,
       driver           : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Login as user B", function(done){
@@ -206,12 +213,14 @@ describe('Check basic scenario for Team view page', function(){
       user_email       : user_B,
       driver           : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("and make sure that only user A and B are presented", function(done){
     check_teamview({driver : driver}, [user_A, user_B])
-      .then(function(){done()});
+      .then(function(){ done() })
+      .catch(done);
   });
 
   it("Logout from B account", function(done){
@@ -219,7 +228,8 @@ describe('Check basic scenario for Team view page', function(){
       application_host : application_host,
       driver           : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Login back as user A", function(done){
@@ -228,12 +238,14 @@ describe('Check basic scenario for Team view page', function(){
       user_email       : user_A,
       driver           : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("and make sure that all users are shown:  A, B, and C", function(done){
     check_teamview({driver : driver}, [user_A, user_B, user_C])
-      .then(function(){ done() });
+      .then(function(){ done() })
+      .catch(done);
   });
 
   it("Update IT department to be supervised by user B", function(done){
@@ -265,7 +277,8 @@ describe('Check basic scenario for Team view page', function(){
       application_host : application_host,
       driver           : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Login as user B", function(done){
@@ -274,12 +287,14 @@ describe('Check basic scenario for Team view page', function(){
       user_email       : user_B,
       driver           : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("and make sure that all users are shown:  A, B, and C", function(done){
     check_teamview({driver : driver}, [user_A, user_B, user_C])
-      .then(function(){ done() });
+      .then(function(){ done() })
+      .catch(done);
   });
 
   it("Logout from admin account", function(done){
@@ -287,7 +302,8 @@ describe('Check basic scenario for Team view page', function(){
       application_host : application_host,
       driver           : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Login as user C", function(done){
@@ -296,12 +312,14 @@ describe('Check basic scenario for Team view page', function(){
       user_email       : user_C,
       driver           : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("and make sure that only one user C is here", function(done){
     check_teamview({ driver : driver }, [user_C])
-      .then(function(){ done() });
+      .then(function(){ done() })
+      .catch(done);
   });
 
   it("Logout from user C account", function(done){
@@ -309,7 +327,8 @@ describe('Check basic scenario for Team view page', function(){
       application_host : application_host,
       driver           : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Login as user A", function(done){
@@ -318,7 +337,8 @@ describe('Check basic scenario for Team view page', function(){
       user_email       : user_A,
       driver           : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Open page for editing company details", function(done){
@@ -326,7 +346,8 @@ describe('Check basic scenario for Team view page', function(){
       url    : application_host + 'settings/general/',
       driver : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Check that company is been updated if valid values are submitted", function(done){
@@ -341,7 +362,8 @@ describe('Check basic scenario for Team view page', function(){
       message : /successfully/i,
       should_be_successful : true,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Logout from user A account", function(done){
@@ -349,7 +371,8 @@ describe('Check basic scenario for Team view page', function(){
       application_host : application_host,
       driver           : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Login as user C", function(done){
@@ -358,12 +381,14 @@ describe('Check basic scenario for Team view page', function(){
       user_email       : user_C,
       driver           : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("and make sure that all users are shown on Team view page", function(done){
     check_teamview({driver : driver}, [user_A, user_B, user_C])
-      .then(function(){ done() });
+      .then(function(){ done() })
+      .catch(done);
   });
 
   after(function(done){

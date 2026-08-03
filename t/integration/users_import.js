@@ -49,7 +49,8 @@ describe('Bulk import of users', function(){
     .then(data => {
       driver = data.driver;
       done();
-    });
+    })
+    .catch(done);
   });
 
   it('Navigate to bulk upload page', function(done){
@@ -57,7 +58,8 @@ describe('Bulk import of users', function(){
       url    : application_host + 'users/import/',
       driver : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it('Create test .CSV file for the test', function(done){
@@ -141,7 +143,8 @@ describe('Bulk import of users', function(){
       application_host : application_host,
       driver           : driver,
     })
-    .then(function(){done()});
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it('Now try to login as newly added employee using "undefined" as password..', done => {

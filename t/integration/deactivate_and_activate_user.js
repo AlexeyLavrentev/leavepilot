@@ -101,7 +101,8 @@ describe('Deactivate and activate user', function(){
         message : /Details for .+ were updated/,
         should_be_successful : true,
       })
-      .then(function(){ done() });
+      .then(function(){ done() })
+      .catch(done);
     })
     .catch(done);
   });

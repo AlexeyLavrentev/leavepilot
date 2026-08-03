@@ -54,7 +54,8 @@ describe('Ensure that leaves with not full days are rendered properly', function
       driver = data.driver;
       new_user_email = data.email;
       done();
-    });
+    })
+    .catch(done);
   });
 
   it("Create new non-admin user", done => {
@@ -65,7 +66,8 @@ describe('Ensure that leaves with not full days are rendered properly', function
     .then(data =>{
       non_admin_user_email = data.new_user_email;
       done();
-    });
+    })
+    .catch(done);
   });
 
   it("Logout from admin acount", done => {

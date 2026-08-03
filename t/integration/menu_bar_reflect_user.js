@@ -39,7 +39,8 @@ describe('Menu bar reflect permissions of logged in user', function(){
     .then(function(data){
       driver = data.driver;
       done();
-    });
+    })
+    .catch(done);
   });
 
   it("Check that all necessary menus are shown", function(done){
@@ -60,7 +61,8 @@ describe('Menu bar reflect permissions of logged in user', function(){
 
     bluebird
       .all( promises_to_check )
-      .then(function(){ done() });
+      .then(function(){ done() })
+      .catch(done);
   });
 
   it("Create non-admin user", function(done){
@@ -71,7 +73,8 @@ describe('Menu bar reflect permissions of logged in user', function(){
     .then(function(data){
       ordinary_user_email = data.new_user_email;
       done();
-    });
+    })
+    .catch(done);
   });
 
   it("Logout from admin acount", function(done){
@@ -79,7 +82,8 @@ describe('Menu bar reflect permissions of logged in user', function(){
       application_host : application_host,
       driver           : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Login as ordinary user", function(done){
@@ -88,7 +92,8 @@ describe('Menu bar reflect permissions of logged in user', function(){
       user_email       : ordinary_user_email,
       driver           : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Check that limited links are there", function(done){

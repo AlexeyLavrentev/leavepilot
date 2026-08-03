@@ -46,7 +46,8 @@ describe("Remove company account", function(){
       emailCompanyA = data.email;
       driver        = data.driver;
       done();
-    });
+    })
+    .catch(done);
   });
 
   it("Ensure user starts at the very beginning of current year", done =>{
@@ -89,7 +90,8 @@ describe("Remove company account", function(){
       emailCompanyB = data.email;
       driver        = data.driver;
       done();
-    });
+    })
+    .catch(done);
   });
 
   it("Ensure user starts at the very beginning of current year", done =>{

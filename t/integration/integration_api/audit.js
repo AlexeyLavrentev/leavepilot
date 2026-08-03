@@ -142,7 +142,8 @@ describePremium('Basic audit for user changes', function(){
         .to.be.eql( removedEvents.length );
 
       done();
-    });
+    })
+    .catch(done);
   });
 
   after(function(done){

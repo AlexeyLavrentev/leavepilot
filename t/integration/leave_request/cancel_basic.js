@@ -53,7 +53,8 @@ describe('Leave request cancelation', function(){
       driver  = data.driver;
       email_A = data.email;
       done();
-    });
+    })
+    .catch(done);
   });
 
   it("Create second user B", function(done){
@@ -64,7 +65,8 @@ describe('Leave request cancelation', function(){
     .then(function(data){
       email_B = data.new_user_email;
       done();
-    });
+    })
+    .catch(done);
   });
 
   it("Obtain information about admin user A", function(done){
@@ -75,7 +77,8 @@ describe('Leave request cancelation', function(){
     .then(function(data){
       user_id_A = data.user.id;
       done();
-    });
+    })
+    .catch(done);
   });
 
   it("Obtain information about user B", function(done){
@@ -86,7 +89,8 @@ describe('Leave request cancelation', function(){
     .then(function(data){
       user_id_B = data.user.id;
       done();
-    });
+    })
+    .catch(done);
   });
 
   it("Logout from user A (admin)", function(done){
@@ -94,7 +98,8 @@ describe('Leave request cancelation', function(){
       application_host : application_host,
       driver           : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Login as user B", function(done){
@@ -103,7 +108,8 @@ describe('Leave request cancelation', function(){
       user_email       : email_B,
       driver           : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Open Book leave popup window", function(done){
@@ -113,7 +119,8 @@ describe('Leave request cancelation', function(){
         // This is very important line when working with Bootstrap modals!
         return driver.sleep(1000);
       })
-      .then(function(){ done() });
+      .then(function(){ done() })
+      .catch(done);
   });
 
   it("Submit new leave request from user B for one weekday", function(done){
@@ -128,7 +135,8 @@ describe('Leave request cancelation', function(){
       }],
       message : /New leave request was added/,
     })
-    .then(function(){done()});
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Open requests page", function( done ){
@@ -136,7 +144,8 @@ describe('Leave request cancelation', function(){
       url    : application_host + 'requests/',
       driver : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it('Ensure newly created request is on Requests page', function(done){
@@ -147,7 +156,8 @@ describe('Leave request cancelation', function(){
         value    : "cancel",
       }],
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it('Ensure that new request is single one', function(done){
@@ -168,7 +178,8 @@ describe('Leave request cancelation', function(){
       .then(function(status){
         expect( status ).to.be.eq('Pending');
         done();
-      });
+      })
+      .catch(done);
   });
 
   it("Cancel leave request", function(done){
@@ -186,7 +197,8 @@ describe('Leave request cancelation', function(){
             .then(function(elements){ return elements.length === 0; });
         }, 5000);
       })
-      .then(function(){ done() });
+      .then(function(){ done() })
+      .catch(done);
   });
 
  it('Ensure that My requests page does not contain any entries', function(done){
@@ -204,7 +216,8 @@ describe('Leave request cancelation', function(){
       application_host : application_host,
       driver           : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Login back as admin user A", function(done){
@@ -213,7 +226,8 @@ describe('Leave request cancelation', function(){
       user_email       : email_A,
       driver           : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Open requests page", function( done ){
@@ -221,7 +235,8 @@ describe('Leave request cancelation', function(){
       url    : application_host + 'requests/',
       driver : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it('Ensure that there is no pending leave requests', function(done){
@@ -238,7 +253,8 @@ describe('Leave request cancelation', function(){
       url    : application_host + 'audit/email/',
       driver : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it('Ensure that there were two emails regarding cancelation', function(done){
@@ -262,7 +278,8 @@ describe('Leave request cancelation', function(){
       url    : application_host + 'users/edit/'+user_id_B+'/absences/',
       driver : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it('Ensure its details shows nothing from allowance was used', function(done){
@@ -284,7 +301,8 @@ describe('Leave request cancelation', function(){
       application_host : application_host,
       driver           : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Login as user B", function(done){
@@ -293,7 +311,8 @@ describe('Leave request cancelation', function(){
       user_email       : email_B,
       driver           : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Open Book leave popup window", function(done){
@@ -303,7 +322,8 @@ describe('Leave request cancelation', function(){
         // This is very important line when working with Bootstrap modals!
         return driver.sleep(1000);
       })
-      .then(function(){ done() });
+      .then(function(){ done() })
+      .catch(done);
   });
 
   it("Submit leave request for the same date as the first", function(done){
@@ -318,7 +338,8 @@ describe('Leave request cancelation', function(){
       }],
       message : /New leave request was added/,
     })
-    .then(function(){done()});
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Open requests page", function( done ){
@@ -326,7 +347,8 @@ describe('Leave request cancelation', function(){
       url    : application_host + 'requests/',
       driver : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it('Ensure that new request is in Pending status', function(done){
@@ -338,7 +360,8 @@ describe('Leave request cancelation', function(){
       .then(function(status){
         expect( status ).to.be.eq('Pending');
         done();
-      });
+      })
+      .catch(done);
   });
 
   after(function(done){
@@ -368,7 +391,8 @@ describe('Check only requestor can see the Cancel button', function(){
       driver  = data.driver;
       email_A = data.email;
       done();
-    });
+    })
+    .catch(done);
   });
 
   it("Create second user B", function(done){
@@ -379,7 +403,8 @@ describe('Check only requestor can see the Cancel button', function(){
     .then(function(data){
       email_B = data.new_user_email;
       done();
-    });
+    })
+    .catch(done);
   });
 
   it("Obtain information about admin user A", function(done){
@@ -390,7 +415,8 @@ describe('Check only requestor can see the Cancel button', function(){
     .then(function(data){
       user_id_A = data.user.id;
       done();
-    });
+    })
+    .catch(done);
   });
 
   it("Obtain information about user B", function(done){
@@ -401,7 +427,8 @@ describe('Check only requestor can see the Cancel button', function(){
     .then(function(data){
       user_id_B = data.user.id;
       done();
-    });
+    })
+    .catch(done);
   });
 
   it("Logout from user A (admin)", function(done){
@@ -409,7 +436,8 @@ describe('Check only requestor can see the Cancel button', function(){
       application_host : application_host,
       driver           : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Login as user B", function(done){
@@ -418,7 +446,8 @@ describe('Check only requestor can see the Cancel button', function(){
       user_email       : email_B,
       driver           : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Open Book leave popup window", function(done){
@@ -428,7 +457,8 @@ describe('Check only requestor can see the Cancel button', function(){
         // This is very important line when working with Bootstrap modals!
         return driver.sleep(1000);
       })
-      .then(function(){ done() });
+      .then(function(){ done() })
+      .catch(done);
   });
 
   it("Submit new leave requesti from user B", function(done){
@@ -443,7 +473,8 @@ describe('Check only requestor can see the Cancel button', function(){
       }],
       message : /New leave request was added/,
     })
-    .then(function(){done()});
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Open requests page", function( done ){
@@ -451,7 +482,8 @@ describe('Check only requestor can see the Cancel button', function(){
       url    : application_host + 'requests/',
       driver : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Ensure Cancel button is visible for user B", function(done){
@@ -462,7 +494,8 @@ describe('Check only requestor can see the Cancel button', function(){
       .then(function(cancel_btn){
         expect( cancel_btn ).to.be.ok;
         done();
-      });
+      })
+      .catch(done);
   });
 
   it("Logout from user A (admin)", function(done){
@@ -470,7 +503,8 @@ describe('Check only requestor can see the Cancel button', function(){
       application_host : application_host,
       driver           : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Login as admin user A", function(done){
@@ -479,7 +513,8 @@ describe('Check only requestor can see the Cancel button', function(){
       user_email       : email_A,
       driver           : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it('Open user B absences section', function(done){
@@ -487,7 +522,8 @@ describe('Check only requestor can see the Cancel button', function(){
       url    : application_host + 'users/edit/'+user_id_B+'/absences/',
       driver : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Ensure new request is there but no Cancel button", function(done){
@@ -498,7 +534,8 @@ describe('Check only requestor can see the Cancel button', function(){
       .then(function(cancel_btns){
         expect( cancel_btns.length ).to.be.eq(0);
         done();
-      });
+      })
+      .catch(done);
   });
 
   after(function(done){

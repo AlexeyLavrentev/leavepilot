@@ -46,7 +46,8 @@ describe('Leave type limits for next year: ' + next_year, function(){
     .then(data =>{
       ({driver,email:admin_user_email} = data);
       done();
-    });
+    })
+    .catch(done);
   });
 
   it("Open page with leave types", function(done){
@@ -76,7 +77,8 @@ describe('Leave type limits for next year: ' + next_year, function(){
     .then(data => {
       non_admin_user_email = data.new_user_email;
       done();
-    });
+    })
+    .catch(done);
   });
 
   it("Logout from admin account", function(done){

@@ -49,7 +49,8 @@ describe('Overlapping leaverequest (with halfs)', function(){
       driver = data.driver;
       new_user_email = data.email;
       done();
-    });
+    })
+    .catch(done);
   });
 
   it("Create new non-admin user", function(done){
@@ -60,7 +61,8 @@ describe('Overlapping leaverequest (with halfs)', function(){
     .then(function(data){
       non_admin_user_email = data.new_user_email;
       done();
-    });
+    })
+    .catch(done);
   });
 
   it("Logout from admin acount", function(done){
@@ -97,7 +99,8 @@ describe('Overlapping leaverequest (with halfs)', function(){
       .then(function(title){
         expect(title).to.be.equal('Calendar');
         done();
-      });
+      })
+      .catch(done);
   });
 
   it("Request new leave", function(done){

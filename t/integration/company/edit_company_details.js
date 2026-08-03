@@ -23,7 +23,8 @@ describe('Edit company details', function(){
     .then(function(data){
       driver = data.driver;
       done();
-    });
+    })
+    .catch(done);
   });
 
   it("Open page for editing company details", function(done){
@@ -31,7 +32,8 @@ describe('Edit company details', function(){
       url    : application_host + 'settings/general/',
       driver : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Check that company is been updated if valid values are submitted", function(done){
@@ -49,7 +51,8 @@ describe('Edit company details', function(){
       message                : /successfully/i,
       should_be_successful   : true,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   after(function(done){

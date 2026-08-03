@@ -41,7 +41,8 @@ describe('Leave request with single user', function(){
     .then((data) => {
       ({driver, email:new_user_email} = data);
       done();
-    });
+    })
+    .catch(done);
   });
 
   it("Ensure user starts at the very beginning of current year", done =>{
@@ -54,7 +55,8 @@ describe('Leave request with single user', function(){
       url    : application_host + 'calendar/?show_full_year=1&year=2015',
       driver : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Open page to create new leave", function(done){
@@ -62,7 +64,8 @@ describe('Leave request with single user', function(){
       .then(function(el){
         return el.click();
       })
-      .then(function(){ done() });
+      .then(function(){ done() })
+      .catch(done);
   });
 
   it("Create new leave request", function(done){
@@ -98,7 +101,8 @@ describe('Leave request with single user', function(){
       halfs_1st_days : [moment('2015-06-15')],
       type           : 'pended',
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   after(function(done){
