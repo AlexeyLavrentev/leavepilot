@@ -1298,6 +1298,65 @@ label.label-plain {
   flex: 0 0 18px;
 }
 
+/*
+  Holds whatever the header script could not fit on the primary row. The items
+  arrive with the markup their edition registered, icon and all, so the icon is
+  restyled here for a menu rather than for the bar — and un-hidden, since the
+  tight desktop band drops icons from the row that this menu sits inside.
+*/
+.nav-overflow-menu {
+  min-width: 220px;
+  max-width: min(320px, 100vw - 32px);
+}
+
+.nav-overflow-menu > li > a {
+  display: flex;
+  align-items: center;
+  white-space: nowrap;
+  overflow-wrap: normal;
+}
+
+.primary-navigation .nav-overflow-menu .nav-primary-icon {
+  display: inline-block;
+  flex: 0 0 18px;
+  width: 18px;
+  margin-right: 8px;
+  color: #7b8d9d;
+  text-align: center;
+}
+
+/*
+  A track that scrolls also clips, and this menu opens out of that track. The
+  script adds this class once it is measuring the row, which is also the point
+  from which it guarantees the row fits and the scrolling is not needed.
+*/
+.navbar-default .primary-navigation.nav-overflow-managed {
+  overflow: visible;
+}
+
+/*
+  An edition can hang a notification badge off a navigation item, and that
+  badge is invisible for as long as the item is inside the menu. The toggle
+  carries a mark of its own while one is showing.
+*/
+.nav-overflow-badge {
+  display: none;
+}
+
+.nav-overflow-badge.is-visible {
+  display: inline-block;
+  min-width: 18px;
+  margin-left: 6px;
+  padding: 2px 6px;
+  border-radius: 9px;
+  background: #256fae;
+  color: #ffffff;
+  font-size: 11px;
+  line-height: 1.2;
+  text-align: center;
+  vertical-align: middle;
+}
+
 .navbar-default .navbar-toggle {
   margin-top: 14px;
   margin-bottom: 14px;
@@ -2738,7 +2797,33 @@ textarea.form-control {
     justify-content: flex-end;
   }
 }
-@media (min-width: 992px) and (max-width: 1399px) {
+/*
+  The shrink ladder has to run widest step first, because every step matches the
+  same elements with the same specificity and the last one written wins. It used
+  to run the other way round, which meant the tightest step below never applied
+  anywhere: the 13px rule sat underneath it and put the size straight back. The
+  band it was meant to govern measured 13px in the browser, not the 12px the
+  source claimed.
+*/
+@media (min-width: 769px) and (max-width: 1599px) {
+  .navbar-default .navbar-nav > li > a {
+    padding-right: 8px;
+    padding-left: 8px;
+    font-size: 13px;
+  }
+  .navbar-form .btn {
+    padding-right: 10px;
+    padding-left: 10px;
+    font-size: 13px;
+  }
+}
+/*
+  The tightest step starts at 769px rather than 992px. The primary track is at
+  its narrowest at the bottom of the desktop range, not in the middle of it —
+  around 390px of room at 769px against roughly 520px at 992px — so the band
+  that most needs the tighter type was the one being left out of it.
+*/
+@media (min-width: 769px) and (max-width: 1399px) {
   .navbar-default .navbar-brand {
     padding-right: 14px;
     padding-left: 14px;
@@ -2756,18 +2841,6 @@ textarea.form-control {
     padding-right: 10px;
     padding-left: 10px;
     font-size: 12px;
-  }
-}
-@media (min-width: 769px) and (max-width: 1599px) {
-  .navbar-default .navbar-nav > li > a {
-    padding-right: 8px;
-    padding-left: 8px;
-    font-size: 13px;
-  }
-  .navbar-form .btn {
-    padding-right: 10px;
-    padding-left: 10px;
-    font-size: 13px;
   }
 }
 @media (max-width: 768px) {
@@ -5158,7 +5231,8 @@ td.current_day_cell.half_2nd {
   background-color: #1f2327;
   border-color: #2a2f34;
 }
-[data-theme=dark] .nav-menu-icon {
+[data-theme=dark] .nav-menu-icon,
+[data-theme=dark] .primary-navigation .nav-overflow-menu .nav-primary-icon {
   color: #9fb0bf;
 }
 [data-theme=dark] .dropdown-menu > li > a {
