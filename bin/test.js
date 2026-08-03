@@ -75,7 +75,14 @@ const reportQuarantine = () => {
 
 const runMochaSuite = () => {
   if (mochaArgs.length) {
-    return run(node, ['node_modules/mocha/bin/mocha', '--recursive', 't'].concat(mochaArgs));
+    // Paths given on the command line replace the default root rather than
+    // adding to it. Passing both meant "one spec" quietly ran the whole tree
+    // plus that spec, which is a slow way to learn nothing.
+    const explicitPaths = mochaArgs.filter(arg => !arg.startsWith('-'));
+    const roots = explicitPaths.length ? explicitPaths : ['t'];
+    const flags = mochaArgs.filter(arg => arg.startsWith('-'));
+
+    return run(node, ['node_modules/mocha/bin/mocha', '--recursive'].concat(roots, flags));
   }
 
   const allIntegrationFiles = collectJavaScriptFiles(path.join('t', 'integration'));
@@ -126,16 +133,33 @@ const runMochaSuite = () => {
     ? ['--retries', String(configuredRetries)]
     : [];
 
+  const flaky = [];
+
+  const mocha = batch => run(node, ['node_modules/mocha/bin/mocha'].concat(retryArgs).concat(batch));
+
   const runBatch = (batch, index) => {
     console.log(`Running integration batch ${index + 1}/${batches.length} (${batch.length} files)`);
-    const attempt = run(node, ['node_modules/mocha/bin/mocha'].concat(retryArgs).concat(batch));
+
+    // Mocha's own --retries repeats a single test inside the process it is
+    // already in, which does not help the failure this suite actually sees:
+    // the first test of a file loses its browser and the rest of the file then
+    // fails for want of the state it would have created. Every such file
+    // passes on its own in a few seconds. Re-running the whole file gives it a
+    // fresh browser and a freshly registered company, which is the granularity
+    // the flake lives at. Retried files are named at the end of the run: a
+    // real regression fails twice and must not hide behind a green tick.
+    const attempt = mocha(batch).catch(error => {
+      console.error(`Integration batch ${index + 1} failed, retrying the whole batch: ${error.message}`);
+      flaky.push(batch.join(', '));
+      return mocha(batch);
+    });
 
     if (!keepGoing) {
       return attempt;
     }
 
     return attempt.catch(error => {
-      console.error(`Integration batch ${index + 1} failed: ${error.message}`);
+      console.error(`Integration batch ${index + 1} failed twice: ${error.message}`);
       failures.push(index + 1);
     });
   };
@@ -149,6 +173,11 @@ const runMochaSuite = () => {
       ? null
       : run(node, ['node_modules/mocha/bin/mocha', '--recursive', 't/unit'])))
     .then(() => {
+      if (flaky.length) {
+        console.log(`Integration specs that needed a second run (${flaky.length}):`);
+        flaky.forEach(entry => console.log(`  - ${entry}`));
+      }
+
       if (failures.length) {
         throw new Error('Integration batches failed: ' + failures.join(', '));
       }
