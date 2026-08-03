@@ -62,10 +62,13 @@ jobs:
         env:
           NODE_ENV: test
           TEST_DB_STORAGE: /tmp/integration-test.sqlite
-          # Smaller batches than the local default: eight specs sharing one
-          # server and one headless browser on a two-core runner produced
-          # 60-second timeouts that moved between files from run to run.
-          TEST_INTEGRATION_BATCH_SIZE: '4'
+          # Smaller batches than the local default: specs sharing one server and
+          # one headless browser on a two-core runner produced timeouts that
+          # moved between files from run to run. The trace narrowed those to a
+          # 50ms timer inside the poll loop failing to fire for two minutes,
+          # which is a starved process rather than anything the suite decides,
+          # so the runner gets fewer browsers alive at once.
+          TEST_INTEGRATION_BATCH_SIZE: '2'
           # The per-spec budget is tuned for a developer machine. The leave-type
           # limit specs drive several bookings through the browser and overran
           # 60s on a two-core runner while passing locally, so the runner gets a
