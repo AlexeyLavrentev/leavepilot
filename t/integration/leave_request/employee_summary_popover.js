@@ -70,7 +70,8 @@ describe('Employee summary popover on the requests page (keyboard accessible)', 
         driver = data.driver;
         adminEmail = data.email;
         done();
-      });
+      })
+      .catch(done);
   });
 
   it('Adds a non-admin employee with a known email', function(done){
@@ -90,7 +91,8 @@ describe('Employee summary popover on the requests page (keyboard accessible)', 
           user_email: employeeEmail,
         });
       })
-      .then(function(){ done(); });
+      .then(function(){ done() })
+      .catch(done);
   });
 
   it('Books two leaves so two pending requests appear for the admin', function(done){
@@ -121,7 +123,8 @@ describe('Employee summary popover on the requests page (keyboard accessible)', 
           message: /New leave request was added/,
         });
       })
-      .then(function(){ done(); });
+      .then(function(){ done() })
+      .catch(done);
   });
 
   it('Signs employee out and admin back in', function(done){
@@ -131,7 +134,8 @@ describe('Employee summary popover on the requests page (keyboard accessible)', 
           application_host: application_host, driver: driver, user_email: adminEmail,
         });
       })
-      .then(function(){ done(); });
+      .then(function(){ done() })
+      .catch(done);
   });
 
   it('Opens the requests page with two pending rows', function(done){
@@ -140,7 +144,8 @@ describe('Employee summary popover on the requests page (keyboard accessible)', 
       .then(function(n){
         expect(n, 'expected two requests-page triggers').to.equal(2);
       })
-      .then(function(){ done(); });
+      .then(function(){ done() })
+      .catch(done);
   });
 
   it('Each trigger is a real button with a non-empty accessible name', function(done){
@@ -161,7 +166,8 @@ describe('Employee summary popover on the requests page (keyboard accessible)', 
           expect(t.name.length).to.be.greaterThan(0);
         });
       })
-      .then(function(){ done(); });
+      .then(function(){ done() })
+      .catch(done);
   });
 
   it('Keyboard focus on trigger #0 shows its popover immediately (no 700ms delay)', function(done){
@@ -171,7 +177,8 @@ describe('Employee summary popover on the requests page (keyboard accessible)', 
       .then(function(){
         return driver.wait(function(){ return isVisibleViaState(0); }, 1500);
       })
-      .then(function(){ done(); });
+      .then(function(){ done() })
+      .catch(done);
   });
 
   it('aria-describedby on trigger #0 points at a visible .popover[role=tooltip]', function(done){
@@ -186,7 +193,8 @@ describe('Employee summary popover on the requests page (keyboard accessible)', 
         expect(info.exists).to.equal(true);
         expect(info.role).to.equal('tooltip');
       })
-      .then(function(){ done(); });
+      .then(function(){ done() })
+      .catch(done);
   });
 
   it('Replaces the AJAX loading text with the real summary', function(done){
@@ -200,7 +208,8 @@ describe('Employee summary popover on the requests page (keyboard accessible)', 
           return txt.length > 0 && !/loading/i.test(txt);
         });
       }, 4000)
-      .then(function(){ done(); });
+      .then(function(){ done() })
+      .catch(done);
   });
 
   it('Enter on the focused trigger does NOT close the focus-opened popover', function(done){
@@ -211,7 +220,8 @@ describe('Employee summary popover on the requests page (keyboard accessible)', 
       .then(function(v){
         expect(v, 'popover should still be visible after Enter').to.equal(true);
       })
-      .then(function(){ done(); });
+      .then(function(){ done() })
+      .catch(done);
   });
 
   it('Escape closes the popover and leaves focus on the trigger', function(done){
@@ -231,7 +241,8 @@ describe('Employee summary popover on the requests page (keyboard accessible)', 
       .then(function(onTrigger){
         expect(onTrigger).to.equal(true);
       })
-      .then(function(){ done(); });
+      .then(function(){ done() })
+      .catch(done);
   });
 
   it('Enter re-opens the popover after Escape without a new focusin', function(done){
@@ -242,7 +253,8 @@ describe('Employee summary popover on the requests page (keyboard accessible)', 
       .then(function(v){
         expect(v, 'popover should re-open on Enter after Escape').to.equal(true);
       })
-      .then(function(){ done(); });
+      .then(function(){ done() })
+      .catch(done);
   });
 
   it('A second Escape closes the re-opened popover', function(done){
@@ -253,7 +265,8 @@ describe('Employee summary popover on the requests page (keyboard accessible)', 
       .then(function(v){
         expect(v).to.equal(false);
       })
-      .then(function(){ done(); });
+      .then(function(){ done() })
+      .catch(done);
   });
 
   it('Single-open: focusing trigger #0 shows its popover with aria-describedby', function(done){
@@ -271,7 +284,8 @@ describe('Employee summary popover on the requests page (keyboard accessible)', 
       .then(function(id0){
         expect(id0.length, 'trigger #0 should have aria-describedby when open').to.be.greaterThan(0);
       })
-      .then(function(){ done(); });
+      .then(function(){ done() })
+      .catch(done);
   });
 
   it('Single-open: focusing trigger #1 hides trigger #0 and its aria-describedby', function(done){
@@ -291,7 +305,8 @@ describe('Employee summary popover on the requests page (keyboard accessible)', 
       .then(function(id0After){
         expect(id0After, 'aria-describedby must be removed from #0').to.equal('');
       })
-      .then(function(){ done(); });
+      .then(function(){ done() })
+      .catch(done);
   });
 
   it('Single-open: exactly one requests employee-summary popover visible at a time', function(done){
@@ -299,7 +314,8 @@ describe('Employee summary popover on the requests page (keyboard accessible)', 
       .then(function(n){
         expect(n, 'exactly one requests popover visible').to.equal(1);
       })
-      .then(function(){ done(); });
+      .then(function(){ done() })
+      .catch(done);
   });
 
   it('Keyboard focus cancels another trigger\'s pending hover show', function(done){
@@ -366,7 +382,8 @@ describe('Employee summary popover on the requests page (keyboard accessible)', 
       .then(function(n){
         expect(n, 'exactly one requests popover visible').to.equal(1);
       })
-      .then(function(){ done(); });
+      .then(function(){ done() })
+      .catch(done);
   });
 
   it('A real Selenium click opens the popover exactly once (no duplicate show)', function(done){
@@ -417,7 +434,8 @@ describe('Employee summary popover on the requests page (keyboard accessible)', 
           window.jQuery('.requests-user-details-summary-trigger').off('show.bs.popover.test');
         });
       })
-      .then(function(){ done(); });
+      .then(function(){ done() })
+      .catch(done);
   });
 
   it('A second real Selenium click closes the pinned popover', function(done){
@@ -428,7 +446,8 @@ describe('Employee summary popover on the requests page (keyboard accessible)', 
       .then(function(v){
         expect(v, 'popover should close on second click').to.equal(false);
       })
-      .then(function(){ done(); });
+      .then(function(){ done() })
+      .catch(done);
   });
 
   it('Click outside closes a pinned popover', function(done){
@@ -449,7 +468,8 @@ describe('Employee summary popover on the requests page (keyboard accessible)', 
       .then(function(v){
         expect(v, 'popover should close after click outside').to.equal(false);
       })
-      .then(function(){ done(); });
+      .then(function(){ done() })
+      .catch(done);
   });
 
   it('Team View separates the employee cell from the summary trigger (regression)', function(done){
@@ -493,7 +513,8 @@ describe('Employee summary popover on the requests page (keyboard accessible)', 
         expect(info.adminLinkHref, 'admin employee-name link should keep its edit href')
           .to.match(/\/users\/edit\/\d+\//);
       })
-      .then(function(){ done(); });
+      .then(function(){ done() })
+      .catch(done);
   });
 
   after(function(done){

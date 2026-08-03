@@ -33,7 +33,8 @@ describe('Try to open registeration page with active user in a session', functio
     .then(function(data){
       driver = data.driver;
       done();
-    });
+    })
+    .catch(done);
   });
 
   it('Try to open Registration page', function(done){
@@ -41,7 +42,8 @@ describe('Try to open registeration page with active user in a session', functio
       url    : application_host + 'register/',
       driver : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Make sure that user is landed on calendar page", function(done){
@@ -50,7 +52,8 @@ describe('Try to open registeration page with active user in a session', functio
       .then(function(url){
         expect(url).to.be.equal(application_host+'calendar/')
         done();
-      });
+      })
+      .catch(done);
   });
 
   after(function(done){

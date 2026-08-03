@@ -75,7 +75,14 @@ const reportQuarantine = () => {
 
 const runMochaSuite = () => {
   if (mochaArgs.length) {
-    return run(node, ['node_modules/mocha/bin/mocha', '--recursive', 't'].concat(mochaArgs));
+    // Paths given on the command line replace the default root rather than
+    // adding to it. Passing both meant "one spec" quietly ran the whole tree
+    // plus that spec, which is a slow way to learn nothing.
+    const explicitPaths = mochaArgs.filter(arg => !arg.startsWith('-'));
+    const roots = explicitPaths.length ? explicitPaths : ['t'];
+    const flags = mochaArgs.filter(arg => arg.startsWith('-'));
+
+    return run(node, ['node_modules/mocha/bin/mocha', '--recursive'].concat(roots, flags));
   }
 
   const allIntegrationFiles = collectJavaScriptFiles(path.join('t', 'integration'));
@@ -90,9 +97,22 @@ const runMochaSuite = () => {
 
   reportQuarantine();
 
-  const integrationFiles = includeQuarantined
+  const selectedFiles = includeQuarantined
     ? allIntegrationFiles
     : allIntegrationFiles.filter(file => !quarantinedPaths.has(file));
+
+  // Deal the files round-robin so every shard gets a mix of fast and slow specs
+  // rather than one shard inheriting a whole slow directory.
+  const integrationFiles = shard
+    ? selectedFiles.filter((_, position) => (position % shard.total) === (shard.index - 1))
+    : selectedFiles;
+
+  if (shard) {
+    console.log(
+      `Shard ${shard.index}/${shard.total}: ${integrationFiles.length}`
+      + ` of ${selectedFiles.length} integration specs`
+    );
+  }
   const configuredBatchSize = Number(process.env.TEST_INTEGRATION_BATCH_SIZE);
   const batchSize = Number.isInteger(configuredBatchSize) && configuredBatchSize > 0
     ? configuredBatchSize
@@ -113,16 +133,33 @@ const runMochaSuite = () => {
     ? ['--retries', String(configuredRetries)]
     : [];
 
+  const flaky = [];
+
+  const mocha = batch => run(node, ['node_modules/mocha/bin/mocha'].concat(retryArgs).concat(batch));
+
   const runBatch = (batch, index) => {
     console.log(`Running integration batch ${index + 1}/${batches.length} (${batch.length} files)`);
-    const attempt = run(node, ['node_modules/mocha/bin/mocha'].concat(retryArgs).concat(batch));
+
+    // Mocha's own --retries repeats a single test inside the process it is
+    // already in, which does not help the failure this suite actually sees:
+    // the first test of a file loses its browser and the rest of the file then
+    // fails for want of the state it would have created. Every such file
+    // passes on its own in a few seconds. Re-running the whole file gives it a
+    // fresh browser and a freshly registered company, which is the granularity
+    // the flake lives at. Retried files are named at the end of the run: a
+    // real regression fails twice and must not hide behind a green tick.
+    const attempt = mocha(batch).catch(error => {
+      console.error(`Integration batch ${index + 1} failed, retrying the whole batch: ${error.message}`);
+      flaky.push(batch.join(', '));
+      return mocha(batch);
+    });
 
     if (!keepGoing) {
       return attempt;
     }
 
     return attempt.catch(error => {
-      console.error(`Integration batch ${index + 1} failed: ${error.message}`);
+      console.error(`Integration batch ${index + 1} failed twice: ${error.message}`);
       failures.push(index + 1);
     });
   };
@@ -136,6 +173,11 @@ const runMochaSuite = () => {
       ? null
       : run(node, ['node_modules/mocha/bin/mocha', '--recursive', 't/unit'])))
     .then(() => {
+      if (flaky.length) {
+        console.log(`Integration specs that needed a second run (${flaky.length}):`);
+        flaky.forEach(entry => console.log(`  - ${entry}`));
+      }
+
       if (failures.length) {
         throw new Error('Integration batches failed: ' + failures.join(', '));
       }
@@ -191,6 +233,23 @@ const rawArgs = process.argv.slice(2).filter(arg => arg !== '--');
 // Run only the browser suite: the unit tests already have their own CI job, and
 // repeating them here would double a ten-minute run for no extra signal.
 const integrationOnly = rawArgs.includes('--integration-only');
+/*
+  Split the browser suite across several runners. Every hang traced so far ends
+  the same way: a poll returns in milliseconds, the next step is scheduled, and
+  the process does not get back to it for two minutes. That is a starved
+  machine, not a decision any wait makes, so the work is spread instead of being
+  packed onto one two-core runner.
+*/
+const shardArg = rawArgs.find(arg => arg.startsWith('--shard='));
+const shard = shardArg
+  ? (function(){
+      const [index, total] = shardArg.slice('--shard='.length).split('/').map(Number);
+      if (!Number.isInteger(index) || !Number.isInteger(total) || index < 1 || index > total) {
+        throw new Error('--shard expects index/total, for example --shard=2/4');
+      }
+      return {index, total};
+    })()
+  : null;
 // Report every failing batch instead of stopping at the first one. Locally the
 // early stop is the faster feedback; on CI one red batch used to hide the rest.
 const keepGoing = rawArgs.includes('--keep-going');
@@ -200,7 +259,7 @@ const mochaArgs = rawArgs.filter(arg => ![
   '--integration-only',
   '--keep-going',
   '--include-quarantined',
-].includes(arg));
+].includes(arg) && !arg.startsWith('--shard='));
 
 let server;
 

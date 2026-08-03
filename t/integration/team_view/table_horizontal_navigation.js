@@ -21,7 +21,8 @@ describe('Team View horizontal table navigation', function(){
       .then(function(data){
         driver = data.driver;
         done();
-      });
+      })
+      .catch(done);
   });
 
   it('Opens Team View wide enough to require horizontal scroll (12 months)', function(done){
@@ -32,7 +33,8 @@ describe('Team View horizontal table navigation', function(){
     })
       .then(function(){ return driver.wait(until.elementLocated(By.css('.team-view-table-container')), 5000); })
       .then(function(){ return driver.sleep(400); })
-      .then(function(){ done(); });
+      .then(function(){ done() })
+      .catch(done);
   });
 
   function firstShell() {
@@ -74,7 +76,8 @@ describe('Team View horizontal table navigation', function(){
   it('Confirms the table actually overflows horizontally', function(done){
     hasOverflow()
       .then(function(v){ expect(v, 'table should overflow at 12 months').to.equal(true); })
-      .then(function(){ done(); });
+      .then(function(){ done() })
+      .catch(done);
   });
 
   it('Marks the shell as horizontally scrollable and can-scroll-right at start', function(done){
@@ -84,13 +87,15 @@ describe('Team View horizontal table navigation', function(){
         expect(cls).to.contain('can-scroll-right');
         expect(cls, 'no can-scroll-left at the left edge').to.not.contain('can-scroll-left');
       })
-      .then(function(){ done(); });
+      .then(function(){ done() })
+      .catch(done);
   });
 
   it('Shows the scroll cue at the start', function(done){
     cueVisible()
       .then(function(v){ expect(v, 'cue should be visible when can-scroll-right').to.equal(true); })
-      .then(function(){ done(); });
+      .then(function(){ done() })
+      .catch(done);
   });
 
   it('Focuses the scroll region', function(done){
@@ -102,7 +107,8 @@ describe('Team View horizontal table navigation', function(){
         });
       })
       .then(function(isFocused){ expect(isFocused).to.equal(true); })
-      .then(function(){ done(); });
+      .then(function(){ done() })
+      .catch(done);
   });
 
   it('ArrowRight increases scrollLeft and keeps focus on the container', function(done){
@@ -123,13 +129,15 @@ describe('Team View horizontal table navigation', function(){
         });
       })
       .then(function(isFocused){ expect(isFocused, 'focus must stay on the container').to.equal(true); })
-      .then(function(){ done(); });
+      .then(function(){ done() })
+      .catch(done);
   });
 
   it('After ArrowRight, can-scroll-left appears on the shell', function(done){
     shellClasses()
       .then(function(cls){ expect(cls).to.contain('can-scroll-left'); })
-      .then(function(){ done(); });
+      .then(function(){ done() })
+      .catch(done);
   });
 
   it('End moves to the right edge and removes can-scroll-right', function(done){
@@ -143,7 +151,8 @@ describe('Team View horizontal table navigation', function(){
       .then(function(){ return driver.sleep(100); })
       .then(function(){ return cueVisible(); })
       .then(function(v){ expect(v, 'cue should hide at the right edge').to.equal(false); })
-      .then(function(){ done(); });
+      .then(function(){ done() })
+      .catch(done);
   });
 
   it('Home returns scrollLeft to zero and restores can-scroll-right', function(done){
@@ -154,7 +163,8 @@ describe('Team View horizontal table navigation', function(){
       .then(function(left){ expect(left).to.equal(0); })
       .then(function(){ return shellClasses(); })
       .then(function(cls){ expect(cls).to.contain('can-scroll-right'); })
-      .then(function(){ done(); });
+      .then(function(){ done() })
+      .catch(done);
   });
 
   it('Keyboard on a nested admin link is not handled by the table controller', function(done){

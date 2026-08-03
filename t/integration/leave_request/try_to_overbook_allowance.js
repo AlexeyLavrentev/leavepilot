@@ -43,7 +43,8 @@ describe('Try to book more holidays then in allowance', function(){
       new_user_email = data.email;
       driver = data.driver;
       done();
-    });
+    })
+    .catch(done);
   });
 
   it("Create new non-admin user", function(done){
@@ -54,7 +55,8 @@ describe('Try to book more holidays then in allowance', function(){
     .then(function(data){
       non_admin_user_email = data.new_user_email;
       done();
-    });
+    })
+    .catch(done);
   });
 
   it("Logout from admin account", function(done){
@@ -62,7 +64,8 @@ describe('Try to book more holidays then in allowance', function(){
       application_host : application_host,
       driver           : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Login as non-admin user", function(done){
@@ -71,7 +74,8 @@ describe('Try to book more holidays then in allowance', function(){
       user_email       : non_admin_user_email,
       driver           : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Open calendar page", function(done){
@@ -79,7 +83,8 @@ describe('Try to book more holidays then in allowance', function(){
       url    : application_host + 'calendar/?year=2015&show_full_year=1',
       driver : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("And make sure that it is calendar indeed", function(done){
@@ -88,7 +93,8 @@ describe('Try to book more holidays then in allowance', function(){
       .then(function(title){
         expect(title).to.be.equal('Calendar');
         done();
-      });
+      })
+      .catch(done);
   });
 
   it("Request new leave", function(done){
@@ -128,7 +134,8 @@ describe('Try to book more holidays then in allowance', function(){
           should_be_successful : false,
           message : /Failed to create a leave request/,
         })
-        .then(function(){ done() });
+        .then(function(){ done() })
+        .catch(done);
       });
   });
 
@@ -146,7 +153,8 @@ describe('Try to book more holidays then in allowance', function(){
           ).to.be.equal(true);
 
           done();
-        });
+        })
+        .catch(done);
       });
   });
 

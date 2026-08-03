@@ -51,7 +51,8 @@ describe('Check Time zones', function(){
       driver = data.driver;
       user_email = data.email;
       done();
-    });
+    })
+    .catch(done);
   });
 
   it("Ensure user starts at the very beginning of current year", done =>{
@@ -80,7 +81,8 @@ describe('Check Time zones', function(){
       message                : /successfully/i,
       should_be_successful   : true,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Get the date from Book leave modal and put it into today_tonga variable", function(done){
@@ -93,7 +95,8 @@ describe('Check Time zones', function(){
       .then(today => {
         today_tonga = today;
         done();
-      });
+      })
+      .catch(done);
   });
 
   it("Get the current date from Calendar page and ensure it is the same as today_tonga", function(done){
@@ -108,7 +111,8 @@ describe('Check Time zones', function(){
     .then(el => {
       expect(el, 'Ensure that current date is marked correctly').to.exist;
       done();
-    });
+    })
+    .catch(done);
   });
 
   it("Get the current date from Team view page and ensure it is the same as today_tonga", function(done){
@@ -158,7 +162,8 @@ describe('Check Time zones', function(){
     .then(text => {
       expect(text).to.be.eql(moment(today_tonga).format('YYYY-MM-DD'));
       done();
-    });
+    })
+    .catch(done);
   });
 
   it('Reject newly added leave', function(done){
@@ -195,7 +200,8 @@ describe('Check Time zones', function(){
       message                : /successfully/i,
       should_be_successful   : true,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Get the date from Book leave modal and put it into today_usa", function(done){
@@ -208,7 +214,8 @@ describe('Check Time zones', function(){
       .then(today => {
         today_usa = today;
         done();
-      });
+      })
+      .catch(done);
   });
 
   it("Ensure that today_usa is one day behind the today_tonga", function(done){
@@ -228,7 +235,8 @@ describe('Check Time zones', function(){
     .then(el => {
       expect(el, 'Ensure that current date is marked correctly').to.exist;
       done();
-    });
+    })
+    .catch(done);
   });
 
   it("Get the current date from Team view page and ensure it is the same as today_usa", function(done){
@@ -278,7 +286,8 @@ describe('Check Time zones', function(){
     .then(text => {
       expect(text).to.be.eql(moment(today_usa).format('YYYY-MM-DD'));
       done();
-    });
+    })
+    .catch(done);
   });
 
   after(function(done){

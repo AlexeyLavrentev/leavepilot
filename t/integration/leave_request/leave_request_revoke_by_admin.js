@@ -48,7 +48,8 @@ describe('Revoke leave request by Admin', function(){
       email_admin = data.email;
       driver = data.driver;
       done();
-    });
+    })
+    .catch(done);
   });
 
   it("Create EMPLOYEE-to-be user", function(done){
@@ -59,7 +60,8 @@ describe('Revoke leave request by Admin', function(){
     .then(function(data){
       email_employee = data.new_user_email;
       done();
-    });
+    })
+    .catch(done);
   });
 
   it("Logout from admin account", function(done){
@@ -67,7 +69,8 @@ describe('Revoke leave request by Admin', function(){
       application_host : application_host,
       driver           : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Login as EMPLOYEE user", function(done){
@@ -76,7 +79,8 @@ describe('Revoke leave request by Admin', function(){
       user_email       : email_employee,
       driver           : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Open calendar page", function(done){
@@ -84,7 +88,8 @@ describe('Revoke leave request by Admin', function(){
       url    : application_host + 'calendar/?show_full_year=1',
       driver : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("And make sure that it is calendar indeed", function(done){
@@ -92,7 +97,8 @@ describe('Revoke leave request by Admin', function(){
       .then(function(title){
         expect(title).to.be.equal('Calendar');
         done();
-      });
+      })
+      .catch(done);
   });
 
   it("Create new leave request", function(done){
@@ -118,7 +124,8 @@ describe('Revoke leave request by Admin', function(){
           }],
           message : /New leave request was added/,
         })
-        .then(function(){ done() });
+        .then(function(){ done() })
+        .catch(done);
       });
   });
 
@@ -129,7 +136,8 @@ describe('Revoke leave request by Admin', function(){
       halfs_1st_days : [moment.utc(`${currentYear}-05-11`)],
       type           : 'pended',
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Logout from EMPLOYEE account", function(done){
@@ -137,7 +145,8 @@ describe('Revoke leave request by Admin', function(){
       application_host : application_host,
       driver           : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Login as an ADMIN user", function(done){
@@ -146,7 +155,8 @@ describe('Revoke leave request by Admin', function(){
       user_email       : email_admin,
       driver           : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Open requests page", function(done){
@@ -154,7 +164,8 @@ describe('Revoke leave request by Admin', function(){
       url    : application_host + 'requests/',
       driver : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it('Make sure that newly created request is waiting for approval', function(done){
@@ -165,7 +176,8 @@ describe('Revoke leave request by Admin', function(){
         value    : "Reject",
       }],
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Approve newly added leave request", function(done){
@@ -178,7 +190,8 @@ describe('Revoke leave request by Admin', function(){
         // Wait until page properly is reloaded
         return driver.wait(until.elementLocated(By.css('h1')), 1000);
       })
-      .then(function(){ done() });
+      .then(function(){ done() })
+      .catch(done);
   });
 
   it("Open department settings page", function(done){
@@ -186,7 +199,8 @@ describe('Revoke leave request by Admin', function(){
         url    : application_host + 'settings/departments/',
         driver : driver,
       })
-      .then(function(){ done() });
+      .then(function(){ done() })
+      .catch(done);
   });
 
   it("Obtain employee ID from department managment page", function(done){
@@ -207,7 +221,8 @@ describe('Revoke leave request by Admin', function(){
       url    : application_host + 'users/edit/'+employee_user_id+'/absences/',
       driver : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("... and revoke her time off", function(done){
@@ -220,7 +235,8 @@ describe('Revoke leave request by Admin', function(){
         // Wait until page properly is reloaded
         return driver.wait(until.elementLocated(By.css('h1')), 1000);
       })
-      .then(function(){ done() });
+      .then(function(){ done() })
+      .catch(done);
   });
 
   it("Open requests page", function(done){
@@ -228,7 +244,8 @@ describe('Revoke leave request by Admin', function(){
       url    : application_host + 'requests/',
       driver : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Make sure newly revoked request is shown for approval", function(done){
@@ -239,7 +256,8 @@ describe('Revoke leave request by Admin', function(){
         value    : "Reject",
       }],
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Approve revoke request", function(done){
@@ -252,7 +270,8 @@ describe('Revoke leave request by Admin', function(){
         // Wait until page properly is reloaded
         return driver.wait(until.elementLocated(By.css('h1')), 1000);
       })
-      .then(function(){ done() });
+      .then(function(){ done() })
+      .catch(done);
   });
 
   after(function(done){

@@ -23,7 +23,8 @@ describe("Book leave modal keyboard focus management", function(){
     .then(function(data){
       driver = data.driver;
       done();
-    });
+    })
+    .catch(done);
   });
 
   it("Open calendar page", function(done){
@@ -31,7 +32,8 @@ describe("Book leave modal keyboard focus management", function(){
       url    : application_host + 'calendar/',
       driver : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Places focus on the New absence opener button", function(done){
@@ -43,7 +45,8 @@ describe("Book leave modal keyboard focus management", function(){
       .then(function(activeId){
         expect(activeId).to.equal('book_time_off_btn');
       })
-      .then(function(){ done() });
+      .then(function(){ done() })
+      .catch(done);
   });
 
   it("Opens the modal via keyboard (Enter on the opener)", function(done){
@@ -58,7 +61,8 @@ describe("Book leave modal keyboard focus management", function(){
       })
       // let shown.bs.modal handlers run and focus settle
       .then(function(){ return driver.sleep(300); })
-      .then(function(){ done() });
+      .then(function(){ done() })
+      .catch(done);
   });
 
   it("Moves focus to the first form control after shown.bs.modal", function(done){
@@ -69,7 +73,8 @@ describe("Book leave modal keyboard focus management", function(){
         return driver.executeScript('return document.activeElement.id')
           .then(function(id){ return id === 'leave_type'; });
       }, 2000)
-      .then(function(){ done() });
+      .then(function(){ done() })
+      .catch(done);
   });
 
   it("Closes the modal with Escape sent to the focused control", function(done){
@@ -82,7 +87,8 @@ describe("Book leave modal keyboard focus management", function(){
           driver.findElement(By.css('#book_leave_modal'))
         ), 2000);
       })
-      .then(function(){ done() });
+      .then(function(){ done() })
+      .catch(done);
   });
 
   it("Restores focus to the opener (Bootstrap data API behavior)", function(done){
@@ -94,7 +100,8 @@ describe("Book leave modal keyboard focus management", function(){
         return driver.executeScript('return document.activeElement.id')
           .then(function(id){ return id === 'book_time_off_btn'; });
       }, 2000)
-      .then(function(){ done() });
+      .then(function(){ done() })
+      .catch(done);
   });
 
   after(function(done){

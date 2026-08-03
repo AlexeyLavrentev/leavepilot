@@ -39,7 +39,8 @@ describe("Changing default company wide schedule", function(){
     .then(function(data){
       driver = data.driver;
       done();
-    });
+    })
+    .catch(done);
   });
 
   it("Open company details page", function(done){
@@ -47,7 +48,8 @@ describe("Changing default company wide schedule", function(){
       url    : application_host + 'settings/general/',
       driver : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it('Ensure company has default schedule', function(done){
@@ -83,7 +85,8 @@ describe("Changing default company wide schedule", function(){
         value    : 'off',
       }],
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it('Make Wednesday to be non-working day', function(done){
@@ -96,7 +99,8 @@ describe("Changing default company wide schedule", function(){
       submit_button_selector : schedule_form_id+' button[type="submit"]',
       message : /Schedule for company was saved/,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it('And make sure that it was indeed marked so', function(done){
@@ -132,7 +136,8 @@ describe("Changing default company wide schedule", function(){
         value    : 'off',
       }],
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it('Open Calendar page', function(done){
@@ -140,7 +145,8 @@ describe("Changing default company wide schedule", function(){
       url    : application_host + 'calendar/?year=2015&show_full_year=1',
       driver : driver,
     })
-    .then(function(){done()});
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it('... and ensure Wednesday is marked as non-working day', function(done){
@@ -151,7 +157,8 @@ describe("Changing default company wide schedule", function(){
       .then(function(css){
         expect(css).to.match(/\bweekend_cell\b/);
         done();
-      });
+      })
+      .catch(done);
   });
 
   it('... and ensure that Monday is still working day', function(done){
@@ -161,7 +168,8 @@ describe("Changing default company wide schedule", function(){
       .then(function(css){
         expect(css).not.to.match(/\bweekend_cell\b/);
         done();
-      });
+      })
+      .catch(done);
   });
 
   it('Open Team view page', function(done){
@@ -169,7 +177,8 @@ describe("Changing default company wide schedule", function(){
       url    : application_host + 'calendar/teamview/?&date=2015-01',
       driver : driver,
     })
-    .then(function(){done()});
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it('... and make sure Wednsday is marked as non-working day', function(done){
@@ -180,7 +189,8 @@ describe("Changing default company wide schedule", function(){
       .then(function(css){
         expect(css).to.match(/\bweekend_cell\b/);
         done();
-      });
+      })
+      .catch(done);
   });
 
   it('... and ensure Monday is still working day', function(done){
@@ -190,7 +200,8 @@ describe("Changing default company wide schedule", function(){
       .then(function(css){
         expect(css).not.to.match(/\bweekend_cell\b/);
         done();
-      });
+      })
+      .catch(done);
   });
 
   after(function(done){
@@ -222,7 +233,8 @@ describe('Leave request reflects shanges in company schedule', function(){
       driver = data.driver;
       email_A = data.email;
       done();
-    });
+    })
+    .catch(done);
   });
 
   it("Obtain information about newly added user", (done) => {
@@ -242,7 +254,8 @@ describe('Leave request reflects shanges in company schedule', function(){
         // This is very important line when working with Bootstrap modals!
         return driver.sleep(1000);
       })
-      .then(function(){ done() });
+      .then(function(){ done() })
+      .catch(done);
   });
 
   it("Submit new leave requesti for 7 calendar days", function(done){
@@ -257,7 +270,8 @@ describe('Leave request reflects shanges in company schedule', function(){
       }],
       message : /New leave request was added/,
     })
-    .then(function(){done()});
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Open requests page", function(done){
@@ -265,7 +279,8 @@ describe('Leave request reflects shanges in company schedule', function(){
       url    : application_host + 'requests/',
       driver : driver,
     })
-    .then(function(){done()});
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it('... and ensure newly created request deducts 5 days from allowance', function(done){
@@ -274,7 +289,8 @@ describe('Leave request reflects shanges in company schedule', function(){
     .then(function(days_used){
       expect(days_used).to.be.equal('5');
     })
-    .then(function(){done()});
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Open company details page", function(done){
@@ -282,7 +298,8 @@ describe('Leave request reflects shanges in company schedule', function(){
       url    : application_host + 'settings/general/',
       driver : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it('Make Saturday to be working day', function(done){
@@ -295,7 +312,8 @@ describe('Leave request reflects shanges in company schedule', function(){
       submit_button_selector : schedule_form_id+' button[type="submit"]',
       message : /Schedule for company was saved/,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Open requests page", function(done){
@@ -303,7 +321,8 @@ describe('Leave request reflects shanges in company schedule', function(){
       url    : application_host + 'requests/',
       driver : driver,
     })
-    .then(function(){done()});
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it('... and ensure newly created request deducts 6 days from allowance', function(done){
@@ -312,7 +331,8 @@ describe('Leave request reflects shanges in company schedule', function(){
     .then(function(days_used){
       expect(days_used).to.be.equal('6');
     })
-    .then(function(){done()});
+    .then(function(){ done() })
+    .catch(done);
   });
 
   after(function(done){

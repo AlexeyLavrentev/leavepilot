@@ -37,7 +37,8 @@ describe('Edit user to have duplicated email', function(){
       driver = data.driver;
       email_admin = data.email;
       done();
-    });
+    })
+    .catch(done);
   });
 
   it("Create second user", function(done){
@@ -45,7 +46,8 @@ describe('Edit user to have duplicated email', function(){
       application_host : application_host,
       driver           : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Open 'users' page", function(done){
@@ -53,7 +55,8 @@ describe('Edit user to have duplicated email', function(){
       url    : application_host + 'users/',
       driver : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Make sure that both users are shown " +
@@ -66,7 +69,8 @@ describe('Edit user to have duplicated email', function(){
         // click on second user link
         return elements[1].click()
       })
-      .then(function(){ done() });
+      .then(function(){ done() })
+      .catch(done);
   });
 
   it("Try to assign to second user the same email as ADMIN has", function(done){
@@ -79,7 +83,8 @@ describe('Edit user to have duplicated email', function(){
       submit_button_selector : 'button#save_changes_btn',
       message : /Email is already in use/,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Update email user with unique email address", function(done){
@@ -92,7 +97,8 @@ describe('Edit user to have duplicated email', function(){
       submit_button_selector : 'button#save_changes_btn',
       message : /Details for .* were updated/,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   after(function(done){

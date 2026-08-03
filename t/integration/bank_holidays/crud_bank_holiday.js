@@ -24,7 +24,8 @@ describe('CRUD for bank holidays', function(){
     .then((data) => {
       driver = data.driver;
       done();
-    });
+    })
+    .catch(done);
   });
 
   it("Open page with bank holidays", (done) => {

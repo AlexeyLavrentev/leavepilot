@@ -72,7 +72,8 @@ describe('Auto approvals', function(){
       driver  = data.driver;
       email_A = data.email;
       done();
-    });
+    })
+    .catch(done);
   });
 
   it("Create second user B", function(done){
@@ -83,7 +84,8 @@ describe('Auto approvals', function(){
     .then(function(data){
       email_B = data.new_user_email;
       done();
-    });
+    })
+    .catch(done);
   });
 
   it("Obtain information about admin user A", function(done){
@@ -94,7 +96,8 @@ describe('Auto approvals', function(){
     .then(function(data){
       user_id_A = data.user.id;
       done();
-    });
+    })
+    .catch(done);
   });
 
   it("Obtain information about user B", function(done){
@@ -105,7 +108,8 @@ describe('Auto approvals', function(){
     .then(function(data){
       user_id_B = data.user.id;
       done();
-    });
+    })
+    .catch(done);
   });
 
   it("Open details page for user B", function(done){
@@ -113,7 +117,8 @@ describe('Auto approvals', function(){
       url    : application_host + 'users/edit/'+user_id_B+'/',
       driver : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it('Update settings to make all its leave requests auto approved', function(done){
@@ -127,7 +132,8 @@ describe('Auto approvals', function(){
       submit_button_selector : 'button#save_changes_btn',
       message : /Details for .+ were updated/,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Logout from admin user", function(done){
@@ -135,7 +141,8 @@ describe('Auto approvals', function(){
       application_host : application_host,
       driver           : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Login as regular user B", function(done){
@@ -144,7 +151,8 @@ describe('Auto approvals', function(){
       user_email       : email_B,
       driver           : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Open Book leave popup window", function(done){
@@ -154,7 +162,8 @@ describe('Auto approvals', function(){
         // This is very important line when working with Bootstrap modals!
         return driver.sleep(1000);
       })
-      .then(function(){ done() });
+      .then(function(){ done() })
+      .catch(done);
   });
 
   it("Submit new leave requesti from user B", function(done){
@@ -169,7 +178,8 @@ describe('Auto approvals', function(){
       }],
       message : /New leave request was added/,
     })
-    .then(function(){done()});
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Open requests page", function( done ){
@@ -177,7 +187,8 @@ describe('Auto approvals', function(){
       url    : application_host + 'requests/',
       driver : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Ensure that new leave went straight to Approved status", function(done){
@@ -190,7 +201,8 @@ describe('Auto approvals', function(){
       .then(function(status){
         expect( status ).to.be.eq('Approved');
         done();
-      });
+      })
+      .catch(done);
   });
 
   it("Logout from user B", function(done){
@@ -198,7 +210,8 @@ describe('Auto approvals', function(){
       application_host : application_host,
       driver           : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Login as admin user A", function(done){
@@ -207,7 +220,8 @@ describe('Auto approvals', function(){
       user_email       : email_A,
       driver           : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Open requests page", function( done ){
@@ -215,7 +229,8 @@ describe('Auto approvals', function(){
       url    : application_host + 'requests/',
       driver : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it('Ensure that there is no pending leave requests', function(done){
@@ -232,7 +247,8 @@ describe('Auto approvals', function(){
       url    : application_host + 'audit/email/',
       driver : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it('Ensure there were two emails regarding auto-approved leaves', function(done){
@@ -256,7 +272,8 @@ describe('Auto approvals', function(){
       application_host : application_host,
       driver           : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Login as regular user B", function(done){
@@ -265,7 +282,8 @@ describe('Auto approvals', function(){
       user_email       : email_B,
       driver           : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Open requests page", function(done){
@@ -273,7 +291,8 @@ describe('Auto approvals', function(){
       url    : application_host + 'requests/',
       driver : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it('Revoke request', function(done){
@@ -303,7 +322,8 @@ describe('Auto approvals', function(){
       application_host : application_host,
       driver           : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Login as admin user A", function(done){
@@ -312,7 +332,8 @@ describe('Auto approvals', function(){
       user_email       : email_A,
       driver           : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it('Open user B absences section', function(done){
@@ -320,7 +341,8 @@ describe('Auto approvals', function(){
       url    : application_host + 'users/edit/'+user_id_B+'/absences/',
       driver : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Ensure that user B does not have any leaves", function(done){
@@ -329,7 +351,8 @@ describe('Auto approvals', function(){
       .then(function(elements){
         expect(elements.length).to.be.eq(0);
         done();
-      });
+      })
+      .catch(done);
   });
 
   it("Open requests page", function( done ){
@@ -337,7 +360,8 @@ describe('Auto approvals', function(){
       url    : application_host + 'requests/',
       driver : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it('Ensure that there is no pending leave requests', function(done){
@@ -354,7 +378,8 @@ describe('Auto approvals', function(){
       url    : application_host + 'audit/email/',
       driver : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it('Ensure there were two emails regarding auto-approved leaves', function(done){

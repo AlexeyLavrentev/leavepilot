@@ -42,7 +42,8 @@ describe('Check filtering on "users" page', function(){
     .then(function(data){
       driver = data.driver;
       done();
-    });
+    })
+    .catch(done);
   });
 
   it('Create new department "IT": open page', function(done){
@@ -50,7 +51,8 @@ describe('Check filtering on "users" page', function(){
       url    : application_host + 'settings/departments/',
       driver : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("... and submit the form", function(done){
@@ -90,7 +92,8 @@ describe('Check filtering on "users" page', function(){
       // added "ID" is before default "Sales" one
       department_index : "0",
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Open 'users' page", function(done){
@@ -98,7 +101,8 @@ describe('Check filtering on "users" page', function(){
       url    : application_host + 'users/',
       driver : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Make sure that both users are shown", function(done){
@@ -107,7 +111,8 @@ describe('Check filtering on "users" page', function(){
       .then(function(elements){
         expect(elements.length).to.be.equal(2);
         done();
-      });
+      })
+      .catch(done);
   });
 
   it("Click on IT department", function(done){
@@ -119,7 +124,8 @@ describe('Check filtering on "users" page', function(){
         element.click();
         return driver.wait(until.elementLocated(By.css('h1')), 1000);
       })
-      .then(function(){ done() });
+      .then(function(){ done() })
+      .catch(done);
   });
 
   it("... and make sure only user from IT department is shown", function(done){
@@ -132,7 +138,8 @@ describe('Check filtering on "users" page', function(){
       .then(function(text){
         expect(text).to.be.equal('IT');
         done();
-      });
+      })
+      .catch(done);
   });
 
   it('Click on "Sales"', function(done){
@@ -144,7 +151,8 @@ describe('Check filtering on "users" page', function(){
        element.click();
        return driver.wait(until.elementLocated(By.css('h1')), 1000);
      })
-     .then(function(){ done() });
+     .then(function(){ done() })
+     .catch(done);
   });
 
   it("... department and make sure that only one user from that department is shown", function(done){
@@ -157,7 +165,8 @@ describe('Check filtering on "users" page', function(){
       .then(function(text){
         expect(text).to.be.equal('Sales');
         done();
-      });
+      })
+      .catch(done);
   });
 
   it('Click on "All" filter', function(done){
@@ -167,7 +176,8 @@ describe('Check filtering on "users" page', function(){
         element.click();
         return driver.wait(until.elementLocated(By.css('h1')), 1000);
       })
-      .then(function(){ done() });
+      .then(function(){ done() })
+      .catch(done);
   });
 
   it("... and make sure that both users are presenyed", function(done){
@@ -176,7 +186,8 @@ describe('Check filtering on "users" page', function(){
       .then(function(elements){
         expect(elements.length).to.be.equal(2);
         done();
-      });
+      })
+      .catch(done);
   });
 
   after(function(done){

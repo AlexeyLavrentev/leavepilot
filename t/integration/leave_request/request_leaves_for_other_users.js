@@ -48,7 +48,8 @@ describe('Request leave for outher users', function(){
       driver = data.driver;
       admin_email = data.email;
       done();
-    });
+    })
+    .catch(done);
   });
 
   it("Create new line manager user", function(done){
@@ -70,7 +71,8 @@ describe('Request leave for outher users', function(){
     .then(function(data){
       ordenary_user_email = data.new_user_email;
       done();
-    });
+    })
+    .catch(done);
   });
 
   it("Open department management page", function(done){
@@ -78,7 +80,8 @@ describe('Request leave for outher users', function(){
       url    : application_host + 'settings/departments/',
       driver : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Save ID of ordenry user", function(done){
@@ -91,7 +94,8 @@ describe('Request leave for outher users', function(){
         ordenary_user_id = value;
         expect( ordenary_user_id ).to.match(/^\d+$/);
         done();
-      });
+      })
+      .catch(done);
   });
 
   it("Add new department and make its approver to be newly added " +
@@ -118,7 +122,8 @@ describe('Request leave for outher users', function(){
           submit_button_selector : new_department_form_id+' button[type="submit"]',
           message : /Changes to departments were saved/,
         })
-        .then(function(){ done() });
+        .then(function(){ done() })
+        .catch(done);
       });
   });
 
@@ -127,7 +132,8 @@ describe('Request leave for outher users', function(){
       url    : application_host + 'users/edit/'+ordenary_user_id+'/',
       driver : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("And make sure it is part of the newly added department", function(done){
@@ -142,7 +148,8 @@ describe('Request leave for outher users', function(){
       }],
       message : /Details for .* were updated/,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Logout from admin acount", function(done){
@@ -150,7 +157,8 @@ describe('Request leave for outher users', function(){
       application_host : application_host,
       driver           : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   })
 
   it("Login as ordenary user", function(done){
@@ -159,7 +167,8 @@ describe('Request leave for outher users', function(){
       user_email       : ordenary_user_email,
       driver           : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Open calendar page", function(done){
@@ -167,7 +176,8 @@ describe('Request leave for outher users', function(){
       url    : application_host + 'calendar/?show_full_year=1&year=2015',
       driver : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("And make sure that user cannot select other users when requesting new leave", function(done){
@@ -183,7 +193,8 @@ describe('Request leave for outher users', function(){
       .then(function(elements){
         expect(elements.length).to.be.equal(0);
         done();
-      });
+      })
+      .catch(done);
   });
 
   it("Logout from ordenary acount", function(done){
@@ -191,7 +202,8 @@ describe('Request leave for outher users', function(){
       application_host : application_host,
       driver           : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Login as line manager user", function(done){
@@ -200,7 +212,8 @@ describe('Request leave for outher users', function(){
       user_email       : line_manager_email,
       driver           : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Open calendar page", function(done){
@@ -208,7 +221,8 @@ describe('Request leave for outher users', function(){
       url    : application_host + 'calendar/?show_full_year=1&year=2015',
       driver : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("And make sure that user can select herself and ordenary user (because she "+
@@ -225,7 +239,8 @@ describe('Request leave for outher users', function(){
       .then(function(elements){
         expect(elements.length).to.be.greaterThan(0);
         done();
-      });
+      })
+      .catch(done);
   });
 
   it("... make sure there are two records in it", function(done){
@@ -234,7 +249,8 @@ describe('Request leave for outher users', function(){
       .then(function(elements){
         expect( elements.length ).to.be.equal(2);
         done();
-      });
+      })
+      .catch(done);
   });
 
   it("Make sure ordenary user is in that drop down list", function(done){
@@ -248,7 +264,8 @@ describe('Request leave for outher users', function(){
            ordenary_user_email.substring(0,ordenary_user_email.lastIndexOf('@'))
          ));
         done();
-      });
+      })
+      .catch(done);
   });
 
   it("Logout from ordenary acount", function(done){
@@ -256,7 +273,8 @@ describe('Request leave for outher users', function(){
       application_host : application_host,
       driver           : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Login as admin user", function(done){
@@ -265,7 +283,8 @@ describe('Request leave for outher users', function(){
       user_email       : admin_email,
       driver           : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Open calendar page", function(done){
@@ -273,7 +292,8 @@ describe('Request leave for outher users', function(){
       url    : application_host + 'calendar/?show_full_year=1&year=2015',
       driver : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("And make sure that user can select all three users", function(done){
@@ -293,7 +313,8 @@ describe('Request leave for outher users', function(){
       .then(function(elements){
         expect(elements.length).to.be.equal(3);
         done();
-      });
+      })
+      .catch(done);
   });
 
   after(function(done){

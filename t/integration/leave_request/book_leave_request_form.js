@@ -35,7 +35,8 @@ describe("Check the client side logic to facilitate filling new absence form", f
     .then(function(data){
       driver = data.driver;
       done();
-    });
+    })
+    .catch(done);
   });
 
   it("Open calendar page", function(done){
@@ -51,7 +52,8 @@ describe("Check the client side logic to facilitate filling new absence form", f
       .then(function(el){ return el.click() })
       // This is very important line when working with Bootstrap modals!
       .then(function(){ return driver.sleep(1000) })
-      .then(function(){ done() });
+      .then(function(){ done() })
+      .catch(done);
   });
 
   it("Ensure by default FROM and TO fields are populated with current date", function(done){
@@ -65,7 +67,8 @@ describe("Check the client side logic to facilitate filling new absence form", f
         value : company_today().format('YYYY-MM-DD'),
       }],
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Update FROM to be in future and make sure TO is automatically addusted to the same date", function(done){
@@ -89,7 +92,8 @@ describe("Check the client side logic to facilitate filling new absence form", f
           }],
         });
       })
-      .then(function(){ done() });
+      .then(function(){ done() })
+      .catch(done);
 
   });
 
@@ -116,7 +120,8 @@ describe("Check the client side logic to facilitate filling new absence form", f
           }],
         });
       })
-      .then(function(){ done() });
+      .then(function(){ done() })
+      .catch(done);
 
   });
 

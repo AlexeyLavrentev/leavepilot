@@ -79,7 +79,8 @@ describe('Check departments list page', function(){
     .then(function(data){
       driver = data.driver;
       done();
-    });
+    })
+    .catch(done);
   });
 
   it("Open page with department list and ensure it has read-only list", function(done){
@@ -93,7 +94,8 @@ describe('Check departments list page', function(){
     .then(function(inputs){
       expect(inputs.length).to.be.eql(1);
       done();
-    });
+    })
+    .catch(done);
   });
 
   it("Ensure list of departments has links for editing each individual one", function(done){
@@ -115,7 +117,8 @@ describe('Check departments list page', function(){
       .then(function(href){
         expect(href).to.match(/\/users\/edit\/\d+\/$/, "Link to manager indeed contains ID");
         done();
-      });
+      })
+      .catch(done);
   });
 
   it('Add new "AAA" department', function(done){
@@ -142,7 +145,8 @@ describe('Check departments list page', function(){
           message : /Changes to departments were saved/,
           });
         })
-        .then(function(){ done() });
+        .then(function(){ done() })
+        .catch(done);
       });
   });
 
@@ -152,7 +156,8 @@ describe('Check departments list page', function(){
       .then(function(url){
         expect(url).to.match(/\/settings\/departments\/$/, 'Ensure the landing page is department list');
         done();
-      });
+      })
+      .catch(done);
   });
 
   it('Ensure that newly added department AAA is on top of the list', function(done){
@@ -162,7 +167,8 @@ describe('Check departments list page', function(){
       .then(function(texts){
         expect(texts).to.have.eql(['AAA', 'Sales'], 'Check the order of names');
         done();
-      });
+      })
+      .catch(done);
   });
 
   it('Add new "ZZZ" department', function(done){
@@ -187,7 +193,8 @@ describe('Check departments list page', function(){
           message : /Changes to departments were saved/,
           });
         })
-        .then(function(){ done() });
+        .then(function(){ done() })
+        .catch(done);
       });
   });
 
@@ -198,7 +205,8 @@ describe('Check departments list page', function(){
       .then(function(texts){
         expect(texts).to.have.eql(['AAA', 'Sales', 'ZZZ'], 'Check the order of names');
         done();
-      });
+      })
+      .catch(done);
   });
 
   after(function(done){
@@ -236,7 +244,8 @@ describe("Edit individual department via department details page", function(){
       email_A = data.email;
       driver  = data.driver;
       done();
-    });
+    })
+    .catch(done);
   });
 
   it("Create second user B", function(done){
@@ -247,7 +256,8 @@ describe("Edit individual department via department details page", function(){
     .then(function(data){
       email_B = data.new_user_email;
       done();
-    });
+    })
+    .catch(done);
   });
 
   it("Obtain information about user A", function(done){
@@ -258,7 +268,8 @@ describe("Edit individual department via department details page", function(){
     .then(function(data){
       user_id_A = data.user.id;
       done();
-    });
+    })
+    .catch(done);
   });
 
   it("Obtain information about user B", function(done){
@@ -269,7 +280,8 @@ describe("Edit individual department via department details page", function(){
     .then(function(data){
       user_id_B = data.user.id;
       done();
-    });
+    })
+    .catch(done);
   });
 
   it("Open page with department list and click first department in the list", function(done){
@@ -281,7 +293,8 @@ describe("Edit individual department via department details page", function(){
       driver
         .findElements(By.css('a[href*="/settings/departments/edit/"]'))
         .then(function(links){ return links[0].click() })
-        .then(function(){ done() });
+        .then(function(){ done() })
+        .catch(done);
     });
   });
 
@@ -291,7 +304,8 @@ describe("Edit individual department via department details page", function(){
       .then(function(url){
         department_edit_page_url = url;
         done();
-      });
+      })
+      .catch(done);
   });
 
   it('Edit department', function(done){
@@ -316,7 +330,8 @@ describe("Edit individual department via department details page", function(){
       submit_button_selector : department_edit_form_id+' button[type="submit"]',
       message : /Department .* was updated/,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it('Ensure that chnages were applied', function(done){
@@ -339,7 +354,8 @@ describe("Edit individual department via department details page", function(){
         value    : 'on',
       }],
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it('Ensure that user stays on the same page after updating department details', function(done){
@@ -384,7 +400,8 @@ describe("Edit individual department via department details page", function(){
     driver
       .findElement(By.css('a[data-vpp-all-departments-link="1"]'))
       .then(function(link){ return link.click() })
-      .then(function(){ done() });
+      .then(function(){ done() })
+      .catch(done);
   });
 
   it('Add new "AAA" department', function(done){
@@ -410,7 +427,8 @@ describe("Edit individual department via department details page", function(){
           message : /Changes to departments were saved/,
           });
         })
-        .then(function(){ done() });
+        .then(function(){ done() })
+        .catch(done);
       });
   });
 
@@ -423,7 +441,8 @@ describe("Edit individual department via department details page", function(){
         new_department_id = href.match(/settings\/departments\/edit\/(\d+)\//)[1];
         expect(new_department_id).to.match(/^\d+$/, 'The department ID is number');
         done();
-      });
+      })
+      .catch(done);
   });
 
   it("Open user A details page", function(done){
@@ -431,7 +450,8 @@ describe("Edit individual department via department details page", function(){
       url    : application_host + 'users/edit/'+user_id_A+'/',
       driver : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it('... and move her to newly added department', function(done){
@@ -445,7 +465,8 @@ describe("Edit individual department via department details page", function(){
       submit_button_selector : 'button#save_changes_btn',
       message : /Details for .+ were updated/,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it('Ensure that chnages were applied', function(done){
@@ -456,7 +477,8 @@ describe("Edit individual department via department details page", function(){
         value    : new_department_id,
       }],
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Open user B details page", function(done){
@@ -464,7 +486,8 @@ describe("Edit individual department via department details page", function(){
       url    : application_host + 'users/edit/'+user_id_B+'/',
       driver : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it('... and move her to newly added department', function(done){
@@ -478,7 +501,8 @@ describe("Edit individual department via department details page", function(){
       submit_button_selector : 'button#save_changes_btn',
       message : /Details for .+ were updated/,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it('Ensure that chnages were applied', function(done){
@@ -489,7 +513,8 @@ describe("Edit individual department via department details page", function(){
         value    : new_department_id,
       }],
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it('Go to the very first department details page', function(done){
@@ -497,7 +522,8 @@ describe("Edit individual department via department details page", function(){
       url    : department_edit_page_url,
       driver : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it('Remove the department by pressing Delete button', function(done){
@@ -520,7 +546,8 @@ describe("Edit individual department via department details page", function(){
       .then(function(url){
         expect(url).to.match(/\/settings\/departments\/$/, 'The URL points to departments page');
         done();
-      });
+      })
+      .catch(done);
   });
 
   after(function(done){
@@ -564,7 +591,8 @@ describe('CRUD for department secondary supervisers', function(){
       email_A = data.email;
       driver  = data.driver;
       done();
-    });
+    })
+    .catch(done);
   });
 
   it("Obtain information about user A", function(done){
@@ -575,7 +603,8 @@ describe('CRUD for department secondary supervisers', function(){
     .then(function(data){
       user_id_A = data.user.id;
       done();
-    });
+    })
+    .catch(done);
   });
 
   it('Go to departments details page', function(done){
@@ -588,7 +617,8 @@ describe('CRUD for department secondary supervisers', function(){
         .findElements(By.css('a[href*="/settings/departments/edit/"]'))
         // Click on the very first link as we have just one department
         .then(function(links){ return links[0].click() })
-        .then(function(){ done() });
+        .then(function(){ done() })
+        .catch(done);
     });
   });
 
@@ -598,7 +628,8 @@ describe('CRUD for department secondary supervisers', function(){
       .then(function(url){
         department_edit_page_url = url;
         done();
-      });
+      })
+      .catch(done);
   });
 
   it('Invoke "Add secondary supervisers" pop-up window', function(done){
@@ -615,7 +646,8 @@ describe('CRUD for department secondary supervisers', function(){
       .then(function(text){
         expect(text).to.match(/Add new employee/);
         done();
-      });
+      })
+      .catch(done);
   });
 
   it("Create second user B", function(done){
@@ -626,7 +658,8 @@ describe('CRUD for department secondary supervisers', function(){
     .then(function(data){
       email_B = data.new_user_email;
       done();
-    });
+    })
+    .catch(done);
   });
 
   it("Obtain information about user B", function(done){
@@ -637,7 +670,8 @@ describe('CRUD for department secondary supervisers', function(){
     .then(function(data){
       user_id_B = data.user.id;
       done();
-    });
+    })
+    .catch(done);
   });
 
 
@@ -649,7 +683,8 @@ describe('CRUD for department secondary supervisers', function(){
     .then(function(data){
       email_C = data.new_user_email;
       done();
-    });
+    })
+    .catch(done);
   });
 
   it("Obtain information about user C", function(done){
@@ -660,7 +695,8 @@ describe('CRUD for department secondary supervisers', function(){
     .then(function(data){
       user_id_C = data.user.id;
       done();
-    });
+    })
+    .catch(done);
   });
 
 
@@ -669,7 +705,8 @@ describe('CRUD for department secondary supervisers', function(){
       url    : department_edit_page_url,
       driver : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it('... and ensure that user A is its manager', function(done){
@@ -680,7 +717,8 @@ describe('CRUD for department secondary supervisers', function(){
         value    : String(user_id_A),
       }],
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it('Ensure that "secondary supervisors" section is empty', function(done){
@@ -689,7 +727,8 @@ describe('CRUD for department secondary supervisers', function(){
       .then(function(els){
         expect(els.length).to.be.eql(0, 'No remove buttons for supervisers as there are not any');
         done();
-      });
+      })
+      .catch(done);
   });
 
   it('click "add supervisers" button and ensure that popup witndow '+
@@ -709,7 +748,8 @@ describe('CRUD for department secondary supervisers', function(){
       .then(function(vals){
         expect(vals.sort()).to.be.eql([user_id_B, user_id_C].map(function(e){return String(e)}).sort(), 'User list is expected');
         done();
-      });
+      })
+      .catch(done);
   });
 
   it('tick user B and save changes', function(done){
@@ -723,7 +763,8 @@ describe('CRUD for department secondary supervisers', function(){
       submit_button_selector : 'button[name="do_add_supervisors"]',
       message : /Supervisors were added to department/,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it('Observe that user B appeares on the list of secondary supervisers', function(done){

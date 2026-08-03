@@ -1,0 +1,15 @@
+name: timeoff-pilot
+
+services:
+  app:
+    environment:
+      RUN_DB_MIGRATIONS: "false"
+      LEAVE_REMINDER_SCHEDULER_ENABLED: "false"
+      PRODUCTION_CALENDAR_SCHEDULER_ENABLED: "false"
+      TELEGRAM_DIGEST_SCHEDULER_ENABLED: "false"
+      EXTERNAL_CONNECTORS_SCHEDULER_ENABLED: "false"
+    ports: !override
+      - "127.0.0.1:${PILOT_APP_PORT:-3001}:3000"
+    volumes: !override
+      - ./deploy/pilot/app.pilot.json:/app/config/app.json:ro
+

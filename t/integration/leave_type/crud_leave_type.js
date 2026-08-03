@@ -27,7 +27,8 @@ describe('CRUD for leave types', function(){
     .then(function(data){
       driver = data.driver;
       done();
-    });
+    })
+    .catch(done);
   });
 
   it("Open page with leave types", function(done){
@@ -35,7 +36,8 @@ describe('CRUD for leave types', function(){
       url    : application_host + 'settings/general/',
       driver : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   })
 
   it("Check if there are default leave types", function(done){
@@ -49,7 +51,8 @@ describe('CRUD for leave types', function(){
         value    : 'Sick Leave',
       }],
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Make sure default colours are set for leave types", done => {
@@ -65,7 +68,8 @@ describe('CRUD for leave types', function(){
         expect( colours.sort(), 'Check default colour values' )
           .to.be.deep.equal(['leave_type_color_1', 'leave_type_color_1']);
         done();
-      });
+      })
+      .catch(done);
   });
 
   it("Change Sick leave type to be non-default colour", done => {
@@ -105,7 +109,8 @@ describe('CRUD for leave types', function(){
         value    : 'off',
       }],
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it('Check that updating "use allowance flag" works', function(done){
@@ -120,7 +125,8 @@ describe('CRUD for leave types', function(){
       submit_button_selector : leave_type_edit_form_id+' button[type="submit"]',
       message : /Changes to leave types were saved/,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it('Double check that "use allowance" tick boxes were updated correctly', function( done ){
@@ -136,7 +142,8 @@ describe('CRUD for leave types', function(){
         tick     : true,
       }],
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Check that it is possible to update Limits", function(done){
@@ -153,7 +160,8 @@ describe('CRUD for leave types', function(){
       should_be_successful : true,
       message : /Changes to leave types were saved/,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Make sure that Limit cannot be negative", function(done){
@@ -166,7 +174,8 @@ describe('CRUD for leave types', function(){
       submit_button_selector : leave_type_edit_form_id+' button[type="submit"]',
       message : /New limit for .* should be positive number or 0/,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Add new leave type", function(done){
@@ -189,7 +198,8 @@ describe('CRUD for leave types', function(){
           submit_button_selector : leave_type_new_form_id+' button[type="submit"]',
           message : /Changes to leave types were saved/,
         })
-        .then(function(){ done() });
+        .then(function(){ done() })
+        .catch(done);
       });
   });
 
@@ -207,7 +217,8 @@ describe('CRUD for leave types', function(){
         value    : 'Sick Leave',
       }],
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it('And rename newly added leave type to start with "M"', function(done){
@@ -220,7 +231,8 @@ describe('CRUD for leave types', function(){
       submit_button_selector : leave_type_edit_form_id+' button[type="submit"]',
       message : /Changes to leave types were saved/,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Make sure that updated new leave type was moved into second position", function(done){
@@ -237,7 +249,8 @@ describe('CRUD for leave types', function(){
         value    : 'Sick Leave',
       }],
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Remove empty newly added leave type", function(done){
@@ -254,7 +267,8 @@ describe('CRUD for leave types', function(){
       confirm_dialog : true,
       message : /Leave type was successfully removed/,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("And make sure only two old leave types are left", function(done){
@@ -268,7 +282,8 @@ describe('CRUD for leave types', function(){
           value    : 'Sick Leave',
       }],
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Add AAA and ZZZ leave types", function(done){
@@ -346,7 +361,8 @@ describe('CRUD for leave types', function(){
         expect(option_infos[0], 'AAA is first').to.include({ value : '0', text : 'AAA'});
         expect(option_infos[3], 'ZZZ is last').to.include({ value : '3', text : 'ZZZ'});
         done();
-      });
+      })
+      .catch(done);
   });
 
   it('Mark ZZZ as one to be default one', function(done){
@@ -403,7 +419,8 @@ describe('CRUD for leave types', function(){
         expect(option_infos[0], 'ZZZ is first').to.include({ value : '0', text : 'ZZZ'});
         expect(option_infos[1], 'AAA is last').to.include({ value : '1', text : 'AAA'});
         done();
-      });
+      })
+      .catch(done);
   });
 
   after(function(done){

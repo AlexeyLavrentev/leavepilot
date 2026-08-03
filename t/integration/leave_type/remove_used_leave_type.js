@@ -43,7 +43,8 @@ describe('Try to remove used leave type', function(){
     .then(function(data){
       ({driver, email} = data);
       done();
-    });
+    })
+    .catch(done);
   });
 
   it("Ensure user starts at the very beginning of current year", done =>{
@@ -56,7 +57,8 @@ describe('Try to remove used leave type', function(){
       url    : application_host + 'settings/general/',
       driver : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Add new leave type", function(){
@@ -110,7 +112,8 @@ describe('Try to remove used leave type', function(){
       url    : application_host + 'calendar/?show_full_year=1&year=2015',
       driver : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Request new leave", function(){
@@ -148,7 +151,8 @@ describe('Try to remove used leave type', function(){
       halfs_1st_days : [moment('2015-06-15')],
       type           : 'pended',
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Open page with leave types", function(done){
@@ -156,7 +160,8 @@ describe('Try to remove used leave type', function(){
       url    : application_host + 'settings/general/',
       driver : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Try to remove newly added leave type and ensure it fails", function(done){
@@ -166,7 +171,8 @@ describe('Try to remove used leave type', function(){
       message : /Cannot remove leave type: type is in use/,
       confirm_dialog : true,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   after(function(done){

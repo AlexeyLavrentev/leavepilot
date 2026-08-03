@@ -60,7 +60,8 @@ describe('Dealing with inactive users', function(){
       driver = data.driver;
       email_admin = data.email;
       done();
-    });
+    })
+    .catch(done);
   });
 
   it("Create MANAGER", function(done){
@@ -71,7 +72,8 @@ describe('Dealing with inactive users', function(){
     .then(function(data){
       email_manager = data.new_user_email;
       done();
-    });
+    })
+    .catch(done);
   });
 
   it("Create EMPLOYEE", function(done){
@@ -82,7 +84,8 @@ describe('Dealing with inactive users', function(){
     .then(function(data){
       email_employee = data.new_user_email;
       done();
-    });
+    })
+    .catch(done);
   });
 
   it("Open department management page", function(done){
@@ -90,7 +93,8 @@ describe('Dealing with inactive users', function(){
       url    : application_host + 'settings/departments/',
       driver : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it('Update department to be supervised by MANAGER', function(done){
@@ -128,7 +132,8 @@ describe('Dealing with inactive users', function(){
       emails  : [email_admin, email_manager, email_employee],
       is_link : true,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Open departments management page", function(done){
@@ -136,7 +141,8 @@ describe('Dealing with inactive users', function(){
       url    : application_host + 'settings/departments/',
       driver : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("obtain detailed info about employee (ID etc)", function(done){
@@ -147,7 +153,8 @@ describe('Dealing with inactive users', function(){
     .then(function(data){
       employee_id = data.user.id;
       done();
-    });
+    })
+    .catch(done);
   });
 
   it("See if EMPLOYEE is among possible approvers", function(done){
@@ -157,7 +164,8 @@ describe('Dealing with inactive users', function(){
     .then(function(option){
       expect(option).to.be.not.empty;
       done();
-    });
+    })
+    .catch(done);
   });
 
   it("Logout from admin account", function(done){
@@ -165,7 +173,8 @@ describe('Dealing with inactive users', function(){
       application_host : application_host,
       driver           : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it('Login as an EMPLOYEE to make sure it is possible', function(done){
@@ -174,7 +183,8 @@ describe('Dealing with inactive users', function(){
       user_email       : email_employee,
       driver           : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Logout from EMPLOYEE account", function(done){
@@ -182,7 +192,8 @@ describe('Dealing with inactive users', function(){
       application_host : application_host,
       driver           : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it('Login back as ADMIN', function(done){
@@ -191,7 +202,8 @@ describe('Dealing with inactive users', function(){
       user_email       : email_admin,
       driver           : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it('Open employee details page', function(done){
@@ -199,7 +211,8 @@ describe('Dealing with inactive users', function(){
       url    : application_host + 'users/edit/'+employee_id+'/',
       driver : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Mark EMPLOYEE as one inactive one by specifying end date to be in past", function(done){
@@ -212,7 +225,8 @@ describe('Dealing with inactive users', function(){
       submit_button_selector : 'button#save_changes_btn',
       message : /Details for .+ were updated/,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Make sure EMPLOYEE is not on Team view page anymore", function(done){
@@ -221,7 +235,8 @@ describe('Dealing with inactive users', function(){
       emails  : [email_admin, email_manager],
       is_link : true,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Open users list page", function(done){
@@ -229,7 +244,8 @@ describe('Dealing with inactive users', function(){
       url    : application_host + 'users/',
       driver : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it('Make sure that EMPLOYEE still is shown on users page decpite being inactive', function(done){
@@ -238,7 +254,8 @@ describe('Dealing with inactive users', function(){
       .then(function(elements){
         expect(elements.length).to.be.equal(3);
         done();
-      });
+      })
+      .catch(done);
   });
 
   it('Check that employee is striked in the list', function(done) {
@@ -259,7 +276,8 @@ describe('Dealing with inactive users', function(){
       url    : application_host + 'settings/departments/',
       driver : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Try to add new department and make sure that EMPLOYEE is not among potentual approvers", function(done){
@@ -270,7 +288,8 @@ describe('Dealing with inactive users', function(){
       .then(function(option){
         expect(option).to.be.empty;
         done();
-      });
+      })
+      .catch(done);
   });
 
   it("Logout from admin account", function(done){
@@ -278,7 +297,8 @@ describe('Dealing with inactive users', function(){
       application_host : application_host,
       driver           : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Try to login as EMPLOYEE and make sure system rejects", function(done){
@@ -288,7 +308,8 @@ describe('Dealing with inactive users', function(){
       driver           : driver,
       should_fail      : true,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   after(function(done){

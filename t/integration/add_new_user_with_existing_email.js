@@ -29,7 +29,8 @@ describe('Admin tries to add user with email used for other one', function(){
       driver = data.driver;
       new_user_email = data.email;
       done();
-    });
+    })
+    .catch(done);
   });
 
   it("Create new non-admin user", function(done){
@@ -39,7 +40,8 @@ describe('Admin tries to add user with email used for other one', function(){
       email            : new_user_email,
       error_message    : 'Email is already in use',
     })
-    .then(function(){done()});
+    .then(function(){ done() })
+    .catch(done);
   });
 
   after(function(done){

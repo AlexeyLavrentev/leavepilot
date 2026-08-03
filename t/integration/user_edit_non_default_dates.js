@@ -27,7 +27,8 @@ describe("Try to use non defaul date formats for editing employee details", func
     .then(function(data){
       driver = data.driver;
       done();
-    });
+    })
+    .catch(done);
   });
 
   it("Open employee list page", function(done){
@@ -35,7 +36,8 @@ describe("Try to use non defaul date formats for editing employee details", func
       url    : application_host + 'users/',
       driver : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Open employee details page", function(done){
@@ -44,7 +46,8 @@ describe("Try to use non defaul date formats for editing employee details", func
       .then(function(element){
         return element.click()
       })
-      .then(function(){ done() });
+      .then(function(){ done() })
+      .catch(done);
   });
 
   it("Update Start date to be date that was reportedly problematic", function(done){
@@ -58,7 +61,8 @@ describe("Try to use non defaul date formats for editing employee details", func
       message : /Details for .* were updated/,
 //      should_be_successful : true,
     })
-    .then(function(){done()});
+    .then(function(){ done() })
+    .catch(done);
   });
 
   after(function(done){

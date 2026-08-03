@@ -40,7 +40,8 @@ describePremium('Enable/disable Integration APIs', function(){
       .then(data => {
         ({driver, email} = data);
         done();
-      });
+      })
+      .catch(done);
   });
   
   it('Navigate to API page and ensure the API is disable', done => {
@@ -117,7 +118,8 @@ describePremium('Enable/disable Integration APIs', function(){
     .then(obj => {
       expect(obj[0].user.email).to.be.equal(email, 'Ensure that report conatins email of admin user');
       done();
-    });
+    })
+    .catch(done);
   });
 
   it('Regenerate the API key', done => {
@@ -166,7 +168,8 @@ describePremium('Enable/disable Integration APIs', function(){
     .then(obj => {
       expect(obj[0].user.email).to.be.equal(email, 'Ensure that report conatins email of admin user');
       done();
-    });
+    })
+    .catch(done);
   });
 
   it('Disable the API integration for current company', done => {

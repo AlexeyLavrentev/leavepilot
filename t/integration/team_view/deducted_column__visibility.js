@@ -80,7 +80,8 @@ describe('Check that values for new columns are shown only for employess current
       driver  = data.driver;
       email_A = data.email;
       done();
-    });
+    })
+    .catch(done);
   });
 
   it("Create second user B", function(done){
@@ -91,7 +92,8 @@ describe('Check that values for new columns are shown only for employess current
     .then(data => {
       email_B = data.new_user_email;
       done();
-    });
+    })
+    .catch(done);
   });
 
   it("Create second user C", function(done){
@@ -102,7 +104,8 @@ describe('Check that values for new columns are shown only for employess current
     .then(data => {
       email_C = data.new_user_email;
       done();
-    });
+    })
+    .catch(done);
   });
 
   it("Obtain information about user A", function(done){
@@ -113,7 +116,8 @@ describe('Check that values for new columns are shown only for employess current
     .then(data => {
       user_id_A = data.user.id;
       done();
-    });
+    })
+    .catch(done);
   });
 
   it("Obtain information about user B", function(done){
@@ -124,7 +128,8 @@ describe('Check that values for new columns are shown only for employess current
     .then(data => {
       user_id_B = data.user.id;
       done();
-    });
+    })
+    .catch(done);
   });
 
   it("Obtain information about user C", function(done){
@@ -135,7 +140,8 @@ describe('Check that values for new columns are shown only for employess current
     .then(data => {
       user_id_C = data.user.id;
       done();
-    });
+    })
+    .catch(done);
   });
 
   it("Open page for editing company details", function(done){
@@ -204,7 +210,8 @@ describe('Check that values for new columns are shown only for employess current
           submit_button_selector : `${ new_department_form_id } button[type="submit"]`,
           message : /Changes to departments were saved/,
         })
-        .then(function(){ done() });
+        .then(function(){ done() })
+        .catch(done);
       });
   });
 
@@ -228,7 +235,8 @@ describe('Check that values for new columns are shown only for employess current
       }],
       message : /Details for .* were updated/,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it('As user A ensure team view shows deducted values for all three users', async function(){

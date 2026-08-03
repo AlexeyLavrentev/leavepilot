@@ -1,0 +1,44 @@
+{
+  "allow_create_new_accounts": false,
+  "send_emails": false,
+  "application_sender_email": "no-reply@invalid.local",
+  "email_transporter": {
+    "host": "127.0.0.1",
+    "port": 25
+  },
+  "sessionStore": {
+    "useRedis": true,
+    "redisConnectionConfiguration": {
+      "host": "redis",
+      "port": 6379
+    }
+  },
+  "ga_analytics_on": false,
+  "application_domain": "https://vacation-pilot.sdigital.local",
+  "promotion_website_domain": "https://vacation-pilot.sdigital.local",
+  "branding": {
+    "name": "LeavePilot — Pilot",
+    "shortName": "LeavePilot Pilot",
+    "applicationDomain": "https://vacation-pilot.sdigital.local",
+    "promotionWebsiteDomain": "https://vacation-pilot.sdigital.local",
+    "senderEmail": "no-reply@invalid.local",
+    "senderName": "",
+    "logoUrl": "",
+    "faviconUrl": "/favicon.ico",
+    "faviconPng32Url": "/favicon-32x32.png",
+    "faviconPng16Url": "/favicon-16x16.png",
+    "appIconUrl": "/icon-vacation.png",
+    "appleTouchIconUrl": "/apple-touch-icon.png",
+    "manifestUrl": "/manifest.webmanifest"
+  },
+  "licensed_features": [],
+  "license_public_key": "",
+  "features": {},
+  "premium_module": "",
+  "premium_module_required": false,
+  "locale_code_for_sorting": "ru",
+  "default_language": "ru",
+  "supported_languages": ["ru", "en", "uk", "be", "kk"],
+  "force_to_explicitly_select_type_when_requesting_new_leave": false
+}
+

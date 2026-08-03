@@ -10,6 +10,110 @@ Key            = require('selenium-webdriver').Key,
 var DEFAULT_WAIT_TIMEOUT = 5000;
 
 /*
+  driver.wait() polls a condition and gives up after its timeout — but only
+  between polls. While a poll is still in flight it cannot time out at all, so a
+  WebDriver command that never returns hangs the whole chain: the five-second
+  wait below never fires, the test burns its entire budget, and because the
+  promise stays pending rather than rejecting there is nothing for a
+  .catch(done) to catch. That is exactly what the runner kept reporting as a
+  bare "Timeout of 120000ms exceeded" with no cause, and the form trace pinned
+  it to a DOM read issued while a submit was still navigating the page.
+
+  Racing each command against a deadline turns that into a rejection that names
+  the step. The command itself cannot be cancelled, so its result is ignored
+  once the deadline wins.
+*/
+var COMMAND_DEADLINE_MS = Number(process.env.TEST_COMMAND_DEADLINE_MS) > 0
+  ? Number(process.env.TEST_COMMAND_DEADLINE_MS)
+  : 15000;
+
+function withDeadline(what, command) {
+  var settled = false;
+  var timer;
+
+  trace('command:issued', what);
+
+  var guarded = Promise.resolve(command).then(
+    function(value){ settled = true; clearTimeout(timer); trace('command:returned', what); return value; },
+    function(error){ settled = true; clearTimeout(timer); trace('command:failed', what); throw error; }
+  );
+
+  var deadline = new Promise(function(resolve, reject){
+    timer = setTimeout(function(){
+      if (settled) { return; }
+      trace('command:deadline', what);
+      var error = new Error(
+        'WebDriver command did not return within ' + COMMAND_DEADLINE_MS + 'ms: ' + what
+        + '. A driver.wait() cannot expire while its poll is still in flight, so this '
+        + 'would otherwise hang until the spec budget ran out with nothing to catch.'
+      );
+      error.commandDeadlineExceeded = true;
+      reject(error);
+    }, COMMAND_DEADLINE_MS);
+  });
+
+  // Whichever loses is left to settle on its own; swallow it so bluebird does
+  // not report an unhandled rejection for the abandoned side.
+  guarded.catch(function(){});
+
+  return Promise.race([guarded, deadline]);
+}
+
+/*
+  driver.wait() proved unable to settle on the runner: the trace shows its
+  condition polling happily, each command returning in single-digit
+  milliseconds, and then the loop simply stopping — never resolving, never
+  rejecting, never honouring its own timeout. A spec then burns its whole budget
+  and reports a timeout with no cause.
+
+  Polling here instead removes that dependency. The loop is bounded by a
+  deadline we own, so it always settles one way or the other.
+*/
+function poll_until(what, condition, timeout) {
+  var deadline = Date.now() + timeout;
+
+  function attempt() {
+    return Promise.resolve()
+      .then(condition)
+      .then(function(result){
+        if (result) {
+          return result;
+        }
+
+        if (Date.now() >= deadline) {
+          var error = new Error('Timed out after ' + timeout + 'ms waiting for ' + what);
+          error.pollTimedOut = true;
+          throw error;
+        }
+
+        return Promise.delay(50).then(attempt);
+      });
+  }
+
+  return attempt();
+}
+
+/*
+  The polling conditions below treat any failure as "not ready yet" and try
+  again, which is right for an element that has not rendered but wrong for a
+  wedged command: swallowing the deadline puts the chain straight back into the
+  same hang, through an unguarded fallback. A wedge has to propagate.
+*/
+function is_command_deadline_error(err) {
+  return !!(err && err.commandDeadlineExceeded);
+}
+
+function rethrow_wedge(fallback) {
+  return function(err) {
+    if (is_command_deadline_error(err)) {
+      throw err;
+    }
+
+    return typeof fallback === 'function' ? fallback(err) : fallback;
+  };
+}
+
+/*
   Opt-in step tracing. A form submit that wedges shows up as a bare mocha
   timeout with no indication of which command never came back, and the hang has
   not reproduced outside CI. With TEST_TRACE_FORMS=1 the last line printed names
@@ -42,8 +146,8 @@ function is_stale_element_error(err) {
 }
 
 function find_visible_element(driver, selector) {
-  return driver.wait(function(){
-    return driver.findElements(By.css(selector))
+  return poll_until('a visible ' + selector, function(){
+    return withDeadline('locating ' + selector, driver.findElements(By.css(selector)))
       .then(function(els){
         var findFlow = Promise.resolve(-1);
 
@@ -67,19 +171,17 @@ function find_visible_element(driver, selector) {
           return foundIndex === -1 ? false : foundIndex + 1;
         });
       })
-      .catch(function(){
-        return false;
-      });
+      .catch(rethrow_wedge(false));
   }, DEFAULT_WAIT_TIMEOUT)
     .then(function(foundIndex){
-      return driver.findElements(By.css(selector))
+      return withDeadline('re-reading ' + selector, driver.findElements(By.css(selector)))
         .then(function(els){
           return els[foundIndex - 1];
         });
     })
-    .catch(function(){
-      return driver.findElement(By.css(selector));
-    });
+    .catch(rethrow_wedge(function(){
+      return withDeadline('falling back to ' + selector, driver.findElement(By.css(selector)));
+    }));
 }
 
 function is_element_not_interactable_error(err) {
@@ -214,16 +316,17 @@ function fill_form_field(driver, test_case, attempt) {
 }
 
 function read_alert_texts(driver) {
-  return driver.executeScript(
+  trace('readAlerts', 'poll');
+  return withDeadline('reading flash messages', driver.executeScript(
     'return Array.prototype.map.call(document.querySelectorAll("div.alert"), function(el) {'
     + '  return el.textContent;'
     + '});'
-  );
+  ));
 }
 
 function wait_for_matching_alert(driver, message, multi_line_message) {
   trace('waitAlert', String(message));
-  return driver.wait(function(){
+  return poll_until('flash message ' + message, function(){
     return read_alert_texts(driver)
       .then(function(texts){
         if (!texts.length) {
@@ -236,9 +339,7 @@ function wait_for_matching_alert(driver, message, multi_line_message) {
 
         return _.find(texts, function(text){ return message.test(text); }) || false;
       })
-      .catch(function(){
-        return false;
-      });
+      .catch(rethrow_wedge(false));
   }, DEFAULT_WAIT_TIMEOUT);
 }
 
@@ -247,9 +348,9 @@ function wait_for_expected_elements(driver, elements_to_check) {
     return Promise.resolve(true);
   }
 
-  return driver.wait(function(){
+  return poll_until('form fields to hold their submitted values', function(){
     return Promise.all(_.map(elements_to_check, function(test_case){
-      return driver.findElement(By.css(test_case.selector))
+      return withDeadline('reading ' + test_case.selector, driver.findElement(By.css(test_case.selector)))
         .then(function(el){
           if (test_case.hasOwnProperty('tick')) {
             return el.isSelected().then(function(yes){
@@ -266,9 +367,7 @@ function wait_for_expected_elements(driver, elements_to_check) {
     .then(function(checks){
       return _.every(checks, function(check){ return check; });
     })
-    .catch(function(){
-      return false;
-    });
+    .catch(rethrow_wedge(false));
   }, DEFAULT_WAIT_TIMEOUT);
 }
 
@@ -331,7 +430,7 @@ function submit_form_func(args) {
       .then(function(){
         if (!should_be_successful) {
           return wait_for_matching_alert(driver, message, multi_line_message)
-            .catch(function(){
+            .catch(rethrow_wedge(function(){
               return read_alert_texts(driver)
                 .then(function(alertTexts){
                   throw new Error(
@@ -340,7 +439,7 @@ function submit_form_func(args) {
                     + 'Current alerts: ' + JSON.stringify(alertTexts)
                   );
                 });
-            });
+            }));
         }
 
         return wait_for_expected_elements(driver, elements_to_check)
@@ -350,7 +449,7 @@ function submit_form_func(args) {
             }
 
             return wait_for_matching_alert(driver, message, multi_line_message)
-              .catch(function(){
+              .catch(rethrow_wedge(function(){
                 return read_alert_texts(driver)
                   .then(function(alertTexts){
                     throw new Error(
@@ -359,7 +458,7 @@ function submit_form_func(args) {
                       + 'Current alerts: ' + JSON.stringify(alertTexts)
                     );
                   });
-              });
+              }));
           });
       })
       .then(function(alertResult){

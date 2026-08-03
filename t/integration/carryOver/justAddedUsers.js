@@ -38,7 +38,8 @@ describe('Carry over issue for users started in current year', function(){
       .then(data => {
         ({driver, email} = data);
         done();
-      });
+      })
+      .catch(done);
   });
 
   it("Obtain information about admin user", done => {
@@ -46,7 +47,8 @@ describe('Carry over issue for users started in current year', function(){
       .then(data => {
         userId = data.user.id;
         done();
-      });
+      })
+      .catch(done);
   });
 
   it("Update admin details to have start date at very beginig of this year", done =>{
@@ -69,7 +71,8 @@ describe('Carry over issue for users started in current year', function(){
       .then(text => {
         expect( text ).to.be.eq('0');
         done();
-      });
+      })
+      .catch(done);
   });
 
   it('Update copany configuration to carry over all unused allowance from previous year', done => {
@@ -111,7 +114,8 @@ describe('Carry over issue for users started in current year', function(){
     .then(text => {
       expect( text ).to.be.eq('0');
       done();
-    });
+    })
+    .catch(done);
   });
 
   after(done => {

@@ -85,7 +85,8 @@ describe('Case when holidays spans through more then one month and is devided by
       driver  = data.driver;
       email_A = data.email;
       done();
-    });
+    })
+    .catch(done);
   });
 
   it("Create second user B", function(done){
@@ -96,7 +97,8 @@ describe('Case when holidays spans through more then one month and is devided by
     .then(data => {
       email_B = data.new_user_email;
       done();
-    });
+    })
+    .catch(done);
   });
 
   it("Obtain information about user A", function(done){
@@ -107,7 +109,8 @@ describe('Case when holidays spans through more then one month and is devided by
     .then(data => {
       user_id_A = data.user.id;
       done();
-    });
+    })
+    .catch(done);
   });
 
   it("Obtain information about user B", function(done){
@@ -118,7 +121,8 @@ describe('Case when holidays spans through more then one month and is devided by
     .then(data => {
       user_id_B = data.user.id;
       done();
-    });
+    })
+    .catch(done);
   });
 
   it("Open page with bank holidays", function(done){
@@ -191,7 +195,8 @@ describe('Case when holidays spans through more then one month and is devided by
       }],
       message : /New leave request was added/,
     })
-    .then(function(){done()});
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Open Book leave popup window", function(done){
@@ -214,7 +219,8 @@ describe('Case when holidays spans through more then one month and is devided by
       }],
       message : /New leave request was added/,
     })
-    .then(function(){done()});
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Open Book leave popup window", function(done){
@@ -353,7 +359,8 @@ describe('Case when holidays spans through more then one month and is devided by
       }],
       message : /New leave request was added/,
     })
-    .then(function(){done()});
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Logout from user B", function(done){

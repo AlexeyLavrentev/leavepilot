@@ -43,7 +43,8 @@ describe('Try to access private pages with guest user', function(){
           });
       })
     )
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it('Check main (dashboard) page', function(done) {
@@ -62,7 +63,8 @@ describe('Try to access private pages with guest user', function(){
       })
       .then(function(){
         done();
-      });
+      })
+      .catch(done);
   });
 
 });
@@ -108,12 +110,14 @@ describe('Try to access admin pages with non-admin user', function(){
     .then(function(data){
       driver = data.driver;
       done();
-    });
+    })
+    .catch(done);
   });
 
   it("Iterate through admin pages and make sure they are accessible", function(done){
     check_pathes(driver, true)
-      .then(function(){ done() });
+      .then(function(){ done() })
+      .catch(done);
   });
 
   it("Add new non-admin user", function(done){
@@ -124,7 +128,8 @@ describe('Try to access admin pages with non-admin user', function(){
     .then(function(data){
       non_admin_user_email = data.new_user_email;
       done();
-    });
+    })
+    .catch(done);
   });
 
   it("Logout from admin account", function(done){
@@ -132,7 +137,8 @@ describe('Try to access admin pages with non-admin user', function(){
       application_host : application_host,
       driver           : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("And login with newly created non-admin account", function(done){
@@ -141,12 +147,14 @@ describe('Try to access admin pages with non-admin user', function(){
       user_email       : non_admin_user_email,
       driver           : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done() })
+    .catch(done);
   });
 
   it("Iterate throough pathes and make sure they are not reachable", function(done){
     check_pathes(driver, false)
-      .then(function(){ done() });
+      .then(function(){ done() })
+      .catch(done);
   });
 
   after(function(done){
