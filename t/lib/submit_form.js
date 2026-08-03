@@ -31,14 +31,17 @@ function withDeadline(what, command) {
   var settled = false;
   var timer;
 
+  trace('command:issued', what);
+
   var guarded = Promise.resolve(command).then(
-    function(value){ settled = true; clearTimeout(timer); return value; },
-    function(error){ settled = true; clearTimeout(timer); throw error; }
+    function(value){ settled = true; clearTimeout(timer); trace('command:returned', what); return value; },
+    function(error){ settled = true; clearTimeout(timer); trace('command:failed', what); throw error; }
   );
 
   var deadline = new Promise(function(resolve, reject){
     timer = setTimeout(function(){
       if (settled) { return; }
+      trace('command:deadline', what);
       var error = new Error(
         'WebDriver command did not return within ' + COMMAND_DEADLINE_MS + 'ms: ' + what
         + '. A driver.wait() cannot expire while its poll is still in flight, so this '
@@ -279,6 +282,7 @@ function fill_form_field(driver, test_case, attempt) {
 }
 
 function read_alert_texts(driver) {
+  trace('readAlerts', 'poll');
   return withDeadline('reading flash messages', driver.executeScript(
     'return Array.prototype.map.call(document.querySelectorAll("div.alert"), function(el) {'
     + '  return el.textContent;'
