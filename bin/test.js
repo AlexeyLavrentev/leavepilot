@@ -29,14 +29,57 @@ const serverEnv = Object.assign({}, baseTestEnv, {
   DISABLE_AUTH_RATE_LIMIT: 'true',
 });
 
-const run = (command, args, options = {}) => new Promise((resolve, reject) => {
+/*
+  A wedged child is killed rather than waited on. Mocha's own per-test timeout
+  cannot always end one: a browser spec that blocks on a socket to chromedriver
+  which never answers leaves node with nothing to run, so the timer that would
+  have failed the test never fires either. Observed on CI as a mocha process
+  that printed its last line and then sat silent for 24 minutes until the job
+  timeout killed the whole runner — which loses the other 15 specs in that
+  shard and reports nothing about any of them.
+
+  Killing it turns a silent hang into an ordinary batch failure, which the
+  retry above already knows how to handle.
+*/
+const runWithTimeout = (command, args, options = {}, timeoutMs = 0) => new Promise((resolve, reject) => {
   const child = spawn(command, args, Object.assign({
     stdio: 'inherit',
     env: baseTestEnv,
   }, options));
 
-  child.on('error', reject);
+  let timer;
+  let timedOut = false;
+
+  const done = () => {
+    if (timer) {
+      clearTimeout(timer);
+    }
+  };
+
+  if (timeoutMs > 0) {
+    timer = setTimeout(() => {
+      timedOut = true;
+      console.error(
+        `No exit after ${Math.round(timeoutMs / 1000)}s, killing: ${command} ${args.join(' ')}`
+      );
+      child.kill('SIGKILL');
+    }, timeoutMs);
+    timer.unref();
+  }
+
+  child.on('error', error => {
+    done();
+    reject(error);
+  });
+
   child.on('exit', code => {
+    done();
+
+    if (timedOut) {
+      reject(new Error(`${command} ${args.join(' ')} hung and was killed`));
+      return;
+    }
+
     if (code === 0) {
       resolve();
       return;
@@ -45,6 +88,8 @@ const run = (command, args, options = {}) => new Promise((resolve, reject) => {
     reject(new Error(`${command} ${args.join(' ')} exited with ${code}`));
   });
 });
+
+const run = (command, args, options = {}) => runWithTimeout(command, args, options, 0);
 
 const collectJavaScriptFiles = directory => fs.readdirSync(directory, {withFileTypes: true})
   .sort((left, right) => left.name.localeCompare(right.name))
@@ -135,7 +180,20 @@ const runMochaSuite = () => {
 
   const flaky = [];
 
-  const mocha = batch => run(node, ['node_modules/mocha/bin/mocha'].concat(retryArgs).concat(batch));
+  // A ceiling on one batch, not on one test. The slowest single file observed
+  // takes about 30s, so this is generous by an order of magnitude and only ever
+  // fires on a process that has stopped making progress.
+  const configuredBatchTimeout = Number(process.env.TEST_BATCH_TIMEOUT_MS);
+  const batchTimeoutMs = Number.isInteger(configuredBatchTimeout) && configuredBatchTimeout > 0
+    ? configuredBatchTimeout
+    : 5 * 60 * 1000;
+
+  const mocha = batch => runWithTimeout(
+    node,
+    ['node_modules/mocha/bin/mocha'].concat(retryArgs).concat(batch),
+    {},
+    batchTimeoutMs
+  );
 
   const runBatch = (batch, index) => {
     console.log(`Running integration batch ${index + 1}/${batches.length} (${batch.length} files)`);
