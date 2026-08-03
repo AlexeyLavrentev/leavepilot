@@ -60,6 +60,40 @@ function withDeadline(what, command) {
 }
 
 /*
+  driver.wait() proved unable to settle on the runner: the trace shows its
+  condition polling happily, each command returning in single-digit
+  milliseconds, and then the loop simply stopping — never resolving, never
+  rejecting, never honouring its own timeout. A spec then burns its whole budget
+  and reports a timeout with no cause.
+
+  Polling here instead removes that dependency. The loop is bounded by a
+  deadline we own, so it always settles one way or the other.
+*/
+function poll_until(what, condition, timeout) {
+  var deadline = Date.now() + timeout;
+
+  function attempt() {
+    return Promise.resolve()
+      .then(condition)
+      .then(function(result){
+        if (result) {
+          return result;
+        }
+
+        if (Date.now() >= deadline) {
+          var error = new Error('Timed out after ' + timeout + 'ms waiting for ' + what);
+          error.pollTimedOut = true;
+          throw error;
+        }
+
+        return Promise.delay(50).then(attempt);
+      });
+  }
+
+  return attempt();
+}
+
+/*
   The polling conditions below treat any failure as "not ready yet" and try
   again, which is right for an element that has not rendered but wrong for a
   wedged command: swallowing the deadline puts the chain straight back into the
@@ -112,7 +146,7 @@ function is_stale_element_error(err) {
 }
 
 function find_visible_element(driver, selector) {
-  return driver.wait(function(){
+  return poll_until('a visible ' + selector, function(){
     return withDeadline('locating ' + selector, driver.findElements(By.css(selector)))
       .then(function(els){
         var findFlow = Promise.resolve(-1);
@@ -292,7 +326,7 @@ function read_alert_texts(driver) {
 
 function wait_for_matching_alert(driver, message, multi_line_message) {
   trace('waitAlert', String(message));
-  return driver.wait(function(){
+  return poll_until('flash message ' + message, function(){
     return read_alert_texts(driver)
       .then(function(texts){
         if (!texts.length) {
@@ -314,7 +348,7 @@ function wait_for_expected_elements(driver, elements_to_check) {
     return Promise.resolve(true);
   }
 
-  return driver.wait(function(){
+  return poll_until('form fields to hold their submitted values', function(){
     return Promise.all(_.map(elements_to_check, function(test_case){
       return withDeadline('reading ' + test_case.selector, driver.findElement(By.css(test_case.selector)))
         .then(function(el){
