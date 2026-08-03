@@ -7,6 +7,9 @@
 - окружения, где сразу нужны `MySQL` и `Redis`;
 - развёртывания, близкого к production.
 
+Для переноса копии действующей установки в изолированный параллельный пилот
+используйте [workplace-pilot-runbook.md](workplace-pilot-runbook.md).
+
 ## Что делает compose-конфигурация
 
 `docker-compose.yml` поднимает:

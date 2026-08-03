@@ -67,12 +67,16 @@ jobs:
         env:
           NODE_ENV: test
           TEST_DB_STORAGE: /tmp/integration-test-${{ matrix.shard }}.sqlite
-          # Every hang traced so far ends the same way: a poll returns in
-          # milliseconds, the next step is scheduled, and the process does not
-          # get back to it for two minutes. That is a starved machine rather
-          # than anything a wait decides. Sharding across runners is the main
-          # answer; small batches keep few browsers alive within one.
-          TEST_INTEGRATION_BATCH_SIZE: '2'
+          # One spec at a time. The trace measures where the runner actually
+          # spends its time: across two shards there was not a single pause
+          # over five seconds inside a wait, and every pause over five seconds
+          # sat on the boundary between specs — tearing down one browser and
+          # cold starting the next. Concurrent batches made two Chromes start
+          # at once on two cores, which stretched a boundary from seconds to
+          # 24-33s routinely and to 121s at the tail, just past the budget.
+          # Parallelism now comes from the shards, so batching inside a runner
+          # only makes the browsers fight each other.
+          TEST_INTEGRATION_BATCH_SIZE: '1'
           # The per-spec budget is tuned for a developer machine. The leave-type
           # limit specs drive several bookings through the browser and overran
           # 60s on a two-core runner while passing locally, so the runner gets a

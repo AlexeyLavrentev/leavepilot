@@ -8,6 +8,7 @@ node_modules/
 .env
 .env.*
 !.env.example
+!deploy/pilot/.env.pilot.example
 license_private.pem
 *.license.json
 *.license.txt
