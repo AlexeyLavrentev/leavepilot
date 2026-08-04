@@ -20,7 +20,23 @@ describe("Test runner logging", function() {
     expect(testRunner).to.contain("LOG_LEVEL: 'error'");
     expect(testRunner).to.contain("SE_SKIP_DRIVER_IN_PATH: 'true'");
     expect(testRunner).to.contain('Running integration batch');
-    expect(testRunner).to.contain("'--recursive', 't/unit'");
+
+    // Matched on the arguments rather than on their exact adjacency: this used
+    // to pin the literal "'--recursive', 't/unit'", so adding a flag between
+    // them failed a test about logging.
+    const unitRun = testRunner.slice(testRunner.indexOf("'t/unit'") - 120, testRunner.indexOf("'t/unit'"));
+    expect(unitRun).to.contain("'--recursive'");
+
+    // Every mocha the runner spawns exits when the suite ends. Without this a
+    // finished run waits for the event loop to drain, so one handle nothing
+    // closed keeps it alive with nothing left to print - which is how the
+    // browser suite used to go silent for minutes at a time.
+    const spawns = testRunner.match(/mocha\/bin\/mocha'[^)]*/g) || [];
+    expect(spawns.length).to.be.above(2);
+    spawns.forEach(spawn => {
+      expect(spawn, 'a mocha invocation without --exit: ' + spawn.slice(0, 60))
+        .to.contain("'--exit'");
+    });
     expect(requestIdMiddleware).to.contain("process.env.SILENCE_HTTP_LOGS === 'true'");
   });
 
