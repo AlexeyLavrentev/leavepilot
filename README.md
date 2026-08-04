@@ -88,6 +88,11 @@ cp .env.example .env
 - `CRYPTO_SECRET`
 - `MYSQL_PASSWORD`
 - `MYSQL_ROOT_PASSWORD`
+- `SESSION_COOKIE_SECURE` — поставьте `true`, если TLS терминируется прокси
+  перед приложением. По умолчанию `false`, и тогда cookie сессии уходит без
+  атрибута `Secure`: любой запрос по обычному HTTP к этому домену унесёт
+  идентификатор сессии открытым текстом. Приложение предупреждает об этом при
+  старте строкой `security_posture:`, если `TRUST_PROXY` включён, а флаг — нет.
 
 Если нужно, также меняют:
 
@@ -96,7 +101,6 @@ cp .env.example .env
 - `DB_USER`
 - `DB_PASSWORD`
 - `TRUST_PROXY`
-- `SESSION_COOKIE_SECURE`
 - `SESSION_COOKIE_SAME_SITE`
 
 ### 2. Файл `config/app.json`
