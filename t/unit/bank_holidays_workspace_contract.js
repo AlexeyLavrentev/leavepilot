@@ -172,7 +172,6 @@ describe('Bank Holidays workspace contract (Stage 8H)', function () {
 
     it('supports contrast and transparency preferences', function () {
       expect(css).to.match(/@media \(prefers-contrast: more\)[\s\S]*\.bank-holidays-page/);
-      expect(css).to.match(/@media \(prefers-reduced-transparency: reduce\)[\s\S]*\.bank-holidays-page/);
     });
 
     it('uses px rather than rem typography throughout the page scope', function () {

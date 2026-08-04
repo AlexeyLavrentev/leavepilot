@@ -2008,3 +2008,102 @@ $(document).ready(function () {
 
   layout();
 });
+
+/*
+  Modals and menus open from the control that summoned them.
+
+  "If something disappears one way, we expect it to emerge from where it came."
+  A dialog that scales up from the middle of the screen severs the link between
+  the button pressed and the thing that appeared; one that grows out of that
+  button keeps it. Same path on the way out, so it collapses back to where it
+  came from.
+
+  transform-origin is the whole mechanism, and it needs a real measurement:
+  Bootstrap has not laid the dialog out yet when show.bs.modal fires, so the
+  trigger is measured then and the origin applied on the next frame, once the
+  dialog has a box. One frame out of a 300ms transition; the anchor holds for
+  the rest of it.
+*/
+(function () {
+  var ORIGIN_ATTRIBUTE = 'data-tom-origin';
+  // Comfortably past Bootstrap's 150ms backdrop fade.
+  var ANCHOR_DEADLINE_MS = 600;
+
+  function anchorTo(dialog, trigger) {
+    var target = trigger && trigger.getBoundingClientRect();
+
+    if (!target || (!target.width && !target.height)) {
+      dialog.style.transformOrigin = '';
+      return true;
+    }
+
+    var box = dialog.getBoundingClientRect();
+
+    if (!box.width && !box.height) {
+      return false;
+    }
+
+    // Clamped to the dialog: a trigger far outside it would throw the scale
+    // origin off-screen and read as a slide rather than a growth.
+    var x = Math.max(0, Math.min(box.width, target.left + target.width / 2 - box.left));
+    var y = Math.max(0, Math.min(box.height, target.top + target.height / 2 - box.top));
+    var origin = Math.round(x) + 'px ' + Math.round(y) + 'px';
+
+    dialog.style.transformOrigin = origin;
+    dialog.setAttribute(ORIGIN_ATTRIBUTE, origin);
+
+    return true;
+  }
+
+  $(document).on('show.bs.modal', '.modal', function (event) {
+    var dialog = this.querySelector('.modal-dialog');
+    var trigger = event.relatedTarget;
+
+    if (!dialog) {
+      return;
+    }
+
+    if (!trigger) {
+      // Opened from script rather than a control: nothing to point at, so it
+      // keeps the default centre rather than pointing somewhere arbitrary.
+      dialog.style.transformOrigin = '';
+      dialog.removeAttribute(ORIGIN_ATTRIBUTE);
+      return;
+    }
+
+    /*
+      The dialog is not measurable for a while yet. Bootstrap does not call
+      show() on the modal until its backdrop has finished fading, so the dialog
+      sits inside a display:none parent and measures 0x0 for the whole of that
+      - traced on a real open as zero across six straight frames, then a box
+      once the backdrop settled.
+
+      So this waits on the measurement rather than on a frame count, up to a
+      deadline. A dialog that never gets a box is one that never opened, and
+      retrying past that would leave a loop running behind a closed modal.
+    */
+    var frame = window.requestAnimationFrame || function (callback) { return setTimeout(callback, 16); };
+    var deadline = Date.now() + ANCHOR_DEADLINE_MS;
+
+    (function attempt() {
+      frame(function () {
+        if (anchorTo(dialog, trigger) || Date.now() > deadline) {
+          return;
+        }
+
+        attempt();
+      });
+    })();
+  });
+
+  // The origin set on the way in is left in place, so the dialog leaves along
+  // the path it arrived on rather than collapsing to its centre.
+  $(document).on('hidden.bs.modal', '.modal', function () {
+    var dialog = this.querySelector('.modal-dialog');
+
+    if (dialog) {
+      dialog.style.transformOrigin = '';
+      dialog.removeAttribute(ORIGIN_ATTRIBUTE);
+    }
+  });
+})();

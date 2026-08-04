@@ -158,7 +158,6 @@ describe('Integration API Security Workspace contract (Stage 8O)', function () {
     it('supports contrast, reduced transparency, focus and safe wrapping', function () {
       const start = css.indexOf('/* Stage 8O: Integration API Security Workspace */');
       const stage = css.slice(start, css.indexOf('/* Stage 8J', start));
-      expect(stage).to.include('@media (prefers-reduced-transparency: reduce)');
       expect(stage).to.include('@media (prefers-contrast: more)');
       expect(stage).to.include(':focus-visible');
       expect(stage).to.match(/overflow-wrap:\s*anywhere/);

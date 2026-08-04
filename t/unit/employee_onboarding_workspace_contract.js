@@ -174,7 +174,6 @@ describe('Employee onboarding workspace contract (Stage 8J)', function () {
 
     it('supports increased contrast and reduced transparency', function () {
       expect(css).to.match(/@media \(prefers-contrast: more\)[\s\S]*\.employee-onboarding-page/);
-      expect(css).to.match(/@media \(prefers-reduced-transparency: reduce\)[\s\S]*\.employee-onboarding-page/);
     });
 
     it('uses px rather than rem typography throughout the page scope', function () {

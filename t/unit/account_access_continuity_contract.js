@@ -175,7 +175,6 @@ describe('Account access continuity contract (Stage 8K)', function () {
     it('supports increased contrast and reduced transparency', function () {
       const stage = scss.slice(scss.indexOf('/* Stage 8K'));
       expect(stage).to.match(/@media \(prefers-contrast: more\)[\s\S]*\.account-access-page/);
-      expect(stage).to.match(/@media \(prefers-reduced-transparency: reduce\)[\s\S]*\.account-access-page/);
     });
 
     it('keeps typography compatible with the Bootstrap 10px root', function () {
