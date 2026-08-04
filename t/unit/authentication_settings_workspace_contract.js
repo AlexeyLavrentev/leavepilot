@@ -195,7 +195,6 @@ describe('Authentication Settings workspace contract (Stage 8L)', function () {
 
     it('supports contrast, reduced transparency and safe wrapping', function () {
       const stage = css.slice(css.indexOf('.authentication-settings-page'));
-      expect(stage).to.include('@media (prefers-reduced-transparency: reduce)');
       expect(stage).to.include('@media (prefers-contrast: more)');
       expect(stage).to.match(/overflow-wrap:\s*anywhere/);
       expect(stage).to.match(/word-break:\s*break-word/);

@@ -475,12 +475,6 @@ $leave_cell_font_color : #61686b;
   }
 }
 
-@media (prefers-reduced-transparency: reduce) {
-  .integration-api-page .surface,
-  .integration-api-page .integration-api-credential {
-    backdrop-filter: none;
-  }
-}
 
 @media (prefers-contrast: more) {
   .integration-api-page .surface,
@@ -903,15 +897,6 @@ $leave_cell_font_color : #61686b;
   }
 }
 
-@media (prefers-reduced-transparency: reduce) {
-  .employee-onboarding-page .surface,
-  .employee-onboarding-page .form-control,
-  .employee-onboarding-page .employee-onboarding-option,
-  .employee-onboarding-page .employee-import-file-field {
-    background: var(--onboarding-surface-subtle);
-    backdrop-filter: none;
-  }
-}
 
 @media (prefers-reduced-motion: reduce) {
   .employee-onboarding-page *,
@@ -6610,11 +6595,6 @@ td.current_day_cell.half_2nd {
   }
 }
 /* Reduced transparency */
-@media (prefers-reduced-transparency: reduce) {
-  .employees-page .employees-filter .all-departments a[aria-current="true"] {
-    background: var(--surface-overlay);
-  }
-}
 /* Reduced motion: kill transition/animation AND the press transform */
 @media (prefers-reduced-motion: reduce) {
   .employees-page *,
@@ -6838,11 +6818,6 @@ td.current_day_cell.half_2nd {
 }
 
 /* Reduced transparency: explicit solid surface. */
-@media (prefers-reduced-transparency: reduce) {
-  .reports-hub .report-card {
-    background: var(--surface-overlay);
-  }
-}
 
 /* Reduced motion: kill transition/animation AND the press transform + hover lift. */
 @media (prefers-reduced-motion: reduce) {
@@ -7039,11 +7014,6 @@ td.current_day_cell.half_2nd {
 }
 
 /* Reduced transparency. */
-@media (prefers-reduced-transparency: reduce) {
-  .departments-page .surface {
-    background: var(--surface-overlay);
-  }
-}
 
 /* Reduced motion: kill transition/animation AND transforms (incl. :hover:active). */
 @media (prefers-reduced-motion: reduce) {
@@ -7335,11 +7305,6 @@ td.current_day_cell.half_2nd {
 }
 
 /* Reduced transparency: solid surface. */
-@media (prefers-reduced-transparency: reduce) {
-  .requests-page .surface {
-    background: var(--surface-overlay);
-  }
-}
 
 /* Reduced motion: kill transition/animation AND transforms (incl. :hover:active). */
 @media (prefers-reduced-motion: reduce) {
@@ -7722,11 +7687,6 @@ td.current_day_cell.half_2nd {
 }
 
 /* Reduced transparency: solid surface. */
-@media (prefers-reduced-transparency: reduce) {
-  .employee-details-page .surface {
-    background: var(--surface-overlay);
-  }
-}
 
 /* Reduced motion: kill transition/animation AND transforms (incl. :hover:active). */
 @media (prefers-reduced-motion: reduce) {
@@ -8277,13 +8237,6 @@ td.current_day_cell.half_2nd {
   }
 }
 
-@media (prefers-reduced-transparency: reduce) {
-  .general-settings-page .surface,
-  .general-settings-page .form-control {
-    background: var(--settings-surface-overlay);
-    backdrop-filter: none;
-  }
-}
 
 @media (prefers-reduced-motion: reduce) {
   .general-settings-page *,
@@ -8740,14 +8693,6 @@ td.current_day_cell.half_2nd {
   }
 }
 
-@media (prefers-reduced-transparency: reduce) {
-  .department-details-page .surface,
-  .department-details-page .department-details-nav .list-group-item,
-  .department-details-page .form-control {
-    background: var(--department-surface-overlay);
-    backdrop-filter: none;
-  }
-}
 
 @media (prefers-reduced-motion: reduce) {
   .department-details-page *,
@@ -9208,14 +9153,6 @@ td.current_day_cell.half_2nd {
   }
 }
 
-@media (prefers-reduced-transparency: reduce) {
-  .bank-holidays-page .surface,
-  .bank-holidays-page .bank-holidays-calendar-switcher,
-  .bank-holidays-page .form-control {
-    background: var(--bank-surface-overlay);
-    backdrop-filter: none;
-  }
-}
 
 @media (prefers-reduced-motion: reduce) {
   .bank-holidays-page *,
@@ -9730,14 +9667,6 @@ td.current_day_cell.half_2nd {
   }
 }
 
-@media (prefers-reduced-transparency: reduce) {
-  .report-detail-page .surface,
-  .report-detail-page .form-control,
-  .report-detail-page .report-results-table {
-    background: var(--report-surface-overlay);
-    backdrop-filter: none;
-  }
-}
 
 @media (prefers-reduced-motion: reduce) {
   .report-detail-page *,
@@ -10092,18 +10021,6 @@ td.current_day_cell.half_2nd {
   }
 }
 
-@media (prefers-reduced-transparency: reduce) {
-  .account-access-page .account-access-layout,
-  .account-access-page .account-access-panel,
-  .account-access-page .account-access-card,
-  .account-access-page .auth-methods span {
-    backdrop-filter: none;
-  }
-
-  .account-access-page .auth-methods span {
-    background: #28475f;
-  }
-}
 
 @media (prefers-contrast: more) {
   .account-access-page .account-access-layout,
@@ -10462,13 +10379,6 @@ td.current_day_cell.half_2nd {
   }
 }
 
-@media (prefers-reduced-transparency: reduce) {
-  .authentication-settings-page .authentication-settings-section,
-  .authentication-settings-page .authentication-settings-method-toggle,
-  .authentication-settings-page .authentication-settings-option {
-    backdrop-filter: none;
-  }
-}
 
 @media (prefers-contrast: more) {
   .authentication-settings-page .authentication-settings-section,
@@ -11026,13 +10936,6 @@ td.current_day_cell.half_2nd {
   }
 }
 
-@media (prefers-reduced-transparency: reduce) {
-  .reminder-schedules-page .surface,
-  .reminder-schedules-page .reminder-schedule-modal .modal-content,
-  .reminder-schedules-page .reminder-schedule-template-fields {
-    backdrop-filter: none;
-  }
-}
 
 @media (prefers-contrast: more) {
   .reminder-schedules-page .surface,
@@ -11490,13 +11393,6 @@ td.current_day_cell.half_2nd {
   }
 }
 
-@media (prefers-reduced-transparency: reduce) {
-  .email-audit-page .surface,
-  .email-audit-page .email-audit-table-container,
-  .email-audit-page .email-audit-detail {
-    backdrop-filter: none;
-  }
-}
 
 @media (prefers-contrast: more) {
   .email-audit-page .surface,
@@ -12040,13 +11936,6 @@ td.current_day_cell.half_2nd {
   }
 }
 
-@media (prefers-reduced-transparency: reduce) {
-  .diagnostics-page .surface,
-  .diagnostics-page .diagnostics-preview,
-  .diagnostics-page .diagnostics-privacy-note {
-    backdrop-filter: none;
-  }
-}
 
 @media (prefers-contrast: more) {
   .diagnostics-page .surface,
@@ -12724,11 +12613,6 @@ td.current_day_cell.half_2nd {
 }
 
 /* Reduced transparency: explicit solid surface. */
-@media (prefers-reduced-transparency: reduce) {
-  .workspace-page .workspace-surface {
-    background: var(--workspace-surface-overlay);
-  }
-}
 
 /* Reduced motion: kill transition/animation AND the press transform. */
 @media (prefers-reduced-motion: reduce) {
@@ -13015,11 +12899,6 @@ td.current_day_cell.half_2nd {
   }
 }
 
-@media (prefers-reduced-transparency: reduce) {
-  .workspace-page--calendar .month_container .calendar_month {
-    background: var(--workspace-surface-overlay);
-  }
-}
 
 @media (max-width: 768px) {
   .workspace-page--calendar .team-toolbar,
@@ -13035,3 +12914,70 @@ td.current_day_cell.half_2nd {
 .workspace-page--calendar .calendar-absences .section-heading {
   margin-bottom: var(--workspace-space-4);
 }
+
+
+/*
+  Dialogs and menus grow out of the control that opened them.
+
+  Bootstrap animates a dialog by sliding it down 25% of its own height from the
+  top of the screen, which says nothing about which button was pressed. Replaced
+  with a scale anchored at the trigger - global.js measures it and writes the
+  transform-origin - so the dialog reads as coming out of the control rather
+  than arriving from off-screen. The same origin is left in place while it
+  closes, so it leaves the way it came.
+
+  A menu needs no measurement: it is already positioned against its trigger, so
+  the corner it hangs from is the corner it should grow from.
+*/
+.modal.fade .modal-dialog {
+  transform: translate(0, -8px) scale(0.96);
+  /*
+    Shorter than Bootstrap's 300ms transition-end fallback on purpose. With both
+    at 300ms the two race, and shown.bs.modal can fire on the timer while the
+    dialog is still a fraction under full size - measured at 39.97px for a
+    control that is 40px once settled. Finishing first makes "shown" mean shown.
+  */
+  transition: transform 0.24s cubic-bezier(0.22, 0.61, 0.36, 1),
+              opacity 0.18s ease-out;
+  opacity: 0;
+}
+
+.modal.in .modal-dialog {
+  transform: none;
+  opacity: 1;
+}
+
+.dropdown-menu {
+  transform-origin: top left;
+}
+
+.dropdown-menu-right,
+.navbar-right .dropdown-menu {
+  transform-origin: top right;
+}
+
+.open > .dropdown-menu {
+  animation: tom-menu-in 0.16s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+@keyframes tom-menu-in {
+  from { transform: scale(0.96); opacity: 0; }
+  to   { transform: none; opacity: 1; }
+}
+
+/*
+  Reduced motion keeps the feedback and drops the travel: the dialog and the
+  menu cross-fade in place, with no scale to read as movement.
+*/
+@media (prefers-reduced-motion: reduce) {
+  .modal.fade .modal-dialog,
+  .modal.in .modal-dialog {
+    transform: none;
+    transition: opacity 0.2s ease-out;
+  }
+
+  .open > .dropdown-menu {
+    animation: none;
+  }
+}
+

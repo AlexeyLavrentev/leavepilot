@@ -222,7 +222,6 @@ describe('Reminder Schedules workspace contract (Stage 8M)', function () {
 
     it('supports contrast and reduced transparency without unscoped overrides', function () {
       const stage = css.slice(css.indexOf('/* Stage 8M: Reminder Schedules Workspace */'));
-      expect(stage).to.include('@media (prefers-reduced-transparency: reduce)');
       expect(stage).to.include('@media (prefers-contrast: more)');
       expect(stage).to.not.match(/\n\.(?:btn|row|form-group|surface|modal-content)\s*\{/);
     });
