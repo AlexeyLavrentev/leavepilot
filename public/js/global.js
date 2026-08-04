@@ -99,7 +99,14 @@ $(function () {
   var translations = (window.timeoff && window.timeoff.translations) || {};
   var datepickerTranslations = translations.datepicker;
 
-  if (datepickerTranslations) {
+  /*
+    The date picker is only linked on pages that have a date field, so this
+    script has to work without it. It used to assume otherwise: the translation
+    block below is present in every response, so on a page without the plugin
+    this threw a TypeError and took the rest of this ready handler with it -
+    including the tooltip setup.
+  */
+  if (datepickerTranslations && $.fn.datepicker) {
     $.fn.datepicker.dates[datepickerLocale] = datepickerTranslations;
     $.fn.datepicker.defaults.language = datepickerLocale;
   }
@@ -179,8 +186,13 @@ function getUrlVars(url){
 
 $(document).ready(function(){
 
-  $('#team_view_month_select_btn')
-    .datepicker()
+  /*
+    Same reason as above: without the plugin .datepicker is not a function, and
+    the throw would take every binding after it in this handler with it. Scoped
+    to this one chain rather than returning early, so the rest of the handler
+    keeps running on a page that has no date field.
+  */
+  ($.fn.datepicker ? $('#team_view_month_select_btn').datepicker() : $())
     .on('changeDate', function(e) {
       $('#team-view-loading').removeClass('hidden');
 

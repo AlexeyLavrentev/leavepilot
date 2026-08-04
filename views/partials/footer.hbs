@@ -1,8 +1,18 @@
 
+{{!--
+  The booking modal needs a logged-in user: its employee dropdown is built from
+  logged_user.supervised_users and it posts to an authenticated route. Every view
+  but requests.hbs includes this footer, so it was being rendered on the login,
+  registration, password-reset, error and not-found pages too - four and a half
+  kilobytes of markup, two live datepicker inputs and an empty leave-type select
+  for a visitor who has no session to book against.
+--}}
+{{#if logged_user}}
 {{> book_leave_modal
   container_id='book_leave_modal'
   leave_modal_form_action='/calendar/bookleave/'
 }}
+{{/if}}
 
 <footer class="footer custom-footer">
   <p>
