@@ -12029,13 +12029,17 @@ td.current_day_cell.half_2nd {
     dialog is still a fraction under full size - measured at 39.97px for a
     control that is 40px once settled. Finishing first makes "shown" mean shown.
   */
-  transition: transform 0.24s cubic-bezier(0.22, 0.61, 0.36, 1), opacity 0.18s ease-out;
-  opacity: 0;
+  /*
+    Transform only. Bootstrap already fades the .modal container, so fading the
+    dialog as well is redundant - and a dialog at opacity 0 is a dialog WebDriver
+    reports as not displayed, which turns a click inside a still-animating modal
+    into a failure rather than a wait.
+  */
+  transition: transform 0.24s cubic-bezier(0.22, 0.61, 0.36, 1);
 }
 
 .modal.in .modal-dialog {
   transform: none;
-  opacity: 1;
 }
 
 .dropdown-menu {
