@@ -101,6 +101,50 @@ describe('Page assets', function() {
     });
   });
 
+  /*
+    Pinning a regression the browser suite caught. Gating the date picker made
+    global.js run on pages without the plugin for the first time, and it called
+    $.fn.datepicker.dates unconditionally - the translation block that guarded
+    it is in every response, so on a logged-out page this threw a TypeError and
+    took the rest of that ready handler with it, including the single-click
+    submit guard on the login form.
+
+    Asserted against the source because a faithful jQuery stub is more likely to
+    be wrong than the thing it tests; the browser suite is the real check.
+  */
+  describe('global.js survives without the date picker', function() {
+
+    const globalScript = fs.readFileSync(
+      path.join(__dirname, '..', '..', 'public', 'js', 'global.js'),
+      'utf8'
+    );
+
+    it('guards the plugin defaults it sets', function() {
+      expect(globalScript).to.match(
+        /if \(datepickerTranslations && \$\.fn\.datepicker\)/,
+        'the date-picker locale setup is unguarded again'
+      );
+    });
+
+    it('guards the team-view month picker', function() {
+      expect(globalScript).to.match(
+        /\$\.fn\.datepicker \?[\s\S]{0,120}?\.datepicker\(\)/,
+        'the team-view month picker is constructed without checking for the plugin'
+      );
+    });
+
+    it('leaves no bare $.fn.datepicker dereference', function() {
+      const bare = globalScript
+        .split('\n')
+        .filter(line => /\$\.fn\.datepicker\./.test(line))
+        .filter(line => !/if \(|\?/.test(line));
+
+      // The two lines inside the guarded block are reached only when the plugin
+      // is there; anything outside one is what this catches.
+      expect(bare.length).to.be.at.most(2, 'a new unguarded $.fn.datepicker use appeared');
+    });
+  });
+
   describe('the booking modal follows the same gate', function() {
 
     const footer = fs.readFileSync(
