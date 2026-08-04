@@ -49,8 +49,20 @@ describe('Leave balance forecast', function() {
     expect(modalSource).to.match(/data-tpl-summary=/);
   });
 
-  it('forecast client script is loaded globally', function() {
-    expect(appSource).to.match(/\/js\/leave_forecast\.js/);
+  /*
+    It used to be linked on every response, which meant a logged-out visitor
+    downloaded it along with the date picker it depends on. It is now linked for
+    an authenticated request only — the modal it serves does not render without
+    a session either. lib/middleware/page_assets.js owns that decision, and
+    t/unit/page_assets.js covers both directions of the gate.
+  */
+  it('forecast client script is linked for an authenticated page', function() {
+    const pageAssets = require('../../../lib/middleware/page_assets');
+    const res = {locals: {}};
+
+    pageAssets.attachPageAssets({user: {id: 1}}, res, function() {});
+
+    expect(res.locals.custom_java_script).to.include('/js/leave_forecast.js');
   });
 
   it('client posts with the CSRF header and debounces requests', function() {
