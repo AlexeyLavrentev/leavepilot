@@ -39,6 +39,44 @@ $space-4: 16px;
 $space-5: 24px;
 $space-6: 32px;
 $shadow-sm: 0 1px 2px rgba(31, 45, 61, 0.06);
+
+// Shared surface and accent roles.
+
+// Every custom property in this file used to be a hand-written hex inside a page
+// scope - 360 of them, none from a variable - so the same role picked up a
+// different value each time it was copied to a new page. The differences were
+// one digit in one channel and invisible on their own, which is exactly why they
+// accumulated: --*-accent-edge held #2b7da8 on three pages and #2b7db5 on a
+// fourth, --*-accent-soft held #eaf4fb and #e7f3fb, and the dark overlay was
+// #15191d on four pages against #1f2327 on two.
+
+// These are the roles that had a clear majority, so consolidating them keeps the
+// value most pages already showed. Roles whose values genuinely vary per page -
+// --*-border-strong and --*-surface-subtle - are left alone: they have no
+// majority to consolidate towards, and picking one would be inventing a design
+// decision rather than removing an accident.
+$accent-edge: #2b7da8;
+$accent-edge-dark: #71b9df;
+$token-accent-soft: #eaf4fb;
+$token-accent-soft-dark: #172c38;
+$surface-raised-dark: #20252a;
+$token-surface-overlay-light: #ffffff;
+$surface-overlay-dark: #15191d;
+$shadow-strong-dark: 0 8px 24px rgba(0, 0, 0, 0.4);
+
+// The onboarding page runs a roomier scale and a softer shadow on purpose. Named
+// here so the difference reads as a decision rather than another copy that
+// drifted.
+$onboarding-space-1: 6px;
+$onboarding-space-2: 10px;
+$onboarding-space-3: 16px;
+$onboarding-space-4: 24px;
+$onboarding-space-5: 32px;
+$onboarding-accent-edge: #2b7db5;
+$onboarding-accent-soft: #e7f3fb;
+$onboarding-surface-raised: #f8fafc;
+$onboarding-shadow-strong: 0 8px 24px rgba(20, 45, 65, 0.12);
+
 $shadow-md: 0 8px 24px rgba(31, 45, 61, 0.08);
 $shadow-lg: 0 16px 42px rgba(31, 45, 61, 0.10);
 $font-size-xs: 12px;
@@ -506,22 +544,22 @@ $leave_cell_font_color : #61686b;
 /* Stage 8J — Employee onboarding workspace (single employee + CSV import). */
 .employee-onboarding-page {
   --onboarding-surface: #ffffff;
-  --onboarding-surface-raised: #f8fafc;
+  --onboarding-surface-raised: #{$onboarding-surface-raised};
   --onboarding-surface-subtle: #f2f6fa;
   --onboarding-border: #d8e1e9;
   --onboarding-border-strong: #b9c9d7;
   --onboarding-shadow: 0 1px 2px rgba(20, 45, 65, 0.08);
-  --onboarding-shadow-strong: 0 8px 24px rgba(20, 45, 65, 0.12);
+  --onboarding-shadow-strong: #{$onboarding-shadow-strong};
   --onboarding-muted: #5c7083;
-  --onboarding-accent-soft: #e7f3fb;
-  --onboarding-accent-edge: #2b7db5;
+  --onboarding-accent-soft: #{$onboarding-accent-soft};
+  --onboarding-accent-edge: #{$onboarding-accent-edge};
   --onboarding-radius: 10px;
   --onboarding-control-radius: 8px;
-  --onboarding-space-1: 6px;
-  --onboarding-space-2: 10px;
-  --onboarding-space-3: 16px;
-  --onboarding-space-4: 24px;
-  --onboarding-space-5: 32px;
+  --onboarding-space-1: #{$onboarding-space-1};
+  --onboarding-space-2: #{$onboarding-space-2};
+  --onboarding-space-3: #{$onboarding-space-3};
+  --onboarding-space-4: #{$onboarding-space-4};
+  --onboarding-space-5: #{$onboarding-space-5};
 
   width: 100%;
   max-width: 1120px;
@@ -836,15 +874,15 @@ $leave_cell_font_color : #61686b;
 
 [data-theme="dark"] .employee-onboarding-page {
   --onboarding-surface: #1a1e22;
-  --onboarding-surface-raised: #20252a;
+  --onboarding-surface-raised: #{$surface-raised-dark};
   --onboarding-surface-subtle: #15191d;
   --onboarding-border: #343a40;
   --onboarding-border-strong: #53616d;
   --onboarding-shadow: 0 1px 2px rgba(0, 0, 0, 0.32);
-  --onboarding-shadow-strong: 0 8px 24px rgba(0, 0, 0, 0.4);
+  --onboarding-shadow-strong: #{$shadow-strong-dark};
   --onboarding-muted: #aebdca;
-  --onboarding-accent-soft: #172c38;
-  --onboarding-accent-edge: #71b9df;
+  --onboarding-accent-soft: #{$token-accent-soft-dark};
+  --onboarding-accent-edge: #{$accent-edge-dark};
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -6382,7 +6420,7 @@ td.current_day_cell.half_2nd {
   --surface: #{$surface-color};
   --surface-raised: #{$surface-subtle};
   --surface-sunken: #{$surface-muted};
-  --surface-overlay: #ffffff;
+  --surface-overlay: #{$token-surface-overlay-light};
   --surface-border: #{$border-color};
   --surface-border-hairline: #{color.adjust($surface-color, $lightness: -3%)};
   --shadow-card: #{$shadow-sm};
@@ -6540,9 +6578,9 @@ td.current_day_cell.half_2nd {
    Declares the FULL token set (not just diffs) so the dark scope is self-contained. */
 [data-theme="dark"] .employees-page {
   --surface: #1a1e22;
-  --surface-raised: #20252a;
+  --surface-raised: #{$surface-raised-dark};
   --surface-sunken: #121417;
-  --surface-overlay: #1f2327;
+  --surface-overlay: #{$surface-overlay-dark};
   --surface-border: #2a2f34;
   --surface-border-hairline: #23282d;
   --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.32);
@@ -6671,7 +6709,7 @@ td.current_day_cell.half_2nd {
   --surface: #{$surface-color};
   --surface-raised: #{$surface-subtle};
   --surface-sunken: #{$surface-muted};
-  --surface-overlay: #ffffff;
+  --surface-overlay: #{$token-surface-overlay-light};
   --surface-border: #{$border-color};
   --surface-border-hairline: #{color.adjust($surface-color, $lightness: -3%)};
   --shadow-card: #{$shadow-sm};
@@ -6781,9 +6819,9 @@ td.current_day_cell.half_2nd {
 /* Dark theme: scoped token overrides. */
 [data-theme="dark"] .reports-hub {
   --surface: #1a1e22;
-  --surface-raised: #20252a;
+  --surface-raised: #{$surface-raised-dark};
   --surface-sunken: #121417;
-  --surface-overlay: #1f2327;
+  --surface-overlay: #{$surface-overlay-dark};
   --surface-border: #2a2f34;
   --surface-border-hairline: #23282d;
   --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.32);
@@ -6839,7 +6877,7 @@ td.current_day_cell.half_2nd {
   --surface: #{$surface-color};
   --surface-raised: #{$surface-subtle};
   --surface-sunken: #{$surface-muted};
-  --surface-overlay: #ffffff;
+  --surface-overlay: #{$token-surface-overlay-light};
   --surface-border: #{$border-color};
   --surface-border-hairline: #{color.adjust($surface-color, $lightness: -3%)};
   --shadow-card: #{$shadow-sm};
@@ -6982,9 +7020,9 @@ td.current_day_cell.half_2nd {
 /* Dark theme: scoped token overrides. */
 [data-theme="dark"] .departments-page {
   --surface: #1a1e22;
-  --surface-raised: #20252a;
+  --surface-raised: #{$surface-raised-dark};
   --surface-sunken: #121417;
-  --surface-overlay: #1f2327;
+  --surface-overlay: #{$surface-overlay-dark};
   --surface-border: #2a2f34;
   --surface-border-hairline: #23282d;
   --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.32);
@@ -7097,7 +7135,7 @@ td.current_day_cell.half_2nd {
   --surface: #{$surface-color};
   --surface-raised: #{$surface-subtle};
   --surface-sunken: #{$surface-muted};
-  --surface-overlay: #ffffff;
+  --surface-overlay: #{$token-surface-overlay-light};
   --surface-border: #{$border-color};
   --surface-border-hairline: #{color.adjust($surface-color, $lightness: -3%)};
   --shadow-card: #{$shadow-sm};
@@ -7259,9 +7297,9 @@ td.current_day_cell.half_2nd {
 /* Dark-mode scoped tokens (mirrors Stage 8C). */
 [data-theme="dark"] .requests-page {
   --surface: #1a1e22;
-  --surface-raised: #20252a;
+  --surface-raised: #{$surface-raised-dark};
   --surface-sunken: #121417;
-  --surface-overlay: #1f2327;
+  --surface-overlay: #{$surface-overlay-dark};
   --surface-border: #2a2f34;
   --surface-border-hairline: #23282d;
   --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.32);
@@ -7450,7 +7488,7 @@ td.current_day_cell.half_2nd {
   --surface: #{$surface-color};
   --surface-raised: #{$surface-subtle};
   --surface-sunken: #{$surface-muted};
-  --surface-overlay: #ffffff;
+  --surface-overlay: #{$token-surface-overlay-light};
   --surface-border: #{$border-color};
   --surface-border-hairline: #{color.adjust($surface-color, $lightness: -3%)};
   --shadow-card: #{$shadow-sm};
@@ -7663,9 +7701,9 @@ td.current_day_cell.half_2nd {
 /* Dark-mode scoped tokens (mirrors Stage 8D). */
 [data-theme="dark"] .employee-details-page {
   --surface: #1a1e22;
-  --surface-raised: #20252a;
+  --surface-raised: #{$surface-raised-dark};
   --surface-sunken: #121417;
-  --surface-overlay: #1f2327;
+  --surface-overlay: #{$surface-overlay-dark};
   --surface-border: #2a2f34;
   --surface-border-hairline: #23282d;
   --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.32);
@@ -7796,7 +7834,7 @@ td.current_day_cell.half_2nd {
   --settings-surface: #{$surface-color};
   --settings-surface-raised: #{$surface-subtle};
   --settings-surface-muted: #{$surface-muted};
-  --settings-surface-overlay: #ffffff;
+  --settings-surface-overlay: #{$token-surface-overlay-light};
   --settings-border: #{$border-color};
   --settings-border-subtle: #{color.adjust($surface-color, $lightness: -3%)};
   --settings-shadow: #{$shadow-sm};
@@ -8209,13 +8247,13 @@ td.current_day_cell.half_2nd {
 
 [data-theme="dark"] .general-settings-page {
   --settings-surface: #1a1e22;
-  --settings-surface-raised: #20252a;
+  --settings-surface-raised: #{$surface-raised-dark};
   --settings-surface-muted: #121417;
-  --settings-surface-overlay: #15191d;
+  --settings-surface-overlay: #{$surface-overlay-dark};
   --settings-border: #343a40;
   --settings-border-subtle: #2a3035;
   --settings-shadow: 0 1px 2px rgba(0, 0, 0, 0.32);
-  --settings-shadow-strong: 0 8px 24px rgba(0, 0, 0, 0.4);
+  --settings-shadow-strong: #{$shadow-strong-dark};
   --settings-danger: #ff9b91;
   --settings-danger-surface: #2b1d1d;
   --settings-danger-border: #70423e;
@@ -8415,14 +8453,14 @@ td.current_day_cell.half_2nd {
 .department-details-page {
   --department-surface: #{$surface-color};
   --department-surface-raised: #{$surface-subtle};
-  --department-surface-overlay: #ffffff;
+  --department-surface-overlay: #{$token-surface-overlay-light};
   --department-border: #{$border-color};
   --department-border-subtle: #{color.adjust($surface-color, $lightness: -3%)};
   --department-shadow: #{$shadow-sm};
   --department-shadow-strong: #{$shadow-md};
   --department-muted: #586b7d;
-  --department-accent-soft: #eaf4fb;
-  --department-accent-edge: #2b7da8;
+  --department-accent-soft: #{$token-accent-soft};
+  --department-accent-edge: #{$accent-edge};
   --department-danger: #b42318;
   --department-radius: 10px;
   --department-control-radius: #{$radius-md};
@@ -8671,15 +8709,15 @@ td.current_day_cell.half_2nd {
 
 [data-theme="dark"] .department-details-page {
   --department-surface: #1a1e22;
-  --department-surface-raised: #20252a;
-  --department-surface-overlay: #15191d;
+  --department-surface-raised: #{$surface-raised-dark};
+  --department-surface-overlay: #{$surface-overlay-dark};
   --department-border: #343a40;
   --department-border-subtle: #2a3035;
   --department-shadow: 0 1px 2px rgba(0, 0, 0, 0.32);
-  --department-shadow-strong: 0 8px 24px rgba(0, 0, 0, 0.4);
+  --department-shadow-strong: #{$shadow-strong-dark};
   --department-muted: #aebdca;
-  --department-accent-soft: #172c38;
-  --department-accent-edge: #71b9df;
+  --department-accent-soft: #{$token-accent-soft-dark};
+  --department-accent-edge: #{$accent-edge-dark};
   --department-danger: #ff9b91;
 }
 
@@ -8800,14 +8838,14 @@ td.current_day_cell.half_2nd {
 .bank-holidays-page {
   --bank-surface: #{$surface-color};
   --bank-surface-raised: #{$surface-subtle};
-  --bank-surface-overlay: #ffffff;
+  --bank-surface-overlay: #{$token-surface-overlay-light};
   --bank-border: #{$border-color};
   --bank-border-subtle: #{color.adjust($surface-color, $lightness: -3%)};
   --bank-shadow: #{$shadow-sm};
   --bank-shadow-strong: #{$shadow-md};
   --bank-muted: #586b7d;
-  --bank-accent-soft: #eaf4fb;
-  --bank-accent-edge: #2b7da8;
+  --bank-accent-soft: #{$token-accent-soft};
+  --bank-accent-edge: #{$accent-edge};
   --bank-radius: 10px;
   --bank-control-radius: #{$radius-md};
   --bank-space-1: #{$space-1};
@@ -9137,15 +9175,15 @@ td.current_day_cell.half_2nd {
 
 [data-theme="dark"] .bank-holidays-page {
   --bank-surface: #1a1e22;
-  --bank-surface-raised: #20252a;
-  --bank-surface-overlay: #15191d;
+  --bank-surface-raised: #{$surface-raised-dark};
+  --bank-surface-overlay: #{$surface-overlay-dark};
   --bank-border: #343a40;
   --bank-border-subtle: #2a3035;
   --bank-shadow: 0 1px 2px rgba(0, 0, 0, 0.32);
-  --bank-shadow-strong: 0 8px 24px rgba(0, 0, 0, 0.4);
+  --bank-shadow-strong: #{$shadow-strong-dark};
   --bank-muted: #aebdca;
-  --bank-accent-soft: #172c38;
-  --bank-accent-edge: #71b9df;
+  --bank-accent-soft: #{$token-accent-soft-dark};
+  --bank-accent-edge: #{$accent-edge-dark};
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -9335,14 +9373,14 @@ td.current_day_cell.half_2nd {
 .report-detail-page {
   --report-surface: #{$surface-color};
   --report-surface-raised: #{$surface-subtle};
-  --report-surface-overlay: #ffffff;
+  --report-surface-overlay: #{$token-surface-overlay-light};
   --report-border: #{$border-color};
   --report-border-subtle: #{color.adjust($surface-color, $lightness: -3%)};
   --report-shadow: #{$shadow-sm};
   --report-shadow-strong: #{$shadow-md};
   --report-muted: #586b7d;
-  --report-accent-soft: #eaf4fb;
-  --report-accent-edge: #2b7da8;
+  --report-accent-soft: #{$token-accent-soft};
+  --report-accent-edge: #{$accent-edge};
   --report-radius: 10px;
   --report-control-radius: #{$radius-md};
   --report-space-1: #{$space-1};
@@ -9661,15 +9699,15 @@ td.current_day_cell.half_2nd {
 
 [data-theme="dark"] .report-detail-page {
   --report-surface: #1a1e22;
-  --report-surface-raised: #20252a;
-  --report-surface-overlay: #15191d;
+  --report-surface-raised: #{$surface-raised-dark};
+  --report-surface-overlay: #{$surface-overlay-dark};
   --report-border: #343a40;
   --report-border-subtle: #2a3035;
   --report-shadow: 0 1px 2px rgba(0, 0, 0, 0.32);
-  --report-shadow-strong: 0 8px 24px rgba(0, 0, 0, 0.4);
+  --report-shadow-strong: #{$shadow-strong-dark};
   --report-muted: #aebdca;
-  --report-accent-soft: #172c38;
-  --report-accent-edge: #71b9df;
+  --report-accent-soft: #{$token-accent-soft-dark};
+  --report-accent-edge: #{$accent-edge-dark};
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -12095,7 +12133,7 @@ td.current_day_cell.half_2nd {
   --workspace-surface: #{$surface-color};
   --workspace-surface-raised: #{$surface-subtle};
   --workspace-surface-sunken: #{$surface-muted};
-  --workspace-surface-overlay: #ffffff;
+  --workspace-surface-overlay: #{$token-surface-overlay-light};
   --workspace-border: #{$border-color};
   --workspace-border-hairline: #eef2f6;
   --workspace-border-strong: #cdd8e2;
@@ -12103,7 +12141,7 @@ td.current_day_cell.half_2nd {
   --workspace-ink-body: #425466;
   --workspace-ink-muted: #{$text-muted};
   --workspace-accent: #{$brand-blue};
-  --workspace-accent-soft: #{$accent-soft};
+  --workspace-accent-soft: #{$token-accent-soft};
   --workspace-positive: #1c6b45;
   --workspace-positive-soft: #{$success-soft};
   --workspace-positive-edge: #bfe0cd;
@@ -12635,9 +12673,9 @@ td.current_day_cell.half_2nd {
 /* Dark appearance: scoped token overrides only. */
 [data-theme="dark"] .workspace-page {
   --workspace-surface: #1a1e22;
-  --workspace-surface-raised: #20252a;
+  --workspace-surface-raised: #{$surface-raised-dark};
   --workspace-surface-sunken: #15181b;
-  --workspace-surface-overlay: #1f2327;
+  --workspace-surface-overlay: #{$surface-overlay-dark};
   --workspace-border: #2a2f34;
   --workspace-border-hairline: #23282d;
   --workspace-border-strong: #3a4148;
@@ -12645,7 +12683,7 @@ td.current_day_cell.half_2nd {
   --workspace-ink-body: #c3ccd4;
   --workspace-ink-muted: #97a3ad;
   --workspace-accent: #6cb6e8;
-  --workspace-accent-soft: #1d2c38;
+  --workspace-accent-soft: #{$token-accent-soft-dark};
   --workspace-positive: #7fd49a;
   --workspace-positive-soft: #1f3a2a;
   --workspace-positive-edge: #2f5a40;
