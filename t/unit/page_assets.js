@@ -145,6 +145,41 @@ describe('Page assets', function() {
     });
   });
 
+  /*
+    The Content-Security-Policy allows https://fonts.googleapis.com only, so a
+    protocol-relative link resolved to http:// on a plain-HTTP deployment - the
+    shipped compose out of the box - and the browser blocked the font on every
+    page. A premium console check found it; this keeps it from coming back.
+  */
+  describe('external font is requested over https', function() {
+
+    const layout = fs.readFileSync(
+      path.join(__dirname, '..', '..', 'views', 'layouts', 'main.hbs'),
+      'utf8'
+    );
+    const policy = fs.readFileSync(
+      path.join(__dirname, '..', '..', 'lib', 'middleware', 'auth_security.js'),
+      'utf8'
+    );
+
+    it('links the font with an explicit scheme', function() {
+      expect(layout).to.include('https://fonts.googleapis.com/css');
+      expect(layout).to.not.match(
+        /href="\/\/fonts\.googleapis\.com/,
+        'a protocol-relative font link is blocked by our own CSP over plain HTTP'
+      );
+    });
+
+    it('links only what the policy admits', function() {
+      const linked = (layout.match(/https:\/\/[a-z.]*fonts\.g[a-z]+\.com/g) || []);
+
+      expect(linked.length).to.be.above(0);
+      linked.forEach(origin => {
+        expect(policy, origin + ' is linked but not allowed by the CSP').to.include(origin);
+      });
+    });
+  });
+
   describe('the booking modal follows the same gate', function() {
 
     const footer = fs.readFileSync(
