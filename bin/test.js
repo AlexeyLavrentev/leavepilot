@@ -127,7 +127,7 @@ const runMochaSuite = () => {
     const roots = explicitPaths.length ? explicitPaths : ['t'];
     const flags = mochaArgs.filter(arg => arg.startsWith('-'));
 
-    return run(node, ['node_modules/mocha/bin/mocha', '--recursive'].concat(roots, flags));
+    return run(node, ['node_modules/mocha/bin/mocha', '--recursive', '--exit'].concat(roots, flags));
   }
 
   const allIntegrationFiles = collectJavaScriptFiles(path.join('t', 'integration'));
@@ -188,9 +188,21 @@ const runMochaSuite = () => {
     ? configuredBatchTimeout
     : 5 * 60 * 1000;
 
+  /*
+    --exit is the other half of the hang.
+
+    Without it mocha waits for the event loop to drain after the last test, so
+    one handle nothing closed - a browser session that never quit, a socket to a
+    driver that stopped answering - keeps a finished run alive with nothing left
+    to print. The premium suite has always passed --exit; this one never did.
+
+    It does not paper over a stuck test: a test that never returns still fails
+    on its own timeout, and the batch ceiling above still kills a wedged
+    process. This only makes finishing mean exiting.
+  */
   const mocha = batch => runWithTimeout(
     node,
-    ['node_modules/mocha/bin/mocha'].concat(retryArgs).concat(batch),
+    ['node_modules/mocha/bin/mocha', '--exit'].concat(retryArgs).concat(batch),
     {},
     batchTimeoutMs
   );
@@ -229,7 +241,7 @@ const runMochaSuite = () => {
     )
     .then(() => (integrationOnly
       ? null
-      : run(node, ['node_modules/mocha/bin/mocha', '--recursive', 't/unit'])))
+      : run(node, ['node_modules/mocha/bin/mocha', '--recursive', '--exit', 't/unit'])))
     .then(() => {
       if (flaky.length) {
         console.log(`Integration specs that needed a second run (${flaky.length}):`);
