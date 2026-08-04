@@ -31,13 +31,13 @@
     </script>
 
     <!-- Bootstrap core CSS -->
-    <link rel="stylesheet" href="/css/bootstrap.min.css">
-    <link rel="stylesheet" href="/css/font-awesome.min.css">
+    <link rel="stylesheet" href="{{asset '/css/bootstrap.min.css'}}">
+    <link rel="stylesheet" href="{{asset '/css/font-awesome.min.css'}}">
 
     <!-- Custom styles for this template -->
-    <link rel='stylesheet' href='/css/style.css' />
+    <link rel='stylesheet' href='{{asset "/css/style.css"}}' />
     {{#each custom_css}}
-    <link rel="stylesheet" href="{{this}}" />
+    <link rel="stylesheet" href="{{asset this}}" />
     {{/each}}
   </head>
 
@@ -46,8 +46,8 @@
     {{{body}}}
     </div>
 
-    <script src="/js/jquery.min.js"></script>
-    <script src="/js/bootstrap.min.js"></script>
+    <script src="{{asset '/js/jquery.min.js'}}"></script>
+    <script src="{{asset '/js/bootstrap.min.js'}}"></script>
     <script>
       window.timeoff = {
         locale: "{{locale}}",
@@ -66,7 +66,7 @@
       };
     </script>
     {{~#each custom_java_script~}}
-      <script src="{{this}}"></script>
+      <script src="{{asset this}}"></script>
     {{~/each~}}
 
     {{~# is_ga_analitics_on ~}}

@@ -1,5 +1,8 @@
 
 var express      = require('express');
+var compression  = require('compression');
+const staticAssets = require('./lib/ui/static_assets');
+const MOUNT_PREFIX = staticAssets.MOUNT_PREFIX;
 var os           = require('os');
 var path         = require('path');
 var favicon      = require('serve-favicon');
@@ -106,6 +109,19 @@ app.get('/manifest.webmanifest', function(req, res) {
     display: 'standalone',
   });
 });
+// Compression before the static mount, so the stylesheets and scripts below
+// benefit. A cold page load fetches nine local sub-resources totalling about
+// 745KB uncompressed and 151KB gzipped, and none of it was compressed: there is
+// no compression middleware here and the shipped compose puts no proxy in front
+// of the app to add it.
+app.use(compression());
+
+// Content-addressed URLs for the same files, cached for a year and marked
+// immutable. See lib/ui/static_assets.js for why a long max-age needs the hash.
+app.use(MOUNT_PREFIX + '/:buildId', staticAssets.createStaticMiddleware(express));
+
+// The plain mount stays: anything the manifest does not cover, and any URL
+// already out in the wild, keeps working exactly as before.
 app.use(express.static(path.join(__dirname, 'public')));
 
 const i18next = initI18next();
