@@ -1773,6 +1773,7 @@ textarea.form-control {
   border: 1px solid #e3e9ef;
   border-radius: 12px;
   box-shadow: 0 1px 2px rgba(31, 45, 61, 0.06);
+  overscroll-behavior-x: contain;
 }
 
 .table-responsive > .table {
@@ -1787,6 +1788,7 @@ textarea.form-control {
 
 .data-table-scroll {
   overflow-x: auto;
+  overscroll-behavior-x: contain;
   background: #ffffff;
   border: 1px solid #e3e9ef;
   border-radius: 12px;
@@ -2281,6 +2283,7 @@ textarea.form-control {
 .employee-schedule-widget {
   margin-top: 16px;
   overflow-x: auto;
+  overscroll-behavior-x: contain;
 }
 
 .employee-schedule-widget .btn-group {
@@ -2481,6 +2484,7 @@ textarea.form-control {
 .zup-import-table-wrap {
   max-width: 100%;
   overflow-x: auto;
+  overscroll-behavior-x: contain;
   -webkit-overflow-scrolling: touch;
 }
 
@@ -3187,6 +3191,7 @@ textarea.form-control {
     display: flex;
     width: 100%;
     overflow-x: auto;
+    overscroll-behavior-x: contain;
     border: 1px solid #e3e9ef;
     border-radius: 12px;
   }
@@ -3423,6 +3428,7 @@ td.leave_cell_pended {
   padding-left: 0;
   padding-right: 0;
   overflow-x: auto;
+  overscroll-behavior-x: contain;
   text-align: left;
   padding-left: 32px;
   scrollbar-gutter: stable;
@@ -7482,6 +7488,7 @@ td.current_day_cell.half_2nd {
 .general-settings-page .settings-schedule-widget {
   min-width: 0;
   overflow-x: auto;
+  overscroll-behavior-x: contain;
   padding: 2px;
 }
 .general-settings-page .settings-schedule-widget .schedule-week-grid {
@@ -9752,6 +9759,7 @@ td.current_day_cell.half_2nd {
 
 .reminder-schedules-page .reminder-schedules-table-container {
   overflow-x: auto;
+  overscroll-behavior-x: contain;
   border: 1px solid var(--reminder-border);
   border-radius: 12px;
 }
@@ -10360,6 +10368,7 @@ td.current_day_cell.half_2nd {
 .email-audit-page .email-audit-table-container {
   min-width: 0;
   overflow-x: auto;
+  overscroll-behavior-x: contain;
   background: var(--email-audit-surface);
   border: 1px solid var(--email-audit-border);
   border-radius: 12px;
@@ -11493,6 +11502,7 @@ td.current_day_cell.half_2nd {
   margin: 0;
   border: 0;
   overflow-x: auto;
+  overscroll-behavior-x: contain;
   -webkit-overflow-scrolling: touch;
 }
 

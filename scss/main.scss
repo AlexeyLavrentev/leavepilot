@@ -1947,6 +1947,12 @@ textarea.form-control {
   border: 1px solid $border-color;
   border-radius: $radius-lg;
   box-shadow: $shadow-sm;
+  // Bootstrap declares the overflow on this one, so the containment added
+  // beside our own overflow-x rules never reached it - found by reading the
+  // computed style on a real page rather than the stylesheet. .modal-body and
+  // .form-control compute to overflow-x: auto as well, but neither is a table
+  // a reader swipes through, so they are left alone.
+  overscroll-behavior-x: contain;
 }
 
 .table-responsive > .table {
@@ -1961,6 +1967,19 @@ textarea.form-control {
 
 .data-table-scroll {
   overflow-x: auto;
+  // A swipe that runs off the end stays inside the region.
+  //
+  // Left to chain, a horizontal flick past the last column is how browsers
+  // trigger a back navigation on a trackpad - so reaching the edge of a wide
+  // table could take the reader off the page. That is the hard stop this is
+  // meant to soften, except worse than frozen.
+  //
+  // Contained, the platforms that have a rubber-band show it here rather than
+  // passing the gesture on: the resistance itself instead of an imitation of
+  // it. Hand-rolling one would mean intercepting wheel and touch and
+  // reimplementing momentum, and these containers hold sticky cells that a
+  // transform would break.
+  overscroll-behavior-x: contain;
   background: $surface-color;
   border: 1px solid $border-color;
   border-radius: $radius-lg;
@@ -2456,6 +2475,7 @@ textarea.form-control {
 .employee-schedule-widget {
   margin-top: $space-4;
   overflow-x: auto;
+  overscroll-behavior-x: contain;
 }
 
 .employee-schedule-widget .btn-group {
@@ -2656,6 +2676,7 @@ textarea.form-control {
 .zup-import-table-wrap {
   max-width: 100%;
   overflow-x: auto;
+  overscroll-behavior-x: contain;
   -webkit-overflow-scrolling: touch;
 }
 
@@ -3472,6 +3493,7 @@ textarea.form-control {
     display: flex;
     width: 100%;
     overflow-x: auto;
+    overscroll-behavior-x: contain;
     border: 1px solid $border-color;
     border-radius: $radius-lg;
   }
@@ -3714,6 +3736,7 @@ td.leave_cell_pended {
   padding-left: 0;
   padding-right: 0;
   overflow-x: auto;
+  overscroll-behavior-x: contain;
   text-align: left;
   padding-left: 32px;
   scrollbar-gutter: stable;
@@ -8027,6 +8050,7 @@ td.current_day_cell.half_2nd {
   .settings-schedule-widget {
     min-width: 0;
     overflow-x: auto;
+    overscroll-behavior-x: contain;
     padding: 2px;
   }
 
@@ -10566,6 +10590,7 @@ td.current_day_cell.half_2nd {
 
 .reminder-schedules-page .reminder-schedules-table-container {
   overflow-x: auto;
+  overscroll-behavior-x: contain;
   border: 1px solid var(--reminder-border);
   border-radius: 12px;
 }
@@ -11198,6 +11223,7 @@ td.current_day_cell.half_2nd {
 .email-audit-page .email-audit-table-container {
   min-width: 0;
   overflow-x: auto;
+  overscroll-behavior-x: contain;
   background: var(--email-audit-surface);
   border: 1px solid var(--email-audit-border);
   border-radius: 12px;
@@ -12372,6 +12398,7 @@ td.current_day_cell.half_2nd {
   margin: 0;
   border: 0;
   overflow-x: auto;
+  overscroll-behavior-x: contain;
   -webkit-overflow-scrolling: touch;
 }
 
