@@ -6068,7 +6068,7 @@ td.current_day_cell.half_2nd {
   --surface: #1a1e22;
   --surface-raised: #20252a;
   --surface-sunken: #121417;
-  --surface-overlay: #1f2327;
+  --surface-overlay: #15191d;
   --surface-border: #2a2f34;
   --surface-border-hairline: #23282d;
   --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.32);
@@ -6299,7 +6299,7 @@ td.current_day_cell.half_2nd {
   --surface: #1a1e22;
   --surface-raised: #20252a;
   --surface-sunken: #121417;
-  --surface-overlay: #1f2327;
+  --surface-overlay: #15191d;
   --surface-border: #2a2f34;
   --surface-border-hairline: #23282d;
   --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.32);
@@ -6499,7 +6499,7 @@ td.current_day_cell.half_2nd {
   --surface: #1a1e22;
   --surface-raised: #20252a;
   --surface-sunken: #121417;
-  --surface-overlay: #1f2327;
+  --surface-overlay: #15191d;
   --surface-border: #2a2f34;
   --surface-border-hairline: #23282d;
   --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.32);
@@ -6788,7 +6788,7 @@ td.current_day_cell.half_2nd {
   --surface: #1a1e22;
   --surface-raised: #20252a;
   --surface-sunken: #121417;
-  --surface-overlay: #1f2327;
+  --surface-overlay: #15191d;
   --surface-border: #2a2f34;
   --surface-border-hairline: #23282d;
   --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.32);
@@ -7196,7 +7196,7 @@ td.current_day_cell.half_2nd {
   --surface: #1a1e22;
   --surface-raised: #20252a;
   --surface-sunken: #121417;
-  --surface-overlay: #1f2327;
+  --surface-overlay: #15191d;
   --surface-border: #2a2f34;
   --surface-border-hairline: #23282d;
   --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.32);
@@ -11263,7 +11263,7 @@ td.current_day_cell.half_2nd {
   --workspace-ink-body: #425466;
   --workspace-ink-muted: #657789;
   --workspace-accent: #256fae;
-  --workspace-accent-soft: #e9f2f8;
+  --workspace-accent-soft: #eaf4fb;
   --workspace-positive: #1c6b45;
   --workspace-positive-soft: #e8f4ed;
   --workspace-positive-edge: #bfe0cd;
@@ -11794,7 +11794,7 @@ td.current_day_cell.half_2nd {
   --workspace-surface: #1a1e22;
   --workspace-surface-raised: #20252a;
   --workspace-surface-sunken: #15181b;
-  --workspace-surface-overlay: #1f2327;
+  --workspace-surface-overlay: #15191d;
   --workspace-border: #2a2f34;
   --workspace-border-hairline: #23282d;
   --workspace-border-strong: #3a4148;
@@ -11802,7 +11802,7 @@ td.current_day_cell.half_2nd {
   --workspace-ink-body: #c3ccd4;
   --workspace-ink-muted: #97a3ad;
   --workspace-accent: #6cb6e8;
-  --workspace-accent-soft: #1d2c38;
+  --workspace-accent-soft: #172c38;
   --workspace-positive: #7fd49a;
   --workspace-positive-soft: #1f3a2a;
   --workspace-positive-edge: #2f5a40;
