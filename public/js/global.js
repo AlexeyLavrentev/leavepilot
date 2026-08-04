@@ -1836,3 +1836,163 @@ $(document).ready(function(){
     }
   });
 });
+
+/*
+ * Primary navigation overflow.
+ *
+ * The primary row gets a fixed track between the brand and the utility
+ * cluster, and an edition adds its own items to that track, so the row runs
+ * out of room at ordinary laptop widths rather than exotic ones. The
+ * stylesheet's answer is to let the track scroll, which keeps the bar on one
+ * row but puts items behind a scrollbar that macOS does not draw until
+ * something moves — the primary action button included. This measures the row
+ * instead and moves whatever will not fit into a dropdown, so nothing is off
+ * the screen without a control that points at it. A page with no JavaScript
+ * keeps the scrolling track.
+ */
+$(document).ready(function () {
+  var $nav = $('.primary-navigation');
+  var $overflow = $nav.children('[data-nav-overflow]');
+
+  if (!$nav.length || !$overflow.length) {
+    return;
+  }
+
+  var nav = $nav.get(0);
+  var anchor = $overflow.get(0);
+  var $menu = $overflow.find('.nav-overflow-menu');
+  var $badge = $overflow.find('.nav-overflow-badge');
+
+  /*
+    Items collapse from the end of the row, so the order an edition asked for
+    is also the order in which its items survive on the bar. The action button
+    is not a candidate at any width: it is the primary action of every page.
+  */
+  var collapsible = [];
+
+  /*
+    Bootstrap hides the hamburger above its own breakpoint, which is the same
+    width at which the bar stops being a row, so its state doubles as the test
+    for whether there is a row to measure at all.
+  */
+  var $navbarToggle = $('.navbar-toggle');
+
+  function isRowLayout() {
+    return $navbarToggle.length > 0 && $navbarToggle.css('display') === 'none';
+  }
+
+  /*
+    Everything goes back on the bar before the row is read, and the candidate
+    list is read back out of the DOM rather than remembered from the first
+    pass, so an item added to the row after this ran is picked up too.
+    Collapsing always takes from the end, which is what makes putting the
+    restored items back in list order the same as putting them back where they
+    were.
+  */
+  function restoreAll() {
+    for (var index = 0; index < collapsible.length; index += 1) {
+      if (collapsible[index].parentNode !== nav) {
+        nav.insertBefore(collapsible[index], anchor);
+      }
+    }
+
+    collapsible = $nav.children('li').not($overflow).not('.navbar-form').toArray();
+  }
+
+  /*
+    Sub-pixel rounding leaves a stray pixel at some widths. One pixel is not a
+    hidden item, and collapsing for it would move an item in and out of the
+    menu on every resize.
+  */
+  function overflows() {
+    return nav.scrollWidth - nav.clientWidth > 1;
+  }
+
+  function updateBadge() {
+    var showing = $menu.find('.notification-feature-badge').not('.hidden');
+    var total = 0;
+
+    showing.each(function () {
+      total += parseInt($(this).text(), 10) || 0;
+    });
+
+    $badge.text(total > 0 ? String(total) : '').toggleClass('is-visible', showing.length > 0);
+  }
+
+  function layout() {
+    restoreAll();
+    $overflow.addClass('hidden');
+
+    if (!isRowLayout()) {
+      updateBadge();
+      return;
+    }
+
+    if (!collapsible.length || !overflows()) {
+      updateBadge();
+      return;
+    }
+
+    // Showing the toggle costs width of its own, so it goes on the bar before
+    // anything is measured against it.
+    $overflow.removeClass('hidden');
+
+    var index = collapsible.length - 1;
+    while (index >= 0 && overflows()) {
+      $menu.prepend(collapsible[index]);
+      index -= 1;
+    }
+
+    updateBadge();
+  }
+
+  var queued = false;
+
+  function scheduleLayout() {
+    if (queued) {
+      return;
+    }
+
+    queued = true;
+
+    var run = function () {
+      queued = false;
+      layout();
+    };
+
+    if (window.requestAnimationFrame) {
+      window.requestAnimationFrame(run);
+    } else {
+      window.setTimeout(run, 16);
+    }
+  }
+
+  $nav.addClass('nav-overflow-managed');
+
+  /*
+    The badge an edition hangs off an item is switched on by the notification
+    poll long after this runs, and by then the item may be inside the menu
+    where nobody can see it.
+  */
+  if (window.MutationObserver) {
+    new window.MutationObserver(updateBadge).observe($menu.get(0), {
+      attributes: true,
+      attributeFilter: ['class'],
+      characterData: true,
+      childList: true,
+      subtree: true,
+    });
+  }
+
+  $(window).on('resize orientationchange', scheduleLayout);
+
+  // Web fonts and the icon font both land after this point and both move the
+  // width of every label on the bar.
+  $(window).on('load', scheduleLayout);
+
+  if (document.fonts && document.fonts.ready && typeof document.fonts.ready.then === 'function') {
+    document.fonts.ready.then(scheduleLayout);
+  }
+
+  layout();
+});

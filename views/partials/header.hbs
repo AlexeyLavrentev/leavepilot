@@ -27,6 +27,19 @@
           {{# if logged_user.admin }}
             <li class="hidden-xs"><a href="/users/"><span class="fa fa-address-book-o nav-primary-icon" aria-hidden="true"></span>{{t "nav.employees"}}</a></li>
           {{/if}}
+          <!--
+            Holds whichever navigation items do not fit the row. Empty and
+            hidden until the script measures the bar, so a page without
+            JavaScript keeps the plain scrolling row it had before.
+          -->
+          <li class="dropdown nav-overflow hidden" data-nav-overflow>
+            <a href="#" class="dropdown-toggle nav-overflow-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+              <span class="fa fa-ellipsis-h nav-primary-icon" aria-hidden="true"></span>{{t "nav.more"}}
+              <span class="nav-overflow-badge" aria-hidden="true"></span>
+              <span class="caret" aria-hidden="true"></span>
+            </a>
+            <ul class="dropdown-menu nav-overflow-menu" role="menu"></ul>
+          </li>
           <li class="navbar-form navbar-left">
             <div class="form-group">
               <button type="button" class="btn btn-info navbar-primary-action" data-toggle="modal" data-target="#book_leave_modal" id="book_time_off_btn"><span class="fa fa-plus" aria-hidden="true"></span>{{t "nav.newAbsence"}}</button>
