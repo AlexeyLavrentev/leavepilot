@@ -5,6 +5,25 @@
       sassc scss/main.scss public/css/style.css
 */
 /*
+  A calendar day is two cells wide - a morning half and an afternoon half - and
+  the day number lives in the morning one, while the column heading spans both.
+  Left where it falls, the number prints in the left half of its own day, under
+  the gap between two headings. This moves it back under its heading.
+
+  Half a cell, not a measured pixel count. The two halves are equal, so half of
+  one is half the gap between the day's left edge and the heading's centre, and
+  the number lands on the boundary between the halves - the middle of the day -
+  at whatever width the table happens to be laid out. It was 9px, which was
+  close to the 11.5px a 23px cell wants and left every number in the calendar
+  2px left of its own heading, and would have been wrong by more on a wider
+  table.
+
+  Shared rather than repeated: a day inside a leave renders a button where every
+  other day renders a span, and the first version of that button carried no
+  offset at all, so a coloured period's numbers printed 5px left of the days
+  either side of it.
+*/
+/*
   Design tokens (Stage 1 — UI foundation)
   Semantic CSS custom properties. Light values mirror the raw hex/SCSS vars
   previously inlined in the rules below, so computed appearance is unchanged.
@@ -1065,14 +1084,18 @@ label.label-plain {
   sat on the text baseline, and the parent font's descender space was added
   underneath: a day with a leave pushed its calendar row to 42px against the
   31px of every other row, past the 38px the layout contract allows. Taking it
-  out of flow keeps the target size and the horizontal nudge while the row keeps
-  the height of its text.
+  out of flow keeps the target size while the row keeps the height of its text.
+
+  Out of flow it also lost the horizontal nudge, because the rules that carry it
+  name `span`. The first version wrote `left: 3px` in its place, which is not an
+  offset anyone chose - it was where the button already stood, copied down as
+  though it were one. See $calendar-day-number-nudge.
 */
 .calendar-leave-details-trigger {
   position: absolute;
-  left: 3px;
+  left: 100%;
   top: 50%;
-  transform: translateY(-50%);
+  transform: translate(-50%, -50%);
   z-index: 10;
   display: inline-flex;
   align-items: center;
@@ -3352,7 +3375,7 @@ td.calendar_cell {
 
 td.calendar_cell span {
   position: relative;
-  left: 9px;
+  left: 50%;
   top: -1px;
   display: block;
   text-align: center;
@@ -4455,14 +4478,12 @@ td.calendar_cell {
 
 td.calendar_cell span {
   top: 0;
-  left: 9px;
-  font-size: 12px;
-  font-weight: 600;
+  left: 50%;
 }
 
+/* One day number, two elements that can render it: same type either way. */
+td.calendar_cell span,
 td.calendar_cell .calendar-leave-details-trigger {
-  /* Keeps the out-of-flow trigger centred; the digit styling matches the span. */
-  top: 50%;
   font-size: 12px;
   font-weight: 600;
 }
