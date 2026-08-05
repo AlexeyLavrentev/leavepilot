@@ -44,14 +44,22 @@ $shadow-sm: 0 1px 2px rgba(31, 45, 61, 0.06);
   A calendar day is two cells wide - a morning half and an afternoon half - and
   the day number lives in the morning one, while the column heading spans both.
   Left where it falls, the number prints in the left half of its own day, under
-  the gap between two headings. This pushes it back under its heading.
+  the gap between two headings. This moves it back under its heading.
+
+  Half a cell, not a measured pixel count. The two halves are equal, so half of
+  one is half the gap between the day's left edge and the heading's centre, and
+  the number lands on the boundary between the halves - the middle of the day -
+  at whatever width the table happens to be laid out. It was 9px, which was
+  close to the 11.5px a 23px cell wants and left every number in the calendar
+  2px left of its own heading, and would have been wrong by more on a wider
+  table.
 
   Shared rather than repeated: a day inside a leave renders a button where every
   other day renders a span, and the first version of that button carried no
-  nudge at all, so a coloured period's numbers printed 5px left of the days
+  offset at all, so a coloured period's numbers printed 5px left of the days
   either side of it.
 */
-$calendar-day-number-nudge: 9px;
+$calendar-day-number-nudge: 50%;
 
 // Shared surface and accent roles.
 
