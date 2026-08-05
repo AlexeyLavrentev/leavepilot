@@ -12986,14 +12986,22 @@ td.current_day_cell.half_2nd {
   transform-origin: top right;
 }
 
-.open > .dropdown-menu {
-  animation: tom-menu-in 0.16s cubic-bezier(0.22, 0.61, 0.36, 1);
-}
-
-@keyframes tom-menu-in {
-  from { transform: scale(0.96); opacity: 0; }
-  to   { transform: none; opacity: 1; }
-}
+// No animation on the menu, deliberately.
+//
+// It had a keyframe, which cannot be reversed: closed 60ms into opening it went
+// from opacity 0.69 straight to gone at full size. Replacing it with a
+// transition needs the element to stay in the box tree, and that was measured
+// costing more than the animation is worth - a hidden menu left in layout
+// extends the document's scrollable width, and the general settings page hit
+// 471px of horizontal overflow at a 390px viewport.
+//
+// Doing it properly on Bootstrap 3 means holding display:block through the
+// closing fade from script. That is machinery for 160ms on a click toggle, so
+// the animation goes instead: an uninterruptible one is worse than none, and
+// none is what the framework already does.
+//
+// transform-origin stays. It costs nothing, and it is the anchor an animation
+// would need if one is ever added.
 
 /*
   Reduced motion keeps the feedback and drops the travel: the dialog and the
@@ -13006,8 +13014,6 @@ td.current_day_cell.half_2nd {
     transition: opacity 0.2s ease-out;
   }
 
-  .open > .dropdown-menu {
-    animation: none;
-  }
+  // Nothing to drop for the menu: it does not animate.
 }
 

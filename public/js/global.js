@@ -2107,3 +2107,98 @@ $(document).ready(function () {
     }
   });
 })();
+
+/*
+  The last thing asked for is what happens.
+
+  Bootstrap decides show/hide synchronously but finishes on a transition that
+  lands later, and the late half acts on the intent that was current when it was
+  scheduled. Interrupt a close by pressing the trigger again and the sequence
+  measured is:
+
+    show > hide > show > hidden > shown > shown > hidden
+
+  Two shown events, a hidden after a show, and a modal that ends up closed
+  although opening was the last thing requested: the user presses the button
+  during the closing animation and nothing opens.
+
+  Correcting on the events alone is not enough, and produced something worse -
+  .in set while display stayed none. Bootstrap's show() returns early when it
+  believes the modal is already shown, and after this race it does believe that
+  while hideModal() has already hidden the element. So the correction reads its
+  state rather than guessing at it, and clears the flag that would make the
+  retry a no-op.
+
+  The animation itself is untouched. It already interpolates from wherever it
+  is: interrupting a close and reopening measured 0.97 -> 0.97 -> 1, with no
+  jump back to the starting scale.
+*/
+(function () {
+  var WANTED = 'tomModalWanted';
+  var CORRECTING = 'tomModalCorrecting';
+
+  function state(element) {
+    return $(element).data('bs.modal');
+  }
+
+  function record(element, wanted) {
+    $(element).data(WANTED, wanted);
+  }
+
+  function settledState(element) {
+    // What the element is, not what Bootstrap thinks: after an interrupted
+    // close these disagree, and the element is the one the reader sees.
+    return element.classList.contains('in') && getComputedStyle(element).display !== 'none'
+      ? 'shown'
+      : 'hidden';
+  }
+
+  function reconcile(element) {
+    var $element = $(element);
+    var wanted = $element.data(WANTED);
+
+    if (!wanted) {
+      return;
+    }
+
+    if (wanted === settledState(element)) {
+      $element.data(CORRECTING, false);
+      return;
+    }
+
+    /*
+      One correction, then leave it alone. Every correction settles into another
+      shown/hidden, which asks for another - measured as six state changes for a
+      single interruption, and app code listening on shown.bs.modal ran on each
+      of them. If one retry does not land it, retrying harder will not either.
+    */
+    if ($element.data(CORRECTING)) {
+      return;
+    }
+
+    $element.data(CORRECTING, true);
+
+    var internals = state(element);
+
+    if (internals) {
+      // Left true by a show() that raced a hide, which makes the retry below a
+      // no-op and strands the dialog with .in on a hidden element.
+      internals.isShown = (wanted !== 'shown');
+    }
+
+    $(element).modal(wanted === 'shown' ? 'show' : 'hide');
+  }
+
+  // Reconciled on a frame after the event, so Bootstrap has finished writing
+  // whatever it was going to write before its work is read back.
+  function reconcileSoon(element) {
+    var frame = window.requestAnimationFrame || function (cb) { return setTimeout(cb, 16); };
+    frame(function () { reconcile(element); });
+  }
+
+  $(document)
+    .on('show.bs.modal', '.modal', function () { record(this, 'shown'); })
+    .on('hide.bs.modal', '.modal', function () { record(this, 'hidden'); })
+    .on('shown.bs.modal', '.modal', function () { reconcileSoon(this); })
+    .on('hidden.bs.modal', '.modal', function () { reconcileSoon(this); });
+})();

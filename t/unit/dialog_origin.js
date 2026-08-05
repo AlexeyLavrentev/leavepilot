@@ -139,8 +139,16 @@ describe('Dialogs open from what opened them', function() {
       expect(block).to.match(/opacity/);
     });
 
-    it('stops the menu animation too', function() {
-      expect(block).to.match(/animation:\s*none/);
+    /*
+      Nothing to drop for the menu: it does not animate. It had a keyframe,
+      which cannot be reversed, and making it reversible meant keeping it in
+      layout - which pushed the page sideways. See dialog_interruptibility.js.
+    */
+    it('has no menu motion left to reduce', function() {
+      expect(css).to.not.match(
+        /@media \(prefers-reduced-motion: reduce\)[\s\S]{0,400}\.dropdown-menu[^}]*animation/,
+        'the menu is animating again, and only under reduced motion is it stopped'
+      );
     });
   });
 });
