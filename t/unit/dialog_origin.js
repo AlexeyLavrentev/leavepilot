@@ -139,8 +139,11 @@ describe('Dialogs open from what opened them', function() {
       expect(block).to.match(/opacity/);
     });
 
-    it('stops the menu animation too', function() {
-      expect(block).to.match(/animation:\s*none/);
+    it('stops the menu travelling too', function() {
+      // It used to be a keyframe here; the assertion followed it onto the
+      // transition rather than being deleted with it.
+      expect(block).to.match(/\.dropdown-menu/);
+      expect(block).to.match(/transform:\s*none/);
     });
   });
 });

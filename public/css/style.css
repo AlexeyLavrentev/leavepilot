@@ -12061,20 +12061,23 @@ td.current_day_cell.half_2nd {
   transform-origin: top right;
 }
 
-.open > .dropdown-menu {
-  animation: tom-menu-in 0.16s cubic-bezier(0.22, 0.61, 0.36, 1);
+.dropdown-menu {
+  display: block;
+  visibility: hidden;
+  opacity: 0;
+  transform: scale(0.96);
+  transition: transform 0.16s cubic-bezier(0.22, 0.61, 0.36, 1), opacity 0.16s cubic-bezier(0.22, 0.61, 0.36, 1), visibility 0s linear 0.16s;
+  pointer-events: none;
 }
 
-@keyframes tom-menu-in {
-  from {
-    transform: scale(0.96);
-    opacity: 0;
-  }
-  to {
-    transform: none;
-    opacity: 1;
-  }
+.open > .dropdown-menu {
+  visibility: visible;
+  opacity: 1;
+  transform: none;
+  transition-delay: 0s;
+  pointer-events: auto;
 }
+
 /*
   Reduced motion keeps the feedback and drops the travel: the dialog and the
   menu cross-fade in place, with no scale to read as movement.
@@ -12085,8 +12088,13 @@ td.current_day_cell.half_2nd {
     transform: none;
     transition: opacity 0.2s ease-out;
   }
+  .dropdown-menu,
   .open > .dropdown-menu {
-    animation: none;
+    transform: none;
+    transition: opacity 0.12s ease-out, visibility 0s linear 0.12s;
+  }
+  .open > .dropdown-menu {
+    transition-delay: 0s;
   }
 }
 
