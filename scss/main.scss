@@ -12986,35 +12986,22 @@ td.current_day_cell.half_2nd {
   transform-origin: top right;
 }
 
-// A keyframe animation cannot be reversed: measured, a menu closed 60ms into
-// opening went from opacity 0.69 straight to gone at full size. A transition
-// interpolates from wherever the value currently is, so closing mid-open
-// shrinks it back from there instead of cutting.
+// No animation on the menu, deliberately.
 //
-// That needs the element to stay in the box tree, so visibility replaces
-// Bootstrap's display toggle. It is absolutely positioned either way, so
-// nothing moves; visibility:hidden keeps it out of the tab order and out of
-// hit-testing exactly as display:none did.
-.dropdown-menu {
-  display: block;
-  visibility: hidden;
-  opacity: 0;
-  transform: scale(0.96);
-  transition: transform 0.16s cubic-bezier(0.22, 0.61, 0.36, 1),
-              opacity 0.16s cubic-bezier(0.22, 0.61, 0.36, 1),
-              visibility 0s linear 0.16s;
-  pointer-events: none;
-}
-
-.open > .dropdown-menu {
-  visibility: visible;
-  opacity: 1;
-  transform: none;
-  // Visible immediately on the way in; the delay above only defers hiding
-  // until the shrink has finished.
-  transition-delay: 0s;
-  pointer-events: auto;
-}
+// It had a keyframe, which cannot be reversed: closed 60ms into opening it went
+// from opacity 0.69 straight to gone at full size. Replacing it with a
+// transition needs the element to stay in the box tree, and that was measured
+// costing more than the animation is worth - a hidden menu left in layout
+// extends the document's scrollable width, and the general settings page hit
+// 471px of horizontal overflow at a 390px viewport.
+//
+// Doing it properly on Bootstrap 3 means holding display:block through the
+// closing fade from script. That is machinery for 160ms on a click toggle, so
+// the animation goes instead: an uninterruptible one is worse than none, and
+// none is what the framework already does.
+//
+// transform-origin stays. It costs nothing, and it is the anchor an animation
+// would need if one is ever added.
 
 /*
   Reduced motion keeps the feedback and drops the travel: the dialog and the
@@ -13027,16 +13014,6 @@ td.current_day_cell.half_2nd {
     transition: opacity 0.2s ease-out;
   }
 
-  // The menu is on a transition now, so that is what gets dropped. It still
-  // appears and disappears; it just stops travelling to do it.
-  .dropdown-menu,
-  .open > .dropdown-menu {
-    transform: none;
-    transition: opacity 0.12s ease-out, visibility 0s linear 0.12s;
-  }
-
-  .open > .dropdown-menu {
-    transition-delay: 0s;
-  }
+  // Nothing to drop for the menu: it does not animate.
 }
 

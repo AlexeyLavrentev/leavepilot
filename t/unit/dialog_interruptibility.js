@@ -55,43 +55,40 @@ const rulesFor = selector => {
 
 describe('Interruptibility', function() {
 
-  describe('menus can be reversed mid-flight', function() {
+  /*
+    The menu does not animate at all now, and that is the fix rather than a gap.
 
-    it('animates with a transition, never a keyframe', function() {
-      // A keyframe plays to its end or stops dead; neither is reversible.
+    It had a keyframe, which cannot be reversed: closed 60ms into opening it
+    went from opacity 0.69 straight to gone at full size. Replacing it with a
+    transition needs the element to stay in the box tree, and that was measured
+    costing more than the animation is worth - a hidden menu left in layout
+    extends the document's scrollable width, and the general settings page hit
+    471px of horizontal overflow at a 390px viewport. An uninterruptible
+    animation is worse than none.
+  */
+  describe('menus do not animate rather than animate uninterruptibly', function() {
+
+    it('has no keyframe on the menu', function() {
       expect(css).to.not.match(
         /\.open\s*>\s*\.dropdown-menu\s*\{[^}]*animation:/,
-        'the menu is back on a keyframe animation, which cannot reverse'
+        'a keyframe cannot be reversed'
       );
-
-      const closed = rulesFor('.dropdown-menu').find(block => /transition:/.test(block));
-
-      expect(closed, 'no .dropdown-menu rule declares a transition').to.be.a('string');
-      expect(closed).to.match(/transition:[^;]*opacity/);
-      expect(closed).to.match(/transition:[^;]*transform/);
     });
 
-    /*
-      display: none stops a transition dead, so the closing half would still
-      cut. visibility keeps the element in the box tree while removing it from
-      hit-testing and the tab order, which is what display was there for.
-    */
-    it('keeps the menu in the box tree so the closing half can animate', function() {
-      const closed = rulesFor('.dropdown-menu').find(block => /visibility:\s*hidden/.test(block));
+    it('leaves the menu hidden by display, not held in layout', function() {
+      const held = rulesFor('.dropdown-menu')
+        .filter(block => /visibility:\s*hidden/.test(block));
 
-      expect(closed, 'the menu still relies on display for hiding').to.be.a('string');
-      expect(closed).to.match(/display:\s*block/);
-      expect(closed).to.match(/pointer-events:\s*none/);
+      expect(held).to.deep.equal(
+        [],
+        'a hidden menu kept in the box tree extends the page it sits on'
+      );
     });
 
-    it('defers the hide until the shrink has finished, and shows at once', function() {
-      const closed = rulesFor('.dropdown-menu').find(block => /visibility/.test(block));
-      const open = rulesFor('.open > .dropdown-menu')[0];
-
-      // visibility is not interpolable: it is switched at the end on the way
-      // out, and immediately on the way in.
-      expect(closed).to.match(/transition:[^;]*visibility 0s[^;]*0\.\d+s/);
-      expect(open).to.match(/transition-delay:\s*0s/);
+    it('keeps the anchor an animation would need', function() {
+      expect(
+        rulesFor('.dropdown-menu').some(block => /transform-origin/.test(block))
+      ).to.equal(true);
     });
   });
 
