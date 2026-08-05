@@ -2,7 +2,7 @@
 
 Данное окружение предназначено для полноценного тестирования всех функций LeavePilot, включая SSO аутентификацию и email отправку.
 
-## 🚀 Быстрый старт
+## Быстрый старт
 
 ```bash
 # Запуск тестового окружения
@@ -12,7 +12,7 @@
 ./scripts/stop-test-env.sh
 ```
 
-## 📋 Компоненты
+## Компоненты
 
 | Сервис | URL | Логин | Описание |
 |--------|-----|-------|----------|
@@ -22,7 +22,7 @@
 | **PostgreSQL** | localhost:5432 | timeoff/timeoff_password | База данных |
 | **Redis** | localhost:6379 | - | Хранилище сессий |
 
-## 🔑 Тестовые пользователи
+## Тестовые пользователи
 
 ### Keycloak
 - **Username:** `testuser`
@@ -34,7 +34,7 @@
 - **Email:** `testuser@example.com`
 - **Password:** `Test123456`
 
-## 🧪 Тестирование функций
+## Тестирование функций
 
 ### 1. SSO Аутентификация (OIDC)
 
@@ -55,7 +55,7 @@
 2. Дождитесь отправки
 3. Проверьте email в MailPit
 
-## 🔧 Конфигурация
+## Конфигурация
 
 ### Переменные окружения (.env.testing)
 
@@ -92,7 +92,7 @@ services:
   redis:       # Сессии
 ```
 
-## 📝 Автоматические тесты
+## Автоматические тесты
 
 ### Запуск всех тестов
 
@@ -133,7 +133,7 @@ baseline. CI не позволяет снизить statements, branches, functi
 После добавления тестов пороги следует поднимать до нового фактического
 значения. Миграции исключены: они проверяются отдельными migration smoke tests.
 
-## 🐛 Устранение проблем
+## Устранение проблем
 
 ### Keycloak не запускается
 
@@ -166,13 +166,13 @@ docker compose -f docker-compose.testing.yml down -v
 docker compose -f docker-compose.testing.yml up -d
 ```
 
-## 📚 Дополнительные ресурсы
+## Дополнительные ресурсы
 
 - [Keycloak Documentation](https://www.keycloak.org/documentation)
 - [MailPit Documentation](https://github.com/axllent/mailpit)
 - [LeavePilot Documentation](../README.md)
 
-## 🔄 Обновление
+## Обновление
 
 Для обновления тестового окружения:
 
@@ -188,7 +188,7 @@ docker pull axllent/mailpit:latest
 ./scripts/start-test-env.sh
 ```
 
-## 🗑️ Удаление
+## Удаление
 
 Для полного удаления данных:
 

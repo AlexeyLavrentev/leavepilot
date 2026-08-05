@@ -4389,45 +4389,19 @@ code {
   overflow: hidden;
   background: $surface-color;
   border: 1px solid $border-color;
-  border-radius: 22px;
-  box-shadow: 0 24px 64px rgba(31, 45, 61, 0.13);
+  border-radius: $radius-xl;
+  box-shadow: $shadow-lg;
 }
 
 .auth-intro {
-  position: relative;
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   padding: 52px;
-  overflow: hidden;
   background: $nav-ink;
   color: #d8e4ed;
 }
 
-.auth-intro::before,
-.auth-intro::after {
-  position: absolute;
-  content: "";
-  border: 1px solid rgba(255, 255, 255, 0.11);
-  border-radius: 50%;
-}
-
-.auth-intro::before {
-  top: -110px;
-  right: -145px;
-  width: 410px;
-  height: 410px;
-}
-
-.auth-intro::after {
-  top: 42px;
-  right: -45px;
-  width: 205px;
-  height: 205px;
-}
-
 .auth-intro-content {
-  position: relative;
-  z-index: 1;
   max-width: 440px;
 }
 
@@ -4442,7 +4416,6 @@ code {
   border-radius: $radius-lg;
   color: $nav-ink;
   font-size: 25px;
-  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.18);
 }
 
 .auth-intro .auth-eyebrow {
@@ -5389,11 +5362,9 @@ td.current_day_cell.half_2nd {
   .auth-layout {
     display: block;
     min-height: 0;
-    border-radius: $radius-xl;
   }
 
   .auth-intro {
-    align-items: center;
     min-height: 220px;
     padding: 28px 24px;
   }
