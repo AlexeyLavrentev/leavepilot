@@ -39,7 +39,7 @@
   --color-footer-text: #8293a3;
   --color-border: #e3e9ef;
   --color-link: #2878c8;
-  --color-link-hover: rgb(31.5, 94.5, 157.5);
+  --color-link-hover: rgb(12.3529411765%, 37.0588235294%, 61.7647058824%);
   --color-focus-ring: rgba(43, 126, 189, 0.34);
   --color-focus-ring-strong: #4c9ad4;
   --color-skip-link-bg: #ffffff;
@@ -843,7 +843,7 @@
   --color-footer-text: #8293a3;
   --color-border: #2a2f34;
   --color-link: #8abcf5;
-  --color-link-hover: rgb(31.5, 94.5, 157.5);
+  --color-link-hover: rgb(12.3529411765%, 37.0588235294%, 61.7647058824%);
   --color-focus-ring: rgba(43, 126, 189, 0.34);
   --color-focus-ring-strong: #69a9d2;
   --color-skip-link-bg: #20252a;
@@ -1575,8 +1575,8 @@ input.btn-xs {
 .btn-success:focus,
 .btn-success:active,
 .open > .dropdown-toggle.btn-success {
-  background-color: rgb(29.8454976303, 89.536492891, 140.3545023697);
-  border-color: rgb(29.8454976303, 89.536492891, 140.3545023697);
+  background-color: rgb(11.7041167178%, 35.1123501533%, 55.0409813214%);
+  border-color: rgb(11.7041167178%, 35.1123501533%, 55.0409813214%);
 }
 
 .btn-danger {
@@ -1588,8 +1588,8 @@ input.btn-xs {
 .btn-danger:focus,
 .btn-danger:active,
 .open > .dropdown-toggle.btn-danger {
-  background-color: rgb(155.1660079051, 57.0339920949, 57.0339920949);
-  border-color: rgb(155.1660079051, 57.0339920949, 57.0339920949);
+  background-color: rgb(60.8494148648%, 22.3662714097%, 22.3662714097%);
+  border-color: rgb(60.8494148648%, 22.3662714097%, 22.3662714097%);
 }
 
 .btn-warning {
@@ -5897,7 +5897,7 @@ td.current_day_cell.half_2nd {
   --surface-sunken: #f8fafc;
   --surface-overlay: #ffffff;
   --surface-border: #e3e9ef;
-  --surface-border-hairline: rgb(247.35, 247.35, 247.35);
+  --surface-border-hairline: rgb(97%, 97%, 97%);
   --shadow-card: 0 1px 2px rgba(31, 45, 61, 0.06);
   --shadow-card-strong: 0 8px 24px rgba(31, 45, 61, 0.08);
   --radius-card: 10px;
@@ -6075,7 +6075,7 @@ td.current_day_cell.half_2nd {
   --space-5: 24px;
   --space-6: 32px;
   /* derive dark link-hover from the DARK link color (not the light $link-color the global token uses) */
-  --employees-link-hover: rgb(81.6188976378, 155.7133858268, 240.1811023622);
+  --employees-link-hover: rgb(32.0074108384%, 61.0640728732%, 94.188667593%);
 }
 
 /* High contrast */
@@ -6183,7 +6183,7 @@ td.current_day_cell.half_2nd {
   --surface-sunken: #f8fafc;
   --surface-overlay: #ffffff;
   --surface-border: #e3e9ef;
-  --surface-border-hairline: rgb(247.35, 247.35, 247.35);
+  --surface-border-hairline: rgb(97%, 97%, 97%);
   --shadow-card: 0 1px 2px rgba(31, 45, 61, 0.06);
   --shadow-card-strong: 0 8px 24px rgba(31, 45, 61, 0.08);
   --radius-card: 10px;
@@ -6335,7 +6335,7 @@ td.current_day_cell.half_2nd {
   --surface-sunken: #f8fafc;
   --surface-overlay: #ffffff;
   --surface-border: #e3e9ef;
-  --surface-border-hairline: rgb(247.35, 247.35, 247.35);
+  --surface-border-hairline: rgb(97%, 97%, 97%);
   --shadow-card: 0 1px 2px rgba(31, 45, 61, 0.06);
   --shadow-card-strong: 0 8px 24px rgba(31, 45, 61, 0.08);
   --radius-card: 10px;
@@ -6587,7 +6587,7 @@ td.current_day_cell.half_2nd {
   --surface-sunken: #f8fafc;
   --surface-overlay: #ffffff;
   --surface-border: #e3e9ef;
-  --surface-border-hairline: rgb(247.35, 247.35, 247.35);
+  --surface-border-hairline: rgb(97%, 97%, 97%);
   --shadow-card: 0 1px 2px rgba(31, 45, 61, 0.06);
   --shadow-card-strong: 0 8px 24px rgba(31, 45, 61, 0.08);
   --radius-card: 10px;
@@ -6946,7 +6946,7 @@ td.current_day_cell.half_2nd {
   --surface-sunken: #f8fafc;
   --surface-overlay: #ffffff;
   --surface-border: #e3e9ef;
-  --surface-border-hairline: rgb(247.35, 247.35, 247.35);
+  --surface-border-hairline: rgb(97%, 97%, 97%);
   --shadow-card: 0 1px 2px rgba(31, 45, 61, 0.06);
   --shadow-card-strong: 0 8px 24px rgba(31, 45, 61, 0.08);
   --radius-card: 10px;
@@ -7291,7 +7291,7 @@ td.current_day_cell.half_2nd {
   --settings-surface-muted: #f8fafc;
   --settings-surface-overlay: #ffffff;
   --settings-border: #e3e9ef;
-  --settings-border-subtle: rgb(247.35, 247.35, 247.35);
+  --settings-border-subtle: rgb(97%, 97%, 97%);
   --settings-shadow: 0 1px 2px rgba(31, 45, 61, 0.06);
   --settings-shadow-strong: 0 8px 24px rgba(31, 45, 61, 0.08);
   --settings-danger: #b42318;
@@ -7808,7 +7808,7 @@ td.current_day_cell.half_2nd {
   --department-surface-raised: #fbfcfe;
   --department-surface-overlay: #ffffff;
   --department-border: #e3e9ef;
-  --department-border-subtle: rgb(247.35, 247.35, 247.35);
+  --department-border-subtle: rgb(97%, 97%, 97%);
   --department-shadow: 0 1px 2px rgba(31, 45, 61, 0.06);
   --department-shadow-strong: 0 8px 24px rgba(31, 45, 61, 0.08);
   --department-muted: #586b7d;
@@ -8138,7 +8138,7 @@ td.current_day_cell.half_2nd {
   --bank-surface-raised: #fbfcfe;
   --bank-surface-overlay: #ffffff;
   --bank-border: #e3e9ef;
-  --bank-border-subtle: rgb(247.35, 247.35, 247.35);
+  --bank-border-subtle: rgb(97%, 97%, 97%);
   --bank-shadow: 0 1px 2px rgba(31, 45, 61, 0.06);
   --bank-shadow-strong: 0 8px 24px rgba(31, 45, 61, 0.08);
   --bank-muted: #586b7d;
@@ -8592,7 +8592,7 @@ td.current_day_cell.half_2nd {
   --report-surface-raised: #fbfcfe;
   --report-surface-overlay: #ffffff;
   --report-border: #e3e9ef;
-  --report-border-subtle: rgb(247.35, 247.35, 247.35);
+  --report-border-subtle: rgb(97%, 97%, 97%);
   --report-shadow: 0 1px 2px rgba(31, 45, 61, 0.06);
   --report-shadow-strong: 0 8px 24px rgba(31, 45, 61, 0.08);
   --report-muted: #586b7d;
