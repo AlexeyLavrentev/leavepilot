@@ -80,14 +80,42 @@ function findCachedChromeHeadlessShell() {
   return null;
 }
 
+/*
+  Where puppeteer put the browser it downloaded.
+
+  puppeteer.executablePath() used to answer this and now returns a promise, and
+  this function has to stay synchronous - fifty-odd specs build a driver from
+  it, none of them able to await. The promise did not announce itself either:
+  fs.existsSync of one returns false rather than throwing, so the branch simply
+  stopped finding anything and resolution fell through to the headless shell,
+  which is a different binary from the Chrome these specs are written against.
+
+  The path is computed instead, from the build id puppeteer pins and the cache
+  layout it uses - both of which it exposes synchronously.
+*/
+function findDownloadedChrome() {
+  try {
+    var revisions = require('puppeteer-core').PUPPETEER_REVISIONS;
+    var computeExecutablePath = require('@puppeteer/browsers').computeExecutablePath;
+
+    return computeExecutablePath({
+      browser: 'chrome',
+      buildId: revisions.chrome,
+      cacheDir: path.join(os.homedir(), '.cache', 'puppeteer'),
+    });
+  } catch (error) {
+    return null;
+  }
+}
+
 function resolveChromeBinary() {
   if (process.env.CHROME_BIN) {
     return process.env.CHROME_BIN;
   }
 
-  var puppeteerBinary = puppeteer.executablePath();
-  if (puppeteerBinary && fs.existsSync(puppeteerBinary)) {
-    return puppeteerBinary;
+  var downloaded = findDownloadedChrome();
+  if (downloaded && fs.existsSync(downloaded)) {
+    return downloaded;
   }
 
   return findCachedChromeHeadlessShell();

@@ -50,7 +50,7 @@
     "chai": "^6.2.2",
     "mocha": "^11.7.6",
     "nyc": "^18.0.0",
-    "puppeteer": "^24.40.0",
+    "puppeteer": "^25.4.0",
     "sass": "^1.102.0",
     "selenium-webdriver": "^4.46.0",
     "sequelize-cli": "^6.6.2"
