@@ -5,6 +5,21 @@
 const fs = require('fs');
 const path = require('path');
 const { spawn } = require('child_process');
+const { spawnInGroup, killGroup, terminateGroup } = require('./lib/spawn_group');
+
+/*
+  Every batch this runner has going, so an interrupt can take their browsers
+  with them. A detached child is out of the terminal's foreground group and
+  never sees the Ctrl-C that stopped the runner.
+*/
+const liveChildren = new Set();
+
+['SIGINT', 'SIGTERM'].forEach(signal => {
+  process.on(signal, () => {
+    liveChildren.forEach(child => killGroup(child, 'SIGKILL'));
+    process.exit(signal === 'SIGINT' ? 130 : 143);
+  });
+});
 
 const port = process.env.PORT || '3000';
 const testHost = process.env.TEST_HOST || '127.0.0.1';
@@ -42,15 +57,25 @@ const serverEnv = Object.assign({}, baseTestEnv, {
   retry above already knows how to handle.
 */
 const runWithTimeout = (command, args, options = {}, timeoutMs = 0) => new Promise((resolve, reject) => {
-  const child = spawn(command, args, Object.assign({
+  /*
+    In its own process group, so that killing it kills what it started. A batch
+    is mocha, plus the chromedriver it starts, plus the browser chromedriver
+    starts; killing the first of those three leaves the other two running with
+    no parent. See bin/lib/spawn_group.js for what that cost.
+  */
+  const child = spawnInGroup(command, args, Object.assign({
     stdio: 'inherit',
     env: baseTestEnv,
   }, options));
+
+  liveChildren.add(child);
 
   let timer;
   let timedOut = false;
 
   const done = () => {
+    liveChildren.delete(child);
+
     if (timer) {
       clearTimeout(timer);
     }
@@ -62,7 +87,7 @@ const runWithTimeout = (command, args, options = {}, timeoutMs = 0) => new Promi
       console.error(
         `No exit after ${Math.round(timeoutMs / 1000)}s, killing: ${command} ${args.join(' ')}`
       );
-      child.kill('SIGKILL');
+      terminateGroup(child);
     }, timeoutMs);
     timer.unref();
   }
@@ -74,6 +99,13 @@ const runWithTimeout = (command, args, options = {}, timeoutMs = 0) => new Promi
 
   child.on('exit', code => {
     done();
+
+    /*
+      Swept after an ordinary exit too, not only after a kill. A driver.quit()
+      that timed out leaves its chromedriver behind, mocha --exit does not wait
+      for it, and the group outlives the batch that owned it.
+    */
+    killGroup(child, 'SIGKILL');
 
     if (timedOut) {
       reject(new Error(`${command} ${args.join(' ')} hung and was killed`));
@@ -127,7 +159,7 @@ const runMochaSuite = () => {
     const roots = explicitPaths.length ? explicitPaths : ['t'];
     const flags = mochaArgs.filter(arg => arg.startsWith('-'));
 
-    return run(node, ['node_modules/mocha/bin/mocha', '--recursive'].concat(roots, flags));
+    return run(node, ['node_modules/mocha/bin/mocha', '--recursive', '--exit'].concat(roots, flags));
   }
 
   const allIntegrationFiles = collectJavaScriptFiles(path.join('t', 'integration'));
@@ -188,9 +220,21 @@ const runMochaSuite = () => {
     ? configuredBatchTimeout
     : 5 * 60 * 1000;
 
+  /*
+    --exit is the other half of the hang.
+
+    Without it mocha waits for the event loop to drain after the last test, so
+    one handle nothing closed - a browser session that never quit, a socket to a
+    driver that stopped answering - keeps a finished run alive with nothing left
+    to print. The premium suite has always passed --exit; this one never did.
+
+    It does not paper over a stuck test: a test that never returns still fails
+    on its own timeout, and the batch ceiling above still kills a wedged
+    process. This only makes finishing mean exiting.
+  */
   const mocha = batch => runWithTimeout(
     node,
-    ['node_modules/mocha/bin/mocha'].concat(retryArgs).concat(batch),
+    ['node_modules/mocha/bin/mocha', '--exit'].concat(retryArgs).concat(batch),
     {},
     batchTimeoutMs
   );
@@ -229,7 +273,7 @@ const runMochaSuite = () => {
     )
     .then(() => (integrationOnly
       ? null
-      : run(node, ['node_modules/mocha/bin/mocha', '--recursive', 't/unit'])))
+      : run(node, ['node_modules/mocha/bin/mocha', '--recursive', '--exit', 't/unit'])))
     .then(() => {
       if (flaky.length) {
         console.log(`Integration specs that needed a second run (${flaky.length}):`);

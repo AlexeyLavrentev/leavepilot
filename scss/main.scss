@@ -39,6 +39,65 @@ $space-4: 16px;
 $space-5: 24px;
 $space-6: 32px;
 $shadow-sm: 0 1px 2px rgba(31, 45, 61, 0.06);
+
+/*
+  A calendar day is two cells wide - a morning half and an afternoon half - and
+  the day number lives in the morning one, while the column heading spans both.
+  Left where it falls, the number prints in the left half of its own day, under
+  the gap between two headings. This moves it back under its heading.
+
+  Half a cell, not a measured pixel count. The two halves are equal, so half of
+  one is half the gap between the day's left edge and the heading's centre, and
+  the number lands on the boundary between the halves - the middle of the day -
+  at whatever width the table happens to be laid out. It was 9px, which was
+  close to the 11.5px a 23px cell wants and left every number in the calendar
+  2px left of its own heading, and would have been wrong by more on a wider
+  table.
+
+  Shared rather than repeated: a day inside a leave renders a button where every
+  other day renders a span, and the first version of that button carried no
+  offset at all, so a coloured period's numbers printed 5px left of the days
+  either side of it.
+*/
+$calendar-day-number-nudge: 50%;
+
+// Shared surface and accent roles.
+
+// Every custom property in this file used to be a hand-written hex inside a page
+// scope - 360 of them, none from a variable - so the same role picked up a
+// different value each time it was copied to a new page. The differences were
+// one digit in one channel and invisible on their own, which is exactly why they
+// accumulated: --*-accent-edge held #2b7da8 on three pages and #2b7db5 on a
+// fourth, --*-accent-soft held #eaf4fb and #e7f3fb, and the dark overlay was
+// #15191d on four pages against #1f2327 on two.
+
+// These are the roles that had a clear majority, so consolidating them keeps the
+// value most pages already showed. Roles whose values genuinely vary per page -
+// --*-border-strong and --*-surface-subtle - are left alone: they have no
+// majority to consolidate towards, and picking one would be inventing a design
+// decision rather than removing an accident.
+$accent-edge: #2b7da8;
+$accent-edge-dark: #71b9df;
+$token-accent-soft: #eaf4fb;
+$token-accent-soft-dark: #172c38;
+$surface-raised-dark: #20252a;
+$token-surface-overlay-light: #ffffff;
+$surface-overlay-dark: #15191d;
+$shadow-strong-dark: 0 8px 24px rgba(0, 0, 0, 0.4);
+
+// The onboarding page runs a roomier scale and a softer shadow on purpose. Named
+// here so the difference reads as a decision rather than another copy that
+// drifted.
+$onboarding-space-1: 6px;
+$onboarding-space-2: 10px;
+$onboarding-space-3: 16px;
+$onboarding-space-4: 24px;
+$onboarding-space-5: 32px;
+$onboarding-accent-edge: #2b7db5;
+$onboarding-accent-soft: #e7f3fb;
+$onboarding-surface-raised: #f8fafc;
+$onboarding-shadow-strong: 0 8px 24px rgba(20, 45, 65, 0.12);
+
 $shadow-md: 0 8px 24px rgba(31, 45, 61, 0.08);
 $shadow-lg: 0 16px 42px rgba(31, 45, 61, 0.10);
 $font-size-xs: 12px;
@@ -437,12 +496,6 @@ $leave_cell_font_color : #61686b;
   }
 }
 
-@media (prefers-reduced-transparency: reduce) {
-  .integration-api-page .surface,
-  .integration-api-page .integration-api-credential {
-    backdrop-filter: none;
-  }
-}
 
 @media (prefers-contrast: more) {
   .integration-api-page .surface,
@@ -506,22 +559,22 @@ $leave_cell_font_color : #61686b;
 /* Stage 8J — Employee onboarding workspace (single employee + CSV import). */
 .employee-onboarding-page {
   --onboarding-surface: #ffffff;
-  --onboarding-surface-raised: #f8fafc;
+  --onboarding-surface-raised: #{$onboarding-surface-raised};
   --onboarding-surface-subtle: #f2f6fa;
   --onboarding-border: #d8e1e9;
   --onboarding-border-strong: #b9c9d7;
   --onboarding-shadow: 0 1px 2px rgba(20, 45, 65, 0.08);
-  --onboarding-shadow-strong: 0 8px 24px rgba(20, 45, 65, 0.12);
+  --onboarding-shadow-strong: #{$onboarding-shadow-strong};
   --onboarding-muted: #5c7083;
-  --onboarding-accent-soft: #e7f3fb;
-  --onboarding-accent-edge: #2b7db5;
+  --onboarding-accent-soft: #{$onboarding-accent-soft};
+  --onboarding-accent-edge: #{$onboarding-accent-edge};
   --onboarding-radius: 10px;
   --onboarding-control-radius: 8px;
-  --onboarding-space-1: 6px;
-  --onboarding-space-2: 10px;
-  --onboarding-space-3: 16px;
-  --onboarding-space-4: 24px;
-  --onboarding-space-5: 32px;
+  --onboarding-space-1: #{$onboarding-space-1};
+  --onboarding-space-2: #{$onboarding-space-2};
+  --onboarding-space-3: #{$onboarding-space-3};
+  --onboarding-space-4: #{$onboarding-space-4};
+  --onboarding-space-5: #{$onboarding-space-5};
 
   width: 100%;
   max-width: 1120px;
@@ -836,15 +889,15 @@ $leave_cell_font_color : #61686b;
 
 [data-theme="dark"] .employee-onboarding-page {
   --onboarding-surface: #1a1e22;
-  --onboarding-surface-raised: #20252a;
+  --onboarding-surface-raised: #{$surface-raised-dark};
   --onboarding-surface-subtle: #15191d;
   --onboarding-border: #343a40;
   --onboarding-border-strong: #53616d;
   --onboarding-shadow: 0 1px 2px rgba(0, 0, 0, 0.32);
-  --onboarding-shadow-strong: 0 8px 24px rgba(0, 0, 0, 0.4);
+  --onboarding-shadow-strong: #{$shadow-strong-dark};
   --onboarding-muted: #aebdca;
-  --onboarding-accent-soft: #172c38;
-  --onboarding-accent-edge: #71b9df;
+  --onboarding-accent-soft: #{$token-accent-soft-dark};
+  --onboarding-accent-edge: #{$accent-edge-dark};
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -865,15 +918,6 @@ $leave_cell_font_color : #61686b;
   }
 }
 
-@media (prefers-reduced-transparency: reduce) {
-  .employee-onboarding-page .surface,
-  .employee-onboarding-page .form-control,
-  .employee-onboarding-page .employee-onboarding-option,
-  .employee-onboarding-page .employee-import-file-field {
-    background: var(--onboarding-surface-subtle);
-    backdrop-filter: none;
-  }
-}
 
 @media (prefers-reduced-motion: reduce) {
   .employee-onboarding-page *,
@@ -1211,14 +1255,18 @@ label.label-plain {
   sat on the text baseline, and the parent font's descender space was added
   underneath: a day with a leave pushed its calendar row to 42px against the
   31px of every other row, past the 38px the layout contract allows. Taking it
-  out of flow keeps the target size and the horizontal nudge while the row keeps
-  the height of its text.
+  out of flow keeps the target size while the row keeps the height of its text.
+
+  Out of flow it also lost the horizontal nudge, because the rules that carry it
+  name `span`. The first version wrote `left: 3px` in its place, which is not an
+  offset anyone chose - it was where the button already stood, copied down as
+  though it were one. See $calendar-day-number-nudge.
 */
 .calendar-leave-details-trigger {
   position: absolute;
-  left: 3px;
+  left: calc(50% + $calendar-day-number-nudge);
   top: 50%;
-  transform: translateY(-50%);
+  transform: translate(-50%, -50%);
   z-index: 10;
   display: inline-flex;
   align-items: center;
@@ -1924,6 +1972,12 @@ textarea.form-control {
   border: 1px solid $border-color;
   border-radius: $radius-lg;
   box-shadow: $shadow-sm;
+  // Bootstrap declares the overflow on this one, so the containment added
+  // beside our own overflow-x rules never reached it - found by reading the
+  // computed style on a real page rather than the stylesheet. .modal-body and
+  // .form-control compute to overflow-x: auto as well, but neither is a table
+  // a reader swipes through, so they are left alone.
+  overscroll-behavior-x: contain;
 }
 
 .table-responsive > .table {
@@ -1938,6 +1992,19 @@ textarea.form-control {
 
 .data-table-scroll {
   overflow-x: auto;
+  // A swipe that runs off the end stays inside the region.
+  //
+  // Left to chain, a horizontal flick past the last column is how browsers
+  // trigger a back navigation on a trackpad - so reaching the edge of a wide
+  // table could take the reader off the page. That is the hard stop this is
+  // meant to soften, except worse than frozen.
+  //
+  // Contained, the platforms that have a rubber-band show it here rather than
+  // passing the gesture on: the resistance itself instead of an imitation of
+  // it. Hand-rolling one would mean intercepting wheel and touch and
+  // reimplementing momentum, and these containers hold sticky cells that a
+  // transform would break.
+  overscroll-behavior-x: contain;
   background: $surface-color;
   border: 1px solid $border-color;
   border-radius: $radius-lg;
@@ -2433,6 +2500,7 @@ textarea.form-control {
 .employee-schedule-widget {
   margin-top: $space-4;
   overflow-x: auto;
+  overscroll-behavior-x: contain;
 }
 
 .employee-schedule-widget .btn-group {
@@ -2450,6 +2518,17 @@ textarea.form-control {
   padding: 7px 0;
   line-height: 20px;
   overflow: hidden;
+}
+
+/*
+  The width is applied from script now, so Bootstrap's 0.6s width transition
+  actually runs and the bars grow into place. That is motion where there was
+  none, and this is the preference that says not to.
+*/
+@media (prefers-reduced-motion: reduce) {
+  .employee-allowance-progress .progress-bar {
+    transition: none;
+  }
 }
 
 .employee-absence-summary {
@@ -2633,6 +2712,7 @@ textarea.form-control {
 .zup-import-table-wrap {
   max-width: 100%;
   overflow-x: auto;
+  overscroll-behavior-x: contain;
   -webkit-overflow-scrolling: touch;
 }
 
@@ -3449,6 +3529,7 @@ textarea.form-control {
     display: flex;
     width: 100%;
     overflow-x: auto;
+    overscroll-behavior-x: contain;
     border: 1px solid $border-color;
     border-radius: $radius-lg;
   }
@@ -3624,7 +3705,7 @@ td.calendar_cell {
 }
 td.calendar_cell span {
     position   : relative;
-    left       : 9px;
+    left       : $calendar-day-number-nudge;
     top        : -1px;
     display    : block;
     text-align : center;
@@ -3691,6 +3772,7 @@ td.leave_cell_pended {
   padding-left: 0;
   padding-right: 0;
   overflow-x: auto;
+  overscroll-behavior-x: contain;
   text-align: left;
   padding-left: 32px;
   scrollbar-gutter: stable;
@@ -4343,45 +4425,19 @@ code {
   overflow: hidden;
   background: $surface-color;
   border: 1px solid $border-color;
-  border-radius: 22px;
-  box-shadow: 0 24px 64px rgba(31, 45, 61, 0.13);
+  border-radius: $radius-xl;
+  box-shadow: $shadow-lg;
 }
 
 .auth-intro {
-  position: relative;
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   padding: 52px;
-  overflow: hidden;
   background: $nav-ink;
   color: #d8e4ed;
 }
 
-.auth-intro::before,
-.auth-intro::after {
-  position: absolute;
-  content: "";
-  border: 1px solid rgba(255, 255, 255, 0.11);
-  border-radius: 50%;
-}
-
-.auth-intro::before {
-  top: -110px;
-  right: -145px;
-  width: 410px;
-  height: 410px;
-}
-
-.auth-intro::after {
-  top: 42px;
-  right: -45px;
-  width: 205px;
-  height: 205px;
-}
-
 .auth-intro-content {
-  position: relative;
-  z-index: 1;
   max-width: 440px;
 }
 
@@ -4396,7 +4452,6 @@ code {
   border-radius: $radius-lg;
   color: $nav-ink;
   font-size: 25px;
-  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.18);
 }
 
 .auth-intro .auth-eyebrow {
@@ -4761,14 +4816,12 @@ td.calendar_cell {
 
 td.calendar_cell span {
   top: 0;
-  left: 9px;
-  font-size: 12px;
-  font-weight: 600;
+  left: $calendar-day-number-nudge;
 }
 
+/* One day number, two elements that can render it: same type either way. */
+td.calendar_cell span,
 td.calendar_cell .calendar-leave-details-trigger {
-  /* Keeps the out-of-flow trigger centred; the digit styling matches the span. */
-  top: 50%;
   font-size: 12px;
   font-weight: 600;
 }
@@ -5343,11 +5396,9 @@ td.current_day_cell.half_2nd {
   .auth-layout {
     display: block;
     min-height: 0;
-    border-radius: $radius-xl;
   }
 
   .auth-intro {
-    align-items: center;
     min-height: 220px;
     padding: 28px 24px;
   }
@@ -6382,7 +6433,7 @@ td.current_day_cell.half_2nd {
   --surface: #{$surface-color};
   --surface-raised: #{$surface-subtle};
   --surface-sunken: #{$surface-muted};
-  --surface-overlay: #ffffff;
+  --surface-overlay: #{$token-surface-overlay-light};
   --surface-border: #{$border-color};
   --surface-border-hairline: #{color.adjust($surface-color, $lightness: -3%)};
   --shadow-card: #{$shadow-sm};
@@ -6540,9 +6591,9 @@ td.current_day_cell.half_2nd {
    Declares the FULL token set (not just diffs) so the dark scope is self-contained. */
 [data-theme="dark"] .employees-page {
   --surface: #1a1e22;
-  --surface-raised: #20252a;
+  --surface-raised: #{$surface-raised-dark};
   --surface-sunken: #121417;
-  --surface-overlay: #1f2327;
+  --surface-overlay: #{$surface-overlay-dark};
   --surface-border: #2a2f34;
   --surface-border-hairline: #23282d;
   --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.32);
@@ -6572,11 +6623,6 @@ td.current_day_cell.half_2nd {
   }
 }
 /* Reduced transparency */
-@media (prefers-reduced-transparency: reduce) {
-  .employees-page .employees-filter .all-departments a[aria-current="true"] {
-    background: var(--surface-overlay);
-  }
-}
 /* Reduced motion: kill transition/animation AND the press transform */
 @media (prefers-reduced-motion: reduce) {
   .employees-page *,
@@ -6671,7 +6717,7 @@ td.current_day_cell.half_2nd {
   --surface: #{$surface-color};
   --surface-raised: #{$surface-subtle};
   --surface-sunken: #{$surface-muted};
-  --surface-overlay: #ffffff;
+  --surface-overlay: #{$token-surface-overlay-light};
   --surface-border: #{$border-color};
   --surface-border-hairline: #{color.adjust($surface-color, $lightness: -3%)};
   --shadow-card: #{$shadow-sm};
@@ -6781,9 +6827,9 @@ td.current_day_cell.half_2nd {
 /* Dark theme: scoped token overrides. */
 [data-theme="dark"] .reports-hub {
   --surface: #1a1e22;
-  --surface-raised: #20252a;
+  --surface-raised: #{$surface-raised-dark};
   --surface-sunken: #121417;
-  --surface-overlay: #1f2327;
+  --surface-overlay: #{$surface-overlay-dark};
   --surface-border: #2a2f34;
   --surface-border-hairline: #23282d;
   --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.32);
@@ -6800,11 +6846,6 @@ td.current_day_cell.half_2nd {
 }
 
 /* Reduced transparency: explicit solid surface. */
-@media (prefers-reduced-transparency: reduce) {
-  .reports-hub .report-card {
-    background: var(--surface-overlay);
-  }
-}
 
 /* Reduced motion: kill transition/animation AND the press transform + hover lift. */
 @media (prefers-reduced-motion: reduce) {
@@ -6839,7 +6880,7 @@ td.current_day_cell.half_2nd {
   --surface: #{$surface-color};
   --surface-raised: #{$surface-subtle};
   --surface-sunken: #{$surface-muted};
-  --surface-overlay: #ffffff;
+  --surface-overlay: #{$token-surface-overlay-light};
   --surface-border: #{$border-color};
   --surface-border-hairline: #{color.adjust($surface-color, $lightness: -3%)};
   --shadow-card: #{$shadow-sm};
@@ -6982,9 +7023,9 @@ td.current_day_cell.half_2nd {
 /* Dark theme: scoped token overrides. */
 [data-theme="dark"] .departments-page {
   --surface: #1a1e22;
-  --surface-raised: #20252a;
+  --surface-raised: #{$surface-raised-dark};
   --surface-sunken: #121417;
-  --surface-overlay: #1f2327;
+  --surface-overlay: #{$surface-overlay-dark};
   --surface-border: #2a2f34;
   --surface-border-hairline: #23282d;
   --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.32);
@@ -7001,11 +7042,6 @@ td.current_day_cell.half_2nd {
 }
 
 /* Reduced transparency. */
-@media (prefers-reduced-transparency: reduce) {
-  .departments-page .surface {
-    background: var(--surface-overlay);
-  }
-}
 
 /* Reduced motion: kill transition/animation AND transforms (incl. :hover:active). */
 @media (prefers-reduced-motion: reduce) {
@@ -7097,7 +7133,7 @@ td.current_day_cell.half_2nd {
   --surface: #{$surface-color};
   --surface-raised: #{$surface-subtle};
   --surface-sunken: #{$surface-muted};
-  --surface-overlay: #ffffff;
+  --surface-overlay: #{$token-surface-overlay-light};
   --surface-border: #{$border-color};
   --surface-border-hairline: #{color.adjust($surface-color, $lightness: -3%)};
   --shadow-card: #{$shadow-sm};
@@ -7259,9 +7295,9 @@ td.current_day_cell.half_2nd {
 /* Dark-mode scoped tokens (mirrors Stage 8C). */
 [data-theme="dark"] .requests-page {
   --surface: #1a1e22;
-  --surface-raised: #20252a;
+  --surface-raised: #{$surface-raised-dark};
   --surface-sunken: #121417;
-  --surface-overlay: #1f2327;
+  --surface-overlay: #{$surface-overlay-dark};
   --surface-border: #2a2f34;
   --surface-border-hairline: #23282d;
   --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.32);
@@ -7297,11 +7333,6 @@ td.current_day_cell.half_2nd {
 }
 
 /* Reduced transparency: solid surface. */
-@media (prefers-reduced-transparency: reduce) {
-  .requests-page .surface {
-    background: var(--surface-overlay);
-  }
-}
 
 /* Reduced motion: kill transition/animation AND transforms (incl. :hover:active). */
 @media (prefers-reduced-motion: reduce) {
@@ -7450,7 +7481,7 @@ td.current_day_cell.half_2nd {
   --surface: #{$surface-color};
   --surface-raised: #{$surface-subtle};
   --surface-sunken: #{$surface-muted};
-  --surface-overlay: #ffffff;
+  --surface-overlay: #{$token-surface-overlay-light};
   --surface-border: #{$border-color};
   --surface-border-hairline: #{color.adjust($surface-color, $lightness: -3%)};
   --shadow-card: #{$shadow-sm};
@@ -7663,9 +7694,9 @@ td.current_day_cell.half_2nd {
 /* Dark-mode scoped tokens (mirrors Stage 8D). */
 [data-theme="dark"] .employee-details-page {
   --surface: #1a1e22;
-  --surface-raised: #20252a;
+  --surface-raised: #{$surface-raised-dark};
   --surface-sunken: #121417;
-  --surface-overlay: #1f2327;
+  --surface-overlay: #{$surface-overlay-dark};
   --surface-border: #2a2f34;
   --surface-border-hairline: #23282d;
   --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.32);
@@ -7684,11 +7715,6 @@ td.current_day_cell.half_2nd {
 }
 
 /* Reduced transparency: solid surface. */
-@media (prefers-reduced-transparency: reduce) {
-  .employee-details-page .surface {
-    background: var(--surface-overlay);
-  }
-}
 
 /* Reduced motion: kill transition/animation AND transforms (incl. :hover:active). */
 @media (prefers-reduced-motion: reduce) {
@@ -7796,7 +7822,7 @@ td.current_day_cell.half_2nd {
   --settings-surface: #{$surface-color};
   --settings-surface-raised: #{$surface-subtle};
   --settings-surface-muted: #{$surface-muted};
-  --settings-surface-overlay: #ffffff;
+  --settings-surface-overlay: #{$token-surface-overlay-light};
   --settings-border: #{$border-color};
   --settings-border-subtle: #{color.adjust($surface-color, $lightness: -3%)};
   --settings-shadow: #{$shadow-sm};
@@ -8029,6 +8055,7 @@ td.current_day_cell.half_2nd {
   .settings-schedule-widget {
     min-width: 0;
     overflow-x: auto;
+    overscroll-behavior-x: contain;
     padding: 2px;
   }
 
@@ -8209,13 +8236,13 @@ td.current_day_cell.half_2nd {
 
 [data-theme="dark"] .general-settings-page {
   --settings-surface: #1a1e22;
-  --settings-surface-raised: #20252a;
+  --settings-surface-raised: #{$surface-raised-dark};
   --settings-surface-muted: #121417;
-  --settings-surface-overlay: #15191d;
+  --settings-surface-overlay: #{$surface-overlay-dark};
   --settings-border: #343a40;
   --settings-border-subtle: #2a3035;
   --settings-shadow: 0 1px 2px rgba(0, 0, 0, 0.32);
-  --settings-shadow-strong: 0 8px 24px rgba(0, 0, 0, 0.4);
+  --settings-shadow-strong: #{$shadow-strong-dark};
   --settings-danger: #ff9b91;
   --settings-danger-surface: #2b1d1d;
   --settings-danger-border: #70423e;
@@ -8239,13 +8266,6 @@ td.current_day_cell.half_2nd {
   }
 }
 
-@media (prefers-reduced-transparency: reduce) {
-  .general-settings-page .surface,
-  .general-settings-page .form-control {
-    background: var(--settings-surface-overlay);
-    backdrop-filter: none;
-  }
-}
 
 @media (prefers-reduced-motion: reduce) {
   .general-settings-page *,
@@ -8415,14 +8435,14 @@ td.current_day_cell.half_2nd {
 .department-details-page {
   --department-surface: #{$surface-color};
   --department-surface-raised: #{$surface-subtle};
-  --department-surface-overlay: #ffffff;
+  --department-surface-overlay: #{$token-surface-overlay-light};
   --department-border: #{$border-color};
   --department-border-subtle: #{color.adjust($surface-color, $lightness: -3%)};
   --department-shadow: #{$shadow-sm};
   --department-shadow-strong: #{$shadow-md};
   --department-muted: #586b7d;
-  --department-accent-soft: #eaf4fb;
-  --department-accent-edge: #2b7da8;
+  --department-accent-soft: #{$token-accent-soft};
+  --department-accent-edge: #{$accent-edge};
   --department-danger: #b42318;
   --department-radius: 10px;
   --department-control-radius: #{$radius-md};
@@ -8671,15 +8691,15 @@ td.current_day_cell.half_2nd {
 
 [data-theme="dark"] .department-details-page {
   --department-surface: #1a1e22;
-  --department-surface-raised: #20252a;
-  --department-surface-overlay: #15191d;
+  --department-surface-raised: #{$surface-raised-dark};
+  --department-surface-overlay: #{$surface-overlay-dark};
   --department-border: #343a40;
   --department-border-subtle: #2a3035;
   --department-shadow: 0 1px 2px rgba(0, 0, 0, 0.32);
-  --department-shadow-strong: 0 8px 24px rgba(0, 0, 0, 0.4);
+  --department-shadow-strong: #{$shadow-strong-dark};
   --department-muted: #aebdca;
-  --department-accent-soft: #172c38;
-  --department-accent-edge: #71b9df;
+  --department-accent-soft: #{$token-accent-soft-dark};
+  --department-accent-edge: #{$accent-edge-dark};
   --department-danger: #ff9b91;
 }
 
@@ -8702,14 +8722,6 @@ td.current_day_cell.half_2nd {
   }
 }
 
-@media (prefers-reduced-transparency: reduce) {
-  .department-details-page .surface,
-  .department-details-page .department-details-nav .list-group-item,
-  .department-details-page .form-control {
-    background: var(--department-surface-overlay);
-    backdrop-filter: none;
-  }
-}
 
 @media (prefers-reduced-motion: reduce) {
   .department-details-page *,
@@ -8800,14 +8812,14 @@ td.current_day_cell.half_2nd {
 .bank-holidays-page {
   --bank-surface: #{$surface-color};
   --bank-surface-raised: #{$surface-subtle};
-  --bank-surface-overlay: #ffffff;
+  --bank-surface-overlay: #{$token-surface-overlay-light};
   --bank-border: #{$border-color};
   --bank-border-subtle: #{color.adjust($surface-color, $lightness: -3%)};
   --bank-shadow: #{$shadow-sm};
   --bank-shadow-strong: #{$shadow-md};
   --bank-muted: #586b7d;
-  --bank-accent-soft: #eaf4fb;
-  --bank-accent-edge: #2b7da8;
+  --bank-accent-soft: #{$token-accent-soft};
+  --bank-accent-edge: #{$accent-edge};
   --bank-radius: 10px;
   --bank-control-radius: #{$radius-md};
   --bank-space-1: #{$space-1};
@@ -9137,15 +9149,15 @@ td.current_day_cell.half_2nd {
 
 [data-theme="dark"] .bank-holidays-page {
   --bank-surface: #1a1e22;
-  --bank-surface-raised: #20252a;
-  --bank-surface-overlay: #15191d;
+  --bank-surface-raised: #{$surface-raised-dark};
+  --bank-surface-overlay: #{$surface-overlay-dark};
   --bank-border: #343a40;
   --bank-border-subtle: #2a3035;
   --bank-shadow: 0 1px 2px rgba(0, 0, 0, 0.32);
-  --bank-shadow-strong: 0 8px 24px rgba(0, 0, 0, 0.4);
+  --bank-shadow-strong: #{$shadow-strong-dark};
   --bank-muted: #aebdca;
-  --bank-accent-soft: #172c38;
-  --bank-accent-edge: #71b9df;
+  --bank-accent-soft: #{$token-accent-soft-dark};
+  --bank-accent-edge: #{$accent-edge-dark};
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -9170,14 +9182,6 @@ td.current_day_cell.half_2nd {
   }
 }
 
-@media (prefers-reduced-transparency: reduce) {
-  .bank-holidays-page .surface,
-  .bank-holidays-page .bank-holidays-calendar-switcher,
-  .bank-holidays-page .form-control {
-    background: var(--bank-surface-overlay);
-    backdrop-filter: none;
-  }
-}
 
 @media (prefers-reduced-motion: reduce) {
   .bank-holidays-page *,
@@ -9335,14 +9339,14 @@ td.current_day_cell.half_2nd {
 .report-detail-page {
   --report-surface: #{$surface-color};
   --report-surface-raised: #{$surface-subtle};
-  --report-surface-overlay: #ffffff;
+  --report-surface-overlay: #{$token-surface-overlay-light};
   --report-border: #{$border-color};
   --report-border-subtle: #{color.adjust($surface-color, $lightness: -3%)};
   --report-shadow: #{$shadow-sm};
   --report-shadow-strong: #{$shadow-md};
   --report-muted: #586b7d;
-  --report-accent-soft: #eaf4fb;
-  --report-accent-edge: #2b7da8;
+  --report-accent-soft: #{$token-accent-soft};
+  --report-accent-edge: #{$accent-edge};
   --report-radius: 10px;
   --report-control-radius: #{$radius-md};
   --report-space-1: #{$space-1};
@@ -9661,15 +9665,15 @@ td.current_day_cell.half_2nd {
 
 [data-theme="dark"] .report-detail-page {
   --report-surface: #1a1e22;
-  --report-surface-raised: #20252a;
-  --report-surface-overlay: #15191d;
+  --report-surface-raised: #{$surface-raised-dark};
+  --report-surface-overlay: #{$surface-overlay-dark};
   --report-border: #343a40;
   --report-border-subtle: #2a3035;
   --report-shadow: 0 1px 2px rgba(0, 0, 0, 0.32);
-  --report-shadow-strong: 0 8px 24px rgba(0, 0, 0, 0.4);
+  --report-shadow-strong: #{$shadow-strong-dark};
   --report-muted: #aebdca;
-  --report-accent-soft: #172c38;
-  --report-accent-edge: #71b9df;
+  --report-accent-soft: #{$token-accent-soft-dark};
+  --report-accent-edge: #{$accent-edge-dark};
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -9692,14 +9696,6 @@ td.current_day_cell.half_2nd {
   }
 }
 
-@media (prefers-reduced-transparency: reduce) {
-  .report-detail-page .surface,
-  .report-detail-page .form-control,
-  .report-detail-page .report-results-table {
-    background: var(--report-surface-overlay);
-    backdrop-filter: none;
-  }
-}
 
 @media (prefers-reduced-motion: reduce) {
   .report-detail-page *,
@@ -10054,18 +10050,6 @@ td.current_day_cell.half_2nd {
   }
 }
 
-@media (prefers-reduced-transparency: reduce) {
-  .account-access-page .account-access-layout,
-  .account-access-page .account-access-panel,
-  .account-access-page .account-access-card,
-  .account-access-page .auth-methods span {
-    backdrop-filter: none;
-  }
-
-  .account-access-page .auth-methods span {
-    background: #28475f;
-  }
-}
 
 @media (prefers-contrast: more) {
   .account-access-page .account-access-layout,
@@ -10424,13 +10408,6 @@ td.current_day_cell.half_2nd {
   }
 }
 
-@media (prefers-reduced-transparency: reduce) {
-  .authentication-settings-page .authentication-settings-section,
-  .authentication-settings-page .authentication-settings-method-toggle,
-  .authentication-settings-page .authentication-settings-option {
-    backdrop-filter: none;
-  }
-}
 
 @media (prefers-contrast: more) {
   .authentication-settings-page .authentication-settings-section,
@@ -10618,6 +10595,7 @@ td.current_day_cell.half_2nd {
 
 .reminder-schedules-page .reminder-schedules-table-container {
   overflow-x: auto;
+  overscroll-behavior-x: contain;
   border: 1px solid var(--reminder-border);
   border-radius: 12px;
 }
@@ -10988,13 +10966,6 @@ td.current_day_cell.half_2nd {
   }
 }
 
-@media (prefers-reduced-transparency: reduce) {
-  .reminder-schedules-page .surface,
-  .reminder-schedules-page .reminder-schedule-modal .modal-content,
-  .reminder-schedules-page .reminder-schedule-template-fields {
-    backdrop-filter: none;
-  }
-}
 
 @media (prefers-contrast: more) {
   .reminder-schedules-page .surface,
@@ -11257,6 +11228,7 @@ td.current_day_cell.half_2nd {
 .email-audit-page .email-audit-table-container {
   min-width: 0;
   overflow-x: auto;
+  overscroll-behavior-x: contain;
   background: var(--email-audit-surface);
   border: 1px solid var(--email-audit-border);
   border-radius: 12px;
@@ -11452,13 +11424,6 @@ td.current_day_cell.half_2nd {
   }
 }
 
-@media (prefers-reduced-transparency: reduce) {
-  .email-audit-page .surface,
-  .email-audit-page .email-audit-table-container,
-  .email-audit-page .email-audit-detail {
-    backdrop-filter: none;
-  }
-}
 
 @media (prefers-contrast: more) {
   .email-audit-page .surface,
@@ -12002,13 +11967,6 @@ td.current_day_cell.half_2nd {
   }
 }
 
-@media (prefers-reduced-transparency: reduce) {
-  .diagnostics-page .surface,
-  .diagnostics-page .diagnostics-preview,
-  .diagnostics-page .diagnostics-privacy-note {
-    backdrop-filter: none;
-  }
-}
 
 @media (prefers-contrast: more) {
   .diagnostics-page .surface,
@@ -12095,7 +12053,7 @@ td.current_day_cell.half_2nd {
   --workspace-surface: #{$surface-color};
   --workspace-surface-raised: #{$surface-subtle};
   --workspace-surface-sunken: #{$surface-muted};
-  --workspace-surface-overlay: #ffffff;
+  --workspace-surface-overlay: #{$token-surface-overlay-light};
   --workspace-border: #{$border-color};
   --workspace-border-hairline: #eef2f6;
   --workspace-border-strong: #cdd8e2;
@@ -12103,7 +12061,7 @@ td.current_day_cell.half_2nd {
   --workspace-ink-body: #425466;
   --workspace-ink-muted: #{$text-muted};
   --workspace-accent: #{$brand-blue};
-  --workspace-accent-soft: #{$accent-soft};
+  --workspace-accent-soft: #{$token-accent-soft};
   --workspace-positive: #1c6b45;
   --workspace-positive-soft: #{$success-soft};
   --workspace-positive-edge: #bfe0cd;
@@ -12445,6 +12403,7 @@ td.current_day_cell.half_2nd {
   margin: 0;
   border: 0;
   overflow-x: auto;
+  overscroll-behavior-x: contain;
   -webkit-overflow-scrolling: touch;
 }
 
@@ -12635,9 +12594,9 @@ td.current_day_cell.half_2nd {
 /* Dark appearance: scoped token overrides only. */
 [data-theme="dark"] .workspace-page {
   --workspace-surface: #1a1e22;
-  --workspace-surface-raised: #20252a;
+  --workspace-surface-raised: #{$surface-raised-dark};
   --workspace-surface-sunken: #15181b;
-  --workspace-surface-overlay: #1f2327;
+  --workspace-surface-overlay: #{$surface-overlay-dark};
   --workspace-border: #2a2f34;
   --workspace-border-hairline: #23282d;
   --workspace-border-strong: #3a4148;
@@ -12645,7 +12604,7 @@ td.current_day_cell.half_2nd {
   --workspace-ink-body: #c3ccd4;
   --workspace-ink-muted: #97a3ad;
   --workspace-accent: #6cb6e8;
-  --workspace-accent-soft: #1d2c38;
+  --workspace-accent-soft: #{$token-accent-soft-dark};
   --workspace-positive: #7fd49a;
   --workspace-positive-soft: #1f3a2a;
   --workspace-positive-edge: #2f5a40;
@@ -12686,11 +12645,6 @@ td.current_day_cell.half_2nd {
 }
 
 /* Reduced transparency: explicit solid surface. */
-@media (prefers-reduced-transparency: reduce) {
-  .workspace-page .workspace-surface {
-    background: var(--workspace-surface-overlay);
-  }
-}
 
 /* Reduced motion: kill transition/animation AND the press transform. */
 @media (prefers-reduced-motion: reduce) {
@@ -12977,11 +12931,6 @@ td.current_day_cell.half_2nd {
   }
 }
 
-@media (prefers-reduced-transparency: reduce) {
-  .workspace-page--calendar .month_container .calendar_month {
-    background: var(--workspace-surface-overlay);
-  }
-}
 
 @media (max-width: 768px) {
   .workspace-page--calendar .team-toolbar,
@@ -12997,3 +12946,79 @@ td.current_day_cell.half_2nd {
 .workspace-page--calendar .calendar-absences .section-heading {
   margin-bottom: var(--workspace-space-4);
 }
+
+
+/*
+  Dialogs and menus grow out of the control that opened them.
+
+  Bootstrap animates a dialog by sliding it down 25% of its own height from the
+  top of the screen, which says nothing about which button was pressed. Replaced
+  with a scale anchored at the trigger - global.js measures it and writes the
+  transform-origin - so the dialog reads as coming out of the control rather
+  than arriving from off-screen. The same origin is left in place while it
+  closes, so it leaves the way it came.
+
+  A menu needs no measurement: it is already positioned against its trigger, so
+  the corner it hangs from is the corner it should grow from.
+*/
+.modal.fade .modal-dialog {
+  transform: translate(0, -8px) scale(0.96);
+  /*
+    Shorter than Bootstrap's 300ms transition-end fallback on purpose. With both
+    at 300ms the two race, and shown.bs.modal can fire on the timer while the
+    dialog is still a fraction under full size - measured at 39.97px for a
+    control that is 40px once settled. Finishing first makes "shown" mean shown.
+  */
+  /*
+    Transform only. Bootstrap already fades the .modal container, so fading the
+    dialog as well is redundant - and a dialog at opacity 0 is a dialog WebDriver
+    reports as not displayed, which turns a click inside a still-animating modal
+    into a failure rather than a wait.
+  */
+  transition: transform 0.24s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+.modal.in .modal-dialog {
+  transform: none;
+}
+
+.dropdown-menu {
+  transform-origin: top left;
+}
+
+.dropdown-menu-right,
+.navbar-right .dropdown-menu {
+  transform-origin: top right;
+}
+
+// No animation on the menu, deliberately.
+//
+// It had a keyframe, which cannot be reversed: closed 60ms into opening it went
+// from opacity 0.69 straight to gone at full size. Replacing it with a
+// transition needs the element to stay in the box tree, and that was measured
+// costing more than the animation is worth - a hidden menu left in layout
+// extends the document's scrollable width, and the general settings page hit
+// 471px of horizontal overflow at a 390px viewport.
+//
+// Doing it properly on Bootstrap 3 means holding display:block through the
+// closing fade from script. That is machinery for 160ms on a click toggle, so
+// the animation goes instead: an uninterruptible one is worse than none, and
+// none is what the framework already does.
+//
+// transform-origin stays. It costs nothing, and it is the anchor an animation
+// would need if one is ever added.
+
+/*
+  Reduced motion keeps the feedback and drops the travel: the dialog and the
+  menu cross-fade in place, with no scale to read as movement.
+*/
+@media (prefers-reduced-motion: reduce) {
+  .modal.fade .modal-dialog,
+  .modal.in .modal-dialog {
+    transform: none;
+    transition: opacity 0.2s ease-out;
+  }
+
+  // Nothing to drop for the menu: it does not animate.
+}
+

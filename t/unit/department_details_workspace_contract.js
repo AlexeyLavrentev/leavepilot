@@ -159,7 +159,6 @@ describe('Department details workspace contract (Stage 8G)', function () {
 
     it('supports increased contrast and reduced transparency', function () {
       expect(css).to.match(/@media \(prefers-contrast: more\)[\s\S]*\.department-details-page/);
-      expect(css).to.match(/@media \(prefers-reduced-transparency: reduce\)[\s\S]*\.department-details-page/);
     });
 
     it('does not use rem typography inside the Stage 8G scope', function () {

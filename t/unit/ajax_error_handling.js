@@ -21,7 +21,9 @@ describe("AJAX error handling", function() {
       "utf8"
     );
 
-    expect(source).to.contain('requestFailed: "{{t "errors.requestFailed"}}"');
+    // Rendered as data now, in a JSON block the browser parses rather than
+    // executes, so that no page carries inline script.
+    expect(source).to.contain('"requestFailed": {{{json (t "errors.requestFailed")}}}');
   });
 
   it("adds the session CSRF token to same-origin AJAX writes", function() {
@@ -34,7 +36,7 @@ describe("AJAX error handling", function() {
       "utf8"
     );
 
-    expect(layout).to.contain('csrfToken: {{{json csrf_token}}}');
+    expect(layout).to.contain('"csrfToken": {{{json csrf_token}}}');
     expect(script).to.contain("$(document).ajaxSend");
     expect(script).to.contain("X-CSRF-Token");
     expect(script).to.contain("input[name=\"_csrf\"]");

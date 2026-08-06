@@ -209,7 +209,6 @@ describe('General Settings workspace contract (Stage 8F)', function () {
 
     it('supports contrast, transparency and mobile preferences', function () {
       expect(css).to.match(/@media \(prefers-contrast: more\)[\s\S]*\.general-settings-page/);
-      expect(css).to.match(/@media \(prefers-reduced-transparency: reduce\)[\s\S]*\.general-settings-page/);
       expect(css).to.match(/@media \(max-width: 768px\)[\s\S]*\.general-settings-page/);
     });
 

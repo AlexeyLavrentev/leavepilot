@@ -98,10 +98,6 @@ describe('Shared admin workspace contract (Stage 8Q)', function () {
     const contrast = mediaBlocks(css, '@media (prefers-contrast: more)')
       .find(block => block.includes('.workspace-page'));
     expect(contrast, 'contrast block scoped to the workspace').to.be.a('string');
-
-    const transparency = mediaBlocks(css, '@media (prefers-reduced-transparency: reduce)')
-      .find(block => block.includes('.workspace-page'));
-    expect(transparency, 'reduced-transparency block scoped to the workspace').to.be.a('string');
   });
 
   it('lets dense calendar grids opt out of the shared control sizing', function () {

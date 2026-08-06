@@ -70,6 +70,35 @@ describe('auth security middleware', function() {
     });
   });
 
+  /*
+    The portal sub-app has emitted HSTS since it was written; the main app never
+    did, so the deployment holding the session cookie was the one telling
+    browsers nothing about staying on HTTPS.
+  */
+  it('adds HSTS once the request arrives over TLS', function(done) {
+    const res = createRes();
+
+    authSecurity.setAuthSecurityHeaders(createReq({secure: true}), res, function() {
+      expect(res.headers['Strict-Transport-Security'])
+        .to.equal('max-age=31536000; includeSubDomains');
+      done();
+    });
+  });
+
+  /*
+    The shipped compose publishes the app port directly with no TLS terminator,
+    so the out-of-the-box run is plain HTTP. Announcing HSTS from an origin with
+    no TLS would lock its users out for a year.
+  */
+  it('withholds HSTS on a plaintext request', function(done) {
+    const res = createRes();
+
+    authSecurity.setAuthSecurityHeaders(createReq({secure: false}), res, function() {
+      expect(res.headers).to.not.have.property('Strict-Transport-Security');
+      done();
+    });
+  });
+
   it('creates and exposes csrf token in session and templates', function(done) {
     const req = createReq();
     const res = createRes();

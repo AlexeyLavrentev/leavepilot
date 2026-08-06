@@ -99,7 +99,14 @@ $(function () {
   var translations = (window.timeoff && window.timeoff.translations) || {};
   var datepickerTranslations = translations.datepicker;
 
-  if (datepickerTranslations) {
+  /*
+    The date picker is only linked on pages that have a date field, so this
+    script has to work without it. It used to assume otherwise: the translation
+    block below is present in every response, so on a page without the plugin
+    this threw a TypeError and took the rest of this ready handler with it -
+    including the tooltip setup.
+  */
+  if (datepickerTranslations && $.fn.datepicker) {
     $.fn.datepicker.dates[datepickerLocale] = datepickerTranslations;
     $.fn.datepicker.defaults.language = datepickerLocale;
   }
@@ -179,8 +186,13 @@ function getUrlVars(url){
 
 $(document).ready(function(){
 
-  $('#team_view_month_select_btn')
-    .datepicker()
+  /*
+    Same reason as above: without the plugin .datepicker is not a function, and
+    the throw would take every binding after it in this handler with it. Scoped
+    to this one chain rather than returning early, so the rest of the handler
+    keeps running on a page that has no date field.
+  */
+  ($.fn.datepicker ? $('#team_view_month_select_btn').datepicker() : $())
     .on('changeDate', function(e) {
       $('#team-view-loading').removeClass('hidden');
 
@@ -1996,3 +2008,230 @@ $(document).ready(function () {
 
   layout();
 });
+
+/*
+  Modals and menus open from the control that summoned them.
+
+  "If something disappears one way, we expect it to emerge from where it came."
+  A dialog that scales up from the middle of the screen severs the link between
+  the button pressed and the thing that appeared; one that grows out of that
+  button keeps it. Same path on the way out, so it collapses back to where it
+  came from.
+
+  transform-origin is the whole mechanism, and it needs a real measurement:
+  Bootstrap has not laid the dialog out yet when show.bs.modal fires, so the
+  trigger is measured then and the origin applied on the next frame, once the
+  dialog has a box. One frame out of a 300ms transition; the anchor holds for
+  the rest of it.
+*/
+(function () {
+  var ORIGIN_ATTRIBUTE = 'data-tom-origin';
+  // Comfortably past Bootstrap's 150ms backdrop fade.
+  var ANCHOR_DEADLINE_MS = 600;
+
+  function anchorTo(dialog, trigger) {
+    var target = trigger && trigger.getBoundingClientRect();
+
+    if (!target || (!target.width && !target.height)) {
+      dialog.style.transformOrigin = '';
+      return true;
+    }
+
+    var box = dialog.getBoundingClientRect();
+
+    if (!box.width && !box.height) {
+      return false;
+    }
+
+    // Clamped to the dialog: a trigger far outside it would throw the scale
+    // origin off-screen and read as a slide rather than a growth.
+    var x = Math.max(0, Math.min(box.width, target.left + target.width / 2 - box.left));
+    var y = Math.max(0, Math.min(box.height, target.top + target.height / 2 - box.top));
+    var origin = Math.round(x) + 'px ' + Math.round(y) + 'px';
+
+    dialog.style.transformOrigin = origin;
+    dialog.setAttribute(ORIGIN_ATTRIBUTE, origin);
+
+    return true;
+  }
+
+  $(document).on('show.bs.modal', '.modal', function (event) {
+    var dialog = this.querySelector('.modal-dialog');
+    var trigger = event.relatedTarget;
+
+    if (!dialog) {
+      return;
+    }
+
+    if (!trigger) {
+      // Opened from script rather than a control: nothing to point at, so it
+      // keeps the default centre rather than pointing somewhere arbitrary.
+      dialog.style.transformOrigin = '';
+      dialog.removeAttribute(ORIGIN_ATTRIBUTE);
+      return;
+    }
+
+    /*
+      The dialog is not measurable for a while yet. Bootstrap does not call
+      show() on the modal until its backdrop has finished fading, so the dialog
+      sits inside a display:none parent and measures 0x0 for the whole of that
+      - traced on a real open as zero across six straight frames, then a box
+      once the backdrop settled.
+
+      So this waits on the measurement rather than on a frame count, up to a
+      deadline. A dialog that never gets a box is one that never opened, and
+      retrying past that would leave a loop running behind a closed modal.
+    */
+    var frame = window.requestAnimationFrame || function (callback) { return setTimeout(callback, 16); };
+    var deadline = Date.now() + ANCHOR_DEADLINE_MS;
+
+    (function attempt() {
+      frame(function () {
+        if (anchorTo(dialog, trigger) || Date.now() > deadline) {
+          return;
+        }
+
+        attempt();
+      });
+    })();
+  });
+
+  // The origin set on the way in is left in place, so the dialog leaves along
+  // the path it arrived on rather than collapsing to its centre.
+  $(document).on('hidden.bs.modal', '.modal', function () {
+    var dialog = this.querySelector('.modal-dialog');
+
+    if (dialog) {
+      dialog.style.transformOrigin = '';
+      dialog.removeAttribute(ORIGIN_ATTRIBUTE);
+    }
+  });
+})();
+
+/*
+  The last thing asked for is what happens.
+
+  Bootstrap decides show/hide synchronously but finishes on a transition that
+  lands later, and the late half acts on the intent that was current when it was
+  scheduled. Interrupt a close by pressing the trigger again and the sequence
+  measured is:
+
+    show > hide > show > hidden > shown > shown > hidden
+
+  Two shown events, a hidden after a show, and a modal that ends up closed
+  although opening was the last thing requested: the user presses the button
+  during the closing animation and nothing opens.
+
+  Correcting on the events alone is not enough, and produced something worse -
+  .in set while display stayed none. Bootstrap's show() returns early when it
+  believes the modal is already shown, and after this race it does believe that
+  while hideModal() has already hidden the element. So the correction reads its
+  state rather than guessing at it, and clears the flag that would make the
+  retry a no-op.
+
+  The animation itself is untouched. It already interpolates from wherever it
+  is: interrupting a close and reopening measured 0.97 -> 0.97 -> 1, with no
+  jump back to the starting scale.
+*/
+(function () {
+  var WANTED = 'tomModalWanted';
+  var CORRECTING = 'tomModalCorrecting';
+
+  function state(element) {
+    return $(element).data('bs.modal');
+  }
+
+  function record(element, wanted) {
+    $(element).data(WANTED, wanted);
+  }
+
+  function settledState(element) {
+    // What the element is, not what Bootstrap thinks: after an interrupted
+    // close these disagree, and the element is the one the reader sees.
+    return element.classList.contains('in') && getComputedStyle(element).display !== 'none'
+      ? 'shown'
+      : 'hidden';
+  }
+
+  function reconcile(element) {
+    var $element = $(element);
+    var wanted = $element.data(WANTED);
+
+    if (!wanted) {
+      return;
+    }
+
+    if (wanted === settledState(element)) {
+      $element.data(CORRECTING, false);
+      return;
+    }
+
+    /*
+      One correction, then leave it alone. Every correction settles into another
+      shown/hidden, which asks for another - measured as six state changes for a
+      single interruption, and app code listening on shown.bs.modal ran on each
+      of them. If one retry does not land it, retrying harder will not either.
+    */
+    if ($element.data(CORRECTING)) {
+      return;
+    }
+
+    $element.data(CORRECTING, true);
+
+    var internals = state(element);
+
+    if (internals) {
+      // Left true by a show() that raced a hide, which makes the retry below a
+      // no-op and strands the dialog with .in on a hidden element.
+      internals.isShown = (wanted !== 'shown');
+    }
+
+    $(element).modal(wanted === 'shown' ? 'show' : 'hide');
+  }
+
+  // Reconciled on a frame after the event, so Bootstrap has finished writing
+  // whatever it was going to write before its work is read back.
+  function reconcileSoon(element) {
+    var frame = window.requestAnimationFrame || function (cb) { return setTimeout(cb, 16); };
+    frame(function () { reconcile(element); });
+  }
+
+  $(document)
+    .on('show.bs.modal', '.modal', function () { record(this, 'shown'); })
+    .on('hide.bs.modal', '.modal', function () { record(this, 'hidden'); })
+    .on('shown.bs.modal', '.modal', function () { reconcileSoon(this); })
+    .on('hidden.bs.modal', '.modal', function () { reconcileSoon(this); });
+})();
+
+/*
+  A progress bar's width used to be a style attribute holding a server-rendered
+  percentage. style-src stops allowing those, and the number was already on the
+  element twice - once as a width for sighted readers, once as aria-valuenow for
+  assistive technology. It is read from the accessible value now, so the two
+  cannot drift apart, and applied through the CSSOM, which CSP does not govern.
+
+  Bootstrap gives .progress-bar a width of 0 and a 0.6s width transition, so the
+  bars grow into place rather than appearing. Under prefers-reduced-motion the
+  stylesheet turns that transition off.
+*/
+(function () {
+  'use strict';
+
+  function sizeProgressBars() {
+    var bars = document.querySelectorAll('.progress-bar[aria-valuenow]');
+
+    Array.prototype.forEach.call(bars, function (bar) {
+      var value = parseFloat(bar.getAttribute('aria-valuenow'));
+
+      if (!isNaN(value)) {
+        bar.style.width = value + '%';
+      }
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', sizeProgressBars);
+  } else {
+    sizeProgressBars();
+  }
+})();

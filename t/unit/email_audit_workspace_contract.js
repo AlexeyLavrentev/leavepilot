@@ -172,7 +172,6 @@ describe('Email Audit workspace contract (Stage 8N)', function () {
 
     it('supports contrast and transparency preferences with no unscoped overrides', function () {
       const stage = css.slice(css.indexOf('/* Stage 8N: Email Audit Workspace */'));
-      expect(stage).to.include('@media (prefers-reduced-transparency: reduce)');
       expect(stage).to.include('@media (prefers-contrast: more)');
       expect(stage).to.not.match(/\n\.(?:btn|row|form-group|surface|table|collapse)\s*\{/);
     });

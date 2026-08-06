@@ -133,17 +133,57 @@ describe('Content-addressed static assets', function() {
       expect(calls[0].maxAge).to.equal(0);
     });
 
-    it('falls through for a path it has never heard of', function() {
+    /*
+      A fingerprinted stylesheet drags its siblings along with it.
+      font-awesome.min.css says url('../fonts/fontawesome-webfont.woff2'), and
+      the browser resolves that against the URL the stylesheet came from - so it
+      asks for /assets/<the stylesheet's hash>/fonts/…, a path the manifest has
+      never heard of because only css/ and js/ are fingerprinted.
+
+      Falling through sent those to the router, which answered a redirect. The
+      browser got HTML where it expected a font: "invalid sfntVersion
+      1008813135" is 0x3C21444F, the bytes "<!DO". Every icon in the app
+      rendered as a box, on every page, for as long as the fingerprinted mount
+      had been in place.
+    */
+    it('serves a sibling the manifest does not know rather than dropping it', function() {
       const calls = [];
       const middleware = staticAssets.createStaticMiddleware(fakeExpress(calls));
+      const stylesheetHash = staticAssets.manifest.get('/css/font-awesome.min.css');
       let fellThrough = false;
 
-      middleware(requestFor('/css/nope.css', 'deadbeefdead'), {}, function() {
-        fellThrough = true;
-      });
+      middleware(
+        requestFor('/fonts/fontawesome-webfont.woff2', stylesheetHash),
+        {},
+        function() { fellThrough = true; }
+      );
 
-      expect(fellThrough).to.equal(true);
-      expect(calls).to.have.length(0);
+      expect(fellThrough).to.equal(false, 'the font was handed to the router again');
+      expect(calls).to.have.length(1);
+    });
+
+    /*
+      The hash in that URL belongs to the stylesheet, not to the font, so it
+      says nothing about the bytes being served and must not buy a year.
+    */
+    it('does not cache such a sibling on a hash that is not its own', function() {
+      const calls = [];
+      const middleware = staticAssets.createStaticMiddleware(fakeExpress(calls));
+
+      middleware(requestFor('/fonts/fontawesome-webfont.woff2', 'deadbeefdead'), {}, function() {});
+
+      expect(calls).to.have.length(1);
+      expect(calls[0].immutable).to.not.equal(true);
+      expect(calls[0].maxAge).to.equal(0);
+    });
+
+    // The fallback only works if the mount root is the one those relative URLs
+    // resolve into. express.static answers its own 404 for anything missing.
+    it('serves them from a root that actually holds them', function() {
+      expect(
+        fs.existsSync(path.join(publicRoot, 'fonts', 'fontawesome-webfont.woff2')),
+        'the fonts moved out of public/, and the fallback now resolves to nothing'
+      ).to.equal(true);
     });
   });
 

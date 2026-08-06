@@ -212,18 +212,7 @@ app.use(function(req,res,next){
   next();
 });
 
-app.use(function(req,res,next){
-    res.locals.custom_java_script = [
-      '/js/bootstrap-datepicker.js',
-      '/js/global.js',
-      '/js/leave_forecast.js'
-    ];
-    res.locals.custom_css = [
-      '/css/bootstrap-datepicker3.standalone.css'
-    ];
-
-    next();
-});
+app.use(require('./lib/middleware/page_assets').attachPageAssets);
 
 app.get('/language/:lng', function(req, res) {
   const supportedLanguages = config.get('supported_languages') || ['en'];
@@ -377,9 +366,7 @@ app.use(
 );
 
 // catch 404
-app.use(function(req, res, next) {
-  res.render('not_found');
-});
+app.use(require('./lib/middleware/not_found'));
 
 
 // error handlers

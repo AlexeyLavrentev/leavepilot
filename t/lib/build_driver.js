@@ -1,3 +1,51 @@
+// Generous: a healthy quit takes milliseconds.
+var QUIT_TIMEOUT_MS = 15000;
+
+/*
+  Wraps a quit so it always settles.
+
+  Teardown has no assertion to make, so the only thing that matters is that it
+  finishes. Left unbounded it does not: fifty-three specs tear down with
+  `after(done => driver.quit().then(done))` and no catch, so a quit that rejects
+  never calls done(), and one that hangs on a socket to a browser that has
+  already gone never calls it either. The suite can then neither continue nor
+  end, and the run goes silent until something outside kills it - which is what
+  both hangs captured on CI look like, each beginning on the line right after
+  mocha printed a failing test.
+*/
+function boundQuit(quit, timeoutMs) {
+  return function() {
+    return new Promise(function(resolve) {
+      var settled = false;
+
+      var finish = function(note) {
+        if (settled) return;
+        settled = true;
+        if (note) console.error(note);
+        resolve();
+      };
+
+      var timer = setTimeout(function() {
+        finish('driver.quit did not return within ' + timeoutMs + 'ms, carrying on');
+      }, timeoutMs);
+
+      // unref, so the teardown timer cannot itself keep the process alive.
+      if (typeof timer.unref === 'function') timer.unref();
+
+      Promise.resolve()
+        .then(quit)
+        .then(
+          function() { clearTimeout(timer); finish(); },
+          function(error) {
+            clearTimeout(timer);
+            finish('driver.quit failed, carrying on: ' + (error && error.message));
+          }
+        );
+    });
+  };
+}
+
+
 var fs = require('fs'),
     path = require('path'),
     os = require('os'),
@@ -45,13 +93,34 @@ function resolveChromeBinary() {
   return findCachedChromeHeadlessShell();
 }
 
-module.exports = function() {
+/*
+  Separated from the driver so what Chrome is told can be asserted without
+  starting one.
+*/
+function buildOptions() {
   var options = new chrome.Options();
   var chromeBinary = resolveChromeBinary();
 
   if (chromeBinary) {
     options.setChromeBinaryPath(chromeBinary);
   }
+
+  /*
+    The suite asserts English strings, so the browser's language is part of the
+    contract these specs are written against rather than something to inherit
+    from whoever runs them. CI's Chrome happens to negotiate English; a
+    developer's may not. On a machine whose Chrome asks for Russian the
+    registration page comes back "Новая компания" and every browser spec fails
+    at its first assertion - which reads as the whole suite being broken locally
+    rather than as a language mismatch.
+
+    Both halves are needed: --lang sets the UI language, the preference sets the
+    Accept-Language header, and it is the header the application negotiates on.
+
+    Outside the headless block, because the language is not a headless concern.
+  */
+  options.addArguments('--lang=en-US');
+  options.setUserPreferences({'intl.accept_languages': 'en-US,en'});
 
   if (!process.env.SHOW_CHROME) {
     options.addArguments('--headless=new');
@@ -78,9 +147,13 @@ module.exports = function() {
     );
   }
 
+  return options;
+}
+
+module.exports = function() {
   var driver = new webdriver.Builder()
     .forBrowser('chrome')
-    .setChromeOptions(options)
+    .setChromeOptions(buildOptions())
     .build();
 
   /*
@@ -97,5 +170,25 @@ module.exports = function() {
     script: 20000,
   });
 
+  /*
+    quit() is bounded, because an unbounded one is how this suite hangs.
+
+    Fifty-three specs tear down with `after(done => driver.quit().then(done))`
+    and no catch. When the browser is already gone - which is what a wedged spec
+    leaves behind - that request can sit on a socket indefinitely: done() is
+    never called, the suite can neither continue nor end, and the run goes
+    silent until something outside kills it. Both hangs captured on CI begin on
+    the line immediately after mocha printed a failing test, which is exactly
+    where this hook runs.
+
+    Teardown has no assertion to make, so it resolves either way. A browser that
+    outlives the process is the CI runner's problem to reap, and it already
+    does; a suite that cannot finish is nobody's.
+  */
+  driver.quit = boundQuit(driver.quit.bind(driver), QUIT_TIMEOUT_MS);
+
   return driver;
 };
+
+module.exports.boundQuit = boundQuit;
+module.exports.buildOptions = buildOptions;

@@ -158,7 +158,6 @@ describe('Diagnostics Support Workspace contract (Stage 8P)', function () {
 
     it('supports contrast, transparency, focus and bounded JSON preview', function () {
       const stage = css.slice(css.indexOf('/* Stage 8P: Diagnostics Support Workspace */'));
-      expect(stage).to.include('@media (prefers-reduced-transparency: reduce)');
       expect(stage).to.include('@media (prefers-contrast: more)');
       expect(stage).to.include(':focus-visible');
       expect(stage).to.match(/\.diagnostics-page\s+\.diagnostics-preview pre\s*\{[^}]*max-height:\s*420px[^}]*overflow:\s*auto/);

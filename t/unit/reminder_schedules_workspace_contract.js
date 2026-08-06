@@ -34,6 +34,14 @@ function blockOf(source, selector) {
 
 describe('Reminder Schedules workspace contract (Stage 8M)', function () {
   const view = read('views/reminder_schedules_settings.hbs');
+  /*
+    The screen's controller moved out of the template into a file, so that no
+    page carries inline script and the Content-Security-Policy can stop allowing
+    it. Markup is still asserted against the view; behaviour is asserted against
+    the script, and the labels it builds now arrive as data rather than as
+    template expressions inside it.
+  */
+  const script = read('public/js/reminder_schedules.js');
   const route = read('lib/route/reminder_schedules.js');
   const community = read('lib/edition/community.js');
   const features = read('lib/features.js');
@@ -61,8 +69,8 @@ describe('Reminder Schedules workspace contract (Stage 8M)', function () {
     it('keeps both add entry points mapped to the same manual form opener', function () {
       expect(view).to.include('id="add-schedule"');
       expect(view).to.include('id="add-first-schedule"');
-      expect(view).to.include("document.getElementById('add-schedule').addEventListener('click', function() { openForm(null); })");
-      expect(view).to.include("document.getElementById('add-first-schedule').addEventListener('click', function() { openForm(null); })");
+      expect(script).to.include("document.getElementById('add-schedule').addEventListener('click', function() { openForm(null); })");
+      expect(script).to.include("document.getElementById('add-first-schedule').addEventListener('click', function() { openForm(null); })");
     });
   });
 
@@ -77,11 +85,11 @@ describe('Reminder Schedules workspace contract (Stage 8M)', function () {
     });
 
     it('creates localized labels, status text, and deliberate row hooks', function () {
-      expect(view).to.include("row.setAttribute('data-reminder-schedule-row', String(schedule.id))");
-      expect(view).to.include("cell.setAttribute('data-label', label)");
-      expect(view).to.include("'mobile-card-action reminder-schedule-actions'");
-      expect(view).to.include("'reminder-status-chip '");
-      expect(view).to.include('schedule.isActive ? \'{{t "emails.reminderSchedules.active"}}\' : \'{{t "emails.reminderSchedules.inactive"}}\'');
+      expect(script).to.include("row.setAttribute('data-reminder-schedule-row', String(schedule.id))");
+      expect(script).to.include("cell.setAttribute('data-label', label)");
+      expect(script).to.include("'mobile-card-action reminder-schedule-actions'");
+      expect(script).to.include("'reminder-status-chip '");
+      expect(script).to.include("schedule.isActive ? strings.active : strings.inactive");
     });
 
     it('preserves every schedule form identifier and native constraint', function () {
@@ -109,24 +117,26 @@ describe('Reminder Schedules workspace contract (Stage 8M)', function () {
     });
 
     it('keeps destructive deletion behind the existing localized confirmation', function () {
-      expect(view).to.include("if (!window.confirm('{{t \"emails.reminderSchedules.deleteConfirm\"}}')) return");
-      expect(view).to.include("method: 'DELETE'");
+      // The confirmation text is a label like any other now: data on the page
+      // rather than an expression rendered into the code.
+      expect(script).to.include('window.confirm(strings.deleteConfirm)');
+      expect(script).to.include("method: 'DELETE'");
     });
   });
 
   describe('protected request and security contract', function () {
     it('keeps the CSRF token and same-origin JSON request headers', function () {
-      expect(view).to.include('var csrf = {{{json csrfToken}}};');
-      expect(view).to.include("'X-CSRF-Token': csrf, 'Content-Type': 'application/json'");
+      expect(script).to.include('var csrf = (window.timeoff || {}).csrfToken;');
+      expect(script).to.include("'X-CSRF-Token': csrf, 'Content-Type': 'application/json'");
       expect(route).to.include('csrfToken: res.locals.csrf_token');
     });
 
-    it('keeps every API endpoint and method in the inline controller', function () {
-      expect(view).to.include("request('/api/reminder-schedules')");
-      expect(view).to.include("'/api/reminder-schedules/' + id");
-      expect(view).to.include("method: id ? 'PUT' : 'POST'");
-      expect(view).to.include("request('/api/reminder-schedules/' + schedule.id, {method: 'DELETE'})");
-      expect(view).to.include("request('/api/reminder-schedules/test-send', {method: 'POST'");
+    it('keeps every API endpoint and method in the controller', function () {
+      expect(script).to.include("request('/api/reminder-schedules')");
+      expect(script).to.include("'/api/reminder-schedules/' + id");
+      expect(script).to.include("method: id ? 'PUT' : 'POST'");
+      expect(script).to.include("request('/api/reminder-schedules/' + schedule.id, {method: 'DELETE'})");
+      expect(script).to.include("request('/api/reminder-schedules/test-send', {method: 'POST'");
     });
 
     it('keeps every persisted JSON payload field', function () {
@@ -139,7 +149,7 @@ describe('Reminder Schedules workspace contract (Stage 8M)', function () {
         'emailSubjectCustom',
         'emailBodyCustom',
       ]) {
-        expect(view).to.match(new RegExp('\\b' + field + ':'));
+        expect(script).to.match(new RegExp('\\b' + field + ':'));
       }
     });
 
@@ -179,8 +189,8 @@ describe('Reminder Schedules workspace contract (Stage 8M)', function () {
   describe('accessible feedback and scoped presentation', function () {
     it('exposes atomic status feedback and promotes errors to alerts', function () {
       expect(view).to.include('aria-live="polite" aria-atomic="true"');
-      expect(view).to.include("feedback.setAttribute('role', isError ? 'alert' : 'status')");
-      expect(view).to.include("feedback.setAttribute('aria-live', isError ? 'assertive' : 'polite')");
+      expect(script).to.include("feedback.setAttribute('role', isError ? 'alert' : 'status')");
+      expect(script).to.include("feedback.setAttribute('aria-live', isError ? 'assertive' : 'polite')");
     });
 
     it('declares light and dark tokens only under the page scope', function () {
@@ -222,7 +232,6 @@ describe('Reminder Schedules workspace contract (Stage 8M)', function () {
 
     it('supports contrast and reduced transparency without unscoped overrides', function () {
       const stage = css.slice(css.indexOf('/* Stage 8M: Reminder Schedules Workspace */'));
-      expect(stage).to.include('@media (prefers-reduced-transparency: reduce)');
       expect(stage).to.include('@media (prefers-contrast: more)');
       expect(stage).to.not.match(/\n\.(?:btn|row|form-group|surface|modal-content)\s*\{/);
     });

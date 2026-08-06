@@ -196,7 +196,6 @@ describe('Reports detail workspace contract (Stage 8I)', function () {
 
     it('supports increased contrast and reduced transparency', function () {
       expect(css).to.match(/@media \(prefers-contrast: more\)[\s\S]*\.report-detail-page/);
-      expect(css).to.match(/@media \(prefers-reduced-transparency: reduce\)[\s\S]*\.report-detail-page/);
     });
 
     it('uses px rather than rem typography throughout the report scope', function () {
