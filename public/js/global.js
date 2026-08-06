@@ -2202,3 +2202,36 @@ $(document).ready(function () {
     .on('shown.bs.modal', '.modal', function () { reconcileSoon(this); })
     .on('hidden.bs.modal', '.modal', function () { reconcileSoon(this); });
 })();
+
+/*
+  A progress bar's width used to be a style attribute holding a server-rendered
+  percentage. style-src stops allowing those, and the number was already on the
+  element twice - once as a width for sighted readers, once as aria-valuenow for
+  assistive technology. It is read from the accessible value now, so the two
+  cannot drift apart, and applied through the CSSOM, which CSP does not govern.
+
+  Bootstrap gives .progress-bar a width of 0 and a 0.6s width transition, so the
+  bars grow into place rather than appearing. Under prefers-reduced-motion the
+  stylesheet turns that transition off.
+*/
+(function () {
+  'use strict';
+
+  function sizeProgressBars() {
+    var bars = document.querySelectorAll('.progress-bar[aria-valuenow]');
+
+    Array.prototype.forEach.call(bars, function (bar) {
+      var value = parseFloat(bar.getAttribute('aria-valuenow'));
+
+      if (!isNaN(value)) {
+        bar.style.width = value + '%';
+      }
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', sizeProgressBars);
+  } else {
+    sizeProgressBars();
+  }
+})();
