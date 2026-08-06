@@ -37,7 +37,7 @@
     "passport": "^0.7.0",
     "passport-http-bearer": "^1.0.1",
     "passport-local": "^1.0.0",
-    "redis": "^5.12.1",
+    "redis": "^6.2.0",
     "sequelize": "^6.37.7",
     "serve-favicon": "^2.1.7",
     "sqlite3": "^6.0.1",
