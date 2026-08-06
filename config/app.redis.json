@@ -17,7 +17,6 @@
       "port": 6379
     }
   },
-  "ga_analytics_on" : false,
   "application_domain" : "http://app.timeoff.management",
   "promotion_website_domain" : "http://timeoff.management",
   "branding": {
