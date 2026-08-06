@@ -2520,6 +2520,17 @@ textarea.form-control {
   overflow: hidden;
 }
 
+/*
+  The width is applied from script now, so Bootstrap's 0.6s width transition
+  actually runs and the bars grow into place. That is motion where there was
+  none, and this is the preference that says not to.
+*/
+@media (prefers-reduced-motion: reduce) {
+  .employee-allowance-progress .progress-bar {
+    transition: none;
+  }
+}
+
 .employee-absence-summary {
   margin-bottom: $space-4;
 }
