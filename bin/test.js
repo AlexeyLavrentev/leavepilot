@@ -5,6 +5,21 @@
 const fs = require('fs');
 const path = require('path');
 const { spawn } = require('child_process');
+const { spawnInGroup, killGroup, terminateGroup } = require('./lib/spawn_group');
+
+/*
+  Every batch this runner has going, so an interrupt can take their browsers
+  with them. A detached child is out of the terminal's foreground group and
+  never sees the Ctrl-C that stopped the runner.
+*/
+const liveChildren = new Set();
+
+['SIGINT', 'SIGTERM'].forEach(signal => {
+  process.on(signal, () => {
+    liveChildren.forEach(child => killGroup(child, 'SIGKILL'));
+    process.exit(signal === 'SIGINT' ? 130 : 143);
+  });
+});
 
 const port = process.env.PORT || '3000';
 const testHost = process.env.TEST_HOST || '127.0.0.1';
@@ -42,15 +57,25 @@ const serverEnv = Object.assign({}, baseTestEnv, {
   retry above already knows how to handle.
 */
 const runWithTimeout = (command, args, options = {}, timeoutMs = 0) => new Promise((resolve, reject) => {
-  const child = spawn(command, args, Object.assign({
+  /*
+    In its own process group, so that killing it kills what it started. A batch
+    is mocha, plus the chromedriver it starts, plus the browser chromedriver
+    starts; killing the first of those three leaves the other two running with
+    no parent. See bin/lib/spawn_group.js for what that cost.
+  */
+  const child = spawnInGroup(command, args, Object.assign({
     stdio: 'inherit',
     env: baseTestEnv,
   }, options));
+
+  liveChildren.add(child);
 
   let timer;
   let timedOut = false;
 
   const done = () => {
+    liveChildren.delete(child);
+
     if (timer) {
       clearTimeout(timer);
     }
@@ -62,7 +87,7 @@ const runWithTimeout = (command, args, options = {}, timeoutMs = 0) => new Promi
       console.error(
         `No exit after ${Math.round(timeoutMs / 1000)}s, killing: ${command} ${args.join(' ')}`
       );
-      child.kill('SIGKILL');
+      terminateGroup(child);
     }, timeoutMs);
     timer.unref();
   }
@@ -74,6 +99,13 @@ const runWithTimeout = (command, args, options = {}, timeoutMs = 0) => new Promi
 
   child.on('exit', code => {
     done();
+
+    /*
+      Swept after an ordinary exit too, not only after a kill. A driver.quit()
+      that timed out leaves its chromedriver behind, mocha --exit does not wait
+      for it, and the group outlives the batch that owned it.
+    */
+    killGroup(child, 'SIGKILL');
 
     if (timedOut) {
       reject(new Error(`${command} ${args.join(' ')} hung and was killed`));
