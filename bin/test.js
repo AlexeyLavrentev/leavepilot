@@ -6,6 +6,7 @@ const fs = require('fs');
 const path = require('path');
 const { spawn } = require('child_process');
 const { spawnInGroup, killGroup, terminateGroup } = require('./lib/spawn_group');
+const { createRunTemp, removeRunTemp, temporaryDirectoryEnv } = require('./lib/run_temp');
 
 /*
   Every batch this runner has going, so an interrupt can take their browsers
@@ -14,9 +15,18 @@ const { spawnInGroup, killGroup, terminateGroup } = require('./lib/spawn_group')
 */
 const liveChildren = new Set();
 
+/*
+  Everything the run writes to temp goes here, so clearing up is one delete.
+  Chrome leaves a profile directory behind for every WebDriver session - on a
+  clean run as much as a killed one - and nothing was ever removing them. See
+  bin/lib/run_temp.js for what that came to.
+*/
+const runTemp = createRunTemp();
+
 ['SIGINT', 'SIGTERM'].forEach(signal => {
   process.on(signal, () => {
     liveChildren.forEach(child => killGroup(child, 'SIGKILL'));
+    removeRunTemp(runTemp);
     process.exit(signal === 'SIGINT' ? 130 : 143);
   });
 });
@@ -26,7 +36,7 @@ const testHost = process.env.TEST_HOST || '127.0.0.1';
 const host = `http://${testHost}:${port}`;
 const node = process.execPath;
 const dbStorage = process.env.TEST_DB_STORAGE || path.join(process.cwd(), 'db.test.sqlite');
-const baseTestEnv = Object.assign({}, process.env, {
+const baseTestEnv = Object.assign({}, process.env, temporaryDirectoryEnv(runTemp), {
   PORT: port,
   HOST: testHost,
   TEST_HOST: testHost,
@@ -386,7 +396,11 @@ run(node, ['bin/db_update.js'])
   })
   .then(() => runMochaSuite())
   .then(() => stopServer(server))
+  .then(() => removeRunTemp(runTemp))
   .catch(error => stopServer(server).then(() => {
+    // After the server, so nothing is still writing into it, and before the
+    // exit, because a failing run leaves as much behind as a passing one.
+    removeRunTemp(runTemp);
     console.error(error && error.stack || error);
     process.exit(1);
   }));

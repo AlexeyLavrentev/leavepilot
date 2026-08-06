@@ -106,6 +106,24 @@ function buildOptions() {
   }
 
   /*
+    A profile of our own, under this run's temp directory, rather than the
+    org.chromium.Chromium.scoped_dir.* one Chrome makes when it is not told
+    where to put it - and then leaves behind when the session ends. Not only on
+    a killed run: a clean run of one spec, ten tests passing and driver.quit()
+    returning normally, still left one. Measured on a development machine, 7439
+    of them, 10.17 GB, accumulated over a few days of runs.
+
+    os.tmpdir() is the run's own directory, because bin/test.js hands its
+    children a TMPDIR and node honours it; the runner removes that directory
+    when the run ends, which takes every profile in it. Started by hand instead,
+    this is an ordinary temp directory and the host clears it on its own
+    schedule, as it did before.
+  */
+  options.addArguments(
+    '--user-data-dir=' + fs.mkdtempSync(path.join(os.tmpdir(), 'timeoff-chrome-'))
+  );
+
+  /*
     The suite asserts English strings, so the browser's language is part of the
     contract these specs are written against rather than something to inherit
     from whoever runs them. CI's Chrome happens to negotiate English; a
