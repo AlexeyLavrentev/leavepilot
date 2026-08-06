@@ -1,4 +1,5 @@
 'use strict';
+const setViewport = require('../lib/set_viewport');
 
 var By               = require('selenium-webdriver').By,
     expect           = require('chai').expect,
@@ -33,7 +34,7 @@ describe('Login page SSO UX', function(){
 
   before(function(){
     driver = build_driver();
-    driver.manage().window().setRect({width: 1024, height: 768});
+    setViewport(driver, {width: 1024, height: 768});
     return driver.get(application_host + 'login/');
   });
 

@@ -1,3 +1,4 @@
+const setViewport = require('./set_viewport');
 /*
 
 */
@@ -33,7 +34,7 @@ var register_new_user_func = Promise.promisify( function(args, callback){
   var driver = args.driver || build_driver()
 
 
-  driver.manage().window().setRect({width: 1024, height: 768})
+  setViewport(driver, {width: 1024, height: 768})
     .then(function(){
       return driver.get(application_root + '/register/');
     })

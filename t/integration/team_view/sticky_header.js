@@ -14,6 +14,7 @@ const models = require('../../../lib/model/db');
 const registerNewUser = require('../../lib/register_new_user');
 const addNewUser = require('../../lib/add_new_user');
 const openPage = require('../../lib/open_page');
+const setViewport = require('../../lib/set_viewport');
 
 describe('Team View sticky header', function() {
   this.timeout(config.get_execution_timeout() * 3);
@@ -223,7 +224,7 @@ describe('Team View sticky header', function() {
   }
 
   async function captureVisualCase(testCase) {
-    await driver.manage().window().setRect({width: testCase.width, height: testCase.height});
+    await setViewport(driver, {width: testCase.width, height: testCase.height});
     await openAndInflate(testCase.months);
     await applyTheme(testCase.theme);
 
@@ -315,7 +316,7 @@ describe('Team View sticky header', function() {
     const capabilities = await driver.getCapabilities();
     browserName = capabilities.get('browserName');
     browserVersion = capabilities.get('browserVersion');
-    await driver.manage().window().setRect({width: 1024, height: 768});
+    await setViewport(driver, {width: 1024, height: 768});
     await openAndInflate(12);
   });
 
@@ -332,7 +333,16 @@ describe('Team View sticky header', function() {
   });
 
   it('reports the real browser, desktop viewport, and two real department tables', async function() {
-    const viewport = await driver.manage().window().getRect();
+    /*
+      The viewport, not the window. These read window().getRect() and called it
+      the viewport, which are different numbers: giving the page a 1024x768
+      viewport takes a taller window than that, by however much chrome the host
+      draws - 143px here. The window assertion passed while the page was 625px
+      tall and the test said "desktop viewport" about it.
+    */
+    const viewport = await driver.executeScript(
+      'return {width: window.innerWidth, height: window.innerHeight};'
+    );
     expect(browserName).to.match(/^chrome/);
     expect(viewport).to.include({width: 1024, height: 768});
     expect((await driver.findElements(By.css('.team-view-table-shell'))).length).to.be.at.least(2);
@@ -559,7 +569,7 @@ describe('Team View sticky header', function() {
       {width: 768, height: 900},
       {width: 390, height: 844},
     ]) {
-      await driver.manage().window().setRect(viewport);
+      await setViewport(driver, viewport);
       await driver.executeScript('window.scrollTo(0, 0);');
       await driver.sleep(80);
       const pageOverflowBeforeSticky = await driver.executeScript(
@@ -606,7 +616,7 @@ describe('Team View sticky header', function() {
   });
 
   it('verifies mobile wheel/pointer input without CDP touch emulation', async function() {
-    await driver.manage().window().setRect({width: 390, height: 844});
+    await setViewport(driver, {width: 390, height: 844});
     await openAndInflate(12);
     await applyTheme('light');
     await driver.executeScript(function() {

@@ -13,6 +13,7 @@ const expect = require('chai').expect;
 const registerNewUser = require('../../lib/register_new_user');
 const addNewUser = require('../../lib/add_new_user');
 const openPage = require('../../lib/open_page');
+const setViewport = require('../../lib/set_viewport');
 
 describe('Interactive Team View deducted-days popover', function() {
   this.timeout(config.get_execution_timeout());
@@ -193,7 +194,16 @@ describe('Interactive Team View deducted-days popover', function() {
 
   it('reports the real browser and desktop viewport used by the suite', async function() {
     const capabilities = await driver.getCapabilities();
-    const viewport = await driver.manage().window().getRect();
+    /*
+      The viewport, not the window. These read window().getRect() and called it
+      the viewport, which are different numbers: giving the page a 1024x768
+      viewport takes a taller window than that, by however much chrome the host
+      draws - 143px here. The window assertion passed while the page was 625px
+      tall and the test said "desktop viewport" about it.
+    */
+    const viewport = await driver.executeScript(
+      'return {width: window.innerWidth, height: window.innerHeight};'
+    );
     const browserName = capabilities.get('browserName');
     const browserVersion = capabilities.get('browserVersion');
 
@@ -446,7 +456,7 @@ describe('Interactive Team View deducted-days popover', function() {
     fs.mkdirSync(directory, {recursive: true});
 
     for (const viewport of viewports) {
-      await driver.manage().window().setRect({
+      await setViewport(driver, {
         width: viewport.width,
         height: viewport.height,
       });
@@ -591,7 +601,7 @@ describe('Interactive Team View deducted-days popover', function() {
   });
 
   it('validates mobile pointer toggle, outside close, and both scroll regions', async function() {
-    await driver.manage().window().setRect({width: 390, height: 844});
+    await setViewport(driver, {width: 390, height: 844});
     await openTeamView(12);
     await applyTheme('light');
     const trigger = await fractionalTrigger();

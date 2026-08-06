@@ -36,6 +36,7 @@ var moment = require('moment');
 var register_new_user_func = require('../../lib/register_new_user');
 var add_new_user_func = require('../../lib/add_new_user');
 var open_page_func = require('../../lib/open_page');
+const sizeViewport = require('../../lib/set_viewport');
 
 var SCREEN_DIR = '/tmp/stage8e-employee-details';
 
@@ -46,7 +47,7 @@ function ensureScreenDir() {
 }
 
 async function setViewport(driver, w, h) {
-  await driver.manage().window().setRect({ width: w, height: h });
+  await sizeViewport(driver, { width: w, height: h });
   await driver.sleep(250);
 }
 

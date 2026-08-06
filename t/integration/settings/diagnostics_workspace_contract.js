@@ -14,11 +14,12 @@ var until = webdriver.until;
 var config = require('../../lib/config');
 var registerNewUser = require('../../lib/register_new_user');
 var openPage = require('../../lib/open_page');
+const sizeViewport = require('../../lib/set_viewport');
 
 var SCREEN_DIR = '/tmp/stage8p-diagnostics';
 
 async function setViewport(driver, width, height) {
-  await driver.manage().window().setRect({ width: width, height: height });
+  await sizeViewport(driver, { width: width, height: height });
   await driver.sleep(180);
 }
 

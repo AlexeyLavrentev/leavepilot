@@ -15,11 +15,12 @@ var registerNewUser = require('../../lib/register_new_user');
 var openPage = require('../../lib/open_page');
 var submitForm = require('../../lib/submit_form');
 var setUserStart = require('../../lib/set_user_to_start_at_the_beginning_of_the_year');
+const sizeViewport = require('../../lib/set_viewport');
 
 var SCREEN_DIR = '/tmp/stage8n-email-audit';
 
 async function setViewport(driver, width, height) {
-  await driver.manage().window().setRect({ width: width, height: height });
+  await sizeViewport(driver, { width: width, height: height });
   await driver.sleep(180);
 }
 

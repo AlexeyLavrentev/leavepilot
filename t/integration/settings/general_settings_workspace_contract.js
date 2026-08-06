@@ -19,6 +19,7 @@ var until = webdriver.until;
 var config = require('../../lib/config');
 var register_new_user_func = require('../../lib/register_new_user');
 var open_page_func = require('../../lib/open_page');
+const sizeViewport = require('../../lib/set_viewport');
 
 var SCREEN_DIR = '/tmp/stage8f-general-settings';
 
@@ -29,7 +30,7 @@ function ensureScreenDir() {
 }
 
 async function setViewport(driver, width, height) {
-  await driver.manage().window().setRect({ width: width, height: height });
+  await sizeViewport(driver, { width: width, height: height });
   await driver.sleep(180);
 }
 

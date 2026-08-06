@@ -198,7 +198,16 @@ describe('Interactive leave details popover — all first-party surfaces', funct
 
   it('reports the real browser and desktop viewport used by the suite', async function() {
     const capabilities = await driver.getCapabilities();
-    const viewport = await driver.manage().window().getRect();
+    /*
+      The viewport, not the window. These read window().getRect() and called it
+      the viewport, which are different numbers: giving the page a 1024x768
+      viewport takes a taller window than that, by however much chrome the host
+      draws - 143px here. The window assertion passed while the page was 625px
+      tall and the test said "desktop viewport" about it.
+    */
+    const viewport = await driver.executeScript(
+      'return {width: window.innerWidth, height: window.innerHeight};'
+    );
     const browserName = capabilities.get('browserName');
     const browserVersion = capabilities.get('browserVersion');
     expect(browserName).to.match(/^chrome/);
