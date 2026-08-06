@@ -14,6 +14,7 @@ var models = require('../../../lib/model/db');
 var buildDriver = require('../../lib/build_driver');
 var registerNewUser = require('../../lib/register_new_user');
 var logoutUser = require('../../lib/logout_user');
+const sizeViewport = require('../../lib/set_viewport');
 
 var SCREEN_DIR = '/tmp/stage8k-account-access';
 
@@ -29,7 +30,7 @@ async function capture(driver, name) {
 }
 
 async function setViewport(driver, width, height) {
-  await driver.manage().window().setRect({ width: width, height: height });
+  await sizeViewport(driver, { width: width, height: height });
   await driver.sleep(180);
 }
 

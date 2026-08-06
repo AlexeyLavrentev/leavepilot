@@ -36,6 +36,7 @@ const models = require('../../../lib/model/db');
 const register_new_user_func = require('../../lib/register_new_user');
 const add_new_user_func = require('../../lib/add_new_user');
 const open_page_func = require('../../lib/open_page');
+const sizeViewport = require('../../lib/set_viewport');
 
 const SCREEN_DIR = '/tmp/screens';
 
@@ -46,7 +47,7 @@ function ensureScreenDir() {
 }
 
 async function setViewport(driver, w, h) {
-  await driver.manage().window().setRect({ width: w, height: h });
+  await sizeViewport(driver, { width: w, height: h });
   await driver.sleep(250);
 }
 

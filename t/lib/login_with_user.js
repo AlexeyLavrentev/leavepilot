@@ -1,3 +1,4 @@
+const setViewport = require('./set_viewport');
 
 'use strict';
 
@@ -16,7 +17,7 @@ function login_with_user_func(args) {
       should_fail      = args.should_fail || false,
       driver           = args.driver || build_driver();
 
-  return driver.manage().window().setRect({width: 1024, height: 768})
+  return setViewport(driver, {width: 1024, height: 768})
     .then(function() {
       return driver.get(application_host + 'login/');
     })

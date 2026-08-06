@@ -1,4 +1,5 @@
 'use strict';
+const sizeViewport = require('../../lib/set_viewport');
 
 /* globals describe, it, before, after */
 
@@ -37,7 +38,7 @@ function ensureScreenDir() {
 }
 
 async function setViewport(driver, w, h) {
-  await driver.manage().window().setRect({ width: w, height: h });
+  await sizeViewport(driver, { width: w, height: h });
   await driver.sleep(250);
 }
 
