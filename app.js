@@ -20,6 +20,13 @@ const i18nextMiddleware = require('i18next-http-middleware');
 const { initI18next } = require('./lib/i18n');
 
 var app = express();
+
+/*
+  Express advertises itself in an X-Powered-By header on every response. It
+  tells an attacker which stack to look up known issues for and tells everyone
+  else nothing, which is a poor trade for a header sent on every request.
+*/
+app.disable('x-powered-by');
 var baseViewPath = path.join(__dirname, 'views');
 var baseLayoutsPath = path.join(baseViewPath, 'layouts');
 var editionContext = {

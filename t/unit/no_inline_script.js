@@ -183,7 +183,10 @@ describe('No page carries inline script', function() {
     });
 
     it('exist', function() {
-      ['feeds_list.js', 'reminder_schedules.js', 'theme_boot.js', 'config_boot.js', 'analytics.js']
+      // analytics.js is not here: the snippet it held is gone. It pointed at a
+      // host script-src does not allow and at a Universal Analytics property,
+      // which stopped taking data in July 2023.
+      ['feeds_list.js', 'reminder_schedules.js', 'theme_boot.js', 'config_boot.js']
         .forEach(name => {
           expect(
             fs.existsSync(path.join(root, 'public', 'js', name)),
