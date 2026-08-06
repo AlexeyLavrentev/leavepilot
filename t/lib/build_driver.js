@@ -93,13 +93,34 @@ function resolveChromeBinary() {
   return findCachedChromeHeadlessShell();
 }
 
-module.exports = function() {
+/*
+  Separated from the driver so what Chrome is told can be asserted without
+  starting one.
+*/
+function buildOptions() {
   var options = new chrome.Options();
   var chromeBinary = resolveChromeBinary();
 
   if (chromeBinary) {
     options.setChromeBinaryPath(chromeBinary);
   }
+
+  /*
+    The suite asserts English strings, so the browser's language is part of the
+    contract these specs are written against rather than something to inherit
+    from whoever runs them. CI's Chrome happens to negotiate English; a
+    developer's may not. On a machine whose Chrome asks for Russian the
+    registration page comes back "Новая компания" and every browser spec fails
+    at its first assertion - which reads as the whole suite being broken locally
+    rather than as a language mismatch.
+
+    Both halves are needed: --lang sets the UI language, the preference sets the
+    Accept-Language header, and it is the header the application negotiates on.
+
+    Outside the headless block, because the language is not a headless concern.
+  */
+  options.addArguments('--lang=en-US');
+  options.setUserPreferences({'intl.accept_languages': 'en-US,en'});
 
   if (!process.env.SHOW_CHROME) {
     options.addArguments('--headless=new');
@@ -126,9 +147,13 @@ module.exports = function() {
     );
   }
 
+  return options;
+}
+
+module.exports = function() {
   var driver = new webdriver.Builder()
     .forBrowser('chrome')
-    .setChromeOptions(options)
+    .setChromeOptions(buildOptions())
     .build();
 
   /*
@@ -166,3 +191,4 @@ module.exports = function() {
 };
 
 module.exports.boundQuit = boundQuit;
+module.exports.buildOptions = buildOptions;
