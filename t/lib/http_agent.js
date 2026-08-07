@@ -198,7 +198,23 @@ async function agent() {
   return testAgent;
 }
 
-async function close() {
+/*
+  Per-suite teardown: stops listening and puts the environment back, leaving the
+  database and the session store for whoever runs next.
+
+  close() cannot do this job, because it closes the sequelize connection while
+  ready() keeps its promise memoised - so the second suite to call close() finds
+  a dead connection ("getConnection was called after the connection manager was
+  closed"). That made close() something only the last suite in the process could
+  call, which in turn meant every other suite left DISABLE_AUTH_RATE_LIMIT set:
+  the rate-limiter specs in t/unit/middleware/auth_security.js build their own
+  limiters and then find nothing is ever blocked.
+
+  Nothing here holds the event loop open - the listener is unref'd and the
+  database is in memory - so a suite that only releases still lets the process
+  exit.
+*/
+async function release() {
   if (server) {
     const activeServer = server;
     server = null;
@@ -209,6 +225,11 @@ async function close() {
       }
     });
   }
+  restoreTestEnv();
+}
+
+async function close() {
+  await release();
   if (app) {
     const sessionMiddleware = app.get('session_middleware');
     if (sessionMiddleware && typeof sessionMiddleware.close === 'function') {
@@ -216,7 +237,6 @@ async function close() {
     }
     await app.get('db_model').sequelize.close();
   }
-  restoreTestEnv();
 }
 
 module.exports = {
@@ -224,4 +244,5 @@ module.exports = {
   close,
   getApp,
   ready,
+  release,
 };
