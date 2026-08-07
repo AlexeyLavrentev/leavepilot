@@ -136,7 +136,8 @@ describe('Try to book more holidays then in allowance', function(){
         })
         .then(function(){ done() })
         .catch(done);
-      });
+      })
+        .catch(done);
   });
 
   it("Check that correct warning messages are shown", function(done){

@@ -132,7 +132,8 @@ describe('Leave type limits for next year: ' + next_year, function(){
           .then(function(){ done() })
           .catch(done);
         });
-      });
+      })
+        .catch(done);
   });
 
   it("Logout from regular user session", function(done){
@@ -224,7 +225,8 @@ describe('Leave type limits for next year: ' + next_year, function(){
         })
         .then(function(){ done() })
         .catch(done);
-      });
+      })
+        .catch(done);
   });
 
   after(function(done){

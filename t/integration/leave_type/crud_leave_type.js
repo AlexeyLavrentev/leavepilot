@@ -200,7 +200,8 @@ describe('CRUD for leave types', function(){
         })
         .then(function(){ done() })
         .catch(done);
-      });
+      })
+        .catch(done);
   });
 
   it('Check that new leave type was added at the beginning of the list as it starts with "A"', function(done){

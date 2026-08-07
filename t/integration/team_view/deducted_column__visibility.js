@@ -212,7 +212,8 @@ describe('Check that values for new columns are shown only for employess current
         })
         .then(function(){ done() })
         .catch(done);
-      });
+      })
+        .catch(done);
   });
 
   it("Open user editing page for user B", function(done){
