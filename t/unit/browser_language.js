@@ -25,6 +25,7 @@
 */
 
 const expect = require('chai').expect;
+const fs = require('fs');
 const { buildOptions } = require('../lib/build_driver');
 
 describe('The browser the suite drives', function() {
@@ -72,6 +73,50 @@ describe('The browser the suite drives', function() {
         process.env.SHOW_CHROME = withHead;
       }
     }
+  });
+
+  /*
+    puppeteer.executablePath() answered this until puppeteer 25 made it return
+    a promise. It did not announce the change: fs.existsSync of a promise is
+    false rather than a throw, so the branch stopped finding anything and
+    resolution fell through to chrome-headless-shell - a different binary from
+    the Chrome these specs are written against, and nothing would have said so.
+  */
+  describe('the browser it is pointed at', function() {
+
+    it('is a real Chrome, not the headless shell', function() {
+      const binary = chromeOptions().binary;
+
+      if (!binary) {
+        return this.skip();   // selenium finds its own; nothing to assert
+      }
+
+      expect(binary).to.not.match(
+        /chrome-headless-shell/,
+        'resolution fell through to the shell, which is not what the geometry contracts measure'
+      );
+    });
+
+    it('resolves to a path that exists', function() {
+      const binary = chromeOptions().binary;
+
+      if (!binary) {
+        return this.skip();
+      }
+
+      expect(fs.existsSync(binary), binary + ' does not exist').to.equal(true);
+    });
+
+    // The resolver has to stay synchronous: fifty-odd specs build a driver from
+    // it and none of them can await.
+    it('is resolved synchronously', function() {
+      const binary = chromeOptions().binary;
+
+      expect(binary === null || typeof binary === 'string').to.equal(
+        true,
+        'the binary arrived as a ' + (binary && binary.constructor && binary.constructor.name)
+      );
+    });
   });
 
   it('still carries the settings the layout contracts depend on', function() {
