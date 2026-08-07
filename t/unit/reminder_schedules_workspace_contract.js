@@ -157,14 +157,25 @@ describe('Reminder Schedules workspace contract (Stage 8M)', function () {
       expect(community.match(/feature\s*:\s*'leave_start_reminders'/g) || []).to.have.lengthOf(3);
       expect(community).to.include('middleware: [features.requireFeature(feature), ensureAdmin]');
       expect(features).to.include('leave_start_reminders: { defaultEnabled: true }');
+
+      /*
+        The URLs are the same; they are now split between the mount prefix and
+        the route. Both routers used to be mounted at '/' with absolute paths,
+        and a mount at '/' makes the two middleware above layers over every URL
+        rather than a gate on the router beside them - so the admin check
+        answered for every route registered after it, and for the 404 handler.
+        See t/unit/edition_route_mounting.js.
+      */
+      expect(community).to.include("path: '/settings/reminder-schedules/'");
+      expect(community).to.include("path: '/api/reminder-schedules'");
       for (const signature of [
-        "app.get('/api/reminder-schedules'",
-        "app.post('/api/reminder-schedules'",
-        "app.put('/api/reminder-schedules/:id'",
-        "app.delete('/api/reminder-schedules/:id'",
-        "app.get('/api/reminder-schedules/history'",
-        "app.post('/api/reminder-schedules/test-send'",
-        "app.get('/settings/reminder-schedules/'",
+        "app.get('/', listSchedules)",
+        "app.post('/', createSchedule)",
+        "app.put('/:id', updateSchedule)",
+        "app.delete('/:id', deleteSchedule)",
+        "app.get('/history', getHistory)",
+        "app.post('/test-send', testSend)",
+        "app.get('/', showReminderSchedules)",
       ]) {
         expect(route).to.include(signature);
       }
