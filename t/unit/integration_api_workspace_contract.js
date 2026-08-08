@@ -97,9 +97,17 @@ describe('Integration API Security Workspace contract (Stage 8O)', function () {
     it('requires an explicit confirmation before token regeneration', function () {
       expect(view).to.include('aria-describedby="regenerate_token_warning"');
       expect(view).to.include('data-confirm-message="{{t "integrationApi.regenerateConfirm"}}"');
-      expect(controller).to.include('window.confirm(message)');
-      expect(controller).to.include('event.preventDefault()');
-      expect(controller).to.match(/addEventListener\('click',[\s\S]*}, true\)/);
+      /*
+        The question used to be asked here as well as by the shared handler,
+        which meant two dialogs for one button. public/js/confirm_actions.js
+        reads the same attribute on the capture phase, on every page - so the
+        contract is that the attribute is there and something reads it.
+      */
+      const sharedHandler = read('public/js/confirm_actions.js');
+
+      expect(sharedHandler).to.include('window.confirm(message)');
+      expect(sharedHandler).to.include('event.preventDefault()');
+      expect(sharedHandler).to.match(/addEventListener\('click',[\s\S]*}, true\)/);
       expect(premiumIntegration.match(/confirm_dialog:\s*true/g) || []).to.have.lengthOf(2);
     });
 

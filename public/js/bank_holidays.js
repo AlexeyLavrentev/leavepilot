@@ -4,10 +4,10 @@ $(document).ready(function () {
 
     e.stopPropagation();
 
-    var confirmationMessage = $(this).attr('data-confirm-message');
-    if (!confirmationMessage || !window.confirm(confirmationMessage)) {
-      return false;
-    }
+    // The confirmation is asked by public/js/confirm_actions.js, which reads
+    // the same data-confirm-message attribute on the capture phase and stops
+    // this handler from running at all when the answer is no. Asking here too
+    // put the dialog up twice.
 
     var delete_form = $('#delete_bankholiday_form');
     delete_form.attr('action', delete_form.attr('action') + $(this).attr('value') + '/');
