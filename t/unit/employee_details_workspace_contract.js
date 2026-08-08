@@ -84,7 +84,15 @@ describe('Employee details workspace contract (Stage 8E)', function () {
       expect(shell).to.include('method="post"');
       expect(shell).to.include('action="/users/delete/{{employee.id}}/"');
       expect(shell).to.include('name="_csrf"');
-      expect(shell).to.include('onsubmit="return confirm(');
+      /*
+        This asked for onsubmit="return confirm(" - the shape the guard used to
+        have. An inline event handler is script, and script-src 'self' does not
+        allow one, so the browser never installed it: the attribute sat in the
+        markup looking like a guard while Delete deleted without asking. The
+        message is data now, read by public/js/confirm_actions.js.
+      */
+      expect(shell).to.include('data-confirm-message="');
+      expect(shell).to.not.match(/onsubmit\s*=/);
       expect(shell).to.include("{{t 'userDetails.deleteConfirm'");
       expect(shell).to.include('id="remove_btn"');
       expect(shell).to.include('type="submit"');

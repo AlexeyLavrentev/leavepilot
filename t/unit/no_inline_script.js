@@ -115,6 +115,30 @@ describe('No page carries inline script', function() {
       expect(offenders.map(relative)).to.deep.equal([]);
     });
 
+    /*
+      An inline event handler is script too, and script-src 'self' declines to
+      install it - silently. The attribute stays in the DOM and reads as a
+      guard, so a form carrying
+
+        onsubmit="return confirm('Delete this employee?')"
+
+      submits without asking. Measured in a browser rather than argued:
+
+        {"formFound":true,"attributePresent":true,"handlerInstalled":false}
+
+      This file checked <script> blocks and style attributes and not these,
+      which is why the five that existed survived the removal of
+      'unsafe-inline'. The message belongs in a data attribute, with the
+      handler in public/js/confirm_actions.js.
+    */
+    it('has no inline event handler in any of them', function() {
+      const offenders = servedToBrowsers.filter(file =>
+        /\son[a-z]+\s*=\s*["']/i.test(read(file))
+      );
+
+      expect(offenders.map(relative)).to.deep.equal([]);
+    });
+
     it('has no style attribute in any of them', function() {
       const offenders = servedToBrowsers.filter(file => /\sstyle\s*=\s*["']/.test(read(file)));
 

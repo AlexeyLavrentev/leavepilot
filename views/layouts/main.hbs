@@ -70,6 +70,11 @@
       }
     </script>
     <script src="{{asset '/js/config_boot.js'}}"></script>
+    {{!-- Confirmation before irreversible actions. Unconditional rather than
+          pushed per route: an onsubmit attribute that the CSP declines to
+          install looks exactly like a working guard, so the page carrying one
+          must never be a page this was left off. --}}
+    <script src="{{asset '/js/confirm_actions.js'}}"></script>
     {{~#each custom_java_script~}}
       <script src="{{asset this}}"></script>
     {{~/each~}}

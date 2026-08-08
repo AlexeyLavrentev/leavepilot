@@ -159,7 +159,18 @@ describe('General Settings workspace contract (Stage 8F)', function () {
     it('keeps the unchanged delete controller selector and confirmation behavior', function () {
       expect(controller).to.include("$('button.leavetype-remove-btn')");
       expect(controller).to.include("$('#delete_leavetype_form')");
-      expect(controller).to.include('window.confirm(confirmationMessage)');
+      /*
+        The controller asked the question itself. public/js/confirm_actions.js
+        now reads the same data-confirm-message on the capture phase, for every
+        page, because an inline onsubmit guard elsewhere turned out never to run
+        under script-src 'self' - and asking in both places put the dialog up
+        twice, which destructive_settings_action_safety fails on.
+
+        So the contract is the attribute and a reader for it, not a second copy
+        of the question here.
+      */
+      expect(view).to.include('data-confirm-message=');
+      expect(read('public/js/confirm_actions.js')).to.include('data-confirm-message');
     });
   });
 

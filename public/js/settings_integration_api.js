@@ -9,15 +9,9 @@
   var tokenInput = page.querySelector('#token-value');
   var copyStatus = page.querySelector('#copy_token_status');
 
-  if (regenerateButton) {
-    regenerateButton.addEventListener('click', function (event) {
-      var message = regenerateButton.getAttribute('data-confirm-message');
-      if (message && !window.confirm(message)) {
-        event.preventDefault();
-        event.stopImmediatePropagation();
-      }
-    }, true);
-  }
+  // The regenerate confirmation is asked by public/js/confirm_actions.js, from
+  // the same data-confirm-message attribute. It used to be asked here as well,
+  // which meant two dialogs for one button.
 
   if (!copyButton || !tokenInput || !copyStatus) return;
 

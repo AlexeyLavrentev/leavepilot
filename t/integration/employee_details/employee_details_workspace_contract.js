@@ -296,7 +296,16 @@ describe('Employee details workspace interaction, geometry & visual matrix (Stag
     var src = await driver.executeScript('return document.documentElement.outerHTML');
     assert(/id="add_new_user_frm"/.test(src), 'missing #add_new_user_frm');
     assert(/action="\/users\/delete\/\d+\/"/.test(src), 'missing delete action');
-    assert(/onsubmit="return confirm\(/.test(src), 'missing onsubmit confirm');
+    /*
+      This asserted onsubmit="return confirm(...)" - the shape the guard used
+      to have, and one the Content-Security-Policy stops the browser from
+      installing: script-src 'self' does not allow an inline event handler, so
+      the attribute sat in the DOM looking like a guard while typeof
+      form.onsubmit was "object" and Delete deleted without asking. The message
+      is data now, read by public/js/confirm_actions.js.
+    */
+    assert(/data-confirm-message="/.test(src), 'missing the confirmation message');
+    assert(!/onsubmit="return confirm\(/.test(src), 'the inline handler is back; the CSP will not run it');
     // the i18n key is interpolated into the confirm text in the DOM; assert the rendered text
     // (the English value is "Do you really want to delete the user <name> <lastname>?").
     assert(/delete the user/.test(src), 'missing interpolated delete-confirm text');
