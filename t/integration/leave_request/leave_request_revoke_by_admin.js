@@ -126,7 +126,8 @@ describe('Revoke leave request by Admin', function(){
         })
         .then(function(){ done() })
         .catch(done);
-      });
+      })
+        .catch(done);
   });
 
   it("Check that all days are marked as pended", function(done){

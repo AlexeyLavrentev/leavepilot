@@ -150,6 +150,15 @@ const reportQuarantine = () => {
   });
 };
 
+/*
+  Every mocha run this file starts loads t/lib/fail_fast, which turns a
+  rejection nobody handled into an immediate named failure. Without it those
+  land as a bare "Timeout of 120000ms exceeded" and then, often, a process
+  that never exits - which costs this runner two 300s watchdog kills before
+  it gives up on the batch.
+*/
+const FAIL_FAST = ['--require', path.join('t', 'lib', 'fail_fast.js')];
+
 const runMochaSuite = () => {
   if (mochaArgs.length) {
     // Paths given on the command line replace the default root rather than
@@ -159,7 +168,7 @@ const runMochaSuite = () => {
     const roots = explicitPaths.length ? explicitPaths : ['t'];
     const flags = mochaArgs.filter(arg => arg.startsWith('-'));
 
-    return run(node, ['node_modules/mocha/bin/mocha', '--recursive', '--exit'].concat(roots, flags));
+    return run(node, ['node_modules/mocha/bin/mocha', '--recursive', '--exit'].concat(FAIL_FAST, roots, flags));
   }
 
   const allIntegrationFiles = collectJavaScriptFiles(path.join('t', 'integration'));
@@ -234,7 +243,7 @@ const runMochaSuite = () => {
   */
   const mocha = batch => runWithTimeout(
     node,
-    ['node_modules/mocha/bin/mocha', '--exit'].concat(retryArgs).concat(batch),
+    ['node_modules/mocha/bin/mocha', '--exit'].concat(FAIL_FAST).concat(retryArgs).concat(batch),
     {},
     batchTimeoutMs
   );
@@ -273,7 +282,7 @@ const runMochaSuite = () => {
     )
     .then(() => (integrationOnly
       ? null
-      : run(node, ['node_modules/mocha/bin/mocha', '--recursive', '--exit', 't/unit'])))
+      : run(node, ['node_modules/mocha/bin/mocha', '--recursive', '--exit'].concat(FAIL_FAST, ['t/unit']))))
     .then(() => {
       if (flaky.length) {
         console.log(`Integration specs that needed a second run (${flaky.length}):`);

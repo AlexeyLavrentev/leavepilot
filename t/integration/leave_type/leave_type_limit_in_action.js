@@ -140,7 +140,8 @@ describe('Leave type limits in actoion', function(){
         })
         .then(function(){ done() })
         .catch(done);
-      });
+      })
+        .catch(done);
   });
 
   it("Add a request that fits under the limit", function(done){
@@ -170,7 +171,8 @@ describe('Leave type limits in actoion', function(){
           .then(function(){ done() })
           .catch(done);
         });
-      });
+      })
+        .catch(done);
   });
 
   after(function(done){

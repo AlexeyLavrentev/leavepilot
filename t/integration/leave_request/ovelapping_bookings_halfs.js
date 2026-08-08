@@ -128,7 +128,8 @@ describe('Overlapping leaverequest (with halfs)', function(){
         })
         .then(function(){ done() })
         .catch(done);
-      });
+      })
+        .catch(done);
   });
 
   it("Check that all days are marked as pended", function(done){
@@ -163,7 +164,8 @@ describe('Overlapping leaverequest (with halfs)', function(){
         })
         .then(function(){ done() })
         .catch(done);
-      });
+      })
+        .catch(done);
   });
 
   it("Try to create new request that overlaps with existing one: new request's " +
@@ -220,7 +222,8 @@ describe('Overlapping leaverequest (with halfs)', function(){
         })
         .then(function(){ done() })
         .catch(done);
-      });
+      })
+        .catch(done);
   });
 
   it("And create correct one", function(done){
@@ -248,7 +251,8 @@ describe('Overlapping leaverequest (with halfs)', function(){
         })
         .then(function(){ done() })
         .catch(done);
-      });
+      })
+        .catch(done);
   });
 
   it("Check that all days are marked as pended", function(done){

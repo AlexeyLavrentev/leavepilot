@@ -157,7 +157,8 @@ describe('Check basic scenario for Team view page', function(){
         })
         .then(function(){ done() })
         .catch(done);
-      });
+      })
+        .catch(done);
   });
 
   it("Create user C", function(done){
