@@ -115,24 +115,19 @@ module.exports = {
       underscored: true,
       timestamps: true,
 
-      indexes: [
-        {
-          name: 'reminder_schedules_company_active',
-          fields: ['company_id', 'is_active'],
-        },
-        {
-          name: 'reminder_schedules_leave_type',
-          fields: ['leave_type_id'],
-        },
-        {
-          name: 'reminder_schedules_unique_per_company',
-          unique: true,
-          fields: ['company_id', 'leave_type_id', 'days_before'],
-          where: {
-            is_active: true,
-          },
-        },
-      ],
+      /*
+        An `indexes` option used to sit here. createTable does not read one:
+        this migration has always created the table and no indexes, on every
+        database it has ever run against. Removing it changes nothing - the
+        table DDL is identical either way - and it stops the file describing a
+        schema that does not exist.
+
+        The three plain indexes are created by
+        20260808130000-index-reminder-schedules. The unique one that was
+        declared here is not, and was never anywhere else: the model does not
+        declare it, so nothing has run with it, and as written it is partial -
+        unique where is_active - which MySQL cannot express.
+      */
 
       comment: 'Flexible reminder schedules for leave start notifications',
     });
