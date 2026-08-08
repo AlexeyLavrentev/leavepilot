@@ -159,6 +159,12 @@ jobs:
 
       - name: Migrate fresh DB (run #1) and dump schema
         run: |
+          # Actions runs each step with `bash -e`, which has no pipefail: the
+          # status of `a | tee b` is tee's, and tee always succeeds. The grep
+          # below covers a migration that throws, since db_update prints its
+          # marker only after they have all run - but not what it does
+          # afterwards, and not a reordering of that logging.
+          set -o pipefail
           node bin/db_update.js | tee run1.log
           grep -q "Fresh database" run1.log
           node bin/dump_schema.js > schema-fresh-mysql.sql
@@ -175,6 +181,7 @@ jobs:
 
       - name: Migrate again (run #2) and assert no-op + identical schema
         run: |
+          set -o pipefail
           node bin/db_update.js | tee run2.log
           grep -q "Applied migrations: none" run2.log
           if grep -q "Fresh database" run2.log; then
