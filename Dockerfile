@@ -39,7 +39,7 @@ RUN groupadd --system --gid 1001 nodejs \
   && useradd --system --uid 1001 --gid nodejs --create-home appuser
 
 LABEL org.opencontainers.image.source="https://github.com/AlexeyLavrentev/timeoff" \
-      org.opencontainers.image.description="LeavePilot Community — open-source leave management system" \
+      org.opencontainers.image.description="LeavePilot Community — source-available leave management system" \
       org.opencontainers.image.licenses="Elastic-2.0"
 
 COPY package.json package-lock.json ./

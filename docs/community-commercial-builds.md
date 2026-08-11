@@ -2,8 +2,8 @@
 
 This project now has two delivery modes:
 
-- Community build: open-source core only.
-- Commercial build: open-source core plus a private premium module.
+- Community build: source-available core only.
+- Commercial build: source-available core plus a private premium module.
 
 Use `docs/release-checklist.md` before publishing either build.
 

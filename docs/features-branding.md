@@ -4,7 +4,7 @@ This fork keeps the original leave-management surface available by default and e
 
 ## Protection boundary
 
-This is an open-source, self-hosted codebase. Feature flags and signed licenses
+This is a source-available, self-hosted codebase. Feature flags and signed licenses
 raise the operational and contractual boundary for official builds, but they are
 not unbreakable DRM. Anyone with full source access can patch checks in their
 own fork. For stronger protection, keep premium implementation code in a private

@@ -81,7 +81,7 @@ docker compose -f docker-compose.yml -f docker-compose.commercial.yml config --q
 
 ## 3. Community Build
 
-Community build contains only the open-source core.
+Community build contains only the source-available core.
 
 ```sh
 cd /path/to/timeoff
