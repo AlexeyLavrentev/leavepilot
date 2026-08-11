@@ -416,4 +416,82 @@ describe('The documents agree with the licence', function() {
       ).not.to.match(saleOfAccessLexeme);
     });
   });
+
+  /*
+    The product is distributed under the Elastic License 2.0, which is not an
+    OSI-approved licence. Calling it "open-source" on a delivered surface is
+    therefore legally inaccurate: the reader, and the licence scanner reading
+    OCI metadata or the npm registry, infers a grant the licence does not give.
+    The accurate term is "source-available", the phrasing CONTRIBUTING.md
+    already carries next to the DCO certificate.
+
+    README travels in every npm tarball, the OCI description label travels in
+    every built image, the OCI annotations travel in every published manifest,
+    and the package.json description field travels in every registry lookup -
+    so a drifted "open-source" label ships with the product even when the
+    repository root declares Elastic-2.0.
+
+    CONTRIBUTING.md is deliberately not one of the surfaces below. It
+    reproduces the Developer Certificate of Origin verbatim, and clause (a)
+    of that certificate says "the open source license indicated in the file" -
+    an edited certificate is no longer the certificate everyone else has
+    read, so the legitimate mention has to stay. The teeth assertion below
+    pins that mention in place: without it, leaving CONTRIBUTING.md out of
+    labelSurfaces would guard nothing, and the guard could go green on a
+    cleaned-out repository.
+
+    package.json is checked separately because it is JSON, not prose: a line
+    scanner over the whole file would surface every key and string, and the
+    description field is the only place the product itself is labelled there.
+  */
+  describe('how the product is labelled on delivered surfaces', function() {
+
+    const productLabelledOpenSource = /open[\s-]source/i;
+
+    const labelSurfaces = surfaces.concat(['.github/workflows/publish-community-container.yml']);
+
+    const labelOffenders = labelSurfaces.reduce((found, surface) => {
+      read(surface).split('\n').forEach((line, index) => {
+        if (productLabelledOpenSource.test(line)) {
+          found.push(surface + ':' + (index + 1) + ': ' + line.trim());
+        }
+      });
+
+      return found;
+    }, []);
+
+    it('has delivered surfaces to check', function() {
+      // The README, every docs/*.md, both Dockerfiles and the publish workflow
+      // are the surfaces whose "open-source" label ships outside the project.
+      expect(
+        labelSurfaces.length,
+        'the guard lost its input, and a guard with nothing to check is green'
+      ).to.be.above(20);
+    });
+
+    it('does not label the product "open-source" on any delivered surface', function() {
+      expect(
+        labelOffenders,
+        'these lines call the product "open-source", but Elastic License 2.0 is not OSI-approved - the accurate term is "source-available"'
+      ).to.deep.equal([]);
+    });
+
+    it('does not label the product "open-source" in the package.json description', function() {
+      const description = require('../../package.json').description;
+
+      expect(
+        description,
+        'package.json description labels the product "open-source" - the npm registry would show the inaccurate term to every lookup'
+      ).not.to.match(productLabelledOpenSource);
+    });
+
+    it('still has the DCO-verbatim "open source" mention CONTRIBUTING.md carries', function() {
+      const contributing = read('CONTRIBUTING.md');
+
+      expect(
+        productLabelledOpenSource.test(contributing),
+        'CONTRIBUTING.md no longer carries the DCO-verbatim "open source" mention, so leaving it out of labelSurfaces guards nothing'
+      ).to.equal(true);
+    });
+  });
 });
