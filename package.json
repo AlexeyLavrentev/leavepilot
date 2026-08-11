@@ -7,6 +7,23 @@
   "engines": {
     "node": ">=22.12.0 <23"
   },
+  "files": [
+    "app.js",
+    "bin",
+    "config",
+    "docker",
+    "lib",
+    "locales",
+    "migrations",
+    "views",
+    "public",
+    "LICENSE.md",
+    "NOTICE",
+    "docs/EULA.md",
+    "docs/licensing-faq.md",
+    "docs/install-local-npm.md",
+    "docs/faq.md"
+  ],
   "dependencies": {
     "bluebird": "^3.7.2",
     "body-parser": "^2.3.0",
