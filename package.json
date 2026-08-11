@@ -10,6 +10,12 @@
   "files": [
     "app.js",
     "bin",
+    "!bin/license_portal.js",
+    "!bin/portal_admin.js",
+    "!bin/import-registry.js",
+    "!bin/license_portal_backup.js",
+    "!bin/fetch_user_stat.js",
+    "!bin/test.js",
     "config",
     "docker",
     "lib",

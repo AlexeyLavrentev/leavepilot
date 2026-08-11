@@ -29,9 +29,21 @@
  * No assertion is made about the total number of entries: that figure drifts
  * with every commit and has already moved several times while this phase was
  * being planned.
+ *
+ * The dead-entry assertion is generative rather than a fixed list: it takes the
+ * shipped bin/*.js scripts, reads each one off the disk, finds every relative
+ * `require()` (a specifier that starts with a dot), resolves it against the
+ * file's own directory, and asks whether the resolved path - or its .js, .json
+ * or /index.js form, or any shipped path sharing its prefix - is itself in the
+ * tarball. A script that reaches outside the package for its own dependencies
+ * is a file the consumer's install will crash on at the first resolution. The
+ * seventh such entry, added in six months, is caught by the same assertion
+ * without another edit here - which is the point of computing the offenders
+ * instead of naming the six that were measured at plan time.
  */
 
 const {execFileSync} = require('child_process');
+const fs = require('fs');
 const path = require('path');
 const {expect} = require('chai');
 
@@ -67,6 +79,53 @@ const FORBIDDEN_PREFIXES = [
   '.github/',
   '.zcode/',
 ];
+
+// Every shipped bin/*.js whose relative require() cannot be satisfied from
+// inside the tarball. The set is computed, not listed: a script added later
+// that reaches outside the package is caught by the same pass without another
+// edit here. Resolution mirrors Node's own: the specifier is normalised
+// against the file's directory, then matched as the exact path, with .js,
+// .json or /index.js appended, or as a directory prefix shared by a shipped
+// path. Specifiers that do not start with a dot are packages or built-ins and
+// are outside this assertion's scope.
+const deadEntryOffenders = shippedPaths => {
+  const shippedSet = new Set(shippedPaths);
+  const offenders = [];
+
+  for (const entry of shippedPaths) {
+    if (!entry.startsWith('bin/') || !entry.endsWith('.js')) {
+      continue;
+    }
+
+    let source;
+    try {
+      source = fs.readFileSync(path.join(ROOT, entry), 'utf8');
+    } catch (e) {
+      continue;
+    }
+
+    const requires = [...source.matchAll(/require\(['"](\.[^'"]+)['"]\)/g)].map(m => m[1]);
+
+    for (const specifier of requires) {
+      const resolved = path.posix.normalize(
+        path.posix.dirname(entry) + '/' + specifier
+      );
+      const candidates = [
+        resolved,
+        resolved + '.js',
+        resolved + '.json',
+        resolved + '/index.js',
+      ];
+      const isDirectoryPrefix = [...shippedSet].some(p => p.startsWith(resolved + '/'));
+
+      if (!candidates.some(c => shippedSet.has(c)) && !isDirectoryPrefix) {
+        offenders.push(entry + ' -> ' + specifier);
+      }
+    }
+  }
+
+  return offenders;
+};
 
 describe('Published package contents', function() {
   this.timeout(30000); // npm pack takes about a second locally, more on a runner
@@ -121,6 +180,24 @@ describe('Published package contents', function() {
       paths,
       'the documents are listed one by one precisely so this one stays out'
     ).to.not.include('docs/license-portal-design.md');
+  });
+
+  it('does not ship bin scripts whose own dependencies reach outside the package', function() {
+    const offenders = deadEntryOffenders(paths);
+
+    expect(
+      offenders,
+      'these shipped bin/*.js scripts require() a relative path that is not itself in the tarball; a consumer install crashes on the first one'
+    ).to.deep.equal([]);
+  });
+
+  it('ships enough bin scripts for the dead-entry check to bite', function() {
+    const shippedBinScripts = paths.filter(p => p.startsWith('bin/') && p.endsWith('.js'));
+
+    expect(
+      shippedBinScripts.length,
+      'the dead-entry assertion above is satisfied by an empty bin set; guard the floor so a stripped whitelist reads as a failure, not as clean'
+    ).to.be.greaterThan(5);
   });
 
   // Not a gate: npm adds LICENSE.md to every package whether or not the
