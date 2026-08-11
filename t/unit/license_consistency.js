@@ -240,4 +240,124 @@ describe('The documents agree with the licence', function() {
       ).to.include(licensor);
     });
   });
+
+  /*
+    EULA §3 "License Restrictions" used to address "the Software" - the term §1
+    defines as BOTH editions - so its reverse-engineering and competing-service
+    bans narrowed what the Elastic License 2.0 permits for the Community
+    Edition. The precedence clause in §2.1 resolves the conflict in LICENSE.md's
+    favour but does not remove the contradiction, so the scoping is asserted by
+    text inside §3 itself: an intro paragraph under the heading names the
+    Premium Edition, and keeps the notice-preservation ban (item 3) in force for
+    both editions, because LICENSE.md imposes the same on the Community Edition.
+
+    Kept as a test rather than done once. Item 1 already reads "the Premium
+    Edition source code", so a guard that only checks "§3 contains Premium
+    Edition" would stay green on the drifted text. The intro paragraph between
+    the §3 heading and "You MAY NOT:" is the load-bearing slice: it is empty
+    today and only appears once §3 is scoped, which is why Test 2 asserts it
+    specifically rather than the section as a whole.
+  */
+  describe('the restrictions EULA §3 places on the Premium Edition', function() {
+
+    const eula = (function() {
+      try {
+        return read('docs/EULA.md');
+      } catch (error) {
+        return null;
+      }
+    })();
+
+    const section3 = (function() {
+      const text = String(eula);
+      const start = text.indexOf('## 3. License Restrictions');
+      if (start === -1) {
+        return '';
+      }
+      const afterStart = text.indexOf('## 4.', start);
+      if (afterStart === -1) {
+        return '';
+      }
+      return text.slice(start, afterStart);
+    })();
+
+    const intro = (function() {
+      const slice = String(section3);
+      const heading = slice.indexOf('## 3. License Restrictions');
+      if (heading === -1) {
+        return '';
+      }
+      const headingEnd = slice.indexOf('\n', heading);
+      if (headingEnd === -1) {
+        return '';
+      }
+      const youMayNot = slice.indexOf('You MAY NOT:', headingEnd);
+      if (youMayNot === -1) {
+        return '';
+      }
+      return slice.slice(headingEnd + 1, youMayNot);
+    })();
+
+    it('has a §3 License Restrictions section to scope', function() {
+      expect(
+        section3.length,
+        'the §3 slice is gone from docs/EULA.md, and a guard with nothing to check is green'
+      ).to.be.above(0);
+    });
+
+    it('scopes §3 to the Premium Edition in an intro paragraph under the heading', function() {
+      expect(
+        intro.trim().length,
+        'no intro paragraph between the §3 heading and "You MAY NOT:" - the scoping lives inside §3, not in the §2.1 precedence clause'
+      ).to.be.above(0);
+
+      expect(
+        intro,
+        'the intro paragraph no longer names the Premium Edition, so §3 still addresses both editions'
+      ).to.match(/Premium Edition/);
+
+      expect(
+        intro,
+        'the intro paragraph no longer keeps the notice-preservation ban (item 3) in force for both editions, which LICENSE.md requires of the Community Edition too'
+      ).to.match(/both Editions/);
+    });
+
+    it('addresses the reverse-engineering restriction to the Premium Edition', function() {
+      const reverse = String(section3).split('\n').find(line => /reverse engineer/i.test(line));
+
+      expect(
+        reverse,
+        'the reverse-engineering item is gone from §3, so this guard lost its line'
+      ).to.be.a('string');
+
+      expect(
+        reverse,
+        '§3 still restricts reverse engineering on "the Software" instead of scoping it to the Premium Edition'
+      ).to.match(/Premium Edition/);
+
+      expect(
+        reverse,
+        '§3 still addresses the reverse-engineering restriction to "the Software" - the term §1 defines as both editions - and narrows what ELv2 permits for the Community Edition'
+      ).not.to.match(/\bthe Software\b/);
+    });
+
+    it('addresses the competing-services restriction to the Premium Edition', function() {
+      const competing = String(section3).split('\n').find(line => /competing services/i.test(line));
+
+      expect(
+        competing,
+        'the competing-services item is gone from §3, so this guard lost its line'
+      ).to.be.a('string');
+
+      expect(
+        competing,
+        '§3 still restricts competing services on "the Software" instead of scoping it to the Premium Edition'
+      ).to.match(/Premium Edition/);
+
+      expect(
+        competing,
+        '§3 still addresses the competing-services restriction to "the Software" - the term §1 defines as both editions - and narrows what ELv2 permits for the Community Edition'
+      ).not.to.match(/\bthe Software\b/);
+    });
+  });
 });
