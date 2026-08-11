@@ -110,6 +110,9 @@ jobs:
       - name: Build community runtime image
         run: docker build --target runtime -t leavepilot-ce:ci .
 
+      - name: Verify licence files inside the runtime image
+        run: scripts/verify-artifact-licenses.sh leavepilot-ce:ci
+
   portal-docker-build:
     name: Portal Docker image build
     runs-on: ubuntu-24.04
@@ -120,6 +123,9 @@ jobs:
 
       - name: Build portal image
         run: docker build -f Dockerfile.portal -t leavepilot-portal:ci .
+
+      - name: Verify licence files inside the portal image
+        run: scripts/verify-artifact-licenses.sh leavepilot-portal:ci
 
   mysql-migration-smoke:
     name: Fresh MySQL 8 migration smoke test
