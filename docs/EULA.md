@@ -46,6 +46,28 @@ license grants you:
 Premium licenses are **per-organization** and **non-transferable**
 without explicit written permission.
 
+### 2.3 How LICENSE.md and this EULA relate
+
+LICENSE.md (the Elastic License 2.0) is the sole authoritative text of the
+rights granted for the Community Edition. It provides the copyright licence -
+to use, copy, modify, and distribute the software, including as derivative
+works - and it carries its own Limitations, including the prohibition on
+providing the software to third parties as a hosted or managed service, and
+the obligation to retain the licensor's notices. This EULA does not restate
+or replace those rights: they live in LICENSE.md.
+
+This EULA adds what LICENSE.md does not address: the Premium Edition grant
+(§2.2), the restrictions that bind the Premium Edition (§3), and the
+conditions that apply to both Editions - warranty disclaimer (§6),
+termination (§8), governing law (§9), and the remaining sections below.
+
+The §3 restrictions bind only the Premium Edition, because the Community
+Edition is already governed by the Elastic License 2.0, including its own
+Limitations. The precedence clause in §2.1 resolves any overlap for the
+Community Edition: where this EULA and LICENSE.md disagree about the
+Community Edition, LICENSE.md governs. LICENSE.md does not address the
+Premium Edition; the Premium Edition is governed by this EULA.
+
 ---
 
 ## 3. License Restrictions
