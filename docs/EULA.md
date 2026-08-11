@@ -50,13 +50,19 @@ without explicit written permission.
 
 ## 3. License Restrictions
 
+The restrictions in this section apply to the LeavePilot
+Premium Edition. The prohibition on removing or altering copyright,
+licensing, or licence-data notices (item 3) applies to
+both Editions, because LICENSE.md imposes the same obligation on the
+Community Edition.
+
 You MAY NOT:
 
 1. **Distribute or sublicense** the Premium Edition source code
-2. **Reverse engineer** the Software or attempt to derive source code
+2. **Reverse engineer** the Premium Edition or attempt to derive its source code
 3. **Remove or alter** copyright notices, license information, or
    license verification mechanisms
-4. **Use the Software** to provide competing services (SaaS resale)
+4. **Use the Premium Edition** to provide competing services (SaaS resale)
 5. **Exceed** the licensed number of users or organizations
 6. **Circumvent** license verification or run without valid license
 
