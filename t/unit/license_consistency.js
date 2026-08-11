@@ -184,4 +184,60 @@ describe('The documents agree with the licence', function() {
       expect(rows.length - 1, 'the scenario table no longer carries eight scenarios').to.equal(8);
     });
   });
+
+  /*
+    The terms an incoming contribution is made on live in CONTRIBUTING.md and
+    are enforced by the dco job in .github/workflows/core-ci.yml. Text without
+    the gate is a paragraph nobody keeps; the gate without the text is a wall
+    with no explanation. Asserted here because the two drift apart the same way
+    the licence and the documents did - by one of them being edited alone.
+
+    CONTRIBUTING.md is not one of the surfaces above and must not become one:
+    it is a file where naming licensing terms is legitimate by construction.
+  */
+  describe('the terms an incoming contribution is made on', function() {
+
+    const contributing = (function() {
+      try {
+        return read('CONTRIBUTING.md');
+      } catch (error) {
+        return null;
+      }
+    })();
+
+    it('exists', function() {
+      expect(
+        contributing,
+        'CONTRIBUTING.md is gone, and the dco job rejects pull requests on terms nobody can read'
+      ).to.be.a('string');
+    });
+
+    it('asks for the trailer the CI gate rejects pull requests without', function() {
+      expect(
+        String(contributing),
+        'CONTRIBUTING.md no longer asks for the sign-off the dco job enforces'
+      ).to.include('Signed-off-by');
+
+      expect(
+        String(contributing),
+        'CONTRIBUTING.md no longer tells an author how to fix commits it has already rejected'
+      ).to.include('git rebase --signoff');
+    });
+
+    it('states the grant of rights first, and names the same licensor', function() {
+      const grant = String(contributing).search(/grant of rights/i);
+      const signOff = String(contributing).indexOf('Signed-off-by');
+
+      expect(grant, 'CONTRIBUTING.md no longer states what rights a contribution grants').to.be.above(-1);
+      expect(
+        signOff,
+        'the sign-off is described before the grant it accepts, so a contributor signs terms not yet read'
+      ).to.be.above(grant);
+
+      expect(
+        String(contributing),
+        'the grant names a different licensor than LICENSE.md and NOTICE do'
+      ).to.include(licensor);
+    });
+  });
 });
