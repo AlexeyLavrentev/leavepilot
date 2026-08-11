@@ -56,6 +56,7 @@ COPY --chown=appuser:nodejs locales ./locales
 COPY --chown=appuser:nodejs migrations ./migrations
 COPY --chown=appuser:nodejs views ./views
 COPY --from=build --chown=appuser:nodejs /app/public ./public
+COPY --chown=appuser:nodejs LICENSE.md NOTICE ./
 RUN chmod +x /app/docker/*.sh \
   && chown appuser:nodejs /app
 
