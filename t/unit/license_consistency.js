@@ -362,6 +362,106 @@ describe('The documents agree with the licence', function() {
   });
 
   /*
+    EULA §2 names the source of rights for each edition - §2.1 sends the
+    Community Edition to LICENSE.md with the precedence clause, §2.2 grants
+    the Premium rights, and §3 is scoped to the Premium Edition by plan 01-10 -
+    but it never gathers the relationship between LICENSE.md (the Elastic
+    License 2.0) and this EULA into one explicit statement. The reader has to
+    infer which document grants what, and how the §3 restrictions interact
+    with ELv2's own Limitations. The lawyer (Q2 in
+    .planning/legal-review-request.md) asked for this to be stated explicitly,
+    not derived.
+
+    Kept as a test rather than done once. The key terms "LICENSE.md",
+    "Elastic License 2.0", "Community Edition" and "Premium" are already
+    spread across §2.1 and §2.2, so a guard that only checked for their
+    presence anywhere in §2 would stay green on the current incomplete EULA.
+    What makes this enforceable is requiring the relationship under its OWN
+    heading - one that carries a relate/relationship/interaction marker
+    alongside a document name - and then reading the block under that heading
+    for the full set of terms. Today no such heading exists, so the heading
+    and block assertions are red; once §2.3 is added they go green, and the
+    §2.1 precedence clause they lean on is pinned by the third assertion.
+
+    Sufficiency of the statement for the lawyer's criterion is a legal
+    judgment that cannot be derived from code; the spec covers the mechanical
+    part (a dedicated section exists and carries the right terms), and the
+    sufficiency-by-essence check is left to human verification.
+  */
+  describe('the explicit relationship between LICENSE.md and this EULA', function() {
+
+    const eula = (function() {
+      try {
+        return read('docs/EULA.md');
+      } catch (error) {
+        return null;
+      }
+    })();
+
+    const relationshipBlock = (function() {
+      const text = String(eula);
+      const lines = text.split('\n');
+      const start = lines.findIndex(line =>
+        /^#+\s/.test(line)
+        && /relate|relationship|interaction/i.test(line)
+        && /LICENSE|Elastic License|ELv2|EULA/i.test(line)
+      );
+      if (start === -1) {
+        return { heading: '', body: '' };
+      }
+      let end = lines.length;
+      for (let i = start + 1; i < lines.length; i += 1) {
+        if (/^#+\s/.test(lines[i]) || /^---\s*$/.test(lines[i])) {
+          end = i;
+          break;
+        }
+      }
+      return { heading: lines[start], body: lines.slice(start + 1, end).join('\n') };
+    })();
+
+    it('has a heading that names the relationship between LICENSE.md and this EULA', function() {
+      expect(
+        relationshipBlock.heading,
+        'no EULA heading carries a relate/relationship/interaction marker alongside LICENSE/Elastic License/ELv2/EULA - the relationship is still derived, not stated'
+      ).to.be.a('string').that.is.not.empty;
+    });
+
+    it('states the relationship in the block under that heading', function() {
+      expect(
+        relationshipBlock.body.trim().length,
+        'the relationship heading is present but its block is empty - the heading alone does not state the relationship'
+      ).to.be.above(0);
+
+      expect(
+        relationshipBlock.body,
+        'the relationship block no longer names the Community Edition'
+      ).to.match(/Community Edition/);
+
+      expect(
+        relationshipBlock.body,
+        'the relationship block no longer names the Premium Edition'
+      ).to.match(/Premium/);
+
+      expect(
+        relationshipBlock.body,
+        'the relationship block no longer names the Elastic License 2.0 or LICENSE.md as the Community Edition grant'
+      ).to.match(/Elastic License 2\.0|LICENSE\.md/);
+
+      expect(
+        relationshipBlock.body,
+        'the relationship block no longer says how the two documents interact or govern each other'
+      ).to.match(/govern|interact|add|apply/i);
+    });
+
+    it('keeps the §2.1 precedence clause that resolves Community Edition overlaps', function() {
+      expect(
+        String(eula),
+        'the §2.1 clause "Where this EULA and LICENSE.md disagree ... LICENSE.md governs" is gone - §2.3 supplements it, it does not replace it'
+      ).to.match(/LICENSE\.md governs/);
+    });
+  });
+
+  /*
     README used to restate the ELv2 hosted-or-managed-service ban and then
     narrow it to a sale-of-access scenario - «то есть продавать им доступ».
     Neither LICENSE.md nor docs/licensing-faq.md sets any condition on payment:
