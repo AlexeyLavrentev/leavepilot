@@ -9,6 +9,15 @@ on:
       - "release/**"
       - "inf/**"
 
+# Every job here works off the repository's contents: checkout, setup-node,
+# docker build, npm ci, mocha, docker compose config, actions/upload-artifact
+# (which rides the Actions runtime token, not the repository token). None of
+# them needs more than read access, so the token is scoped to the least that
+# satisfies every job in this file rather than inherited from the repository
+# default. The one observable price is named in line at the secret scanner.
+permissions:
+  contents: read
+
 jobs:
   dco:
     name: DCO sign-off
@@ -336,6 +345,12 @@ jobs:
           fetch-depth: 0
 
       - name: Secret scan (gitleaks)
+        # Price of the top-level `permissions: contents: read`: gitleaks still
+        # detects secrets and fails the job on a find, but it can no longer
+        # post the inline PR comment it does with `pull-requests: write`.
+        # Detection and the non-zero exit do not depend on the token's scope,
+        # only the comment does - and a missing comment is the lesser surprise
+        # than a job that silently inherits write access it never needs.
         uses: gitleaks/gitleaks-action@v3
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

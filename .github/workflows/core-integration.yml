@@ -14,6 +14,13 @@ on:
       - "release/**"
       - "inf/**"
 
+# Both external actions used here - actions/checkout and actions/setup-node -
+# need only read access to the repository's contents, and the browser suite
+# writes nothing back. The token is scoped to the least sufficient permission
+# rather than inherited from the repository default.
+permissions:
+  contents: read
+
 jobs:
   integration:
     name: Browser suite ${{ matrix.shard }}/4
