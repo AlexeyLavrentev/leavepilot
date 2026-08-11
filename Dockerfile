@@ -40,7 +40,7 @@ RUN groupadd --system --gid 1001 nodejs \
 
 LABEL org.opencontainers.image.source="https://github.com/AlexeyLavrentev/timeoff" \
       org.opencontainers.image.description="LeavePilot Community — open-source leave management system" \
-      org.opencontainers.image.licenses="MIT"
+      org.opencontainers.image.licenses="Elastic-2.0"
 
 COPY package.json package-lock.json ./
 COPY --from=deps /app/node_modules ./node_modules

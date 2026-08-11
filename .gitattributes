@@ -1,0 +1,9 @@
+# The canonical Elastic License 2.0 text and its reference fixture are pinned by
+# sha256 (48255018b41fc0e965b1115af7e6779bc218bb8a6747d561da800d5022622aa2), and
+# a spec compares the two byte for byte. The text carries exactly one non-ASCII
+# character — U+2019, the right single quote in "licensor's trademarks" — so any
+# line-ending normalisation or smart-quote substitution on any developer machine
+# would move the hash. Without -text that spec turns red weeks later with an
+# empty-looking diff and no change to the licence itself.
+LICENSE.md -text
+t/fixtures/elastic-license-2.0.txt -text
