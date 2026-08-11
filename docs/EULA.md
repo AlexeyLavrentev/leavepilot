@@ -1,8 +1,9 @@
 # End User License Agreement (EULA)
 
 **LeavePilot**  
-**Last updated:** 2026-06-29  
-**Version:** 1.0
+**Licensor:** Alexey Lavrentev  
+**Last updated:** 2026-08-11  
+**Version:** 1.1
 
 ---
 
@@ -22,9 +23,16 @@ the Software.
 
 ### 2.1 Community Edition
 
-LeavePilot Community Edition is licensed under the MIT License. You are
-free to use, modify, and distribute the software subject to the MIT
-License terms.
+The terms of the LeavePilot Community Edition are set by
+[LICENSE.md](../LICENSE.md) in the root of the software distribution:
+the Elastic License 2.0 (SPDX identifier `Elastic-2.0`). Those terms are
+not restated here, so that there is a single authoritative text of them.
+
+For the licensor's reading of the "hosted or managed service" limitation,
+with worked examples, see [licensing-faq.md](licensing-faq.md).
+
+Where this EULA and [LICENSE.md](../LICENSE.md) disagree about the terms
+of the Community Edition, LICENSE.md governs.
 
 ### 2.2 Premium Edition
 
@@ -160,12 +168,12 @@ LeavePilot is not liable for compliance violations by Licensees.
 
 ## 11. Third-Party Software
 
-This Software includes third-party components licensed under:
+This Software includes inherited and third-party components distributed
+under their own licenses. All notices and attributions for those
+components are collected in the NOTICE file in the root of the software
+distribution, which is the single place they are maintained.
 
-- MIT License (see LICENSE file)
-- Other open-source licenses (see NOTICE file)
-
-These licenses continue to apply to their respective components.
+Those licenses continue to apply to their respective components.
 
 ---
 

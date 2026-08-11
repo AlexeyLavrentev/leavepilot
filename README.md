@@ -590,13 +590,21 @@ AES-256-GCM (authenticated encryption). Сейчас это **OIDC client secret
 
 ### Community Edition
 
-LeavePilot Community Edition распространяется по лицензии MIT.
+LeavePilot Community Edition распространяется по лицензии Elastic License 2.0
+(SPDX: `Elastic-2.0`).
+
 Вы можете:
-- использовать в коммерческих целях;
+- разворачивать систему у себя, в том числе для коммерческого использования внутри своей организации;
 - модифицировать исходный код;
 - распространять свои модификации.
 
-Подробнее см. файл [LICENSE](LICENSE).
+Вы не можете предоставлять систему третьим лицам как hosted or managed service —
+то есть продавать им доступ к развёрнутому вами экземпляру.
+
+Полный текст лицензии — [LICENSE.md](LICENSE.md). Разбор границы «hosted or
+managed service» с примерами по типовым сценариям —
+[docs/licensing-faq.md](docs/licensing-faq.md). История лицензирования и
+атрибуция апстрима — в файле NOTICE.
 
 ### Premium Edition
 
