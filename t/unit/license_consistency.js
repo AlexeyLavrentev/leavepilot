@@ -360,4 +360,60 @@ describe('The documents agree with the licence', function() {
       ).not.to.match(/\bthe Software\b/);
     });
   });
+
+  /*
+    README used to restate the ELv2 hosted-or-managed-service ban and then
+    narrow it to a sale-of-access scenario - «то есть продавать им доступ».
+    Neither LICENSE.md nor docs/licensing-faq.md sets any condition on payment:
+    the licence forbids providing the software to third parties as a hosted or
+    managed service regardless of whether access is sold. README travels in
+    every npm tarball, so the softer reading ships with the product.
+
+    Kept as a test rather than done once. The next author of the licence
+    paragraph will phrase the boundary in their own words and has no reason to
+    compare it to LICENSE.md, so a narrowing gloss would come back with nothing
+    failing. The guard finds the hosted-service line in README, reads the
+    passage it sits in (the line plus the next, to catch a wrap), and rejects
+    sale-of-access lexemes in that passage.
+  */
+  describe('how README states the hosted-or-managed-service boundary', function() {
+
+    const readme = (function() {
+      try {
+        return read('README.md');
+      } catch (error) {
+        return null;
+      }
+    })();
+
+    const passage = (function() {
+      const lines = String(readme).split('\n');
+      const i = lines.findIndex(line => /hosted or managed service/i.test(line));
+      if (i === -1) {
+        return '';
+      }
+      return lines.slice(i, i + 2).join(' ');
+    })();
+
+    // Sale-of-access lexemes next to the hosted-service ban - «продавать
+    // доступ» and its forms. LICENSE.md names no condition on payment, so this
+    // class of word in the licence-restriction passage is the narrowing to
+    // reject. The guard is scoped to the passage, not the whole file: a sale
+    // mentioned elsewhere in README is not the licence being narrowed.
+    const saleOfAccessLexeme = /продавать|продаж/iu;
+
+    it('restates the hosted-or-managed-service boundary somewhere', function() {
+      expect(
+        passage.length,
+        'README no longer names the hosted-or-managed-service boundary, so the guard lost its line'
+      ).to.be.above(0);
+    });
+
+    it('does not narrow the hosted-service ban to a sale of access', function() {
+      expect(
+        passage,
+        'README narrows the ELv2 hosted-service ban to a sale-of-access scenario - LICENSE.md sets no condition on payment, and the narrowing ships in every npm tarball'
+      ).not.to.match(saleOfAccessLexeme);
+    });
+  });
 });
