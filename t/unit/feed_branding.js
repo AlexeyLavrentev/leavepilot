@@ -147,4 +147,73 @@ describe('The iCal feed branding', function() {
       expect(response.text).to.contain('PRODID:-//LeavePilot//LeavePilot//EN');
     });
   });
+
+  describe('with a multi-line brand name (CRLF hardening)', function() {
+
+    // ical-generator 11.1.0 does not escape CR/LF inside PRODID or
+    // X-WR-CALNAME values (WR-03). An operator-controlled multi-line
+    // BRAND_NAME would otherwise inject extra iCal property lines into
+    // every subscriber's calendar (an operator self-DoS shape). feed.js
+    // flattens brand.name/brand.shortName to a single line before they
+    // reach ical-generator; this block proves the flattening holds
+    // end-to-end on the wire bytes.
+    let savedName;
+    let savedShortName;
+
+    before(function() {
+      savedName = process.env.BRAND_NAME;
+      savedShortName = process.env.BRAND_SHORT_NAME;
+      // The '\n' is a real newline character: without single-line coercion
+      // it splits the PRODID/X-WR-CALNAME value across iCal property lines.
+      process.env.BRAND_NAME = 'Acme\nINJECTED:evil';
+      process.env.BRAND_SHORT_NAME = 'Acme\nX-INJECTED:bad';
+    });
+
+    after(function() {
+      if (typeof savedName === 'undefined') {
+        delete process.env.BRAND_NAME;
+      } else {
+        process.env.BRAND_NAME = savedName;
+      }
+      if (typeof savedShortName === 'undefined') {
+        delete process.env.BRAND_SHORT_NAME;
+      } else {
+        process.env.BRAND_SHORT_NAME = savedShortName;
+      }
+    });
+
+    it('flattens a multi-line BRAND_NAME in the iCal PRODID', async function() {
+      const token = await feedOf(employee, 'calendar');
+      const response = await fetchFeed(token);
+
+      expect(response.status).to.equal(200);
+      const lines = response.text.split('\n');
+      const prodidLine = lines.find(line => line.indexOf('PRODID:') === 0);
+      expect(prodidLine, 'PRODID line present').to.be.a('string');
+      // Both the legitimate token and the injected token ride the SAME
+      // PRODID line: the newline was flattened to a space, not emitted as
+      // a line break that would split the property into its own line.
+      expect(prodidLine).to.contain('Acme');
+      expect(prodidLine).to.contain('INJECTED:evil');
+      // No line in the body is the bare injected token: that would only
+      // exist if the newline had split a record into its own property line.
+      expect(
+        lines,
+        'the injected token must not appear as its own iCal line'
+      ).to.not.include('INJECTED:evil');
+    });
+
+    it('flattens a multi-line BRAND_NAME in the X-WR-CALNAME', async function() {
+      const token = await feedOf(employee, 'calendar');
+      const response = await fetchFeed(token);
+
+      expect(response.status).to.equal(200);
+      const lines = response.text.split('\n');
+      const calnameLine = lines.find(line => line.indexOf('X-WR-CALNAME:') === 0);
+      expect(calnameLine, 'X-WR-CALNAME line present').to.be.a('string');
+      // Same single-line guarantee mirrored on the X-WR-CALNAME line.
+      expect(calnameLine).to.contain('Acme');
+      expect(calnameLine).to.contain('INJECTED:evil');
+    });
+  });
 });
