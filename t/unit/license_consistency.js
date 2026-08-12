@@ -186,14 +186,19 @@ describe('The documents agree with the licence', function() {
   });
 
   /*
-    The terms an incoming contribution is made on live in CONTRIBUTING.md and
-    are enforced by the dco job in .github/workflows/core-ci.yml. Text without
-    the gate is a paragraph nobody keeps; the gate without the text is a wall
-    with no explanation. Asserted here because the two drift apart the same way
-    the licence and the documents did - by one of them being edited alone.
+    The terms an incoming contribution is made on live in the Contributor
+    Licence Agreement (docs/CLA-individual.md, docs/CLA-corporate.md), which is
+    the sole source of the grant (D-47). CONTRIBUTING.md points at the CLA and
+    carries a short, non-binding summary; it does not restate the grant.
+    Signed-off-by / DCO remains a technical CI gate (D-41), and CLA-Assistant
+    is the acceptance mechanism (D-46). The grant does NOT live in
+    CONTRIBUTING.md - restating it there is a drift surface (the
+    README<->EULA drift already bit this project, see the guard above), so the
+    watchdog rejects both a missing pointer and a restated grant paragraph.
 
     CONTRIBUTING.md is not one of the surfaces above and must not become one:
-    it is a file where naming licensing terms is legitimate by construction.
+    it is a file where naming licensing terms is legitimate by construction,
+    and so is pointing at the agreement that carries them.
   */
   describe('the terms an incoming contribution is made on', function() {
 
@@ -224,20 +229,134 @@ describe('The documents agree with the licence', function() {
       ).to.include('git rebase --signoff');
     });
 
-    it('states the grant of rights first, and names the same licensor', function() {
-      const grant = String(contributing).search(/grant of rights/i);
-      const signOff = String(contributing).indexOf('Signed-off-by');
-
-      expect(grant, 'CONTRIBUTING.md no longer states what rights a contribution grants').to.be.above(-1);
+    it('points at the Contributor Licence Agreement rather than restating it', function() {
+      // D-47: the grant lives in the CLA, CONTRIBUTING.md is a pointer. Losing
+      // the pointer leaves a contributor with no path to the terms, and the
+      // two routes (individual vs. corporate) are not interchangeable.
       expect(
-        signOff,
-        'the sign-off is described before the grant it accepts, so a contributor signs terms not yet read'
-      ).to.be.above(grant);
+        String(contributing),
+        'CONTRIBUTING.md no longer routes individual contributors to docs/CLA-individual.md'
+      ).to.include('docs/CLA-individual.md');
 
       expect(
         String(contributing),
-        'the grant names a different licensor than LICENSE.md and NOTICE do'
-      ).to.include(licensor);
+        'CONTRIBUTING.md no longer routes corporate contributors to docs/CLA-corporate.md'
+      ).to.include('docs/CLA-corporate.md');
+    });
+
+    it('tells the contributor how the CLA is accepted', function() {
+      // D-46: CLA-Assistant is the acceptance mechanism. The instruction has
+      // to distinguish the individual path (sign for yourself) from the
+      // corporate one (your employer signs a CCLA and you must be on its
+      // Schedule B), or a corporate contributor signs the wrong agreement and
+      // the grant is unenforceable.
+      expect(
+        String(contributing),
+        'CONTRIBUTING.md no longer names CLA-Assistant as the way to sign the CLA'
+      ).to.include('CLA-Assistant');
+
+      expect(
+        String(contributing),
+        'CONTRIBUTING.md no longer distinguishes the individual signing path'
+      ).to.match(/individual/i);
+
+      expect(
+        String(contributing),
+        'CONTRIBUTING.md no longer distinguishes the corporate signing path'
+      ).to.match(/corporate/i);
+    });
+
+    it('does not restate the CLA grant in CONTRIBUTING.md', function() {
+      // D-47: the grant lives only in the CLA. The phrases below are the
+      // load-bearing wording of the D-40 grant; if they reappear here the two
+      // texts will drift apart the moment one is edited alone. The check runs
+      // against a whitespace-collapsed view because the phrases wrap across
+      // lines in Markdown, and a literal substring search would stay green on
+      // the wrapped text.
+      const norm = String(contributing).replace(/\s+/g, ' ');
+
+      expect(
+        norm,
+        'CONTRIBUTING.md restates the proprietary-relicensing clause - this wording lives in the CLA, restating it here is the drift surface D-47 rejects'
+      ).to.not.match(/including\s+proprietary\s+and\s+closed-source\s+terms/i);
+
+      expect(
+        norm,
+        'CONTRIBUTING.md restates the canonical copyright-grant wording - this wording lives in the CLA, restating it here is the drift surface D-47 rejects'
+      ).to.not.match(/perpetual,\s+worldwide,\s+non-exclusive,\s+royalty-free,\s+irrevocable/i);
+    });
+
+    it('no longer carries the superseded no-CLA stance', function() {
+      // D-39 was superseded by the Adopt CLA decision (Q5 in
+      // .planning/legal-review-request.md): DCO plus a broad grant in prose
+      // was judged insufficient for commercial Premium/OEM. The "trade-off
+      // this project has accepted with its eyes open" paragraph defended the
+      // superseded position and has no business surviving the change. The
+      // check runs against a whitespace-collapsed view because the phrase
+      // wraps across lines in Markdown.
+      const norm = String(contributing).replace(/\s+/g, ' ');
+
+      expect(
+        norm,
+        'CONTRIBUTING.md still carries the D-39 no-CLA stance that the Adopt CLA decision supersedes'
+      ).to.not.match(/trade-off\s+this\s+project\s+has\s+accepted\s+with\s+its\s+eyes\s+open/i);
+    });
+
+    describe('the Contributor Licence Agreement files', function() {
+
+      // read() throws on a missing file; the IIFE returns '' so the marker
+      // expects below fail red on an absent CLA instead of crashing the run -
+      // a missing agreement is a failure to surface, not a reason to skip.
+      const claIndividual = (function() {
+        try {
+          return read('docs/CLA-individual.md');
+        } catch (error) {
+          return '';
+        }
+      })();
+
+      const claCorporate = (function() {
+        try {
+          return read('docs/CLA-corporate.md');
+        } catch (error) {
+          return '';
+        }
+      })();
+
+      it('ships an Individual CLA forked from the Apache 2.0 ICLA', function() {
+        // D-43/D-45: the ICLA is the primary grant for individual
+        // contributors, forked from the canonical Apache text so corporate
+        // legal teams recognise it. Each marker is its own expect so a
+        // failure names the missing piece.
+        expect(
+          claIndividual.length,
+          'docs/CLA-individual.md is missing - the individual grant has no home'
+        ).to.be.above(0);
+
+        expect(claIndividual, 'the ICLA no longer carries an Apache-style Grant of Copyright License').to.match(/Grant of Copyright License/i);
+        expect(claIndividual, 'the ICLA no longer carries an Apache-style Grant of Patent License').to.match(/Grant of Patent License/i);
+        expect(claIndividual, 'the ICLA no longer carries the D-40 proprietary-relicensing marker').to.match(/proprietary/i);
+        expect(claIndividual, 'the ICLA no longer carries the D-40 Premium/OEM marker').to.match(/Premium|OEM/i);
+        expect(claIndividual, 'the ICLA no longer names the licensor - the same entity as LICENSE.md and NOTICE').to.include(licensor);
+        expect(claIndividual, 'the ICLA no longer states the applicable law (D-05, pending lawyer confirmation)').to.match(/Russian Federation|РФ/i);
+      });
+
+      it('ships a Corporate CLA forked from the Apache 2.0 CCLA', function() {
+        // D-44: the CCLA covers contributions made in the course of employment
+        // through an authorised signer who binds the corporation and maintains
+        // the designated-employee roster. Schedule A is the corporate point of
+        // contact; Schedule B is that roster, updated by amendment.
+        expect(
+          claCorporate.length,
+          'docs/CLA-corporate.md is missing - the corporate grant has no home'
+        ).to.be.above(0);
+
+        expect(claCorporate, 'the CCLA no longer carries Schedule A').to.match(/Schedule A/);
+        expect(claCorporate, 'the CCLA no longer carries Schedule B').to.match(/Schedule B/);
+        expect(claCorporate, 'the CCLA no longer states the authorised-signer model (D-44)').to.match(/authorised|authorized/i);
+        expect(claCorporate, 'the CCLA no longer carries the D-40 proprietary-relicensing marker').to.match(/proprietary/i);
+        expect(claCorporate, 'the CCLA no longer names the licensor - the same entity as LICENSE.md and NOTICE').to.include(licensor);
+      });
     });
   });
 
