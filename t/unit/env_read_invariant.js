@@ -22,14 +22,19 @@
   site. A single explicit file, not a glob (prohibition P: no broad globs); the
   exemption carries teeth below so it can never guard nothing.
 
-  Read detection: a direct read of a branded env var in either dot-access
-  (process.env.TIMEOFF_X) or quoted-bracket form (process.env['TIMEOFF_X']). The
-  resolver's COMPUTED bracket access (process.env[<prefix>+surname]) does NOT
-  match either form — the bracket alternative requires a quoted literal key — so
-  the resolver is invisible to the offender scan by design, and the allowlist is
-  forward-looking (a literal read added to the resolver later is exempted). The
-  teeth assertion proves the resolver genuinely reads process.env, so the
-  exemption is never a no-op.
+  Read detection: a direct read of a branded env var in any of FOUR forms —
+  dot access (process.env.TIMEOFF_X), quoted bracket
+  (process.env['TIMEOFF_X']), template-literal bracket
+  (process.env[`TIMEOFF_X`]), or destructuring from process.env
+  (const { TIMEOFF_X } = process.env). The resolver's COMPUTED bracket
+  access (process.env[<prefix>+surname]) does NOT match any literal-key
+  form, and the resolver does not destructure process.env, so the resolver
+  is invisible to the offender scan by design, and the allowlist is
+  forward-looking (a literal read added to the resolver later is exempted).
+  The teeth assertion proves the resolver genuinely reads process.env, so
+  the exemption is never a no-op. (WR-02, G-02-5: the template-bracket and
+  destructuring forms were added so a future contributor using those natural
+  JS idioms cannot silently bypass the resolver contract.)
 */
 
 var expect = require('chai').expect;
@@ -59,13 +64,23 @@ var allowedReadSites = ['lib/env_resolver.js'];
 // a line (a line may carry more than one); lastIndex is reset before each scan.
 var readDots = /process\.env\.(TIMEOFF_|LEAVEPILOT_|BRAND_)[A-Z_0-9]+/g;
 var readBracket = /process\.env\[['"](TIMEOFF_|LEAVEPILOT_|BRAND_)[A-Z_0-9]+['"]\]/g;
+// Template-literal bracket: process.env[`TIMEOFF_X`]. Integrated into
+// accessEnds so the write-filter applies (a write process.env[`X`] = ...
+// must NOT be flagged). The backtick is an ordinary character in a JS regex
+// literal — written literally between \[ and \].
+var readTemplateBracket = /process\.env\[`(?:TIMEOFF_|LEAVEPILOT_|BRAND_)[A-Z_0-9]+`\]/g;
+// Destructuring from process.env: { ... <branded name> ... } = process.env.
+// Always a read (destructuring FROM process.env cannot be a write), so it is
+// checked directly in lineHasBrandedRead, not via the write-filtering
+// accessEnds path. [^}]* tolerates commas, renames (: alias), and defaults.
+var readDestructure = /\{[^}]*\b(?:TIMEOFF_|LEAVEPILOT_|BRAND_)[A-Z_0-9]+[^}]*\}\s*=\s*process\.env/g;
 
 // End-indices (exclusive) of every branded env-var access on the line. Each end
 // index is the position immediately AFTER the matched token, used to test
 // whether that access is a write-assignment.
 function accessEnds(line) {
   var ends = [];
-  [readDots, readBracket].forEach(function(re) {
+  [readDots, readBracket, readTemplateBracket].forEach(function(re) {
     re.lastIndex = 0;
     var m;
     while ((m = re.exec(line)) !== null) {
@@ -138,6 +153,12 @@ function collectFiles() {
 // the per-line contract has one definition (license_consistency offendersFor
 // L82-90 shape).
 function lineHasBrandedRead(line) {
+  // Destructuring FROM process.env is always a read (cannot be a write), so
+  // a branded name destructured anywhere in the binding flags the line.
+  readDestructure.lastIndex = 0;
+  if (readDestructure.test(line)) {
+    return true;
+  }
   var ends = accessEnds(line);
   if (ends.length === 0) {
     return false;
