@@ -142,7 +142,7 @@
     "groupDetails": "Group details",
     "conflictRules": "Conflict rules",
     "conflictRulesDetails": "Conflict rule details",
-    "login": "LeavePilot"
+    "login": ""
   },
   "userPopup": {
     "available": "Available",
@@ -570,8 +570,8 @@
     "timezoneHelp": "Used to calculate working days and notification send times."
   },
   "home": {
-    "title": "LeavePilot",
-    "subtitle": "Open-source leave management for teams of all sizes.",
+    "title": "",
+    "subtitle": "Source-available leave management for teams of all sizes.",
     "signUp": "Sign up now",
     "orFork": "or fork us on",
     "features": {
@@ -1032,7 +1032,7 @@
     "adminPasswordNoticePrefix": "In order to prevent a situation where a company account locks itself out, the current administrator (",
     "adminPasswordNoticeSuffix": ") has to enter the password associated with her/his email on the LDAP server.",
     "adminPasswordNoticeSecondPrefix": "This is to ensure that",
-    "adminPasswordNoticeSecondSuffix": "can log in to LeavePilot with the new LDAP settings.",
+    "adminPasswordNoticeSecondSuffix": "can log in with the new LDAP settings.",
     "currentPasswordLabel": "My LDAP password",
     "currentPasswordHelpPrefix": "Password for",
     "currentPasswordHelpSuffix": "in the new LDAP server.",
@@ -1116,11 +1116,7 @@
     "message": "Oops! We can't seem to find the page that you're looking for."
   },
   "meta": {
-    "description": "Open source Staff Time off management system"
-  },
-  "brand": {
-    "name": "LeavePilot",
-    "nameLower": "LeavePilot"
+    "description": "Source-available Staff Time off management system"
   },
   "footer": {
     "copyrightPrefix": "©",
