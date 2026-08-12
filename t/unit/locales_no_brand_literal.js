@@ -7,9 +7,11 @@
   stops at the locales a translator happened to edit — the visible product
   name drifts away from branding.get() the moment a new language is added or
   a translator restates the name in their own words. BRAND-05 closes that
-  surface: the locales carry no product literal at all, and the two plain-
-  string render keys (login screen, home page title) are intercepted at
-  render time by lib/view/helpers.js t() so they return branding.get().name.
+  surface: the locales carry no product literal at all, and the brand render
+  keys templates actually use (brand.name, brand.nameLower) are intercepted
+  at render time by lib/view/helpers.js t() so they return branding.get().name.
+  The login screen eyebrow and the page <title> render the brand via the
+  {{brand_name}} helper instead, not via t().
 
   Kept as a test rather than done once. The next translator who opens a
   translation.json to localise the login screen will put the product name
@@ -23,9 +25,9 @@
   deleted AND the literal along with it: the visible product name would then
   render from whatever fallback the locale carries, which after this plan is
   the empty string. The teeth prove the interception still returns
-  branding.get().name for brand.name, login and home.title, so the guard
-  cannot be satisfied by removing the dynamic source the empty-string
-  literals rely on.
+  branding.get().name for brand.name and brand.nameLower (the keys footer.hbs
+  and the email templates actually render), so the guard cannot be satisfied
+  by removing the dynamic source the empty-string literals rely on.
 */
 
 const expect = require('chai').expect;
@@ -137,10 +139,11 @@ describe('Client locale catalogs carry no product-name literal', function() {
     The brand-literal scan above is also satisfied by deleting the dynamic
     interception in lib/view/helpers.js and the literal along with it: the
     visible product name would then render from the empty-string fallback
-    the locales now carry for titles.login / home.title / brand.name. The
-    teeth below prove the interception still returns branding.get().name for
-    the three intercepted keys, so removing the dynamic source is a visible
-    failure, not a silent pass.
+    the locales now carry for brand.name / brand.nameLower. The teeth below
+    prove the interception still returns branding.get().name for the two
+    keys templates actually render (brand.name in the email templates,
+    brand.nameLower in footer.hbs), so removing the dynamic source is a
+    visible failure, not a silent pass.
 
     helpers.js is required here, not at module top level, so a structurally
     broken locale (caught by the valid-JSON spec above) fails this describe
@@ -180,18 +183,11 @@ describe('Client locale catalogs carry no product-name literal', function() {
       ).to.equal('Teeth Brand');
     });
 
-    it('returns the dynamic brand name for the login key', function() {
+    it('returns the dynamic brand name LOWERCASED for the brand.nameLower key', function() {
       expect(
-        helpers.t('login', {hash: {}}),
-        't("login") no longer returns branding.get().name — the login screen title relies on this interception (D-09)'
-      ).to.equal('Teeth Brand');
-    });
-
-    it('returns the dynamic brand name for the home.title key', function() {
-      expect(
-        helpers.t('home.title', {hash: {}}),
-        't("home.title") no longer returns branding.get().name — the home page title relies on this interception (D-09)'
-      ).to.equal('Teeth Brand');
+        helpers.t('brand.nameLower', {hash: {}}),
+        't("brand.nameLower") no longer returns branding.get().name lowercased — footer.hbs renders this key (D-09)'
+      ).to.equal('teeth brand');
     });
   });
 });
