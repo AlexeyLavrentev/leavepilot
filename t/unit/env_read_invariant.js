@@ -132,10 +132,24 @@ function collectFiles() {
   return files;
 }
 
+// True when the line carries a branded env READ in any detected form. The
+// dot / quoted-bracket / template-bracket forms are reads when at least one
+// access on the line is not a write-assignment. offendersIn delegates here so
+// the per-line contract has one definition (license_consistency offendersFor
+// L82-90 shape).
+function lineHasBrandedRead(line) {
+  var ends = accessEnds(line);
+  if (ends.length === 0) {
+    return false;
+  }
+  return ends.some(function(end) {
+    return !isWriteAssignment(line, end);
+  });
+}
+
 // Offender objects { file, line, text } for one file. Allowlisted files
-// contribute nothing (the sole permit). A line is an offender when it carries a
-// branded env access that is a READ (at least one access on the line is not a
-// write-assignment) — license_consistency offendersFor L82-90 shape.
+// contribute nothing (the sole permit). A line is an offender when
+// lineHasBrandedRead(line) is true.
 function offendersIn(absFile) {
   var relativePath = path.relative(root, absFile).split(path.sep).join('/');
   if (isAllowed(relativePath)) {
@@ -143,14 +157,7 @@ function offendersIn(absFile) {
   }
   var found = [];
   read(relativePath).split('\n').forEach(function(line, index) {
-    var ends = accessEnds(line);
-    if (ends.length === 0) {
-      return;
-    }
-    var hasRead = ends.some(function(end) {
-      return !isWriteAssignment(line, end);
-    });
-    if (hasRead) {
+    if (lineHasBrandedRead(line)) {
       found.push({ file: relativePath, line: index + 1, text: line.trim() });
     }
   });
@@ -250,5 +257,28 @@ describe('BRAND-02 invariant: all branded env reads go through the resolver', fu
       licenseOffenders,
       'bin/license.js write-assignments are being flagged as reads — the write-filter is broken:\n' + format(licenseOffenders)
     ).to.deep.equal([]);
+  });
+
+  // TEETH (read-form coverage, WR-02 / G-02-5): the watchdog must catch a
+  // branded env read in ANY of the four JS forms a future contributor might
+  // reach for — not just the dot and quoted-bracket forms present in the
+  // codebase today. Destructuring from process.env and template-literal
+  // bracket access are natural idioms that would otherwise bypass the
+  // invariant silently. The negative cases (a non-branded destructuring; a
+  // template-bracket WRITE) prove the flag is not vacuous.
+  it('flags every branded env read form (destructuring + template-bracket teeth)', function() {
+    // Destructuring FROM process.env — always a read (it cannot be a write).
+    expect(lineHasBrandedRead('const { TIMEOFF_LICENSE } = process.env;'),
+      'single-name destructuring of a branded var must be flagged').to.equal(true);
+    expect(lineHasBrandedRead('const { LEAVEPILOT_LICENSE, BRAND_NAME } = process.env;'),
+      'multi-name destructuring carrying a branded var must be flagged').to.equal(true);
+    expect(lineHasBrandedRead('const { PATH, HOME } = process.env;'),
+      'a non-branded destructuring must NOT be flagged').to.equal(false);
+
+    // Template-literal bracket — a read when not a write-assignment.
+    expect(lineHasBrandedRead('const v = process.env[`TIMEOFF_LICENSE`];'),
+      'a template-literal bracket read of a branded var must be flagged').to.equal(true);
+    expect(lineHasBrandedRead('process.env[`LEAVEPILOT_LICENSE`] = "x";'),
+      'a template-literal bracket WRITE must NOT be flagged').to.equal(false);
   });
 });
