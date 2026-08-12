@@ -1,49 +1,42 @@
 # Contributing to LeavePilot Community
 
 This file states the terms on which a contribution to this project is accepted.
-Two conditions apply to every contribution, and both are set out below — the
-grant of rights first, so that you read what you are agreeing to before you read
-how that agreement is expressed.
+Two mechanisms apply to every contribution: the Contributor Licence Agreement
+(the legal grant, in `docs/CLA-individual.md` and `docs/CLA-corporate.md`) and
+the `Signed-off-by` trailer (a technical CI gate that certifies provenance).
+The CLA is the source of the grant; the sign-off is its CI enforcement
+companion, and both are set out below.
 
 Nothing else lives here. The development process, test requirements, and issue
 and pull request templates are deliberately outside the scope of this document.
 
-## Grant of rights
+## Contributor Licence Agreement
 
-By submitting a contribution to this project — as a pull request, as a patch, or
-in any other form — you grant Alexey Lavrentev, the licensor named in
-`LICENSE.md` and `NOTICE`, a perpetual, worldwide, non-exclusive, royalty-free,
-irrevocable licence to reproduce, modify, prepare derivative works of, publicly
-display, publicly perform, sublicense and distribute your contribution and any
-derivative works of it **under any licensing terms, including proprietary and
-closed-source terms**.
+Every contribution is made under a Contributor Licence Agreement. The full grant
+lives in the agreement itself, not in this file: the agreement is the single
+source, and restating the grant here would be a drift surface this project has
+deliberately rejected.
 
-This expressly includes, and is not limited to:
+- **If you are contributing as yourself**, read and sign
+  [`docs/CLA-individual.md`](docs/CLA-individual.md) (the Individual Contributor
+  Licence Agreement).
+- **If you are contributing in the course of employment**, your employer signs
+  [`docs/CLA-corporate.md`](docs/CLA-corporate.md) (the Corporate Contributor
+  Licence Agreement) through its authorised signatory, and you must be listed on
+  its Schedule B before your contribution is merged.
 
-- distribution of your contribution as part of the community edition under the
-  Elastic License 2.0, whose text is in `LICENSE.md`;
-- distribution as part of the closed-source LeavePilot Premium module, which is
-  sold commercially and is not published under the Elastic License 2.0;
-- distribution as part of OEM or white-label deliveries, in which the software
-  is supplied under a customer's own brand on separately negotiated terms.
+In short, and non-bindingly: you grant the Licensor a perpetual, irrevocable,
+worldwide, royalty-free licence to use your contribution under any terms,
+including proprietary terms for the Premium and OEM deliveries, and you keep
+your copyright. If this summary and the agreement in `docs/CLA-individual.md`
+or `docs/CLA-corporate.md` ever differ, the agreement file is the grant and this
+summary is not.
 
-You retain copyright in your contribution. This is a licence granted to the
-licensor, not an assignment: it does not take your copyright away from you, and
-it does not restrict what you may do with your own work anywhere else.
-
-You also confirm that the contribution is yours to give — that you hold the
-rights you are granting here, and that no employer, client or earlier licence
-stands in the way of granting them.
-
-The grant is deliberately broad, and the reason is stated here rather than left
-to be discovered: a contribution that cannot be relicensed cannot be taken into
-the premium module or into an OEM delivery at all, so a narrower grant would
-mean refusing contributions rather than accepting them on softer terms. The
-known cost of asking for this is that some contributors will not accept the
-clause and will not contribute. That is a trade-off this project has accepted
-with its eyes open, not an oversight. If it is a clause you cannot accept,
-please open an issue and say so, rather than sending a pull request under terms
-you did not mean to agree to.
+When you open your first pull request, CLA-Assistant asks you to sign through
+GitHub. It links the agreement that matches your path — individual or corporate
+— records your acceptance against your GitHub account, and sets the status check
+to passing. Once signed, the check stays green for your subsequent pull requests
+until the agreement text changes, at which point you are asked to sign again.
 
 ## Developer Certificate of Origin
 
@@ -56,7 +49,8 @@ which appends a line of this form to the commit message:
     Signed-off-by: Your Name <you@example.com>
 
 The trailer certifies that you wrote the contribution yourself, or that you
-otherwise have the right to submit it under the terms set out above. It is the
+otherwise have the right to submit it under the Contributor Licence Agreement
+above and in `docs/CLA-individual.md` / `docs/CLA-corporate.md`. It is the
 Developer Certificate of Origin, version 1.1 (https://developercertificate.org/),
 reproduced in full at the end of this document.
 
@@ -74,8 +68,9 @@ One reading note on the text below. The Developer Certificate of Origin is
 reproduced verbatim, as its own terms require, and its clause (a) speaks of "the
 open source license indicated in the file". This software is source-available
 rather than open source: read that phrase as the terms stated in `LICENSE.md`
-and in the grant above. The certificate is not edited to say so, because an
-edited certificate is no longer the certificate that everyone else has read.
+and in the Contributor Licence Agreement above. The certificate is not edited to
+say so, because an edited certificate is no longer the certificate that everyone
+else has read.
 
 ## Developer Certificate of Origin 1.1
 
