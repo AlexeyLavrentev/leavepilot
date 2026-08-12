@@ -196,7 +196,7 @@
       "bankHoliday": "Bank holiday: {{name}}"
     },
     "messages": {
-      "companyLocked": "Company account is locked and new Timeoff requests could not be added. Please contact administration.",
+      "companyLocked": "Company account is locked and new time-off requests could not be added. Please contact administration.",
       "leaveAdded": "New leave request was added",
       "leaveCreateFailed": "Failed to create a leave request",
       "teamViewAccessFailed": "Failed to access TeamView page. Please contact administrator.",
