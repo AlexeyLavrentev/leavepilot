@@ -1,0 +1,12 @@
+{
+  "_comment": "Owner-provided anonymized dump of a working deployment's env (BRAND-03 fixture, plan 02-03 Task 1). Source: this machine's .env + docker-compose app service (NODE_ENV=production). Only TIMEOFF_*/LEAVEPILOT_*/BRAND_*/APPLICATION_*/PROMOTION_ keys + NODE_ENV retained; all other env (DB_*, SESSION_SECRET, CRYPTO_SECRET) dropped. This is a community-edition deployment: license fields are genuinely empty (no license deployed), so no secret values existed to redact — empty stays empty. Structural/boolean values kept verbatim per plan anonymization rules. expectedDeprecatedCount = number of TIMEOFF_* names (env_resolver.describeDeprecations counts keys, not values).",
+  "env": {
+    "NODE_ENV": "production",
+    "TIMEOFF_PREMIUM_MODULE_HOST_PATH": "../timeoff-premium",
+    "TIMEOFF_PREMIUM_MODULE": "",
+    "TIMEOFF_PREMIUM_MODULE_REQUIRED": "false",
+    "TIMEOFF_LICENSE": "",
+    "TIMEOFF_LICENSE_PUBLIC_KEY": ""
+  },
+  "expectedDeprecatedCount": 5
+}
