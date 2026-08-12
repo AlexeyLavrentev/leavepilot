@@ -14,6 +14,9 @@ describe('Branding', function() {
       PROMOTION_WEBSITE_DOMAIN : process.env.PROMOTION_WEBSITE_DOMAIN,
       BRAND_LOGO_URL : process.env.BRAND_LOGO_URL,
       BRAND_FAVICON_URL : process.env.BRAND_FAVICON_URL,
+      BRAND_FAVICON_PNG_32_URL : process.env.BRAND_FAVICON_PNG_32_URL,
+      BRAND_APP_ICON_URL : process.env.BRAND_APP_ICON_URL,
+      BRAND_MANIFEST_URL : process.env.BRAND_MANIFEST_URL,
       BRAND_SENDER_EMAIL : process.env.BRAND_SENDER_EMAIL,
       BRAND_SENDER_NAME : process.env.BRAND_SENDER_NAME,
       BRAND_EMAIL_FROM : process.env.BRAND_EMAIL_FROM,
@@ -70,5 +73,43 @@ describe('Branding', function() {
     process.env.BRAND_EMAIL_FROM = 'No Reply <noreply@example.com>';
 
     expect(branding.getEmailFrom()).to.equal('No Reply <noreply@example.com>');
+  });
+
+  /*
+    BRAND-04 "surfaces rebrand without code edit". The /manifest.webmanifest
+    route (app.js:95-117) builds the web manifest from branding.get() — these
+    specs pin that an operator override of the manifest-relevant fields flows
+    through branding.get() with no code change, and that the defaults match the
+    LeavePilot surfaces the route renders today.
+  */
+  it('lets manifest-route fields rebrand via BRAND_* override', function() {
+    process.env.BRAND_NAME = 'Acme';
+    process.env.BRAND_SHORT_NAME = 'A';
+    process.env.BRAND_FAVICON_PNG_32_URL = 'https://cdn/acme-32.png';
+    process.env.BRAND_APP_ICON_URL = 'https://cdn/acme-icon.png';
+    process.env.BRAND_MANIFEST_URL = '/acme-manifest.webmanifest';
+
+    var currentBranding = branding.get();
+
+    expect(currentBranding.name).to.equal('Acme');
+    expect(currentBranding.shortName).to.equal('A');
+    expect(currentBranding.faviconPng32Url).to.equal('https://cdn/acme-32.png');
+    expect(currentBranding.appIconUrl).to.equal('https://cdn/acme-icon.png');
+    expect(currentBranding.manifestUrl).to.equal('/acme-manifest.webmanifest');
+  });
+
+  it('exposes LeavePilot manifest defaults when no override is set', function() {
+    var currentBranding = branding.get();
+
+    expect(currentBranding.faviconPng32Url).to.equal('/favicon-32x32.png');
+    expect(currentBranding.appIconUrl).to.equal('/icon-vacation.png');
+    expect(currentBranding.manifestUrl).to.equal('/manifest.webmanifest');
+  });
+
+  it('getEmailFrom returns the bare sender address under the default brand', function() {
+    // Locks the email surface as a branding consumer via the dedicated accessor
+    // (the .emailFrom property check above is the same value reached another way;
+    // this asserts getEmailFrom() itself stays wired to branding.get()).
+    expect(branding.getEmailFrom()).to.equal('email@test.com');
   });
 });
