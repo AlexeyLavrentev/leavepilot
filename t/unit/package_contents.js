@@ -51,6 +51,8 @@ const ROOT = path.join(__dirname, '..', '..');
 
 const OPERATOR_DOCS = [
   'docs/EULA.md',
+  'docs/CLA-individual.md',
+  'docs/CLA-corporate.md',
   'docs/licensing-faq.md',
   'docs/install-local-npm.md',
   'docs/faq.md',
