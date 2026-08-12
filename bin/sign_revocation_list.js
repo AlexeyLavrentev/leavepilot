@@ -5,12 +5,13 @@
 const fs = require('fs');
 const crypto = require('crypto');
 const minimist = require('minimist');
+const envResolver = require('../lib/env_resolver');
 const features = require('../lib/features');
 
 const argv = minimist(process.argv.slice(2));
 const privateKey = argv['private-key']
   || (argv['private-key-file'] ? fs.readFileSync(argv['private-key-file'], 'utf8') : '')
-  || process.env.TIMEOFF_LICENSE_REVOCATION_PRIVATE_KEY;
+  || envResolver.resolve('LICENSE_REVOCATION_PRIVATE_KEY');
 const revokedLicenseIds = String(argv.revoked || '')
   .split(',')
   .map(value => value.trim())
