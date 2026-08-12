@@ -35,7 +35,7 @@ may do with Your own work anywhere else.
 
 ## 1. Definitions
 
-"You" (or "Your") shall mean the copyright owner or legal entity authorised by
+"You" (or "Your") shall mean the copyright owner or legal entity authorized by
 the copyright owner that is making this Agreement with the Licensor. For legal
 entities, the entity making a Contribution and all other entities that control,
 are controlled by, or are under common control with that entity are considered
@@ -97,7 +97,7 @@ You represent that You are legally entitled to grant the above license. You
 represent that You hold the rights You are granting here, and that no employer,
 client, or earlier license stands in the way of granting them. If Your
 Contribution is made in the course of employment, You represent that Your
-employer has authorised the Contribution or has waived its rights in it, or
+employer has authorized the Contribution or has waived its rights in it, or
 that a Corporate Contributor License Agreement (see `docs/CLA-corporate.md`)
 between Your employer and the Licensor is on file or will be executed before the
 Contribution is merged.
