@@ -90,5 +90,19 @@
     "clear": "Ачысціць",
     "weekStart": 1,
     "format": "dd.mm.yyyy"
+  },
+  "licenseStatus": {
+    "sectionTitle": "Ліцэнзія і рэдакцыя",
+    "community": "{{brand}} Community Edition — бясплатна.",
+    "upsellCommunity": "Даведацца пра Premium",
+    "active": "Premium актыўны ({{plan}}).",
+    "manage": "Кіраваць падпіскай",
+    "expiring": "Premium актыўны — заканчваецца праз {{days}} дн. ({{expires}}).",
+    "upsellRenew": "Працягнуць падпіску",
+    "grace": "Premium скончыўся {{expires}} — функцыі працуюць да {{graceEndsAt}}, працягніце.",
+    "expired": "Premium скончыўся — прэміум-функцыі адключаны.",
+    "revoked": "Ліцэнзія адклікана — прэміум-функцыі адключаны.",
+    "upsellContact": "Звязацца з падтрымкай",
+    "error": "Памылка ліцэнзіі ({{reason}}) — пераўстанавіце або абнавіце ліцэнзійны файл."
   }
 }

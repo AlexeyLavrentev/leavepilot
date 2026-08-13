@@ -1239,5 +1239,19 @@
     "messages": {
       "disabled": "Бұл орнату үшін бұл мүмкіндік қосылмаған."
     }
+  },
+  "licenseStatus": {
+    "sectionTitle": "Лицензия және нұсқа",
+    "community": "{{brand}} Community Edition — тегін.",
+    "upsellCommunity": "Premium туралы білу",
+    "active": "Premium белсенді ({{plan}}).",
+    "manage": "Жазылымды басқару",
+    "expiring": "Premium белсенді — {{days}} күннен кейін аяқталады ({{expires}}).",
+    "upsellRenew": "Жазылымды жаңарту",
+    "grace": "Premium аяқталды {{expires}} — функциялар {{graceEndsAt}} дейін жұмыс істейді, жаңартыңыз.",
+    "expired": "Premium аяқталды — премиум функциялар өшірілді.",
+    "revoked": "Лицензия күшінен айырылды — премиум функциялар өшірілді.",
+    "upsellContact": "Қолдау қызметімен байланысу",
+    "error": "Лицензия қатесі ({{reason}}) — лицензиялық файлды қайта орнатыңыз немесе жаңартыңыз."
   }
 }

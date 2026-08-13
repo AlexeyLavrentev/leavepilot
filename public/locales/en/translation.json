@@ -1233,5 +1233,19 @@
     "messages": {
       "disabled": "This feature is not enabled for this installation."
     }
+  },
+  "licenseStatus": {
+    "sectionTitle": "License & edition",
+    "community": "{{brand}} Community Edition — free.",
+    "upsellCommunity": "Learn about Premium",
+    "active": "Premium active ({{plan}}).",
+    "manage": "Manage subscription",
+    "expiring": "Premium active — expires in {{days}} day(s) ({{expires}}).",
+    "upsellRenew": "Renew subscription",
+    "grace": "Premium expired {{expires}} — features work until {{graceEndsAt}}, please renew.",
+    "expired": "Premium expired — premium features are disabled.",
+    "revoked": "License revoked — premium features are disabled.",
+    "upsellContact": "Contact support",
+    "error": "License error ({{reason}}) — reinstall or update the license file."
   }
 }

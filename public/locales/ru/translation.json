@@ -1239,5 +1239,19 @@
     "messages": {
       "disabled": "Эта функция не включена для этой установки."
     }
+  },
+  "licenseStatus": {
+    "sectionTitle": "Лицензия и редакция",
+    "community": "{{brand}} Community Edition — бесплатно.",
+    "upsellCommunity": "Узнать о Premium",
+    "active": "Premium активен ({{plan}}).",
+    "manage": "Управлять подпиской",
+    "expiring": "Premium активен — истекает через {{days}} дн. ({{expires}}).",
+    "upsellRenew": "Продлить подписку",
+    "grace": "Premium истёк {{expires}} — функции работают до {{graceEndsAt}}, продлите.",
+    "expired": "Premium истёк — премиум-функции отключены.",
+    "revoked": "Лицензия отозвана — премиум-функции отключены.",
+    "upsellContact": "Связаться с поддержкой",
+    "error": "Ошибка лицензии ({{reason}}) — переустановите или обновите лицензионный файл."
   }
 }

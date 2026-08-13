@@ -90,5 +90,19 @@
     "clear": "Очистити",
     "weekStart": 1,
     "format": "dd.mm.yyyy"
+  },
+  "licenseStatus": {
+    "sectionTitle": "Ліцензія та редакція",
+    "community": "{{brand}} Community Edition — безкоштовно.",
+    "upsellCommunity": "Дізнатися про Premium",
+    "active": "Premium активний ({{plan}}).",
+    "manage": "Керувати підпискою",
+    "expiring": "Premium активний — завершується через {{days}} дн. ({{expires}}).",
+    "upsellRenew": "Продовжити підписку",
+    "grace": "Premium завершився {{expires}} — функції працюють до {{graceEndsAt}}, продовжіть.",
+    "expired": "Premium завершився — преміум-функції вимкнено.",
+    "revoked": "Ліцензію відкликано — преміум-функції вимкнено.",
+    "upsellContact": "Зв'язатися з підтримкою",
+    "error": "Помилка ліцензії ({{reason}}) — перевстановіть або оновіть ліцензійний файл."
   }
 }
