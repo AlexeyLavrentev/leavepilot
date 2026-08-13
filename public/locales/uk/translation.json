@@ -109,14 +109,6 @@
       "migrations": "Шляхи міграцій"
     }
   },
-  "licenseWarnings": {
-    "title": "Преміум ліцензія:",
-    "expiring": "спливає через {{days}} дн., {{expires}}.",
-    "grace": "закінчився {{expires}}. Пільговий період закінчиться {{graceEndsAt}}.",
-    "expired": "закінчився {{expires}}. Преміум функції відключені; Community та доступ до даних працюють.",
-    "revoked": "відкликана. Преміум функції відключені; Community та доступ до даних працюють.",
-    "details": "Відкрити діагностику"
-  },
   "notifications": {
     "pendingRequest_one": "{{count}} заявка на відпустку",
     "pendingRequest_few": "{{count}} заявки на відпустку",

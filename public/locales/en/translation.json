@@ -109,14 +109,6 @@
       "migrations": "Migration paths"
     }
   },
-  "licenseWarnings": {
-    "title": "Premium license:",
-    "expiring": "expires in {{days}} day(s), on {{expires}}.",
-    "grace": "expired on {{expires}}. Grace period ends on {{graceEndsAt}}.",
-    "expired": "expired on {{expires}}. Premium features are disabled; Community and data access remain available.",
-    "revoked": "has been revoked. Premium features are disabled; Community and data access remain available.",
-    "details": "View diagnostics"
-  },
   "notifications": {
     "pendingRequest_one": "{{count}} leave request to process",
     "pendingRequest_other": "{{count}} leave requests to process"

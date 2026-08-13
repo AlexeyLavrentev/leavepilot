@@ -109,14 +109,6 @@
       "migrations": "Шляхі міграцый"
     }
   },
-  "licenseWarnings": {
-    "title": "Прэміум-ліцэнзія:",
-    "expiring": "заканчваецца праз {{days}} дзён., {{expires}}.",
-    "grace": "скончыўся {{expires}}. Льготны перыяд скончыцца {{graceEndsAt}}.",
-    "expired": "скончыўся {{expires}}. Прэміум-функцыі адключаныя; Community і доступ да дадзеных працуюць.",
-    "revoked": "адклікана. Прэміум-функцыі адключаныя; Community і доступ да дадзеных працуюць.",
-    "details": "Адкрыць дыягностыку"
-  },
   "notifications": {
     "pendingRequest_one": "{{count}} заяўка на водпуск",
     "pendingRequest_few": "{{count}} заяўкі на водпуск",

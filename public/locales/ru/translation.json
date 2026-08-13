@@ -109,14 +109,6 @@
       "migrations": "Пути миграций"
     }
   },
-  "licenseWarnings": {
-    "title": "Премиум-лицензия:",
-    "expiring": "истекает через {{days}} дн., {{expires}}.",
-    "grace": "истекла {{expires}}. Льготный период закончится {{graceEndsAt}}.",
-    "expired": "истекла {{expires}}. Премиум-функции отключены; Community и доступ к данным работают.",
-    "revoked": "отозвана. Премиум-функции отключены; Community и доступ к данным работают.",
-    "details": "Открыть диагностику"
-  },
   "notifications": {
     "pendingRequest_one": "{{count}} заявка на отпуск",
     "pendingRequest_few": "{{count}} заявки на отпуск",
