@@ -122,14 +122,6 @@
   </div><!-- /.container-fluid -->
 </nav>
 
-{{#if license_warning}}
-  <div class="alert alert-warning license-warning" role="alert">
-    <strong>{{t "licenseWarnings.title"}}</strong>
-    {{t license_warning.key days=license_warning.days expires=license_warning.expires graceEndsAt=license_warning.graceEndsAt}}
-    <a class="alert-link" href="/settings/company/diagnostics/">{{t "licenseWarnings.details"}}</a>
-  </div>
-{{/if}}
-
 {{# if logged_user }}
   {{# if logged_user.company.company_wide_message  }}
     <div class="alert alert-danger" role="alert">{{ logged_user.company.company_wide_message }}</div>

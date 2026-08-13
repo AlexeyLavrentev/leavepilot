@@ -175,36 +175,6 @@ app.use(function(req,res,next){
   res.locals.default_language = config.get('default_language') || 'en';
   res.locals.branding = branding.get();
   res.locals.features = features.getEnabledMap();
-  res.locals.license_warning = null;
-  if (req.user && req.user.admin) {
-    const licenseStatus = features.getLicenseStatus();
-    if (licenseStatus.source !== 'none') {
-      if (licenseStatus.inGrace) {
-        res.locals.license_warning = {
-          key: 'licenseWarnings.grace',
-          expires: licenseStatus.expires,
-          graceEndsAt: licenseStatus.graceEndsAt,
-        };
-      } else if (licenseStatus.reason === 'revoked') {
-        res.locals.license_warning = {
-          key: 'licenseWarnings.revoked',
-        };
-      } else if (licenseStatus.reason === 'expired') {
-        res.locals.license_warning = {
-          key: 'licenseWarnings.expired',
-          expires: licenseStatus.expires,
-        };
-      } else if (licenseStatus.daysUntilExpiry !== null
-          && licenseStatus.daysUntilExpiry >= 0
-          && licenseStatus.daysUntilExpiry <= 60) {
-        res.locals.license_warning = {
-          key: 'licenseWarnings.expiring',
-          days: licenseStatus.daysUntilExpiry,
-          expires: licenseStatus.expires,
-        };
-      }
-    }
-  }
   res.locals.primary_premium_nav_items = edition.getNavigationItems({location: 'primary'});
   res.locals.settings_department_premium_nav_items = edition.getNavigationItems({location: 'settings_departments'});
   res.locals.settings_company_premium_nav_items = edition.getNavigationItems({location: 'settings_company'});
