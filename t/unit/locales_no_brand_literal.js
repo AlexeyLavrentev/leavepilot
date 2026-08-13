@@ -191,3 +191,91 @@ describe('Client locale catalogs carry no product-name literal', function() {
     });
   });
 });
+
+/*
+  The licenseStatus.* namespace (added in plan 03-01) is the single suppressible
+  license surface after the D-01 banner removal (plan 03-02). A brand or URL
+  literal in one of its values — "Visit LeavePilot", "https://timeoff.management"
+  — is an OEM leak surface (Phase 4): the brand name and the upsell URL must
+  flow from branding.get() through the mapper (lib/license_status_view.js),
+  never from a locale catalog. The watchdog below forbids that.
+
+  This scan is deliberately SCOPED to the parsed licenseStatus object's own
+  string values. The global brandLiteral regex above already guards the whole
+  file against the product NAME (LeavePilot / Leave Pilot / TimeOff) and is
+  left byte-unchanged — widening it to https?:// would false-positive on the
+  oidcSectionHelp values (e.g. en L1224) that legitimately carry a Keycloak
+  issuer URL "https://<host>/realms/<realm>" as part of their guidance. Parsing
+  the catalog and walking ONLY the licenseStatus object keeps oidcSectionHelp
+  out of scope by construction, so the URL guard does not regress the build.
+*/
+const licenseStatusLiteral = /LeavePilot|Leave\s+Pilot|TimeOff|timeoff\.management|https?:\/\//i;
+
+describe('licenseStatus.* locale values carry no brand or URL literal', function() {
+
+  // Flatten only the licenseStatus object's own string leaves. The mapper
+  // renders plain strings (lib/view/helpers.js t()), so a JSON parse + a
+  // recursive walk over this one object is the correct shape — and it keeps
+  // the oidcSectionHelp keys (which legitimately contain https://) out of the
+  // URL scan by construction, which a whole-file line scan could not.
+  const flattenStringLeaves = function(value, found) {
+    if (typeof value === 'string') {
+      found.push(value);
+    } else if (value && typeof value === 'object') {
+      Object.keys(value).forEach(function(key) { flattenStringLeaves(value[key], found); });
+    }
+    return found;
+  };
+
+  it('has the licenseStatus namespace in every client catalog', function() {
+    // Surface-exists: a guard that scanned an absent namespace would be green
+    // on a deleted input (mirrors the five-surfaces guard above). The scan
+    // cannot pass by deleting the licenseStatus object the mapper renders.
+    expectedLocales.forEach(function(lang) {
+      const parsed = JSON.parse(read('public/locales/' + lang + '/translation.json'));
+      expect(
+        parsed.licenseStatus,
+        'public/locales/' + lang + '/translation.json has no licenseStatus object — the scoped URL/brand-literal guard lost its input'
+      ).to.be.an('object').that.is.not.empty;
+    });
+  });
+
+  it('has no brand or URL literal in any licenseStatus value', function() {
+    const offenders = [];
+    surfaces.forEach(function(surface) {
+      const parsed = JSON.parse(read(surface));
+      const values = flattenStringLeaves(parsed.licenseStatus, []);
+      values.forEach(function(value) {
+        if (licenseStatusLiteral.test(value)) {
+          offenders.push(surface + ': ' + value);
+        }
+      });
+    });
+    expect(
+      offenders,
+      'these licenseStatus.* values carry a brand or URL literal (LeavePilot / Leave Pilot / TimeOff / timeoff.management / http(s)://) — ' +
+      'the name and upsell URL must come from branding.get(), not a locale catalog:\n' +
+      offenders.join('\n')
+    ).to.deep.equal([]);
+  });
+
+  it('matches the brand spellings, the domain, and a URL, but skips placeholders', function() {
+    // Positive teeth: every spelling the scoped guard exists to catch is
+    // matched. If a future edit narrows the regex (e.g. drops the https?://
+    // alternation), one of these flips to false and the hole is loud. These
+    // also prove the main spec above is non-vacuous: a real offender seeded
+    // into a licenseStatus value would be caught and fail the build.
+    expect(licenseStatusLiteral.test('Visit LeavePilot'), 'camelCase LeavePilot must be caught').to.equal(true);
+    expect(licenseStatusLiteral.test('Visit Leave Pilot'), 'spaced Leave Pilot must be caught').to.equal(true);
+    expect(licenseStatusLiteral.test('Powered by TimeOff'), 'camelCase TimeOff must be caught').to.equal(true);
+    expect(licenseStatusLiteral.test('see timeoff.management'), 'the community default domain must be caught').to.equal(true);
+    expect(licenseStatusLiteral.test('https://timeoff.management'), 'an https URL must be caught').to.equal(true);
+    expect(licenseStatusLiteral.test('http://example.com/buy'), 'an http URL must be caught').to.equal(true);
+
+    // Negative teeth: the clean placeholder-bearing copy the mapper actually
+    // renders must NOT be flagged, so the guard cannot widen to catch the
+    // {{plan}} / {{days}} / {{expires}} placeholders or normal punctuation.
+    expect(licenseStatusLiteral.test('Premium активен ({{plan}}).'), 'a clean placeholder value must NOT be caught').to.equal(false);
+    expect(licenseStatusLiteral.test('Premium active — expires in {{days}} day(s) ({{expires}}).'), 'a clean expiring value must NOT be caught').to.equal(false);
+  });
+});
