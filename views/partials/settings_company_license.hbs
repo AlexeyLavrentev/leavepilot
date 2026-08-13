@@ -1,0 +1,24 @@
+{{!--
+  License & edition status line (FUNNEL-01/02/03).
+
+  ONE admin-only, OEM-suppressible surface (CONTEXT D-08): this partial plus the
+  licenseStatus.* locale namespace are the entire upsell publication surface, so
+  Phase 4 suppresses both with a single condition.
+
+  The product name reaches the copy ONLY via the {{brand}} placeholder fed from
+  branding.get().name (branding is on res.locals globally). The upsell href
+  comes ONLY from licenseStatus.upsellUrl (sourced from
+  branding.get().promotionWebsiteDomain) — never a hardcoded literal. The mapper
+  (lib/license_status_view.js) pre-computes {tone, textKey, upsellKey, upsellUrl,
+  vars}, so this partial has zero branching logic.
+--}}
+<section class="general-settings-license surface" aria-labelledby="general-settings-license-title">
+  <div class="settings-section-heading">
+    <h2 id="general-settings-license-title">{{t "licenseStatus.sectionTitle"}}</h2>
+  </div>
+  <p class="license-status">
+    <span class="license-status-dot is-{{licenseStatus.tone}}" aria-hidden="true"></span>
+    <span class="license-status-text">{{t licenseStatus.textKey brand=branding.name plan=licenseStatus.vars.plan days=licenseStatus.vars.days expires=licenseStatus.vars.expires graceEndsAt=licenseStatus.vars.graceEndsAt reason=licenseStatus.vars.reason}}</span>
+    {{#if licenseStatus.upsellUrl}}<a class="license-status-link" href="{{licenseStatus.upsellUrl}}" rel="noopener noreferrer">{{t licenseStatus.upsellKey}}</a>{{/if}}
+  </p>
+</section>
