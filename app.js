@@ -219,51 +219,10 @@ const authSecurity = require("./lib/middleware/auth_security");
 app.use(authSecurity.setAuthSecurityHeaders);
 app.use(authSecurity.attachCsrfToken);
 
-// Verify CSRF token for POST/PUT/DELETE requests
-app.use(function(req, res, next) {
-  if (["GET", "HEAD", "OPTIONS"].includes(req.method)) {
-    return next();
-  }
-
-  // Skip CSRF verification for login/register routes as they have their own middleware
-  if (req.path.startsWith("/login") || req.path.startsWith("/register") || req.path.startsWith("/forgot-password") || req.path.startsWith("/reset-password")) {
-    return next();
-  }
-
-  // Registered multipart routes parse their body after this middleware and
-  // perform the same constant-time token comparison as soon as fields exist.
-  if (authSecurity.shouldDeferMultipartCsrf(req, edition.isMultipartRoute)) {
-    return next();
-  }
-
-  // For authenticated routes, verify CSRF token
-  const sessionToken = req.session && req.session.csrf_token;
-  const requestToken = req.body && req.body._csrf || req.headers && req.headers["x-csrf-token"];
-  const rejectCsrf = function() {
-    const wantsJson = req.xhr
-      || /^\/api\//.test(req.originalUrl || req.url || '')
-      || (req.accepts && req.accepts(['html', 'json']) === 'json');
-
-    if (wantsJson) {
-      return res.status(403).json({error: 'invalid_csrf'});
-    }
-
-    if (req.user) {
-      req.session.flash_error(req.t ? req.t("login.messages.invalidCsrfToken") : "Invalid CSRF token");
-    }
-    return res.redirect_with_session(req.originalUrl || req.path || "/");
-  };
-
-  if (!sessionToken || !requestToken) {
-    return rejectCsrf();
-  }
-
-  if (!authSecurity.tokensMatch(sessionToken, requestToken)) {
-    return rejectCsrf();
-  }
-
-  next();
-});
+// Global CSRF verification for every state-changing request. The login-family
+// routes exempt by exact path (authSecurity.CSRF_EXEMPT_EXACT_PATHS) carry
+// their own route-local verifier mounted in lib/route/login.js.
+app.use(authSecurity.verifyCsrfTokenGlobally);
 
 // Here will be publicly accessible routes
 

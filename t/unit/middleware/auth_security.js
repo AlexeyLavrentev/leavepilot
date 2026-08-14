@@ -409,7 +409,8 @@ describe('global CSRF verifier', function() {
     });
 
     expect(res.redirects).to.deep.equal(['/requests/leave/']);
-    expect(req.session.flash.errors).to.deep.equal([]);
+    // flash_error is never called, so no flash entry is ever created
+    expect(req.session.flash).to.equal(undefined);
   });
 
   it('accepts a matching body token', function() {
