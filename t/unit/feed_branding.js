@@ -14,6 +14,16 @@
 
 const expect = require('chai').expect;
 const httpAgent = require('../lib/http_agent');
+const branding = require('../../lib/branding');
+
+// D-04: under the OEM gate an operator BRAND_* override only surfaces with a
+// custom_branding entitlement. The override describes below inject an unsigned
+// OEM license (valid in NODE_ENV=test via allowUnsignedLicenses) and reset the
+// memoized entitlement cache so the HTTP request re-evaluates it.
+const OEM_LICENSE_PAYLOAD = JSON.stringify({
+  customer: 'Test OEM',
+  features: ['custom_branding'],
+});
 
 describe('The iCal feed branding', function() {
 
@@ -37,8 +47,9 @@ describe('The iCal feed branding', function() {
   // BRAND_* is read live by branding.get() on every request (envResolver.getEnv
   // has no cache), so an override set in a nested before is honoured by the
   // fetch. Saved and restored so the override cannot leak into whichever suite
-  // runs next in the same mocha process.
-  const brandKeys = ['BRAND_NAME', 'BRAND_SHORT_NAME'];
+  // runs next in the same mocha process. LEAVEPILOT_LICENSE is snapshotted
+  // alongside (D-04: the override describes inject an OEM entitlement).
+  const brandKeys = ['BRAND_NAME', 'BRAND_SHORT_NAME', 'LEAVEPILOT_LICENSE'];
   const savedBrandEnv = {};
 
   before(async function() {
@@ -95,8 +106,10 @@ describe('The iCal feed branding', function() {
   describe('with a configured brand override', function() {
 
     before(function() {
+      process.env.LEAVEPILOT_LICENSE = OEM_LICENSE_PAYLOAD;
       process.env.BRAND_NAME = 'Acme Leave';
       process.env.BRAND_SHORT_NAME = 'Acme';
+      branding.__resetOemCacheForTests();
     });
 
     it('carries the configured brand in the iCal PRODID', async function() {
@@ -134,8 +147,10 @@ describe('The iCal feed branding', function() {
   describe('with the default brand (no override)', function() {
 
     before(function() {
+      delete process.env.LEAVEPILOT_LICENSE;
       delete process.env.BRAND_NAME;
       delete process.env.BRAND_SHORT_NAME;
+      branding.__resetOemCacheForTests();
     });
 
     it('produces the LeavePilot PRODID', async function() {
@@ -165,8 +180,10 @@ describe('The iCal feed branding', function() {
       savedShortName = process.env.BRAND_SHORT_NAME;
       // The '\n' is a real newline character: without single-line coercion
       // it splits the PRODID/X-WR-CALNAME value across iCal property lines.
+      process.env.LEAVEPILOT_LICENSE = OEM_LICENSE_PAYLOAD;
       process.env.BRAND_NAME = 'Acme\nINJECTED:evil';
       process.env.BRAND_SHORT_NAME = 'Acme\nX-INJECTED:bad';
+      branding.__resetOemCacheForTests();
     });
 
     after(function() {

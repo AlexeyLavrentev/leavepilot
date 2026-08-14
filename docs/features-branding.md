@@ -67,6 +67,12 @@ returns today are the contract:
 - `senderName`
 - `emailFrom` (derived from `senderName` and `senderEmail` when not set
   explicitly)
+- `oemActive` (boolean control flag — the OEM suppression signal from the
+  license-aware gate in `get()`; **not** a brand-display field. `true` only
+  when a valid, non-grace license carries the `custom_branding` entitlement.
+  Under `oemActive` the operator's configured brand surfaces; otherwise
+  `get()` returns the default brand regardless of `BRAND_*`/config, and the
+  Phase 3 upsell section stays visible.)
 
 Backward compatibility: adding a field is a non-breaking change. Removing or
 renaming a field is a breaking change that requires a major version bump.

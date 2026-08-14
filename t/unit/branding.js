@@ -3,6 +3,19 @@
 var expect = require('chai').expect;
 var branding = require('../../lib/branding');
 
+// D-04: without the custom_branding entitlement the operator's BRAND_* config
+// is IGNORED and DEFAULT_BRANDING is returned. The override tests below set
+// BRAND_* and assert the override surfaces, so they now need an unsigned OEM
+// license carrying the entitlement (valid in NODE_ENV=test via
+// allowUnsignedLicenses, features.js L277-292). The default-brand tests set no
+// license and keep expecting LeavePilot. The license env + the OEM cache are
+// snapshotted/restored and the cache is reset in beforeEach so the cases are
+// order-independent.
+var OEM_LICENSE_PAYLOAD = JSON.stringify({
+  customer: 'Test OEM',
+  features: ['custom_branding'],
+});
+
 describe('Branding', function() {
   var originalEnv = {};
 
@@ -20,7 +33,9 @@ describe('Branding', function() {
       BRAND_SENDER_EMAIL : process.env.BRAND_SENDER_EMAIL,
       BRAND_SENDER_NAME : process.env.BRAND_SENDER_NAME,
       BRAND_EMAIL_FROM : process.env.BRAND_EMAIL_FROM,
+      LEAVEPILOT_LICENSE : process.env.LEAVEPILOT_LICENSE,
     };
+    branding.__resetOemCacheForTests();
   });
 
   afterEach(function() {
@@ -31,6 +46,7 @@ describe('Branding', function() {
         process.env[key] = originalEnv[key];
       }
     });
+    branding.__resetOemCacheForTests();
   });
 
   it('returns default branding from app config', function() {
@@ -45,6 +61,7 @@ describe('Branding', function() {
   });
 
   it('lets environment variables override customer branding', function() {
+    process.env.LEAVEPILOT_LICENSE = OEM_LICENSE_PAYLOAD;
     process.env.BRAND_NAME = 'Acme Leave';
     process.env.BRAND_SHORT_NAME = 'Acme';
     process.env.APPLICATION_DOMAIN = 'https://leave.example.com';
@@ -63,6 +80,7 @@ describe('Branding', function() {
   });
 
   it('formats email sender from branding values', function() {
+    process.env.LEAVEPILOT_LICENSE = OEM_LICENSE_PAYLOAD;
     process.env.BRAND_SENDER_EMAIL = 'leave@example.com';
     process.env.BRAND_SENDER_NAME = 'Acme Leave';
 
@@ -70,6 +88,7 @@ describe('Branding', function() {
   });
 
   it('allows a fully custom email sender value', function() {
+    process.env.LEAVEPILOT_LICENSE = OEM_LICENSE_PAYLOAD;
     process.env.BRAND_EMAIL_FROM = 'No Reply <noreply@example.com>';
 
     expect(branding.getEmailFrom()).to.equal('No Reply <noreply@example.com>');
@@ -83,6 +102,7 @@ describe('Branding', function() {
     LeavePilot surfaces the route renders today.
   */
   it('lets manifest-route fields rebrand via BRAND_* override', function() {
+    process.env.LEAVEPILOT_LICENSE = OEM_LICENSE_PAYLOAD;
     process.env.BRAND_NAME = 'Acme';
     process.env.BRAND_SHORT_NAME = 'A';
     process.env.BRAND_FAVICON_PNG_32_URL = 'https://cdn/acme-32.png';
