@@ -271,7 +271,7 @@ jobs:
             -e MYSQL_ROOT_PASSWORD=rootpw \
             -e MYSQL_DATABASE=lp_test \
             -p 3306:3306 \
-            mysql:8.0
+            mysql:8.0.45
           echo "Waiting for MySQL to become healthy..."
           for i in $(seq 1 60); do
             if docker exec lp-mysql mysqladmin ping -h127.0.0.1 -uroot -prootpw >/dev/null 2>&1; then
@@ -341,6 +341,117 @@ jobs:
       - name: Stop disposable MySQL
         if: always()
         run: docker rm -f lp-mysql || true
+
+  mysql-dialect:
+    name: Dialect-sensitive specs on MySQL 8.0.45
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Start disposable MySQL 8.0.45
+        # Same skeleton as the migration smoke job above, image pinned per
+        # D-03: a floating tag moves the gate itself between patch runs,
+        # which is a flake source no retry policy should absorb. Operator
+        # compose files keep their floating mysql:8.0 on purpose - operators
+        # decide when to upgrade their own database.
+        run: |
+          docker run -d --name lp-mysql-dialect \
+            -e MYSQL_ROOT_PASSWORD=rootpw \
+            -e MYSQL_DATABASE=lp_test \
+            -p 3306:3306 \
+            mysql:8.0.45
+          echo "Waiting for MySQL to become healthy..."
+          for i in $(seq 1 60); do
+            if docker exec lp-mysql-dialect mysqladmin ping -h127.0.0.1 -uroot -prootpw >/dev/null 2>&1; then
+              echo "MySQL ready (attempt $i)"; exit 0
+            fi
+            sleep 2
+          done
+          echo "MySQL did not become ready in time"; docker logs lp-mysql-dialect; exit 1
+
+      - name: Install dependencies
+        run: npm ci
+        env:
+          CHROMEDRIVER_SKIP_DOWNLOAD: 'true'
+          PUPPETEER_SKIP_DOWNLOAD: 'true'
+
+      - name: Record browser version
+        # The manifest's run list includes browser-driving integration specs,
+        # so this job needs a browser exactly like the integration shards do.
+        run: |
+          google-chrome --version
+          echo "CHROME_BIN=$(command -v google-chrome)" >> "$GITHUB_ENV"
+
+      - name: Run dialect-sensitive specs
+        # QUAL-01 closing half: the manifest's specs run on MySQL beside the
+        # SQLite contours, not instead of them, and a failure here fails the
+        # build. The spec list is derived from the committed manifest so the
+        # job cannot drift from what t/unit/dialect_sensitive_manifest.js
+        # guards.
+        run: |
+          specs=$(node -e "console.log(require('./t/fixtures/dialect-sensitive-specs.json').specs.map(s => s.file).join(' '))")
+          echo "Dialect run list: ${specs}"
+          node bin/test.js ${specs}
+        env:
+          NODE_ENV: test
+          TEST_DB_DIALECT: mysql
+          DB_HOST: 127.0.0.1
+          DB_PORT: '3306'
+          DB_NAME: lp_test
+          DB_USER: root
+          DB_PASSWORD: rootpw
+          # D-04: the same retry discipline the SQLite contours have - one
+          # retry per file, recorded in the flake artifact, no second policy.
+          TEST_RETRIES: '1'
+          # D-21: this is a runner-driven contour, so skip honesty is a gate
+          # here exactly like on the integration shards.
+          TEST_ENFORCE_SKIP_HONESTY: 'true'
+
+      - name: Write flake report to the job summary
+        # D-06: the summary exists on every build, red included - the runner
+        # writes flake-report.json on its failure path too. Zero records are
+        # stated explicitly, so an empty report reads as "nothing retried",
+        # not as "nothing checked".
+        if: always()
+        run: |
+          node -e '
+            const fs = require("fs");
+            const report = JSON.parse(fs.readFileSync("flake-report.json", "utf8"));
+            const lines = ["## Flake report (MySQL dialect)", ""];
+            if (report.length === 0) {
+              lines.push("Zero retry records: no spec file and no single test needed a second attempt.");
+            } else {
+              lines.push(report.length + " retry record(s):", "");
+              report.forEach(record => {
+                lines.push("- **" + record.contour + "** (attempt " + record.attempt + "): " + record.spec);
+                (record.tests || []).forEach(name => lines.push("  - " + name));
+              });
+            }
+            fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, lines.join("\n") + "\n");
+          '
+
+      - name: Upload flake report
+        # Published on every build, empty included: a missing file is a defect
+        # of the runner contract, not an empty flake (hence
+        # if-no-files-found: error rather than ignore).
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: flake-report-mysql
+          path: flake-report.json
+          if-no-files-found: error
+
+      - name: Stop disposable MySQL
+        if: always()
+        run: docker rm -f lp-mysql-dialect || true
 
   security:
     name: Security gates

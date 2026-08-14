@@ -103,9 +103,9 @@ const flakeSidecarPath = contour => {
 };
 
 const buildFlakeRecords = () => flaky.map(entry => ({
-  contour: 'integration-batch-retry',
+  contour: entry.contour,
   layer: 'batch',
-  spec: entry,
+  spec: entry.spec,
   tests: [],
   attempt: 1,
 }));
@@ -286,6 +286,16 @@ const reportQuarantine = () => {
 const FAIL_FAST = ['--require', path.join('t', 'lib', 'fail_fast.js')];
 
 const runMochaSuite = () => {
+  // Mocha's own --retries repeats a single test inside the process it is
+  // already in. Both carriers below read the same TEST_RETRIES knob, so a
+  // runner-driven contour - the CI integration shards, the MySQL dialect
+  // job - gets the identical retry discipline whether it runs integration
+  // batches or an explicit path list (D-04: one policy, no second one).
+  const configuredRetries = Number(process.env.TEST_RETRIES);
+  const retryArgs = Number.isInteger(configuredRetries) && configuredRetries > 0
+    ? ['--retries', String(configuredRetries)]
+    : [];
+
   if (mochaArgs.length) {
     // Paths given on the command line replace the default root rather than
     // adding to it. Passing both meant "one spec" quietly ran the whole tree
@@ -294,12 +304,28 @@ const runMochaSuite = () => {
     const roots = explicitPaths.length ? explicitPaths : ['t'];
     const flags = mochaArgs.filter(arg => arg.startsWith('-'));
 
-    return run(
+    // One sidecar for the whole explicit run, stable across the retry below:
+    // the sidecar always reflects the latest attempt.
+    const explicitSidecarPath = flakeSidecarPath('explicit-paths-mocha-retry');
+
+    const mochaExplicit = () => run(
       node,
       ['node_modules/mocha/bin/mocha', '--recursive', '--exit']
-        .concat(FAIL_FAST, ['--reporter', FLAKE_REPORTER], roots, flags),
-      { env: Object.assign({}, baseTestEnv, { FLAKE_ARTIFACT_PATH: flakeSidecarPath('explicit-paths-mocha-retry') }) }
+        .concat(FAIL_FAST, retryArgs, ['--reporter', FLAKE_REPORTER], roots, flags),
+      { env: Object.assign({}, baseTestEnv, { FLAKE_ARTIFACT_PATH: explicitSidecarPath }) }
     );
+
+    // D-04 parity: an explicit-path run gets the same one-retry-per-file
+    // discipline the integration batch branch has. Re-running the whole list
+    // gives every file a fresh process (and a browser spec its fresh
+    // browser), which is the granularity the flake lives at. The retry is
+    // named on the console and recorded in the flake report's batch layer -
+    // never silent - and a list that fails twice in a row fails the runner.
+    return mochaExplicit().catch(error => {
+      console.error(`Explicit-path run failed, retrying the whole list: ${error.message}`);
+      flaky.push({ contour: 'explicit-paths-batch-retry', spec: roots.join(', ') });
+      return mochaExplicit();
+    });
   }
 
   const allIntegrationFiles = collectJavaScriptFiles(path.join('t', 'integration'));
@@ -340,15 +366,6 @@ const runMochaSuite = () => {
   }
 
   const failures = [];
-
-  // Browser specs wait on animations and network, and a shared runner makes
-  // those waits tighter than they are on a developer machine. One retry keeps a
-  // single missed wait from failing the run without weakening any assertion; a
-  // spec that fails twice in a row is reported.
-  const configuredRetries = Number(process.env.TEST_RETRIES);
-  const retryArgs = Number.isInteger(configuredRetries) && configuredRetries > 0
-    ? ['--retries', String(configuredRetries)]
-    : [];
 
   // A ceiling on one batch, not on one test. The slowest single file observed
   // takes about 30s, so this is generous by an order of magnitude and only ever
@@ -404,7 +421,7 @@ const runMochaSuite = () => {
     // real regression fails twice and must not hide behind a green tick.
     const attempt = mocha(batch, batchSidecarPath).catch(error => {
       console.error(`Integration batch ${index + 1} failed, retrying the whole batch: ${error.message}`);
-      flaky.push(batch.join(', '));
+      flaky.push({ contour: 'integration-batch-retry', spec: batch.join(', ') });
       return mocha(batch, batchSidecarPath);
     });
 
@@ -433,8 +450,8 @@ const runMochaSuite = () => {
       )))
     .then(() => {
       if (flaky.length) {
-        console.log(`Integration specs that needed a second run (${flaky.length}):`);
-        flaky.forEach(entry => console.log(`  - ${entry}`));
+        console.log(`Spec files that needed a second run (${flaky.length}):`);
+        flaky.forEach(entry => console.log(`  - [${entry.contour}] ${entry.spec}`));
       }
 
       if (failures.length) {
