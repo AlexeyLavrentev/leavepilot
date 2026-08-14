@@ -8,21 +8,34 @@ const features = require('../../lib/features');
 
 describe('Feature licensing', function() {
   const originalEnv = {};
+  // Every prefixed key is listed in BOTH generations: the CI coverage
+  // contour exports the canonical LEAVEPILOT_* names, and envResolver lets
+  // the canonical generation win - clearing only the legacy TIMEOFF_* names
+  // leaked the ambient switch into the licensing specs below.
   const envKeys = [
     'NODE_ENV',
     'TIMEOFF_EDITION',
+    'LEAVEPILOT_EDITION',
     'TIMEOFF_FEATURES',
+    'LEAVEPILOT_FEATURES',
     'TIMEOFF_LICENSE',
+    'LEAVEPILOT_LICENSE',
     'TIMEOFF_LICENSE_SECRET',
+    'LEAVEPILOT_LICENSE_SECRET',
     'TIMEOFF_LICENSE_PUBLIC_KEY',
+    'LEAVEPILOT_LICENSE_PUBLIC_KEY',
     'FEATURE_TIME_BALANCE',
     'ALLOW_UNLICENSED_FEATURE_OVERRIDES',
     'ALLOW_UNSIGNED_LICENSES',
     'ALLOW_CONFIG_LICENSED_FEATURES',
     'TIMEOFF_LICENSE_PUBLIC_KEYS',
+    'LEAVEPILOT_LICENSE_PUBLIC_KEYS',
     'TIMEOFF_LICENSE_GRACE_DAYS',
+    'LEAVEPILOT_LICENSE_GRACE_DAYS',
     'TIMEOFF_LICENSE_REVOCATION_LIST',
+    'LEAVEPILOT_LICENSE_REVOCATION_LIST',
     'TIMEOFF_LICENSE_REVOCATION_PUBLIC_KEY',
+    'LEAVEPILOT_LICENSE_REVOCATION_PUBLIC_KEY',
   ];
   const originalConfig = {
     licensedFeatures: config.get('licensed_features'),

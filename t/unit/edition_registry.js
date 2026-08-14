@@ -6,13 +6,20 @@ var features = require('../../lib/features');
 
 describe('Edition registry', function() {
   var originalFeatureTimeBalance;
-  var originalTimeoffFeatures;
+  var originalFeaturesEnv = {};
+
+  // Both feature-switch generations are cleared: the CI coverage contour
+  // exports LEAVEPILOT_FEATURES=all, and a scaffold that only cleared the
+  // legacy TIMEOFF_FEATURES name leaked the canonical one into these specs.
+  var FEATURES_ENV_KEYS = ['TIMEOFF_FEATURES', 'LEAVEPILOT_FEATURES'];
 
   beforeEach(function() {
     originalFeatureTimeBalance = process.env.FEATURE_TIME_BALANCE;
-    originalTimeoffFeatures = process.env.TIMEOFF_FEATURES;
+    FEATURES_ENV_KEYS.forEach(function(key) {
+      originalFeaturesEnv[key] = process.env[key];
+      delete process.env[key];
+    });
     delete process.env.FEATURE_TIME_BALANCE;
-    delete process.env.TIMEOFF_FEATURES;
     features.registerFeature('time_balance');
   });
 
@@ -23,11 +30,13 @@ describe('Edition registry', function() {
       process.env.FEATURE_TIME_BALANCE = originalFeatureTimeBalance;
     }
 
-    if (typeof originalTimeoffFeatures === 'undefined') {
-      delete process.env.TIMEOFF_FEATURES;
-    } else {
-      process.env.TIMEOFF_FEATURES = originalTimeoffFeatures;
-    }
+    FEATURES_ENV_KEYS.forEach(function(key) {
+      if (typeof originalFeaturesEnv[key] === 'undefined') {
+        delete process.env[key];
+      } else {
+        process.env[key] = originalFeaturesEnv[key];
+      }
+    });
   });
 
   it('applies registered routes to express app', function() {
