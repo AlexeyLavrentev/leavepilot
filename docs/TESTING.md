@@ -197,3 +197,67 @@ docker pull axllent/mailpit:latest
 docker compose -f docker-compose.testing.yml down -v
 docker volume prune
 ```
+
+# Running the MySQL contour locally
+
+The default test contour is SQLite and nothing below is needed for it: a
+plain `npm test` keeps using a throwaway SQLite file. The MySQL contour
+exists to reproduce, on a developer machine, what a dialect-sensitive defect
+looks like before pushing — the same class of failure the CI MySQL jobs
+catch.
+
+## Start a disposable MySQL 8
+
+```bash
+docker run -d --name lp-test-mysql \
+  -e MYSQL_ROOT_PASSWORD=rootpw \
+  -e MYSQL_DATABASE=lp_test \
+  -p 3306:3306 \
+  mysql:8.0.45
+```
+
+It takes a moment to become ready; wait for it to answer before running
+anything against it:
+
+```bash
+for i in $(seq 1 60); do
+  if docker exec lp-test-mysql mysqladmin ping -h127.0.0.1 -uroot -prootpw >/dev/null 2>&1; then
+    echo "MySQL ready (attempt $i)"
+    break
+  fi
+  sleep 2
+done
+```
+
+Remove it when finished: `docker rm -f lp-test-mysql`.
+
+## Point the runner at it
+
+```bash
+TEST_DB_DIALECT=mysql \
+DB_HOST=127.0.0.1 DB_PORT=3306 DB_NAME=lp_test DB_USER=root DB_PASSWORD=rootpw \
+npm test
+```
+
+- `TEST_DB_DIALECT=mysql` is the runner knob: with it the runner's children
+  get `DB_DIALECT=mysql`; with any other value — or unset — they get
+  `DB_DIALECT=sqlite`, so the default contour is unchanged.
+- The `DB_*` connection variables (`DB_HOST`, `DB_PORT`, `DB_NAME`,
+  `DB_USER`, `DB_PASSWORD`) are ordinary passthrough environment variables;
+  the runner does not enumerate or default them.
+- `DB_STORAGE` stays the SQLite file path and is simply ignored under MySQL.
+
+## Reproducing a CI-red dialect run before pushing
+
+Run the same command the CI migration smoke job runs, against the disposable
+server above:
+
+```bash
+TEST_DB_DIALECT=mysql \
+DB_HOST=127.0.0.1 DB_PORT=3306 DB_NAME=lp_test DB_USER=root DB_PASSWORD=rootpw \
+node bin/db_update.js
+```
+
+If a spec or a migration is red under MySQL while green under SQLite, that
+is a dialect defect: fix it before pushing rather than after the CI job
+finds it for you.

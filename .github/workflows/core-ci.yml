@@ -175,7 +175,16 @@ jobs:
           NODE_ENV: test
           DB_DIALECT: sqlite
           DB_STORAGE: /tmp/unit-test.sqlite
-          TIMEOFF_FEATURES: all
+          # Canonical prefix: the deprecated features name this env used to
+          # carry made t/unit/env_deprecation.js red on every coverage run
+          # (D-19).
+          LEAVEPILOT_FEATURES: all
+          # D-21: test:coverage loads t/lib/skip_honesty.js via --require,
+          # which counts self-skipped spec files unconditionally. This env
+          # turns the count into a gate: more than 4 skipped spec files
+          # fails the step. A local test:coverage without the env warns
+          # only, so a driver-less laptop stays green.
+          TEST_ENFORCE_SKIP_HONESTY: 'true'
 
       - name: Validate community compose
         run: docker compose config --quiet
