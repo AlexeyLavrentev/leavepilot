@@ -12,6 +12,12 @@
   (lib/license_status_view.js) pre-computes {tone, textKey, upsellKey, upsellUrl,
   vars}, so this partial has zero branching logic.
 --}}
+{{!-- D-07 / OEM-05: the ENTIRE upsell section is suppressed under a valid
+  custom_branding entitlement (branding.oemActive). One condition in one
+  place (Phase 3 D-08 contract); branding rides res.locals globally (app.js),
+  so the partial reads it directly with no new wiring. The section is absent
+  under OEM, not repointed to a partner domain. --}}
+{{#unless branding.oemActive}}
 <section class="general-settings-license surface" aria-labelledby="general-settings-license-title">
   <div class="settings-section-heading">
     <h2 id="general-settings-license-title">{{t "licenseStatus.sectionTitle"}}</h2>
@@ -22,3 +28,4 @@
     {{#if licenseStatus.upsellUrl}}<a class="license-status-link" href="{{licenseStatus.upsellUrl}}" rel="noopener noreferrer">{{t licenseStatus.upsellKey}}</a>{{/if}}
   </p>
 </section>
+{{/unless}}
