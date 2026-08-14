@@ -1,92 +1,88 @@
-# OEM deployment runbook
+# OEM-поставка: инструкция для оператора
 
-This runbook walks an operator through assembling a white-label (OEM) shipment
-of the application from documentation only. It covers the three assembly steps
-— brand configuration, license installation, and leak verification — using a
-configuration overlay, environment variables, and a mounted license.
+Эта инструкция описывает, как собрать поставку продукта под **своим брендом**
+(white-label / OEM), работая **только с настройками** — без правки исходного кода.
+Три шага: настроить бренд, установить лицензию, проверить, что нигде не
+«торчит» имя настоящего производителя.
 
-The shipment unit is a published container image plus a configuration overlay
-(decision **D-10**): you mount your configuration, your license, and your
-`BRAND_*` environment into the same image every customer runs. The brand is
-**not** baked into the image — a rebrand is a configuration change followed by a
-container restart, never a source modification or an image rebuild.
+Поставка — это готовый docker-образ плюс ваш набор настроек (решение **D-10**):
+вы подкладываете в тот же самый образ свои настройки, свою лицензию и переменные
+окружения `BRAND_*`. Бренд **не вшит** в образ — сменить логотип или название
+это поменять настройку и перезапустить контейнер, а не пересобирать образ и не
+лазить в код.
 
-> OEM assembly is configuration-only. You do not work with application source to
-> rebrand; you work with `config/app.json`, environment variables, the license,
-> and the container image.
+> OEM-сборка = только настройки. Чтобы перебрендить продукт, вы работаете с
+> `config/app.json`, переменными окружения, лицензией и образом. В исходники
+> лезть не нужно.
 
-## What this runbook does not cover
+## Чего здесь нет
 
-Image publishing, container-registry tag conventions, and the release checklist
-are release mechanics, covered separately in Phase 6. This runbook covers
-assembly only: configure the brand, install the license, verify the leak guard.
+Публикация образа, теги в реестре, чек-лист релиза — это релизная механика,
+она описана отдельно в Фазе 6. Здесь — только сборка: настроить бренд, поставить
+лицензию, проверить защиту от утечек.
 
-## Prerequisites
+## Что нужно заранее
 
-Before you begin, have ready:
+- готовый опубликованный образ продукта (тот, на котором работают все клиенты);
+- подписанная OEM-лицензия, в которой есть право `custom_branding`
+  (см. [Шаг 2. Установка лицензии](#2-установка-лицензии));
+- публичный ключ, соответствующий ключу, которым подписана лицензия;
+- ваши материалы бренда (логотип, иконки, манифест), выложенные по адресам,
+  доступным из развёртывания, плюс название продукта, домены и адрес отправителя
+  писем, которые должны видеть пользователи.
 
-- a published application image (the image every customer runs);
-- a signed OEM license whose payload carries the `custom_branding` entitlement
-  (see [License installation](#2-license-installation));
-- the license public key that matches the signing key;
-- your custom brand assets (logo, favicons, app icon, manifest) hosted at URLs
-  the deployment can reach, plus the product name, domains, and sender address
-  you want users to see.
+## 1. Настройка бренда
 
-## 1. Brand configuration
+Бренд работает по принципу «настройка + разрешение» (решение **D-04**): лицензия
+даёт только **право** на свой бренд, а сами данные бренда (название, логотип,
+домены) лежат в ваших настройках. Пока нет действующей лицензии `custom_branding`
+(и не в льготном периоде) — продукт показывает стандартный бренд по умолчанию
+**вне зависимости от ваших настроек**.
 
-A custom brand is **operator-config-gated** (decision **D-04**): the license
-grants only the *right* to apply a custom brand; the brand data itself lives in
-your configuration. Without a valid, non-grace `custom_branding` entitlement the
-application shows the community default brand **regardless of your
-configuration**.
+Настройки вносятся двумя равноценными путями — через секцию `branding` в
+`config/app.json` или через переменные окружения `BRAND_*`. Оба пути читает один
+и тот же слой. Переменные окружения важнее файла настроек, а файл важнее
+встроенных значений по умолчанию. Любого пути по отдельности достаточно.
 
-You supply the brand through two equivalent paths — the `branding` section of
-`config/app.json`, or the `BRAND_*` environment variables — both resolved by the
-same layer. Environment variables take precedence over the config file, which
-takes precedence over the built-in default. Either path is sufficient on its
-own.
+### Поля бренда
 
-### Brand fields
+Полный список того, что можно перебрендить — это 14 полей контракта
+`branding.get()` (каждое поле перечислено ниже):
 
-The full configurable surface is the 14-field `branding.get()` contract (every
-field you can rebrand is listed here):
+| Что | Ключ в `config/app.json` (секция `branding`) | Переменная окружения |
+|-----|----------------------------------------------|----------------------|
+| Название продукта | `name` | `BRAND_NAME` |
+| Короткое название | `shortName` | `BRAND_SHORT_NAME` |
+| Домен приложения | `applicationDomain` | `APPLICATION_DOMAIN` |
+| Домен сайта (для ссылок) | `promotionWebsiteDomain` | `PROMOTION_WEBSITE_DOMAIN` |
+| URL логотипа | `logoUrl` | `BRAND_LOGO_URL` |
+| URL favicon | `faviconUrl` | `BRAND_FAVICON_URL` |
+| Favicon PNG 32px | `faviconPng32Url` | `BRAND_FAVICON_PNG_32_URL` |
+| Favicon PNG 16px | `faviconPng16Url` | `BRAND_FAVICON_PNG_16_URL` |
+| Иконка приложения | `appIconUrl` | `BRAND_APP_ICON_URL` |
+| Apple touch icon | `appleTouchIconUrl` | `BRAND_APPLE_TOUCH_ICON_URL` |
+| Web manifest | `manifestUrl` | `BRAND_MANIFEST_URL` |
+| Адрес отправителя писем | `senderEmail` | `BRAND_SENDER_EMAIL` (или `APPLICATION_SENDER_EMAIL`) |
+| Имя отправителя писем | `senderName` | `BRAND_SENDER_NAME` |
+| Заголовок `From:` писем | `emailFrom` | `BRAND_EMAIL_FROM` (если не задан — собирается из имени и адреса отправителя) |
 
-| Field | `config/app.json` branding key | Environment variable |
-|-------|--------------------------------|----------------------|
-| Product name | `name` | `BRAND_NAME` |
-| Short name | `shortName` | `BRAND_SHORT_NAME` |
-| Application domain | `applicationDomain` | `APPLICATION_DOMAIN` |
-| Promotion website domain | `promotionWebsiteDomain` | `PROMOTION_WEBSITE_DOMAIN` |
-| Logo URL | `logoUrl` | `BRAND_LOGO_URL` |
-| Favicon URL | `faviconUrl` | `BRAND_FAVICON_URL` |
-| 32px PNG favicon | `faviconPng32Url` | `BRAND_FAVICON_PNG_32_URL` |
-| 16px PNG favicon | `faviconPng16Url` | `BRAND_FAVICON_PNG_16_URL` |
-| App icon URL | `appIconUrl` | `BRAND_APP_ICON_URL` |
-| Apple touch icon URL | `appleTouchIconUrl` | `BRAND_APPLE_TOUCH_ICON_URL` |
-| Web manifest URL | `manifestUrl` | `BRAND_MANIFEST_URL` |
-| Sender email | `senderEmail` | `BRAND_SENDER_EMAIL` (or `APPLICATION_SENDER_EMAIL`) |
-| Sender name | `senderName` | `BRAND_SENDER_NAME` |
-| Email From header | `emailFrom` | `BRAND_EMAIL_FROM` (derived from sender name + email when unset) |
+Поле `emailFrom`, если не задано явно, собирается автоматически из имени и адреса
+отправителя. Полный контракт — включая служебный флаг `oemActive`, который
+выдаёт лицензионный гейт, — описан в [features-branding.md](features-branding.md).
 
-The `emailFrom` header is derived from the sender name and sender email when not
-set explicitly. The complete contract — including the `oemActive` control flag
-the license gate emits — is documented in
-[features-branding.md](features-branding.md).
+### Пример: наложение через файл настроек
 
-### Example: configuration overlay
-
-Mount a `config/app.json` that carries a `branding` section:
+Подмонтируйте `config/app.json` со секцией `branding`:
 
 ```json
 {
   "branding": {
-    "name": "Acme Leave",
+    "name": "Отпуск Acme",
     "shortName": "Acme",
     "applicationDomain": "https://leave.acme.example",
     "promotionWebsiteDomain": "https://acme.example",
     "senderEmail": "no-reply@acme.example",
-    "senderName": "Acme Leave",
+    "senderName": "Отпуск Acme",
     "logoUrl": "https://leave.acme.example/assets/acme-logo.svg",
     "faviconUrl": "/favicons/acme.ico",
     "faviconPng32Url": "/favicons/acme-32x32.png",
@@ -98,160 +94,156 @@ Mount a `config/app.json` that carries a `branding` section:
 }
 ```
 
-### Example: environment overlay
+### Пример: наложение через переменные окружения
 
-The same fields via environment — useful for a single-field change or a
-secret-managed deployment:
+Те же поля через окружение — удобно для точечной правки или когда секретами
+управляет система развертывания:
 
 ```env
-BRAND_NAME=Acme Leave
+BRAND_NAME=Отпуск Acme
 BRAND_SHORT_NAME=Acme
 APPLICATION_DOMAIN=https://leave.acme.example
 PROMOTION_WEBSITE_DOMAIN=https://acme.example
 BRAND_SENDER_EMAIL=no-reply@acme.example
-BRAND_SENDER_NAME=Acme Leave
+BRAND_SENDER_NAME=Отпуск Acme
 BRAND_LOGO_URL=https://leave.acme.example/assets/acme-logo.svg
 ```
 
-Because the brand is not baked into the image (**D-10**), changing a logo, a
-name, or a domain is a configuration change plus a container restart — no image
-rebuild.
+Поскольку бренд не вшит в образ (**D-10**), сменить логотип, название или домен
+— это поменять настройку и перезапустить контейнер. Образ не пересобирается.
 
-## 2. License installation
+## 2. Установка лицензии
 
-The OEM entitlement is a signed **RSA-SHA256** license whose
-`payload.features` array includes `custom_branding`. The license grants the right
-to ship a custom brand; it does not itself carry the brand data (**D-04**).
+Право OEM — это подписанная **RSA-SHA256** лицензия, в массиве `payload.features`
+которой есть `custom_branding`. Лицензия даёт право ставить свой бренд; сами
+данные бренда она не несёт (**D-04**).
 
-Install the license and its public verification key through environment
-variables:
+Лицензия и публичный ключ для проверки ставятся через переменные окружения:
 
 ```env
-LEAVEPILOT_LICENSE=<base64 RSA-SHA256 license envelope, or inline JSON envelope>
-LEAVEPILOT_LICENSE_PUBLIC_KEY=<PEM public key, newlines escaped as \n>
+LEAVEPILOT_LICENSE=<base64 конверт лицензии RSA-SHA256, либо сам JSON-конверт>
+LEAVEPILOT_LICENSE_PUBLIC_KEY=<PEM-публичный ключ, переводы строк экранированы как \n>
 ```
 
-When the license lives in a file on disk, export its contents:
+Если лицензия лежит в файле на диске, выгрузите её содержимое:
 
 ```bash
 export LEAVEPILOT_LICENSE="$(cat /secrets/oem.license)"
 export LEAVEPILOT_LICENSE_PUBLIC_KEY="$(cat /secrets/license_public_key.pem)"
 ```
 
-Key generation, signing, envelope format, and verification are documented in
-[license-operations.md](license-operations.md) and the License Payload section
-of [features-branding.md](features-branding.md). This runbook does not duplicate
-the crypto workflow — point your signing authority at those documents to issue
-an OEM license with `custom_branding` in `features`.
+Генерацию ключей, подпись, формат конверта и проверку см. в
+[license-operations.md](license-operations.md) и разделе License Payload в
+[features-branding.md](features-branding.md). Эта инструкция не дублирует
+криптографию: передайте документы вашему подписывающему ответственному, чтобы он
+выпустил OEM-лицензию с `custom_branding` в `features`.
 
-### How the entitlement is enforced
+### Как проверяется право
 
-The entitlement is verified by a single license-aware gate that reads the signed
-payload directly. A **valid, non-grace** license carrying `custom_branding`
-activates the custom brand; any other state falls back to the community default
-brand immediately.
+Право проверяет единый лицензионный гейт, который читает подписанный payload
+напрямую. **Действующая, не льготная** лицензия с `custom_branding` включает
+свой бренд; любое иное состояние сразу откатывает продукт на бренд по умолчанию.
 
-There is **no grace window for the custom brand** (decision **D-03**): an
-expired, damaged, or missing OEM license reverts to the default brand at once —
-not after the premium-style 14-day window. The fallback is silent to end users
-(they see the default brand) but visible to the administrator.
+**Для своего бренда нет льготного окна** (решение **D-03**): истёкшая,
+повреждённая или отсутствующая OEM-лицензия немедленно возвращает стандартный
+бренд — не через 14 дней, как у premium. Для конечных пользователей откат
+происходит тихо (они видят стандартный бренд), а администратору он виден.
 
-### Observing license state
+### Как увидеть состояние лицензии
 
-An administrator sees the current license state (valid, expiring, expired, or
-damaged) on the `/settings/general/` page, which surfaces the license-status
-line. A fallback to the default brand shows up here as an expired or error
-state. This is the same license-status surface used in every deployment — no
-separate OEM indicator is required.
+Администратор видит текущее состояние лицензии (действует / скоро истечёт /
+истекла / повреждена) на странице `/settings/general/` — там есть строка статуса
+лицензии. Откат к стандартному бренду здесь выглядит как истёкшее или ошибочное
+состояние. Это та же строка статуса, что и в любом развёртывании — отдельный
+OEM-индикатор не нужен.
 
-## 3. Leak verification
+## 3. Проверка отсутствия утечек
 
-Under an active `custom_branding` entitlement the rendered output must carry no
-vendor trace — the vendor product name, short name, and promotion domain must
-not appear on any user-visible surface. This is guaranteed by construction and
-proven by a CI-gated regression test.
+При действующем праве `custom_branding` в выводе продукта не должно быть следов
+настоящего производителя: его название, короткое имя и домен не должны
+появляться ни на одной видимой пользователю поверхности. Это гарантировано самой
+конструкцией и подтверждается тестом в CI.
 
-### What is verified
+### Что именно проверяется
 
-The canonical leak-surface manifest lives at
-[`t/fixtures/oem-leak-surfaces.json`](../t/fixtures/oem-leak-surfaces.json), with
-a human-readable description in
-[oem-leak-surfaces.md](oem-leak-surfaces.md). It enumerates every rendered
-surface that carries brand data: the page `<title>` and favicons, the navbar,
-the footer copyright, the web manifest, the login page, the iCal feed
-identifiers, the email `From:` address, and the license-status section.
+Канонический перечень поверхностей утечки лежит в
+[`t/fixtures/oem-leak-surfaces.json`](../t/fixtures/oem-leak-surfaces.json), а
+человеко-читаемое описание — в
+[oem-leak-surfaces.md](oem-leak-surfaces.md). Там перечислены все поверхности,
+где отражается бренд: `<title>` страницы и favicon, навбар, копирайт в подвале,
+web manifest, страница входа, идентификаторы iCal-фида, адрес `From:` в письмах и
+секция статуса лицензии.
 
-The CI-gated test [`t/unit/oem_no_vendor_leak.js`](../t/unit/oem_no_vendor_leak.js)
-renders every dynamic surface under a sentinel custom brand and asserts both
-that the custom brand is **present** and that no vendor literal (`LeavePilot`,
-`Leave Pilot`, `TimeOff`, `timeoff.management`) is **absent**. It runs on every
-change through `npm run test:coverage`, the same pipeline that gates every pull
-request.
+Тест в CI [`t/unit/oem_no_vendor_leak.js`](../t/unit/oem_no_vendor_leak.js)
+рендерит каждую динамическую поверхность под контрольным брендом и проверяет
+одновременно два условия: ваш бренд **присутствует**, а любое имя производителя
+(`LeavePilot`, `Leave Pilot`, `TimeOff`, `timeoff.management`) — **отсутствует**.
+Тест запускается при каждом изменении через `npm run test:coverage` — это та же
+проверка, что стоит на каждый pull request.
 
-### Confirm your custom brand surfaces
+### Проверьте, что ваш бренд появился
 
-After booting the image with your brand overlay and an active OEM license,
-confirm:
+После запуска образа с вашими настройками и действующей OEM-лицензией
+убедитесь, что:
 
-1. the login page shows your product name;
-2. the browser tab title (`<title>`) and the web manifest carry your brand name;
-3. the navbar and footer show your brand name and copyright;
-4. the application domain in emails and calendar feeds matches your configured
-   domain.
+1. на странице входа — ваше название продукта;
+2. заголовок вкладки браузера (`<title>`) и web manifest несут ваше название;
+3. в навбаре и подвале — ваше название и копирайт;
+4. домен приложения в письмах и календарных фидах совпадает с вашим.
 
-### Confirm no vendor trace
+### Проверьте, что следов производителя нет
 
-Under an active OEM entitlement the vendor name is absent by construction: the
-gate suppresses the vendor/upsell section entirely, and every brand-bearing
-surface reads your configured brand. The regression test above is the ongoing
-proof — you do not need to grep the output yourself; run the test suite:
+При действующем OEM-праве имя производителя отсутствует по построению: гейт
+полностью гасит секцию с апселлом и ссылками на производителя, а каждая
+брендовая поверхность читает ваш настроенный бренд. Вышеописанный тест —
+постоянное тому подтверждение. Самому грепать вывод не нужно — прогоните тесты:
 
 ```bash
 npm run test:coverage
 ```
 
-A green `oem_no_vendor_leak` result is the proof that no vendor literal reaches a
-rendered surface under a custom brand.
+Зелёный результат `oem_no_vendor_leak` — это доказательство, что ни одно имя
+производителя не попадает на видимую поверхность под своим брендом.
 
-> One intentional, documented out-of-scope item: the JavaScript runtime
-> namespace identifier (the `window.timeoff` key and related config/theme keys)
-> is a devtools-observable code identifier, not rendered user-facing text
-> (decision **D-11**). It is excluded from the leak manifest and is not a brand
-> surface.
+> Один осознанный пункт вне перечня: идентификатор в JavaScript-окружении
+> (ключ `window.timeoff` и родственные config/theme-ключи) — это технический
+> идентификатор, видимый в devtools, а не текст, который видит пользователь
+> (решение **D-11**). Он исключён из перечня утечек и брендовой поверхностью не
+> является.
 
-## Troubleshooting
+## Если что-то не так
 
-### My configured brand does not appear — I see the default brand
+### Мой настроенный бренд не появился — вижу бренд по умолчанию
 
-The license gate did not see a valid, non-grace `custom_branding` entitlement.
-Check, in order:
+Лицензионный гейт не увидел действующее, не льготное право `custom_branding`.
+Проверьте по порядку:
 
-1. `LEAVEPILOT_LICENSE` is set and is the OEM license — its `features` include
-   `custom_branding`.
-2. `LEAVEPILOT_LICENSE_PUBLIC_KEY` matches the key that signed the license.
-3. the license has not expired — no grace applies to OEM (**D-03**).
-4. the license signature is intact (the envelope was not truncated or mangled).
+1. `LEAVEPILOT_LICENSE` задана и это именно OEM-лицензия — в её `features` есть
+   `custom_branding`;
+2. `LEAVEPILOT_LICENSE_PUBLIC_KEY` соответствует ключу, которым подписана
+   лицензия;
+3. лицензия не истекла — льготный период на OEM не распространяется (**D-03**);
+4. подпись лицензии цела (конверт не обрезан и не повреждён).
 
-An administrator can confirm the live state on `/settings/general/`.
+Текущее состояние администратор может проверить на `/settings/general/`.
 
-### The vendor upsell reappears
+### Снова появилась секция с апселлом производителя
 
-This only happens when the OEM entitlement is inactive (see above). Under an
-active entitlement the vendor/upsell section is suppressed entirely.
+Это происходит только когда OEM-право не активно (см. выше). При действующем
+праве секция с апселлом и ссылками производителя гасится полностью.
 
-### A custom field is ignored
+### Какое-то поле не применяется
 
-Confirm the field is one of the 14 contracted fields above and is spelled
-exactly (mind the camelCase). Environment variables take precedence over the
-config file. A field overridden in your overlay takes effect only while the OEM
-entitlement is active; without it, your configuration is ignored and the default
-brand is shown.
+Убедитесь, что поле входит в список из 14 контрактовых полей и написано в точности
+как надо (следите за camelCase). Переменные окружения важнее файла настроек.
+Поле из вашего оверлея работает только пока активно OEM-право; без него ваши
+настройки игнорируются и показывается стандартный бренд.
 
-## Related documents
+## См. также
 
-- [features-branding.md](features-branding.md) — the `branding.get()` contract
-  and the `oemActive` control flag.
-- [license-operations.md](license-operations.md) — license format, key
-  generation, signing, and verification.
-- [oem-leak-surfaces.md](oem-leak-surfaces.md) — the leak-surface manifest and
-  the regression-test principle.
+- [features-branding.md](features-branding.md) — контракт `branding.get()` и
+  служебный флаг `oemActive`.
+- [license-operations.md](license-operations.md) — формат лицензии, генерация
+  ключей, подпись и проверка.
+- [oem-leak-surfaces.md](oem-leak-surfaces.md) — перечень поверхностей утечки и
+  принцип регрессионного теста.
