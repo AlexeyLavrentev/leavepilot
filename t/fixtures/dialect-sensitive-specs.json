@@ -64,13 +64,13 @@
     {
       "file": "t/integration/carryOver/justAddedUsers.js",
       "category": "date-arithmetic",
-      "reason": "Selenium flow that recalculates carried-over allowance for a user who started mid-year; asserts the carry-over figure stays 0 across the year boundary through a real database round-trip (UserAllowance year arithmetic).",
+      "reason": "Selenium flow that recalculates carried-over allowance for a user who started mid-year; asserts the carry-over figure stays 0 across the year boundary through a real database round-trip (lib/model/user_allowance.js year arithmetic).",
       "module": "lib/model/user_allowance.js"
     },
     {
       "file": "t/integration/carryOver/negativeWhenSwitchedOff.js",
       "category": "date-arithmetic",
-      "reason": "Books last-year leave, sets carry-over to None, recalculates, and asserts no negative allowance is carried into the current year — year-boundary arithmetic through a real database round-trip.",
+      "reason": "Books last-year leave, sets carry-over to None, recalculates, and asserts no negative allowance is carried into the current year — lib/model/user_allowance.js year-boundary arithmetic through a real database round-trip.",
       "module": "lib/model/user_allowance.js"
     },
     {
@@ -130,7 +130,7 @@
     {
       "file": "t/unit/leave_deducted_days_ends.js",
       "category": "day-calculation",
-      "reason": "Exercises get_deducted_days_number()/get_deducted_days() including the year filter (moment.utc(leave_day.date).year() !== year.year()) and half-day end corrections across the new-year boundary.",
+      "reason": "Exercises get_deducted_days_number()/get_deducted_days() in lib/model/db/leave.js, including the year filter (moment.utc(leave_day.date).year() !== year.year()) and half-day end corrections across the new-year boundary.",
       "module": "lib/model/db/leave.js"
     },
     {
