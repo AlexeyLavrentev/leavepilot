@@ -253,3 +253,235 @@ describe('auth security middleware', function() {
     expect(blocked.statusCode).to.equal(429);
   });
 });
+
+/*
+  The global CSRF pipeline verifier (QUAL-04).
+
+  It used to live inline in app.js while this module carried a second,
+  weaker copy mounted route-locally; the two drifted (RESEARCH Pitfall 3).
+  The matrix below enumerates EVERY branch of BOTH legacy copies, so the
+  merged export cannot quietly narrow either one:
+
+  - method gate (GET/HEAD/OPTIONS pass) - inline copy only
+  - exact-path exemptions - inline copy had startsWith prefixes
+  - multipart deferral via the edition registry - inline copy only
+  - JSON-aware 403 rejection - inline copy only
+  - flash + redirect_with_session rejection - both copies
+*/
+describe('global CSRF verifier', function() {
+  function createPostReq(overrides) {
+    return createReq(Object.assign({
+      method: 'POST',
+      path: '/requests/leave/',
+      originalUrl: '/requests/leave/',
+    }, overrides || {}));
+  }
+
+  function multipartIs(type) {
+    return function(requested) {
+      return requested === type ? type : false;
+    };
+  }
+
+  it('exports the exact-path exemption list frozen with exactly the agreed entries', function() {
+    expect(authSecurity.CSRF_EXEMPT_EXACT_PATHS).to.be.an('array');
+    expect(Object.isFrozen(authSecurity.CSRF_EXEMPT_EXACT_PATHS)).to.equal(true);
+    expect(authSecurity.CSRF_EXEMPT_EXACT_PATHS).to.deep.equal([
+      '/login',
+      '/register',
+      '/forgot-password',
+      '/reset-password',
+      /*
+        Fifth entry, not in the original D-13 list of four: the SAML
+        assertion consumer. The identity provider POSTs the response
+        through the user's browser, so this one route cannot carry the
+        app's CSRF token; the assertion is signature-verified by the SSO
+        provider instead. Before the merge it was silently covered by the
+        old startsWith('/login') prefix; exact matching would have broken
+        every SAML login (deviation, documented in 05-02-SUMMARY.md).
+      */
+      '/login/sso/callback/saml',
+    ]);
+  });
+
+  it('passes GET, HEAD and OPTIONS through regardless of tokens', function() {
+    ['GET', 'HEAD', 'OPTIONS'].forEach(method => {
+      let passed = false;
+      authSecurity.verifyCsrfTokenGlobally(
+        createPostReq({method: method, session: {}}),
+        createRes(),
+        function() { passed = true; }
+      );
+      expect(passed, method + ' should pass the method gate').to.equal(true);
+    });
+  });
+
+  it('exempts every path in the frozen constant on exact membership', function() {
+    authSecurity.CSRF_EXEMPT_EXACT_PATHS.forEach(exemptPath => {
+      let passed = false;
+      authSecurity.verifyCsrfTokenGlobally(
+        createPostReq({path: exemptPath, originalUrl: exemptPath, session: {}}),
+        createRes(),
+        function() { passed = true; }
+      );
+      expect(passed, exemptPath + ' should be exempt by exact membership').to.equal(true);
+    });
+  });
+
+  it('rejects prefixed non-members - there are no startsWith semantics', function() {
+    ['/login-extra', '/register-foo', '/forgot-passwordx', '/login/sso/callback/saml/extrapath'].forEach(path => {
+      const req = createPostReq({path: path, originalUrl: path, session: {}});
+      const res = createRes();
+
+      authSecurity.verifyCsrfTokenGlobally(req, res, function() {
+        throw new Error(path + ' must not pass the global verifier');
+      });
+
+      expect(res.redirects, path + ' should be rejected to a redirect').to.deep.equal([path]);
+    });
+  });
+
+  it('returns JSON 403 without redirect for an xhr request', function() {
+    const req = createPostReq({xhr: true, session: {}});
+    const res = createRes();
+
+    authSecurity.verifyCsrfTokenGlobally(req, res, function() {
+      throw new Error('missing token must be rejected');
+    });
+
+    expect(res.statusCode).to.equal(403);
+    expect(res.body).to.deep.equal({error: 'invalid_csrf'});
+    expect(res.redirects).to.deep.equal([]);
+  });
+
+  it('returns JSON 403 for a request whose originalUrl is under /api/', function() {
+    const req = createPostReq({originalUrl: '/api/v1/requests/', session: {}});
+    const res = createRes();
+
+    authSecurity.verifyCsrfTokenGlobally(req, res, function() {
+      throw new Error('missing token must be rejected');
+    });
+
+    expect(res.statusCode).to.equal(403);
+    expect(res.body).to.deep.equal({error: 'invalid_csrf'});
+    expect(res.redirects).to.deep.equal([]);
+  });
+
+  it('returns JSON 403 for a client that prefers json over html', function() {
+    const req = createPostReq({
+      accepts: types => types.indexOf('json') !== -1 ? 'json' : 'html',
+      session: {},
+    });
+    const res = createRes();
+
+    authSecurity.verifyCsrfTokenGlobally(req, res, function() {
+      throw new Error('missing token must be rejected');
+    });
+
+    expect(res.statusCode).to.equal(403);
+    expect(res.body).to.deep.equal({error: 'invalid_csrf'});
+    expect(res.redirects).to.deep.equal([]);
+  });
+
+  it('flashes and redirects for an authenticated HTML request without a token', function() {
+    const req = createPostReq({
+      user: {id: 42},
+      session: {csrf_token: 'session-token'},
+    });
+    const res = createRes();
+
+    authSecurity.verifyCsrfTokenGlobally(req, res, function() {
+      throw new Error('missing request token must be rejected');
+    });
+
+    expect(res.redirects).to.deep.equal(['/requests/leave/']);
+    expect(req.session.flash.errors).to.deep.equal([
+      'Your form session expired. Please try again.',
+    ]);
+  });
+
+  it('redirects anonymous HTML requests without flashing', function() {
+    const req = createPostReq({session: {}});
+    const res = createRes();
+
+    authSecurity.verifyCsrfTokenGlobally(req, res, function() {
+      throw new Error('missing token must be rejected');
+    });
+
+    expect(res.redirects).to.deep.equal(['/requests/leave/']);
+    expect(req.session.flash.errors).to.deep.equal([]);
+  });
+
+  it('accepts a matching body token', function() {
+    let passed = false;
+    authSecurity.verifyCsrfTokenGlobally(
+      createPostReq({
+        session: {csrf_token: 'session-token'},
+        body: {_csrf: 'session-token'},
+      }),
+      createRes(),
+      function() { passed = true; }
+    );
+    expect(passed).to.equal(true);
+  });
+
+  it('accepts a matching x-csrf-token header', function() {
+    let passed = false;
+    authSecurity.verifyCsrfTokenGlobally(
+      createPostReq({
+        session: {csrf_token: 'session-token'},
+        headers: {'x-csrf-token': 'session-token'},
+      }),
+      createRes(),
+      function() { passed = true; }
+    );
+    expect(passed).to.equal(true);
+  });
+
+  it('rejects a mismatched token on the JSON branch', function() {
+    const req = createPostReq({
+      xhr: true,
+      session: {csrf_token: 'session-token'},
+      body: {_csrf: 'attacker-token'},
+    });
+    const res = createRes();
+
+    authSecurity.verifyCsrfTokenGlobally(req, res, function() {
+      throw new Error('mismatched token must be rejected');
+    });
+
+    expect(res.statusCode).to.equal(403);
+    expect(res.body).to.deep.equal({error: 'invalid_csrf'});
+  });
+
+  it('defers verification for a registered multipart route before the body is parsed', function() {
+    let passed = false;
+    authSecurity.verifyCsrfTokenGlobally(
+      createPostReq({
+        path: '/users/import/',
+        originalUrl: '/users/import/',
+        session: {},
+        is: multipartIs('multipart/form-data'),
+      }),
+      createRes(),
+      function() { passed = true; }
+    );
+    expect(passed).to.equal(true);
+  });
+
+  it('does not defer for a multipart POST that is not a registered route', function() {
+    const req = createPostReq({
+      path: '/attacker/import/',
+      originalUrl: '/attacker/import/',
+      session: {},
+      is: multipartIs('multipart/form-data'),
+    });
+    const res = createRes();
+
+    authSecurity.verifyCsrfTokenGlobally(req, res, function() {
+      throw new Error('unregistered multipart POST must not be deferred');
+    });
+
+    expect(res.redirects).to.deep.equal(['/attacker/import/']);
+  });
+});
