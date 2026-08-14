@@ -6,6 +6,7 @@ const fs = require('fs');
 const path = require('path');
 const { spawn } = require('child_process');
 const { spawnInGroup, killGroup, terminateGroup } = require('./lib/spawn_group');
+const skipHonesty = require('../t/lib/skip_honesty');
 
 /*
   Every batch this runner has going, so an interrupt can take their browsers
@@ -61,15 +62,45 @@ const serverEnv = Object.assign({}, baseTestEnv, {
 /*
   Flake artifact (D-06): every completed run - empty included - leaves a
   flake-report.json at the repo root describing everything this run had to
-  retry. The batch layer lives here (one record per integration batch that
-  failed its first whole-batch attempt); the mocha layer joins it in the merge
-  step. A write failure must never change the run's exit code: the report is
-  a diagnostic artifact, not a gate, so it warns and lets the run's own
+  retry, from BOTH retry layers:
+
+  - the batch layer, recorded here (one record per integration batch that
+    failed its first whole-batch attempt and was re-run);
+  - the mocha layer, recorded inside each mocha child by
+    t/lib/flake_reporter.js (retry runner events) and flushed to a JSON
+    sidecar whose path travels to the child as FLAKE_ARTIFACT_PATH.
+
+  The merge below folds the sidecars into the final report and cleans them
+  up. A write failure must never change the run's exit code: the report is a
+  diagnostic artifact, not a gate, so it warns and lets the run's own
   verdict stand.
+
+  Every mocha invocation this runner starts carries the flake reporter, so
+  skip honesty (D-21) can count distinct skipped spec files from the same
+  pending records - one rule (t/lib/skip_honesty.js) for both carriers: this
+  runner for runner-driven contours, the require-module for the CI coverage
+  contour.
 */
 const flakeReportPath = path.join(process.cwd(), 'flake-report.json');
 
+const FLAKE_REPORTER = path.join('t', 'lib', 'flake_reporter.js');
+
 const flaky = [];
+const flakeSidecars = [];
+let flakeSidecarCounter = 0;
+
+const flakeSidecarPath = contour => {
+  flakeSidecarCounter += 1;
+  // One sidecar per mocha process; a retried batch reuses its own path so
+  // the sidecar always reflects the batch's latest attempt.
+  const sidecarPath = path.join(
+    process.cwd(),
+    `flake-sidecar-${process.pid}-${flakeSidecarCounter}.json`
+  );
+  flakeSidecars.push({ path: sidecarPath, contour });
+
+  return sidecarPath;
+};
 
 const buildFlakeRecords = () => flaky.map(entry => ({
   contour: 'integration-batch-retry',
@@ -79,11 +110,61 @@ const buildFlakeRecords = () => flaky.map(entry => ({
   attempt: 1,
 }));
 
+const readFlakeSidecars = () => {
+  const mochaRecords = [];
+  const skippedSpecFiles = [];
+
+  flakeSidecars.forEach(sidecar => {
+    let payload;
+
+    try {
+      payload = JSON.parse(fs.readFileSync(sidecar.path, 'utf8'));
+    } catch (error) {
+      if (error.code !== 'ENOENT') {
+        // A sidecar killed with its batch (watchdog timeout) or that failed
+        // to parse contributes no records rather than failing the report.
+        console.warn(`Could not read flake sidecar ${sidecar.path}: ${error.message}`);
+      }
+      return;
+    }
+
+    try {
+      fs.unlinkSync(sidecar.path);
+    } catch (alreadyGone) { /* cleanup is best-effort; the file is gitignored */ }
+
+    (payload.retries || []).forEach(entry => mochaRecords.push({
+      contour: sidecar.contour,
+      layer: 'mocha',
+      spec: entry.spec,
+      tests: [entry.title],
+      attempt: entry.attempt,
+      error: entry.error,
+    }));
+
+    (payload.pending || []).forEach(entry => skippedSpecFiles.push(entry.spec));
+  });
+
+  return { mochaRecords, skippedSpecFiles };
+};
+
 const writeFlakeReport = () => new Promise(resolve => {
+  const merged = readFlakeSidecars();
+  const records = buildFlakeRecords().concat(merged.mochaRecords);
+
   try {
-    fs.writeFileSync(flakeReportPath, JSON.stringify(buildFlakeRecords(), null, 2) + '\n');
+    fs.writeFileSync(flakeReportPath, JSON.stringify(records, null, 2) + '\n');
   } catch (error) {
     console.warn(`Could not write flake report to ${flakeReportPath}: ${error.message}`);
+  }
+
+  // Skip honesty (D-21), runner carrier: the same rule the CI coverage
+  // contour loads via --require, fed from the reporter's pending records.
+  // Locally a breach warns; only contours that set TEST_ENFORCE_SKIP_HONESTY
+  // (CI steps) turn the count into this process exiting non-zero.
+  const evaluation = skipHonesty.reportSkipHonesty(merged.skippedSpecFiles);
+  if (evaluation.enforce) {
+    console.error(skipHonesty.breachMessage(evaluation));
+    process.exitCode = 1;
   }
 
   resolve();
@@ -213,7 +294,12 @@ const runMochaSuite = () => {
     const roots = explicitPaths.length ? explicitPaths : ['t'];
     const flags = mochaArgs.filter(arg => arg.startsWith('-'));
 
-    return run(node, ['node_modules/mocha/bin/mocha', '--recursive', '--exit'].concat(FAIL_FAST, roots, flags));
+    return run(
+      node,
+      ['node_modules/mocha/bin/mocha', '--recursive', '--exit']
+        .concat(FAIL_FAST, ['--reporter', FLAKE_REPORTER], roots, flags),
+      { env: Object.assign({}, baseTestEnv, { FLAKE_ARTIFACT_PATH: flakeSidecarPath('explicit-paths-mocha-retry') }) }
+    );
   }
 
   const allIntegrationFiles = collectJavaScriptFiles(path.join('t', 'integration'));
@@ -284,15 +370,29 @@ const runMochaSuite = () => {
     on its own timeout, and the batch ceiling above still kills a wedged
     process. This only makes finishing mean exiting.
   */
-  const mocha = batch => runWithTimeout(
+  const mocha = (batch, sidecarPath) => runWithTimeout(
     node,
-    ['node_modules/mocha/bin/mocha', '--exit'].concat(FAIL_FAST).concat(retryArgs).concat(batch),
-    {},
+    ['node_modules/mocha/bin/mocha', '--exit']
+      .concat(FAIL_FAST)
+      .concat(retryArgs)
+      .concat([
+        '--reporter', FLAKE_REPORTER,
+        // A2 fallback: if a mocha upgrade ever stops carrying test.file on
+        // retry/pending events, the reporter still knows which batch it
+        // rendered for.
+        '--reporter-option', 'fallbackSpec=' + batch.join(', '),
+      ])
+      .concat(batch),
+    { env: Object.assign({}, baseTestEnv, { FLAKE_ARTIFACT_PATH: sidecarPath }) },
     batchTimeoutMs
   );
 
   const runBatch = (batch, index) => {
     console.log(`Running integration batch ${index + 1}/${batches.length} (${batch.length} files)`);
+
+    // One sidecar per batch, stable across the retry below: the sidecar
+    // always reflects the batch's latest attempt.
+    const batchSidecarPath = flakeSidecarPath('integration-mocha-retry');
 
     // Mocha's own --retries repeats a single test inside the process it is
     // already in, which does not help the failure this suite actually sees:
@@ -302,10 +402,10 @@ const runMochaSuite = () => {
     // fresh browser and a freshly registered company, which is the granularity
     // the flake lives at. Retried files are named at the end of the run: a
     // real regression fails twice and must not hide behind a green tick.
-    const attempt = mocha(batch).catch(error => {
+    const attempt = mocha(batch, batchSidecarPath).catch(error => {
       console.error(`Integration batch ${index + 1} failed, retrying the whole batch: ${error.message}`);
       flaky.push(batch.join(', '));
-      return mocha(batch);
+      return mocha(batch, batchSidecarPath);
     });
 
     if (!keepGoing) {
@@ -325,7 +425,12 @@ const runMochaSuite = () => {
     )
     .then(() => (integrationOnly
       ? null
-      : run(node, ['node_modules/mocha/bin/mocha', '--recursive', '--exit'].concat(FAIL_FAST, ['t/unit']))))
+      : run(
+        node,
+        ['node_modules/mocha/bin/mocha', '--recursive', '--exit']
+          .concat(FAIL_FAST, ['--reporter', FLAKE_REPORTER], ['t/unit']),
+        { env: Object.assign({}, baseTestEnv, { FLAKE_ARTIFACT_PATH: flakeSidecarPath('unit-mocha-retry') }) }
+      )))
     .then(() => {
       if (flaky.length) {
         console.log(`Integration specs that needed a second run (${flaky.length}):`);
