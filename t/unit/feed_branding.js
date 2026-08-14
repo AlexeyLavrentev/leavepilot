@@ -56,8 +56,14 @@ describe('The iCal feed branding', function() {
   // has no cache), so an override set in a nested before is honoured by the
   // fetch. Saved and restored so the override cannot leak into whichever suite
   // runs next in the same mocha process. LEAVEPILOT_LICENSE is snapshotted
-  // alongside (D-04: the override describes inject an OEM entitlement).
-  const brandKeys = ['BRAND_NAME', 'BRAND_SHORT_NAME', 'LEAVEPILOT_LICENSE'];
+  // alongside (D-04: the override describes inject an OEM entitlement). The
+  // FULL vendor-identity set is snapshotted too: the CR-01 atomic rule rejects
+  // a partial custom brand, so the OEM overrides below must rebrand every
+  // required field or the feed assertions would see the default brand.
+  const brandKeys = [
+    'BRAND_NAME', 'BRAND_SHORT_NAME', 'LEAVEPILOT_LICENSE',
+    'APPLICATION_DOMAIN', 'PROMOTION_WEBSITE_DOMAIN', 'BRAND_SENDER_EMAIL',
+  ];
   const savedBrandEnv = {};
 
   before(async function() {
@@ -117,6 +123,9 @@ describe('The iCal feed branding', function() {
       process.env.LEAVEPILOT_LICENSE = OEM_LICENSE_PAYLOAD;
       process.env.BRAND_NAME = 'Acme Leave';
       process.env.BRAND_SHORT_NAME = 'Acme';
+      process.env.APPLICATION_DOMAIN = 'https://acme.example';
+      process.env.PROMOTION_WEBSITE_DOMAIN = 'https://acme.example';
+      process.env.BRAND_SENDER_EMAIL = 'no-reply@acme.example';
       branding.__resetOemCacheForTests();
     });
 

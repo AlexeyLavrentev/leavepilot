@@ -79,7 +79,7 @@
   "excluded": [
     {
       "surface": "lib/branding.js",
-      "reason": "the brand layer / D-05 gate itself; DEFAULT_BRANDING constants (L7-21) are the fallback-of-record shown ONLY when OEM is NOT active (a custom brand overrides every field); getEmailFrom() is the email surface's source (already listed in dynamic[] as lib/email.js), not a separate rendered surface"
+      "reason": "the brand layer / D-05 gate itself; DEFAULT_BRANDING constants (L7-21) are the fallback-of-record shown when OEM is NOT active OR the brand config is INCOMPLETE (the CR-01 atomic rule: every vendor-identity field must be rebranded or the WHOLE custom brand is rejected to the default, so no operator-value/vendor-default hybrid can render); the rejection path is pinned by the t/unit/oem_gate.js CR-01 matrix; getEmailFrom() is the email surface's source (already listed in dynamic[] as lib/email.js), not a separate rendered surface"
     },
     {
       "surface": "lib/view/helpers.js",

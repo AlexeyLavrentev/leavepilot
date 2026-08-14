@@ -16,6 +16,19 @@ var OEM_LICENSE_PAYLOAD = JSON.stringify({
   features: ['custom_branding'],
 });
 
+// CR-01 atomic rule: a PARTIAL custom brand is rejected whole, so every
+// override test below must start from a COMPLETE vendor-identity set and then
+// override the specific fields it asserts. Without this the OEM entitlement
+// would be valid but the brand would fall back to the default.
+function activateOemBrand() {
+  process.env.LEAVEPILOT_LICENSE = OEM_LICENSE_PAYLOAD;
+  process.env.BRAND_NAME = 'Base OEM';
+  process.env.BRAND_SHORT_NAME = 'Base';
+  process.env.APPLICATION_DOMAIN = 'https://base.example';
+  process.env.PROMOTION_WEBSITE_DOMAIN = 'https://base.example';
+  process.env.BRAND_SENDER_EMAIL = 'no-reply@base.example';
+}
+
 describe('Branding', function() {
   var originalEnv = {};
 
@@ -61,7 +74,7 @@ describe('Branding', function() {
   });
 
   it('lets environment variables override customer branding', function() {
-    process.env.LEAVEPILOT_LICENSE = OEM_LICENSE_PAYLOAD;
+    activateOemBrand();
     process.env.BRAND_NAME = 'Acme Leave';
     process.env.BRAND_SHORT_NAME = 'Acme';
     process.env.APPLICATION_DOMAIN = 'https://leave.example.com';
@@ -80,7 +93,7 @@ describe('Branding', function() {
   });
 
   it('formats email sender from branding values', function() {
-    process.env.LEAVEPILOT_LICENSE = OEM_LICENSE_PAYLOAD;
+    activateOemBrand();
     process.env.BRAND_SENDER_EMAIL = 'leave@example.com';
     process.env.BRAND_SENDER_NAME = 'Acme Leave';
 
@@ -88,7 +101,7 @@ describe('Branding', function() {
   });
 
   it('allows a fully custom email sender value', function() {
-    process.env.LEAVEPILOT_LICENSE = OEM_LICENSE_PAYLOAD;
+    activateOemBrand();
     process.env.BRAND_EMAIL_FROM = 'No Reply <noreply@example.com>';
 
     expect(branding.getEmailFrom()).to.equal('No Reply <noreply@example.com>');
@@ -102,7 +115,7 @@ describe('Branding', function() {
     LeavePilot surfaces the route renders today.
   */
   it('lets manifest-route fields rebrand via BRAND_* override', function() {
-    process.env.LEAVEPILOT_LICENSE = OEM_LICENSE_PAYLOAD;
+    activateOemBrand();
     process.env.BRAND_NAME = 'Acme';
     process.env.BRAND_SHORT_NAME = 'A';
     process.env.BRAND_FAVICON_PNG_32_URL = 'https://cdn/acme-32.png';

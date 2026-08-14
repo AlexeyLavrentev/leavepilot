@@ -69,10 +69,17 @@ returns today are the contract:
   explicitly)
 - `oemActive` (boolean control flag — the OEM suppression signal from the
   license-aware gate in `get()`; **not** a brand-display field. `true` only
-  when a valid, non-grace license carries the `custom_branding` entitlement.
-  Under `oemActive` the operator's configured brand surfaces; otherwise
-  `get()` returns the default brand regardless of `BRAND_*`/config, and the
-  Phase 3 upsell section stays visible.)
+  when a valid, non-grace license carries the `custom_branding` entitlement
+  **and** the brand config is COMPLETE: every vendor-identity field (`name`,
+  `shortName`, `applicationDomain`, `promotionWebsiteDomain`, `senderEmail`)
+  is explicitly rebranded via `BRAND_*`/config (a value still equal to the
+  shipped default/placeholder does not count). This is the atomic application
+  rule (CR-01): a partial custom brand never renders as a hybrid — the whole
+  custom brand is applied or the whole default brand is returned (`oemActive`
+  `false`, the rejection reason logged once at decision time). Under
+  `oemActive` the operator's configured brand surfaces; otherwise `get()`
+  returns the default brand regardless of `BRAND_*`/config, and the Phase 3
+  upsell section stays visible.)
 
 Backward compatibility: adding a field is a non-breaking change. Removing or
 renaming a field is a breaking change that requires a major version bump.

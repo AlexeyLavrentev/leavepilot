@@ -62,10 +62,20 @@ const bucketWithUpsell = {
 
 describe('OEM gate tracer (Plan 04-01)', function() {
   const originalEnv = {};
+  const FULL_CUSTOM_ENV_KEYS = [
+    'LEAVEPILOT_LICENSE',
+    'BRAND_NAME',
+    'BRAND_SHORT_NAME',
+    'APPLICATION_DOMAIN',
+    'PROMOTION_WEBSITE_DOMAIN',
+    'BRAND_SENDER_EMAIL',
+    'APPLICATION_SENDER_EMAIL',
+  ];
 
   beforeEach(function() {
-    originalEnv.LEAVEPILOT_LICENSE = process.env.LEAVEPILOT_LICENSE;
-    originalEnv.BRAND_NAME = process.env.BRAND_NAME;
+    FULL_CUSTOM_ENV_KEYS.forEach(function(key) {
+      originalEnv[key] = process.env[key];
+    });
     branding.__resetOemCacheForTests();
   });
 
@@ -83,11 +93,17 @@ describe('OEM gate tracer (Plan 04-01)', function() {
   describe('happy path: a valid custom_branding license activates the custom brand', function() {
     it('sets oemActive true and surfaces the configured brand name', function() {
       process.env.LEAVEPILOT_LICENSE = OEM_LICENSE_PAYLOAD;
+      // CR-01 atomic rule: the full vendor-identity set must be rebranded,
+      // otherwise the whole custom brand falls back to the default.
       process.env.BRAND_NAME = 'Acme OEM';
+      process.env.BRAND_SHORT_NAME = 'Acme';
+      process.env.APPLICATION_DOMAIN = 'https://acme.example';
+      process.env.PROMOTION_WEBSITE_DOMAIN = 'https://acme.example';
+      process.env.BRAND_SENDER_EMAIL = 'no-reply@acme.example';
       branding.__resetOemCacheForTests();
 
       const current = branding.get();
-      expect(current.oemActive, 'entitled + configured -> oemActive true').to.equal(true);
+      expect(current.oemActive, 'entitled + fully configured -> oemActive true').to.equal(true);
       expect(current.name, 'the operator custom brand surfaces').to.equal('Acme OEM');
     });
   });
@@ -139,7 +155,9 @@ describe('OEM gate tracer (Plan 04-01)', function() {
 */
 
 // runNode model: t/unit/edition_community_boundary.js L34-40. The child sets
-// LEAVEPILOT_LICENSE + BRAND_NAME, resets the cache, calls branding.get(), and
+// LEAVEPILOT_LICENSE + the FULL vendor-identity brand set (CR-01 atomic rule:
+// a partial set would fall back to the default brand and break the
+// valid_entitled expectation), resets the cache, calls branding.get(), and
 // prints JSON. execFileSync throws on a non-zero child exit, so a returned,
 // parseable result is itself the OEM-02 "never throws" proof for that outcome
 // (a throw out of branding.get() would crash the child and fail the test).
@@ -154,6 +172,10 @@ function runBrandingOutcome(licenseValue, brandName) {
     childEnv.LEAVEPILOT_LICENSE = licenseValue;
   }
   childEnv.BRAND_NAME = brandName;
+  childEnv.BRAND_SHORT_NAME = brandName;
+  childEnv.APPLICATION_DOMAIN = 'https://matrix.example';
+  childEnv.PROMOTION_WEBSITE_DOMAIN = 'https://matrix.example';
+  childEnv.BRAND_SENDER_EMAIL = 'matrix@matrix.example';
 
   const script = [
     "const branding = require('./lib/branding');",
@@ -334,5 +356,84 @@ describe('OEM-01 non-cumulative teeth: the enterprise fixture is a VALID license
     expect(status.inGrace, 'enterprise fixture is NOT in grace').to.equal(false);
     expect(status.features, 'enterprise fixture carries real enterprise features').to.include('sso_authentication');
     expect(status.features, 'enterprise fixture does NOT carry custom_branding (the OEM tariff)').to.not.include('custom_branding');
+  });
+});
+
+/*
+  ---------------------------------------------------------------------------
+  CR-01 atomic brand application (code-review fix): a PARTIAL custom brand
+  config must NOT render as a hybrid of operator values and vendor defaults.
+  Under a valid OEM entitlement, every vendor-identity field (name, shortName,
+  applicationDomain, promotionWebsiteDomain, senderEmail) must be explicitly
+  rebranded — otherwise the WHOLE custom brand is rejected and the default
+  brand is returned (oemActive:false), with the reason logged for the operator.
+  ---------------------------------------------------------------------------
+*/
+describe('CR-01 atomic application: a partial brand config falls back to the whole default brand', function() {
+  this.timeout(10000);
+
+  // Prints the full branding.get() plus the incomplete-fields diagnosis from
+  // the memoized entitlement cache, in a fresh child process (cache isolation).
+  function runAtomicOutcome(licenseValue, envOverrides) {
+    const childEnv = Object.assign({}, process.env);
+    [
+      'LEAVEPILOT_LICENSE', 'TIMEOFF_LICENSE',
+      'BRAND_NAME', 'BRAND_SHORT_NAME',
+      'APPLICATION_DOMAIN', 'PROMOTION_WEBSITE_DOMAIN',
+      'BRAND_SENDER_EMAIL', 'APPLICATION_SENDER_EMAIL',
+    ].forEach(function(key) { delete childEnv[key]; });
+
+    if (licenseValue !== null) {
+      childEnv.LEAVEPILOT_LICENSE = licenseValue;
+    }
+    Object.keys(envOverrides || {}).forEach(function(key) {
+      childEnv[key] = envOverrides[key];
+    });
+
+    const script = [
+      "const branding = require('./lib/branding');",
+      "branding.__resetOemCacheForTests();",
+      "const b = branding.get();",
+      "const e = branding.__getLastOemDecisionForTests ? branding.__getLastOemDecisionForTests() : null;",
+      "process.stdout.write(JSON.stringify({oemActive: b.oemActive, name: b.name, incomplete: e && e.incompleteFields}));",
+    ].join('');
+
+    return JSON.parse(childProcess.execFileSync(process.execPath, ['-e', script], {
+      cwd: root,
+      env: childEnv,
+      encoding: 'utf8',
+    }).trim());
+  }
+
+  it('a PARTIAL config (only name rebranded) rejects the whole custom brand: oemActive false + default name (no hybrid)', function() {
+    const result = runAtomicOutcome(OEM_LICENSE_PAYLOAD, {
+      BRAND_NAME: 'Half Configured',
+    });
+
+    expect(result.oemActive, 'partial config must not activate OEM (no hybrid state)').to.equal(false);
+    expect(result.name, 'the DEFAULT brand is returned whole, not a mix').to.equal('LeavePilot');
+  });
+
+  it('the shipped config placeholders alone (nothing explicitly rebranded) do not activate OEM', function() {
+    // config/app.json ships vendor placeholders byte-identical to
+    // DEFAULT_BRANDING — an operator who set ONLY the license must see the
+    // default brand, not a "custom" brand made of placeholders.
+    const result = runAtomicOutcome(OEM_LICENSE_PAYLOAD, {});
+
+    expect(result.oemActive, 'placeholder-only config does not count as rebranded').to.equal(false);
+    expect(result.name).to.equal('LeavePilot');
+  });
+
+  it('the legacy sender path (APPLICATION_SENDER_EMAIL) counts as rebranding senderEmail', function() {
+    const result = runAtomicOutcome(OEM_LICENSE_PAYLOAD, {
+      BRAND_NAME: 'Legacy Sender Co',
+      BRAND_SHORT_NAME: 'Legacy',
+      APPLICATION_DOMAIN: 'https://legacy.example',
+      PROMOTION_WEBSITE_DOMAIN: 'https://legacy.example',
+      APPLICATION_SENDER_EMAIL: 'no-reply@legacy.example',
+    });
+
+    expect(result.oemActive, 'legacy application_sender_email satisfies the atomic senderEmail requirement').to.equal(true);
+    expect(result.name).to.equal('Legacy Sender Co');
   });
 });
