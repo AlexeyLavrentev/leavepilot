@@ -731,7 +731,27 @@
       "leaveType": "Leave type",
       "actions": "Actions",
       "saved": "Reminder schedule saved.",
-      "deleted": "Reminder schedule deleted."
+      "deleted": "Reminder schedule deleted.",
+      "errors": {
+        "featureDisabled": "Reminder feature is not available",
+        "listFailed": "Failed to load schedules",
+        "createFailed": "Failed to create schedule",
+        "updateFailed": "Failed to update schedule",
+        "deleteFailed": "Failed to delete schedule",
+        "historyFailed": "Failed to load history",
+        "testSendFailed": "Failed to send test email",
+        "scheduleNotFound": "Schedule not found",
+        "leaveNotFound": "Leave not found",
+        "leaveForbidden": "No access to this leave",
+        "duplicateSchedule": "This schedule already exists",
+        "invalidLeaveType": "Invalid leave type",
+        "daysBeforeRange": "daysBefore must be between 1 and 365",
+        "recipientRequired": "At least one recipient must be selected",
+        "leaveIdRequired": "leaveId is required"
+      },
+      "status": {
+        "testEmailSent": "Test email sent"
+      }
     }
   },
   "teamView": {

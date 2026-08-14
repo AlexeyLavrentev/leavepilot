@@ -733,7 +733,27 @@
       "leaveType": "Тип відсутності",
       "actions": "Дії",
       "saved": "Розклад нагадувань збережено.",
-      "deleted": "Розклад нагадувань видалено."
+      "deleted": "Розклад нагадувань видалено.",
+      "errors": {
+        "featureDisabled": "Функція нагадувань недоступна",
+        "listFailed": "Помилка при отриманні розкладів",
+        "createFailed": "Помилка при створенні розкладу",
+        "updateFailed": "Помилка при оновленні розкладу",
+        "deleteFailed": "Помилка при видаленні розкладу",
+        "historyFailed": "Помилка при отриманні історії",
+        "testSendFailed": "Помилка при надсиланні тестового листа",
+        "scheduleNotFound": "Розклад не знайдено",
+        "leaveNotFound": "Відпустку не знайдено",
+        "leaveForbidden": "Немає доступу до цієї відпустки",
+        "duplicateSchedule": "Такий розклад уже існує",
+        "invalidLeaveType": "Некоректний тип відсутності",
+        "daysBeforeRange": "daysBefore має бути від 1 до 365",
+        "recipientRequired": "Має бути обраний хоча б один одержувач",
+        "leaveIdRequired": "leaveId обов'язковий"
+      },
+      "status": {
+        "testEmailSent": "Тестовий лист надіслано"
+      }
     }
   },
   "teamView": {

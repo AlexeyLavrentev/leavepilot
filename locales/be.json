@@ -104,5 +104,27 @@
     "revoked": "Ліцэнзія адклікана — прэміум-функцыі адключаны.",
     "upsellContact": "Звязацца з падтрымкай",
     "error": "Памылка ліцэнзіі ({{reason}}) — пераўстанавіце або абнавіце ліцэнзійны файл."
+  },
+  "reminderSchedules": {
+    "errors": {
+      "featureDisabled": "Функцыя напамінкаў недаступная",
+      "listFailed": "Памылка пры атрыманні раскладаў",
+      "createFailed": "Памылка пры стварэнні раскладу",
+      "updateFailed": "Памылка пры абнаўленні раскладу",
+      "deleteFailed": "Памылка пры выдаленні раскладу",
+      "historyFailed": "Памылка пры атрыманні гісторыі",
+      "testSendFailed": "Памылка пры адпраўцы тэставага ліста",
+      "scheduleNotFound": "Расклад не знойдзены",
+      "leaveNotFound": "Водпуск не знойдзены",
+      "leaveForbidden": "Няма доступу да гэтага водпуску",
+      "duplicateSchedule": "Такі расклад ужо існуе",
+      "invalidLeaveType": "Некарэктны тып адсутнасці",
+      "daysBeforeRange": "daysBefore павінен быць ад 1 да 365",
+      "recipientRequired": "Павінен быць абраны хаця б адзін атрымальнік",
+      "leaveIdRequired": "leaveId абавязковы"
+    },
+    "status": {
+      "testEmailSent": "Тэставы ліст адпраўлены"
+    }
   }
 }
