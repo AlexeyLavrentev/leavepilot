@@ -25,6 +25,14 @@ const OEM_LICENSE_PAYLOAD = JSON.stringify({
   features: ['custom_branding'],
 });
 
+// The vendor-literal regex shared with t/unit/oem_no_vendor_leak.js (OEM-04).
+// Each override response below already asserts the custom brand IS present; the
+// vendor-absent tooth added in plan 04-03 makes the canonical iCal render test
+// independently prove the surface leaks nothing under a custom brand — so the
+// leak regression guard is not the only thing standing between a reintroduced
+// vendor literal and a shipped white-label feed.
+const brandLiteral = /LeavePilot|Leave\s+Pilot|TimeOff|timeoff\.management/i;
+
 describe('The iCal feed branding', function() {
 
   this.timeout(30000);
@@ -120,6 +128,10 @@ describe('The iCal feed branding', function() {
       expect(response.headers['content-type']).to.contain('text/calendar');
       // cal.prodId({company, product, language}) renders //-<company>-//-<product>-//<language>.
       expect(response.text).to.contain('PRODID:-//Acme Leave//Acme//EN');
+      // OEM-04 vendor-absent tooth: under a custom brand no vendor literal
+      // (LeavePilot / Leave Pilot / TimeOff / timeoff.management) survives in
+      // the rendered iCal body.
+      expect(response.text, 'the iCal body must carry no vendor literal under a custom brand').to.not.match(brandLiteral);
     });
 
     it('prefixes the personal calendar X-WR-CALNAME with the brand', async function() {
@@ -131,6 +143,8 @@ describe('The iCal feed branding', function() {
       expect(calnameLine, 'X-WR-CALNAME line present').to.be.a('string');
       expect(calnameLine).to.contain('Acme Leave:');
       expect(calnameLine).to.contain('calendar');
+      // OEM-04 vendor-absent tooth on the whole iCal body.
+      expect(response.text, 'the iCal body must carry no vendor literal under a custom brand').to.not.match(brandLiteral);
     });
 
     it('prefixes the team-view feed X-WR-CALNAME with the brand', async function() {
@@ -141,6 +155,8 @@ describe('The iCal feed branding', function() {
       const calnameLine = response.text.split('\n').find(line => line.indexOf('X-WR-CALNAME:') === 0);
       expect(calnameLine, 'X-WR-CALNAME line present').to.be.a('string');
       expect(calnameLine).to.contain('Acme Leave:');
+      // OEM-04 vendor-absent tooth on the whole iCal body.
+      expect(response.text, 'the iCal body must carry no vendor literal under a custom brand').to.not.match(brandLiteral);
     });
   });
 
