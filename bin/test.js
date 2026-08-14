@@ -26,22 +26,67 @@ const testHost = process.env.TEST_HOST || '127.0.0.1';
 const host = `http://${testHost}:${port}`;
 const node = process.execPath;
 const dbStorage = process.env.TEST_DB_STORAGE || path.join(process.cwd(), 'db.test.sqlite');
+
+/*
+  TEST_DB_DIALECT selects the database contour the children run against
+  (D-05). 'mysql' switches the child env to DB_DIALECT=mysql; every other
+  value - including unset - keeps sqlite, which remains the default contour.
+  The DB_* connection variables (DB_HOST, DB_PORT, DB_NAME, DB_USER,
+  DB_PASSWORD) ride process.env through the Object.assign base untouched, so
+  pointing them at a server is all a MySQL contour takes; DB_STORAGE is the
+  sqlite file path and is simply ignored under mysql.
+*/
+const dbDialect = process.env.TEST_DB_DIALECT === 'mysql' ? 'mysql' : 'sqlite';
+
 const baseTestEnv = Object.assign({}, process.env, {
   PORT: port,
   HOST: testHost,
   TEST_HOST: testHost,
-  DB_DIALECT: 'sqlite',
+  DB_DIALECT: dbDialect,
   DB_STORAGE: dbStorage,
   DISABLE_NOTIFICATIONS_POLLING: 'true',
   SILENCE_PRETEND_EMAILS: 'true',
   SILENCE_HTTP_LOGS: 'true',
   LOG_LEVEL: 'error',
-  TIMEOFF_FEATURES: 'all',
+  // Canonical prefix: the runner must never inject a deprecated name that
+  // trips its own deprecation spec (D-19).
+  LEAVEPILOT_FEATURES: 'all',
   SE_SKIP_DRIVER_IN_PATH: 'true',
 });
 const serverEnv = Object.assign({}, baseTestEnv, {
   ALLOW_CREATE_NEW_ACCOUNTS: 'true',
   DISABLE_AUTH_RATE_LIMIT: 'true',
+});
+
+/*
+  Flake artifact (D-06): every completed run - empty included - leaves a
+  flake-report.json at the repo root describing everything this run had to
+  retry. The batch layer lives here (one record per integration batch that
+  failed its first whole-batch attempt); the mocha layer joins it in the merge
+  step. A write failure must never change the run's exit code: the report is
+  a diagnostic artifact, not a gate, so it warns and lets the run's own
+  verdict stand.
+*/
+const flakeReportPath = path.join(process.cwd(), 'flake-report.json');
+
+const flaky = [];
+
+const buildFlakeRecords = () => flaky.map(entry => ({
+  contour: 'integration-batch-retry',
+  layer: 'batch',
+  spec: entry,
+  tests: [],
+  attempt: 1,
+}));
+
+const writeFlakeReport = () => new Promise(resolve => {
+  try {
+    fs.writeFileSync(flakeReportPath, JSON.stringify(buildFlakeRecords(), null, 2) + '\n');
+  } catch (error) {
+    console.warn(`Could not write flake report to ${flakeReportPath}: ${error.message}`);
+  }
+
+  resolve();
 });
 
 /*
@@ -219,8 +264,6 @@ const runMochaSuite = () => {
     ? ['--retries', String(configuredRetries)]
     : [];
 
-  const flaky = [];
-
   // A ceiling on one batch, not on one test. The slowest single file observed
   // takes about 30s, so this is generous by an order of magnitude and only ever
   // fires on a process that has stopped making progress.
@@ -395,7 +438,13 @@ run(node, ['bin/db_update.js'])
   })
   .then(() => runMochaSuite())
   .then(() => stopServer(server))
-  .catch(error => stopServer(server).then(() => {
-    console.error(error && error.stack || error);
-    process.exit(1);
-  }));
+  // The flake report is written on the failure path too: a red run is exactly
+  // when what got retried matters most, and the CI upload treats a missing
+  // file as a defect of its own (if-no-files-found: error).
+  .then(() => writeFlakeReport())
+  .catch(error => stopServer(server)
+    .then(() => writeFlakeReport())
+    .then(() => {
+      console.error(error && error.stack || error);
+      process.exit(1);
+    }));
