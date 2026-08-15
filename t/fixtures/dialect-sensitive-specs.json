@@ -138,6 +138,12 @@
       "category": "day-calculation",
       "reason": "Constructs CalendarMonth('2015-01-10', ...) and asserts month-start normalization, weekday and blank-cell arithmetic from lib/model/calendar_month.js (moment.utc(day).startOf('month'), get_base_date().date(day) indexing).",
       "module": "lib/model/calendar_month.js"
+    },
+    {
+      "file": "t/unit/db_migrations_data.js",
+      "category": "sql-literals",
+      "reason": "Plan 05-06: spawns t/lib/db_migrations_data_case.js per data-rewriting migration; the child replays migrations 1..N-1 and executes N with raw sequelize.query('SELECT ... FROM SequelizeMeta') meta-table inspection, raw INSERT/DELETE seeding and table-rebuild SQL from the migration files themselves, on SQLite in the unit contour and on MySQL in this dialect job (per-case databases).",
+      "module": "t/lib/db_migrations_data_case.js"
     }
   ]
 }

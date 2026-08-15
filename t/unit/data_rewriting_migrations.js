@@ -402,6 +402,27 @@ describe('D-10 data-rewriting migration manifest (companion gate)', function() {
     ).to.be.an('array').with.lengthOf(0);
   });
 
+  // (3a) SPEC-EXISTENCE: every entry names the replay spec, and the spec
+  // really exists and really iterates this manifest - the link the entry's
+  // spec field promises. (Landed with the replay spec itself in plan
+  // 05-06 Task 2; before that commit there was no file to point at.)
+  it('names a replay spec that exists and iterates the manifest', function() {
+    expect(
+      fs.existsSync(path.join(root, REPLAY_SPEC)),
+      'the replay spec ' + REPLAY_SPEC + ' does not exist - every manifest entry points at it'
+    ).to.equal(true);
+
+    var specSource = realRead(REPLAY_SPEC);
+    expect(
+      specSource.indexOf('data-rewriting-migrations.json'),
+      'the replay spec must load t/fixtures/data-rewriting-migrations.json - otherwise the manifest and the coverage are two lists that can drift apart'
+    ).to.not.equal(-1);
+    expect(
+      specSource.indexOf('migrations.forEach'),
+      'the replay spec must iterate manifest.migrations - a hand-duplicated case list is exactly the drift this gate exists to prevent'
+    ).to.not.equal(-1);
+  });
+
   // (3b) NON-VACUOUS: the re-derivation and the manifest must actually
   // overlap - at least one entry is self-signaled in its own up() body
   // (oem_no_vendor_leak allowlist-non-vacuous shape). If every entry

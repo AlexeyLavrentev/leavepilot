@@ -50,8 +50,22 @@ var path = require('path');
 var root = path.join(__dirname, '..', '..');
 var manifest = JSON.parse(fs.readFileSync(path.join(root, 't', 'fixtures', 'dialect-sensitive-specs.json'), 'utf8'));
 
-// The one file the scan skips: this gate itself (see header). A single
-// explicit relative path, not a glob.
+// The files the scan skips. Explicit relative paths with stated reasons,
+// never a glob. This gate itself necessarily contains every signal
+// signature (they are its detector definitions). The 05-06 companion gate
+// t/unit/data_rewriting_migrations.js embeds raw-SQL snippets for the same
+// reason - its positive teeth must feed every detector family real
+// signatures. And the plan 05-06 replay child
+// t/lib/db_migrations_data_case.js executes raw dialect SQL by design
+// (SequelizeMeta inspection and row seeding during the migration replay);
+// its dialect behaviour is exercised and guarded through the spec that
+// spawns it, t/unit/db_migrations_data.js, which IS a manifest entry.
+var EXCLUDED_PATHS = {
+  't/unit/dialect_sensitive_manifest.js': 'this gate: its detector definitions carry every signal signature',
+  't/unit/data_rewriting_migrations.js': 'the 05-06 companion gate: its detector teeth embed raw-SQL signatures',
+  't/lib/db_migrations_data_case.js': 'the 05-06 replay child: raw SQL executor driven by manifest entry t/unit/db_migrations_data.js',
+};
+
 var SELF_PATH = 't/unit/dialect_sensitive_manifest.js';
 
 var read = function(relativePath) {
@@ -148,7 +162,7 @@ function collectSpecFiles() {
   return files.map(function(abs) {
     return path.relative(root, abs).split(path.sep).join('/');
   }).filter(function(rel) {
-    return rel !== SELF_PATH;
+    return !EXCLUDED_PATHS[rel];
   }).sort();
 }
 
