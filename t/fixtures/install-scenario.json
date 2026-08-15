@@ -1,5 +1,5 @@
 {
-  "_comment": "Install-check scenario map (06-01; D-02 option a - scenario-map, runner owns order, doc owns step content). HOW BLOCKS ARE IDENTIFIED: each step references a bash fenced block of an install doc by (doc, heading text, blockIndex), where blockIndex counts fences of the SAME language tag inside the SAME heading section (adding a ```text/```json fence to a section cannot renumber its bash blocks). Block content is NEVER copied here - bin/install_check.js resolves and executes it from the doc at run time (D-02). DRIFT DETECTION: every doc step pins an expectCommand literal - the exact command line the step exists to run; the runner refuses to execute a resolved block that is empty or does not contain the literal, naming the step's heading + blockIndex and the missing literal (INSTALL-02). Output expectations are named via harnessAssert (mysql_dialect, redis_pong) and defined in the runner, never parsed from doc prose (D-06). WHO CONSUMES IT: bin/install_check.js (slice execution order = this file's array order, doc order is not execution order), and t/unit/install_scenario_manifest.js (companion gate: every bash block of the doc is either a scenario step or an exclusion below, every step resolves to a real fence - orphan blocks and phantom steps both fail CI). WHERE IT IS CI-GATED: plan 06-02 wires .github/workflows/core-ci.yml install jobs to `node bin/install_check.js --slice docker` / `--slice npm`; the literal doc commands (e.g. `npm install`) never appear in workflow yml (t/unit/ci_install_commands.js guard, 05 D-15). SCOPE (D-08): exactly the two install docs - docs/docker-compose.md now, docs/install-local-npm.md from plan 06-02 (-slice npm). EXCLUSIONS (D-05): the parser executes only community install sections (env prep, normal start, migrations, health checks, first admin, teardown); every bash block outside that coverage is listed below with a reason. The premium-scheduler section (### 4) carries only ```env fences - no bash block exists there to exclude.",
+  "_comment": "Install-check scenario map (06-01; D-02 option a - scenario-map, runner owns order, doc owns step content). HOW BLOCKS ARE IDENTIFIED: each step references a bash fenced block of an install doc by (doc, heading text, blockIndex), where blockIndex counts fences of the SAME language tag inside the SAME heading section (adding a ```text/```json fence to a section cannot renumber its bash blocks). Block content is NEVER copied here - bin/install_check.js resolves and executes it from the doc at run time (D-02). DRIFT DETECTION: every doc step pins an expectCommand literal - the exact command line the step exists to run; the runner refuses to execute a resolved block that is empty or does not contain the literal, naming the step's heading + blockIndex and the missing literal (INSTALL-02). Output expectations are named via harnessAssert (mysql_dialect, sqlite_dialect, redis_pong) and defined in the runner, never parsed from doc prose (D-06). WHO CONSUMES IT: bin/install_check.js (slice execution order = this file's array order, doc order is not execution order), and t/unit/install_scenario_manifest.js (companion gate: every bash block of BOTH docs is either a scenario step or an exclusion below, every step resolves to a real fence - orphan blocks and phantom steps both fail CI). WHERE IT IS CI-GATED: plan 06-02 wires .github/workflows/core-ci.yml install jobs to `node bin/install_check.js --slice docker` / `--slice npm`; the literal doc commands (e.g. `npm install`) never appear in workflow yml (t/unit/ci_install_commands.js guard, 05 D-15). SCOPE (D-08): exactly the two install docs - docs/docker-compose.md and docs/install-local-npm.md (npm slice, 06-02). SLICE OPTIONS: sliceOptions tunes runner behavior per slice - loadDotEnv:false on the npm slice because the compose .env carries DB_DIALECT=mysql which would steer db-update and the dialect check off SQLite; the npm doc's variant A assumes a clean operator shell. BACKGROUND STEPS: a step with \"await\": false is a server the doc starts (npm start); the runner spawns it in its own process group WITHOUT waiting, the readiness wait fails fast if it dies, and harness checkpoint stop_background_steps is the graceful group teardown - the server never outlives the run. EXCLUSIONS (D-05 for docs/docker-compose.md, D-07 for docs/install-local-npm.md): the parser executes only community install sections (env prep, normal start, migrations, health checks, first admin, teardown; variant A of the npm doc); every bash block outside that coverage is listed below with a reason. The premium-scheduler section (### 4) of docs/docker-compose.md carries only ```env fences - no bash block exists there to exclude.",
   "slices": {
     "docker": [
       {
@@ -96,7 +96,54 @@
         "expectCommand": "docker compose down -v",
         "role": "cleanup"
       }
+    ],
+    "npm": [
+      {
+        "doc": "docs/install-local-npm.md",
+        "heading": "1. Установите зависимости",
+        "blockIndex": 0,
+        "expectCommand": "npm install",
+        "role": "install"
+      },
+      {
+        "doc": "docs/install-local-npm.md",
+        "heading": "2. Примените миграции",
+        "blockIndex": 0,
+        "expectCommand": "npm run db-update",
+        "role": "migrate"
+      },
+      {
+        "doc": "docs/install-local-npm.md",
+        "heading": "3. Запустите приложение",
+        "blockIndex": 0,
+        "expectCommand": "npm start",
+        "await": false,
+        "role": "boot"
+      },
+      {
+        "harness": "wait_http_302"
+      },
+      {
+        "doc": "docs/install-local-npm.md",
+        "heading": "Как убедиться, что реально используется SQLite",
+        "blockIndex": 0,
+        "expectCommand": "getDialect",
+        "harnessAssert": "sqlite_dialect",
+        "role": "verify"
+      },
+      {
+        "harness": "stop_background_steps",
+        "role": "cleanup"
+      }
     ]
+  },
+  "sliceOptions": {
+    "docker": {
+      "loadDotEnv": true
+    },
+    "npm": {
+      "loadDotEnv": false
+    }
   },
   "exclusions": [
     {
@@ -164,6 +211,36 @@
       "heading": "Диагностика для поддержки",
       "blockIndex": 2,
       "reason": "D-05: support diagnostics - greps container logs by X-Request-Id; not part of the install path."
+    },
+    {
+      "doc": "docs/install-local-npm.md",
+      "heading": "Какие переменные окружения задать",
+      "blockIndex": 0,
+      "reason": "D-07: variant B environment block (export DB_DIALECT=mysql and friends) - points the npm path at an external MySQL server that does not exist in the CI context; the fast subset proves variant A (SQLite) only."
+    },
+    {
+      "doc": "docs/install-local-npm.md",
+      "heading": "Какие переменные окружения задать",
+      "blockIndex": 1,
+      "reason": "D-07: variant B bootstrap (install + migrate + start against the external MySQL env exported in the block above) - same unreproducible external dependency; the variant-A equivalents are executed as scenario steps instead."
+    },
+    {
+      "doc": "docs/install-local-npm.md",
+      "heading": "Как убедиться, что реально используется MySQL",
+      "blockIndex": 0,
+      "reason": "D-07: variant B verification - asserts the MySQL dialect of the external-server setup the fast subset never brings up; the slice proves its own dialect with the SQLite check block instead."
+    },
+    {
+      "doc": "docs/install-local-npm.md",
+      "heading": "Как проверить Redis в этом сценарии",
+      "blockIndex": 0,
+      "reason": "D-07: variant C check - reads session keys from an external Redis the fast subset never starts (variant A stores sessions in the SQLite database); no redis server exists in this contour to keyspace."
+    },
+    {
+      "doc": "docs/install-local-npm.md",
+      "heading": "Миграции",
+      "blockIndex": 0,
+      "reason": "D-07: post-upgrade advice (rerun migrations after every version bump) - the same command the scenario already executes from the install section (2. Примените миграции); a fresh-install slice covers the first run, not the upgrade ritual."
     }
   ]
 }

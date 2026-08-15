@@ -38,19 +38,24 @@
   Only the community sections the scenario maps are executed; blocks
   outside that coverage (commercial, premium scheduler, diagnostics,
   ...) are explicit exclusions in the scenario map with reasons (D-05).
+  The npm slice (06-02, D-07) runs the variant-A fast subset of
+  docs/install-local-npm.md: install -> migrate -> background boot ->
+  readiness -> the SQLite dialect check -> background stop.
 
   Scope boundary (D-08): exactly the two install docs -
-  docs/docker-compose.md and (from plan 06-02) docs/install-local-npm.md.
+  docs/docker-compose.md and docs/install-local-npm.md.
 
   No markdown dependency: the fence scanner below is a hand-rolled
   line walk (research 06-RESEARCH.md §2).
 
   Usage:
     node bin/install_check.js --slice docker [--doc /path/to/override.md]
+    node bin/install_check.js --slice npm   [--doc /path/to/override.md]
 
-  --doc replaces docs/docker-compose.md for every step that references
-  it, so negative controls can run against a mutated copy without
-  touching the real doc (INSTALL-02 teeth).
+  --doc substitutes the slice's referenced install doc with a mutated
+  copy for negative controls (a slice maps exactly one doc today), so a
+  gutted doc block can be proven to fail the run without touching the
+  real doc (INSTALL-02 teeth).
 */
 
 const fs = require('fs');
@@ -253,6 +258,67 @@ const liveChildren = new Set();
 let scenarioState = null;
 let cookieJarPath = null;
 
+/*
+  Steps the doc starts as a server (the npm slice's `npm start`): the
+  block must keep running while the scenario proceeds, so the runner
+  spawns it in its own group (it joins liveChildren - the interrupt
+  path kills it with everything else), does NOT wait for its exit, and
+  records how it ended so the readiness wait can fail fast when the
+  server died instead of burning its whole ceiling on a refused port.
+*/
+const backgroundSteps = [];
+
+function runShellBackground(commandText, env) {
+  const child = spawnInGroup('/bin/bash', ['-c', commandText], {
+    cwd: REPO_ROOT,
+    env,
+    stdio: 'inherit',
+  });
+
+  const record = { child, exited: null };
+  backgroundSteps.push(record);
+  liveChildren.add(child);
+
+  child.on('exit', code => {
+    record.exited = code === null ? 'signal' : code;
+    liveChildren.delete(child);
+  });
+
+  return Promise.resolve();
+}
+
+/*
+  Group teardown for the background steps: the server the doc started
+  must not outlive the run. SIGTERM first (the app's runtime shutdown
+  closes the db handle), SIGKILL after the grace period - the same
+  discipline bin/test.js applies to its batches. Called as the scenario's
+  own last step (the harness checkpoint below) and again on the runner's
+  success exit; the failure and interrupt paths take the synchronous
+  SIGKILL sweep instead, because a red run must not hang on a server
+  that ignores polite signals.
+*/
+function stopBackgroundSteps() {
+  const running = backgroundSteps.filter(record => record.exited === null);
+
+  if (!running.length) {
+    if (backgroundSteps.length) {
+      console.log('[harness] background steps: already exited, nothing to stop');
+    }
+    return Promise.resolve();
+  }
+
+  return running.reduce(
+    (sequence, record) => sequence.then(() => {
+      console.log(`[harness] stopping background step (pid ${record.child.pid})`);
+      return terminateGroup(record.child).then(() => {
+        record.exited = 'stopped';
+        liveChildren.delete(record.child);
+      });
+    }),
+    Promise.resolve()
+  );
+}
+
 function killLiveChildren() {
   liveChildren.forEach(child => killGroup(child, 'SIGKILL'));
   liveChildren.clear();
@@ -412,7 +478,12 @@ function httpStatusCode(url) {
 const sleep = ms => new Promise(resolve => { setTimeout(resolve, ms); });
 
 function baseUrl(scenario) {
-  const port = (scenario.env.APP_PORT || '3000').trim();
+  // The two install docs name the port differently: the compose doc's
+  // .env carries APP_PORT, the npm doc's «Порт» section says the app
+  // takes PORT when set and 3000 otherwise (bin/wwww reads the same
+  // variable). APP_PORT wins so a compose environment is never
+  // misread, then PORT, then the shared default.
+  const port = (scenario.env.APP_PORT || scenario.env.PORT || '3000').trim();
   return `http://localhost:${port}`;
 }
 
@@ -421,7 +492,10 @@ function baseUrl(scenario) {
   must answer 302 (redirect to the login page). Everything else - refused
   connections, 5xx from a booting container - keeps polling until the
   ceiling; the compose healthcheck has start_period 15s / interval 30s,
-  and first boot runs the migrations.
+  and first boot runs the migrations. One fail-fast: a background step
+  that already exited non-zero means the server the doc started is dead -
+  polling a corpse for the whole ceiling turns a clear crash into a
+  confusing timeout, so the wait rejects naming the exit code.
 */
 function waitForHttp302(scenario) {
   const url = `${baseUrl(scenario)}/`;
@@ -433,6 +507,19 @@ function waitForHttp302(scenario) {
 
   return (function poll() {
     attempt += 1;
+
+    const crashed = backgroundSteps.find(record =>
+      typeof record.exited === 'number' && record.exited !== 0
+    );
+    if (crashed) {
+      return Promise.reject(
+        new Error(
+          `a background step exited with ${crashed.exited} before the site answered`
+            + ` - the server the doc started died (its output is above)`
+        )
+      );
+    }
+
     return httpStatusCode(url).then(status => {
       if (status === '302') {
         console.log(`[harness] HTTP 302 on ${url} after ${attempt} attempt(s)`);
@@ -628,6 +715,12 @@ const outputAsserts = {
     }
     console.log('[harness] MySQL dialect check: output contains "mysql"');
   },
+  sqlite_dialect: output => {
+    if (!/sqlite/.test(output)) {
+      throw new Error(`SQLite dialect check: block output did not contain "sqlite" (got: ${output.trim().slice(0, 200)})`);
+    }
+    console.log('[harness] SQLite dialect check: output contains "sqlite"');
+  },
   redis_pong: output => {
     if (!/PONG/.test(output)) {
       throw new Error(`Redis ping: block output did not contain PONG (got: ${output.trim().slice(0, 200)})`);
@@ -646,6 +739,7 @@ const harnessCheckpoints = {
   allow_create_new_accounts_off: () => restoreAppConfig(),
   register_first_admin: () => registerFirstAdmin(),
   login_first_admin: () => loginFirstAdmin(),
+  stop_background_steps: () => stopBackgroundSteps(),
 };
 
 function resolveBlock(scenario, step) {
@@ -697,6 +791,18 @@ function runDocStep(scenario, step, block) {
 
   if (step.harnessAssert && !outputAssert) {
     throw new Error(`unknown output assert: ${step.harnessAssert}`);
+  }
+
+  // A background step (await:false) is a server the doc starts: spawn it
+  // in its own group, do not wait for it, and let the readiness
+  // checkpoint decide when it is up. The drift pin above still applies -
+  // a gutted boot block fails before anything spawns - and the started
+  // group joins the kill set, so the server cannot outlive the run.
+  if (step.await === false) {
+    if (outputAssert) {
+      throw new Error(`a background step (await:false) cannot carry an output assert: ${label}`);
+    }
+    return runShellBackground(text, scenario.env);
   }
 
   if (outputAssert) {
@@ -830,37 +936,41 @@ function main() {
   const args = parseArgs(process.argv.slice(2));
   const scenarioMap = JSON.parse(fs.readFileSync(SCENARIO_PATH, 'utf8'));
   const sliceSteps = (scenarioMap.slices || {})[args.slice];
+  const sliceOptions = (scenarioMap.sliceOptions || {})[args.slice] || {};
 
   if (!sliceSteps) {
     console.error(
       `slice "${args.slice}" is not defined in t/fixtures/install-scenario.json`
-        + (args.slice === 'npm' ? ' (the npm slice lands with plan 06-02)' : '')
     );
     process.exit(2);
   }
 
-  // Which docs the slice touches; --doc overrides the docker-compose doc
-  // in full (negative controls run a mutated copy against every step).
+  // Which docs the slice touches, resolved to readable paths. --doc
+  // substitutes the slice's single referenced install doc with a mutated
+  // copy (negative controls, INSTALL-02 teeth): a slice maps exactly one
+  // doc today, so the substitution is unambiguous - a future multi-doc
+  // slice must grow an explicit selector instead of guessing here.
   const docPaths = {};
   sliceSteps.forEach(step => {
     if (step.doc) {
-      docPaths[step.doc] = step.doc;
+      docPaths[step.doc] = path.join(REPO_ROOT, step.doc);
     }
   });
+
   if (args.doc) {
-    if (!('docs/docker-compose.md' in docPaths)) {
-      console.error('--doc given but the slice references no docs/docker-compose.md step');
+    const referenced = Object.keys(docPaths);
+    if (referenced.length !== 1) {
+      console.error(
+        `--doc given but the slice references ${referenced.length} doc(s) - the substitution is ambiguous`
+      );
       process.exit(2);
     }
-    docPaths['docs/docker-compose.md'] = path.resolve(args.doc);
+    docPaths[referenced[0]] = path.resolve(args.doc);
   }
 
   const docs = {};
   Object.keys(docPaths).forEach(docRef => {
-    const absolute = docRef === 'docs/docker-compose.md' && args.doc
-      ? path.resolve(args.doc)
-      : path.join(REPO_ROOT, docRef);
-    docs[docRef] = collectDocBlocks(absolute);
+    docs[docRef] = collectDocBlocks(docPaths[docRef]);
   });
 
   const numbered = sliceSteps.map((step, index) => Object.assign({}, step, {
@@ -882,7 +992,15 @@ function main() {
 
   numbered.reduce(
     (sequence, step) => sequence.then(() => {
-      loadDotEnvInto(scenario.env);
+      // .env is operator context for the compose doc: its MySQL
+      // verification block expands MYSQL_ROOT_PASSWORD from it. The npm
+      // doc's variant A assumes a clean shell - and the compose .env
+      // carries DB_DIALECT=mysql, which would steer db-update and the
+      // dialect check off SQLite - so the npm slice opts out
+      // (sliceOptions.loadDotEnv: false).
+      if (sliceOptions.loadDotEnv !== false) {
+        loadDotEnvInto(scenario.env);
+      }
 
       if (step.harness) {
         return runHarnessStep(scenario, step).then(() => { step.ran = true; });
@@ -893,13 +1011,21 @@ function main() {
     }),
     Promise.resolve()
   )
+    .then(() => stopBackgroundSteps())
     .then(() => {
       restoreAppConfig();
       removeCookieJar();
+      // Sweep after the graceful stop too: the scenario's own stop step
+      // (or stopBackgroundSteps above) is the intended path, but a
+      // helper any block started must never outlive the run.
+      killLiveChildren();
       const executed = numbered.filter(step => step.ran).length;
       console.log(`\ninstall-check: slice "${args.slice}" passed (${executed} step(s) executed)`);
     })
     .catch(error => {
+      // A red run takes the synchronous sweep, not the graceful stop:
+      // it must not hang on a server that ignores polite signals.
+      killLiveChildren();
       try {
         restoreAppConfig();
       } catch (restoreError) {
