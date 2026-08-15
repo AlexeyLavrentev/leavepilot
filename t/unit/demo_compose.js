@@ -20,7 +20,7 @@
     exact lever the deliberate divergence from the template exists for;
   - the ${VAR:?required} secret guards keep an accidental guard-free boot of
     the stand from coming up with placeholder-less sessions;
-  - the host port must default to 3001 (LEAVEPILOT_DEMO_PORT lever) so the
+  - the host port must default to 3001 (DEMO_PORT lever) so the
     demo stand coexists with the install-check stand / a dev server on 3000;
   - the brand env passthrough must keep EMPTY defaults so the demo renders
     the default LeavePilot brand (screenshot prerequisite, D-13/D-14);
@@ -188,16 +188,16 @@ describe('demo compose contract (docker-compose.demo.yml, plan 06-03)', function
     });
   });
 
-  it('defaults the host port to 3001 via LEAVEPILOT_DEMO_PORT (demo coexists with the install-check stand on 3000)', function() {
+  it('defaults the host port to 3001 via DEMO_PORT (demo coexists with the install-check stand on 3000)', function() {
     const content = read();
 
     // Quoted or unquoted mapping both accepted; the load-bearing part is
-    // the ${LEAVEPILOT_DEMO_PORT:-3001} default and the 3000 container side
+    // the ${DEMO_PORT:-3001} default and the 3000 container side
     // the runtime image listens on.
     expect(
       content,
-      'the ports mapping must default to ${LEAVEPILOT_DEMO_PORT:-3001}:3000'
-    ).to.match(/^[ \t]*-?[ \t]*"\$\{LEAVEPILOT_DEMO_PORT:-3001\}:3000"[ \t]*$/m);
+      'the ports mapping must default to ${DEMO_PORT:-3001}:3000'
+    ).to.match(/^[ \t]*-?[ \t]*"\$\{DEMO_PORT:-3001\}:3000"[ \t]*$/m);
   });
 
   it('passes every brand env var through with an EMPTY default (default brand renders)', function() {

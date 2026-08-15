@@ -8,7 +8,7 @@
 #   - top-level `name: leavepilot-demo` isolates the project (containers and
 #     volumes are prefixed, so the demo never collides with a real deploy or
 #     the install-check stand of the same compose CLI);
-#   - host port ${LEAVEPILOT_DEMO_PORT:-3001} (3001, so the demo coexists
+#   - host port ${DEMO_PORT:-3001} (3001, so the demo coexists
 #     with the install-check stand / a dev server on 3000);
 #   - pull_policy is parameterized to ${LEAVEPILOT_DEMO_PULL_POLICY:-missing}
 #     instead of the community template's hardcoded `always` (D-21): before
@@ -93,7 +93,7 @@ services:
       APPLICATION_DOMAIN: ${APPLICATION_DOMAIN:-}
       PROMOTION_WEBSITE_DOMAIN: ${PROMOTION_WEBSITE_DOMAIN:-}
     ports:
-      - "${LEAVEPILOT_DEMO_PORT:-3001}:3000"
+      - "${DEMO_PORT:-3001}:3000"
     healthcheck:
       test: ["CMD", "node", "-e", "require('http').get('http://127.0.0.1:3000/', (res) => { process.exit(res.statusCode >= 200 && res.statusCode < 500 ? 0 : 1); }).on('error', () => process.exit(1))"]
       interval: 30s

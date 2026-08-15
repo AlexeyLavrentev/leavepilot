@@ -26,8 +26,8 @@
                 (owner-facing output; the wrapper itself is a node script
                 because bin/test.js is the in-repo orchestrator precedent).
 
-  The demo port is resolved once from LEAVEPILOT_DEMO_PORT (default 3001) -
-  the exact lever the compose ports mapping ${LEAVEPILOT_DEMO_PORT:-3001}:3000
+  The demo port is resolved once from DEMO_PORT (default 3001) -
+  the exact lever the compose ports mapping ${DEMO_PORT:-3001}:3000
   exposes - and every port-touching step (HTTP poll, printed URL) uses the
   resolved value, so overriding the variable moves the wrapper and the
   mapping together.
@@ -37,7 +37,7 @@ const { spawn } = require('child_process');
 const http = require('http');
 
 const COMPOSE_FILE = 'docker-compose.demo.yml';
-const DEMO_PORT = String(process.env.LEAVEPILOT_DEMO_PORT || '3001').trim();
+const DEMO_PORT = String(process.env.DEMO_PORT || '3001').trim();
 const DEMO_URL = `http://localhost:${DEMO_PORT}`;
 
 const ADMIN_EMAIL = 'demo-admin@leavepilot.local';
