@@ -37,14 +37,26 @@ const read = relativePath => fs.readFileSync(path.join(root, relativePath), 'utf
   files where the inherited licence has to be named, because the inherited
   licence itself requires its permission notice to be carried along.
 
+  docs/third-party-inventory.md is absent for the same reason taken one step
+  further: naming third-party licences - MIT among them, per their own
+  package files - is the entire purpose of that document, so the word-pattern
+  guard below would flag every row of its tables. It is excluded as a surface,
+  not exempted line by line, and the canary assertion further down
+  (thirdPartyInventoryCanaries) keeps the exclusion honest: if the inventory
+  stops carrying the attributions the exclusion was written for, this guard
+  goes red rather than excluding a file that no longer needs it.
+
   Both Dockerfiles are in scope. The OCI label is the machine-readable licence
   claim, and it is what corporate image scanners read - leaving it out would
   keep the guard green while the published image said otherwise.
 */
+const thirdPartyInventoryFile = 'docs/third-party-inventory.md';
+
 const surfaces = ['README.md', 'Dockerfile', 'Dockerfile.portal'].concat(
   fs.readdirSync(path.join(root, 'docs'))
     .filter(name => name.endsWith('.md'))
     .map(name => path.posix.join('docs', name))
+    .filter(name => name !== thirdPartyInventoryFile)
 );
 
 /*
@@ -75,6 +87,18 @@ const thirdPartyProductLine = {
   file: 'docs/licensing-architecture.md',
   text: 'MongoDB + React, MIT). Ключевые проблемы для клиентского сценария:'
 };
+
+/*
+  The canary for the surface exclusion above. docs/third-party-inventory.md is
+  excluded because naming third-party licences is its purpose; these are the
+  attributions that purpose exists to serve. If they vanish - the inventory
+  gutted, rewritten without the font licence, or reduced to a stub - the
+  exclusion is excluding nothing and this fails instead.
+*/
+const thirdPartyInventoryCanaries = [
+  'The font files are licensed under the **SIL Open Font License 1.1',
+  '| jQuery | 1.11.2 | MIT |'
+];
 
 const isExempt = (surface, line) =>
   surface === thirdPartyProductLine.file && line.trim() === thirdPartyProductLine.text;
@@ -133,6 +157,25 @@ describe('The documents agree with the licence', function() {
     expect(
       inheritedLicenceName.test(thirdPartyProductLine.text),
       'the exempted line no longer matches what it exempts'
+    ).to.equal(true);
+  });
+
+  // Same principle for the excluded surface: the inventory file is out of
+  // scope precisely because it carries third-party licence names, so it has
+  // to keep carrying them. An exclusion that outlives its file is a hole.
+  it('still carries the third-party attributions its surface exclusion was written for', function() {
+    const lines = read(thirdPartyInventoryFile).split('\n');
+
+    thirdPartyInventoryCanaries.forEach(canary => {
+      expect(
+        lines.some(line => line.trim().startsWith(canary)),
+        'expected ' + thirdPartyInventoryFile + ' to still contain: "' + canary + '"'
+      ).to.equal(true);
+    });
+
+    expect(
+      thirdPartyInventoryCanaries.some(canary => inheritedLicenceName.test(canary)),
+      'at least one canary must match the pattern the exclusion avoids, or it guards nothing'
     ).to.equal(true);
   });
 

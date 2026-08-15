@@ -125,6 +125,10 @@ accompany the fonts; the file `public/fonts/OFL.txt` carries the canonical
 OFL 1.1 text with the Font Awesome copyright attribution, so the license
 rides the distribution exactly where the fonts do (both the npm tarball,
 which whitelists `public/`, and the container image, which `COPY`s it).
+License-text provenance: the body of `public/fonts/OFL.txt` is byte-identical
+to the canonical OFL 1.1 text published in the SPDX license list
+(`https://raw.githubusercontent.com/spdx/license-list-data/main/text/OFL-1.1.txt`);
+only the copyright header above it is Font Awesome-specific.
 
 | File | License | Reserved Font Name |
 |------|---------|--------------------|
