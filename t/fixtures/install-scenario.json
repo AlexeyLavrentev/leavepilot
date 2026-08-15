@@ -1,0 +1,89 @@
+{
+  "_comment": "Install-check scenario map (06-01; D-02 option a - scenario-map, runner owns order, doc owns step content). HOW BLOCKS ARE IDENTIFIED: each step references a bash fenced block of an install doc by (doc, heading text, blockIndex), where blockIndex counts fences of the SAME language tag inside the SAME heading section (adding a ```text/```json fence to a section cannot renumber its bash blocks). Block content is NEVER copied here - bin/install_check.js resolves and executes it from the doc at run time (D-02), so a drifted or gutted doc block fails the run instead of executing stale text. WHO CONSUMES IT: bin/install_check.js (slice execution order = this file's array order, doc order is not execution order), and t/unit/install_scenario_manifest.js (companion gate: every bash block of the doc is either a scenario step or an exclusion below, every step resolves to a real fence - orphan blocks and phantom steps both fail CI). WHERE IT IS CI-GATED: plan 06-02 wires .github/workflows/core-ci.yml install jobs to `node bin/install_check.js --slice docker` / `--slice npm`; the literal doc commands (e.g. `npm install`) never appear in workflow yml (t/unit/ci_install_commands.js guard, 05 D-15). SCOPE (D-08): exactly the two install docs - docs/docker-compose.md now, docs/install-local-npm.md from plan 06-02 (-slice npm). EXCLUSIONS (D-05): the parser executes only community install sections (env prep, normal start, migrations, health checks, first admin, teardown); every bash block outside that coverage is listed below with a reason. The premium-scheduler section (### 4) carries only ```env fences - no bash block exists there to exclude.",
+  "slices": {
+    "docker": [
+      {
+        "doc": "docs/docker-compose.md",
+        "heading": "1. Создайте `.env`",
+        "blockIndex": 0,
+        "role": "env"
+      },
+      {
+        "doc": "docs/docker-compose.md",
+        "heading": "1. Соберите и поднимите контейнеры",
+        "blockIndex": 0
+      },
+      {
+        "harness": "wait_http_302"
+      },
+      {
+        "doc": "docs/docker-compose.md",
+        "heading": "Остановить и удалить тома",
+        "blockIndex": 0,
+        "role": "cleanup"
+      }
+    ]
+  },
+  "exclusions": [
+    {
+      "doc": "docs/docker-compose.md",
+      "heading": "Commercial запуск с private premium module",
+      "blockIndex": 0,
+      "reason": "D-05: commercial build path - builds with a private premium module from a host path via docker-compose.commercial.yml; the private repository is not reproducible on a community checkout or in CI."
+    },
+    {
+      "doc": "docs/docker-compose.md",
+      "heading": "Commercial запуск с private premium module",
+      "blockIndex": 1,
+      "reason": "D-05: premium development override (docker-compose.premium-dev.yml, NODE_ENV=development) - same private premium repository, not reproducible outside a vendor machine."
+    },
+    {
+      "doc": "docs/docker-compose.md",
+      "heading": "3. Настройте ежедневные reminder-уведомления",
+      "blockIndex": 0,
+      "reason": "D-05: optional opt-in - recreates the app container to enable the reminder scheduler after the baseline install; outside the D-05 community install sections (env prep, normal start, migrations, health checks, first admin)."
+    },
+    {
+      "doc": "docs/docker-compose.md",
+      "heading": "3. Настройте ежедневные reminder-уведомления",
+      "blockIndex": 1,
+      "reason": "D-05: manual/emergency reminder run for departments with reminders enabled - an ops action over a running installation, not an install step."
+    },
+    {
+      "doc": "docs/docker-compose.md",
+      "heading": "Проверка сессий",
+      "blockIndex": 0,
+      "reason": "D-05: manual browser-session check (the section's own step 1 is 'log in via browser'); the automated contour proves sessions through its own login flow instead of counting Redis keys."
+    },
+    {
+      "doc": "docs/docker-compose.md",
+      "heading": "Docker Compose для разработки",
+      "blockIndex": 0,
+      "reason": "D-05: development contour with mounted sources and watch mode - the install gate covers the operator path, not the developer one."
+    },
+    {
+      "doc": "docs/docker-compose.md",
+      "heading": "Просто остановить",
+      "blockIndex": 0,
+      "reason": "teardown sibling: the scenario tears the stand down with the -v block (Остановить и удалить тома) so a disposable stand never leaves test volumes behind; plain down is the operator's data-preserving stop and is meaningless against a stand the scenario removes."
+    },
+    {
+      "doc": "docs/docker-compose.md",
+      "heading": "Диагностика для поддержки",
+      "blockIndex": 0,
+      "reason": "D-05: support diagnostics - writes a local system snapshot on request; not part of the install path."
+    },
+    {
+      "doc": "docs/docker-compose.md",
+      "heading": "Диагностика для поддержки",
+      "blockIndex": 1,
+      "reason": "D-05: support diagnostics - collects a bounded log excerpt around an error; not part of the install path."
+    },
+    {
+      "doc": "docs/docker-compose.md",
+      "heading": "Диагностика для поддержки",
+      "blockIndex": 2,
+      "reason": "D-05: support diagnostics - greps container logs by X-Request-Id; not part of the install path."
+    }
+  ]
+}
