@@ -607,8 +607,19 @@ describe('Interactive leave details popover — all first-party surfaces', funct
         const trigger = await driver.findElement(By.css(surface.selector));
         await driver.executeScript(function(element) { element.focus(); }, trigger);
         await waitVisible(trigger, true, 1800);
+        // Wait for the exact precondition the matrix measures. On a slow
+        // two-core CI runner the initial focus can be re-evaluated after the
+        // focus-induced grid scroll (the same Chrome hover/focus re-evaluation
+        // class 82ad934 stabilized in the sibling test), which closes the
+        // popover after the text-only wait below has already passed — the
+        // measurement then reads aria-expanded="false". Re-focus on each poll
+        // and require the open state itself, not just its rendered text.
         await driver.wait(async function() {
           const info = await popoverInfo(trigger);
+          if (info.expanded !== 'true') {
+            await driver.executeScript(function(element) { element.focus(); }, trigger);
+            return false;
+          }
           return info.text.length > 0 && !/loading/i.test(info.text);
         }, 4000);
 
