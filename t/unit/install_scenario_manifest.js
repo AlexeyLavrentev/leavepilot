@@ -20,7 +20,10 @@
   This spec re-derives the bash-fence inventory of the covered docs
   with the SAME scanner the runner uses (parseDocFences exported from
   bin/install_check.js - one scanner, not a second opinion) and
-  cross-checks it against the fixture in both directions.
+  cross-checks it against the fixture in both directions. From 06-02
+  the covered surface is BOTH install docs: docs/docker-compose.md
+  (full stranger path) and docs/install-local-npm.md (the variant-A
+  fast slice, D-07).
 
   Modeled on t/unit/dialect_sensitive_manifest.js (the six-part
   companion-gate anatomy: surfaces-exist, staleness, non-phantom,
@@ -54,6 +57,14 @@ var ALLOWED_DOCS = [
   'docs/docker-compose.md',
   'docs/install-local-npm.md',
 ];
+
+// D-07 reason discipline for the second install doc: every exclusion of
+// docs/install-local-npm.md is by definition a block outside the
+// variant-A fast subset (variant B/C external MySQL/Redis, post-upgrade
+// advice) - the boundary decision itself is the justification, so the
+// reason must name D-07 the same way D-05 boundary sections must name
+// D-05.
+var D07_DOC = 'docs/install-local-npm.md';
 
 // D-05 coverage boundary: exclusions of blocks in these sections (by
 // heading substring) must name D-05 in their reason - the boundary
@@ -172,22 +183,35 @@ describe('install scenario manifest (companion gate, 06-01)', function() {
       scanner.parseDocFences('# Heading\n\n```text\nnothing executable\n```\n').length,
       'a doc with no bash fences must yield zero bash candidates'
     ).to.equal(1); // the fence exists but is text; bashBlocksOf filters it
+
+    // The second install doc joined the invariant with 06-02 (D-07); its
+    // bash surface is guarded unconditionally, not only once referenced.
+    expect(
+      bashBlocksOf('docs/install-local-npm.md').length,
+      'docs/install-local-npm.md resolved to too few bash fences - the scanner lost its input'
+    ).to.be.above(5);
   });
 
-  // (2) STALENESS, the contract itself: every bash block of the covered
+  // (2) STALENESS, the contract itself: every bash block of BOTH covered
   // docs is either a scenario step or an exclusion with a reason. This
   // is the test that fails the build when a bash fence appears in a
-  // covered section and nobody maps it.
+  // covered section and nobody maps it. The doc list is ALLOWED_DOCS,
+  // not "whatever the fixture references" - an install doc nobody maps
+  // yet is exactly the orphan state this gate exists to catch, so the
+  // contract must hold for the second doc even before the fixture's
+  // first step points at it.
   it('has no orphan bash block outside the scenario map and its exclusions', function() {
-    var offenders = unaccountedBlocks('docs/docker-compose.md', dockerBlocks, accounted);
+    ALLOWED_DOCS.forEach(function(relativeDoc) {
+      var offenders = unaccountedBlocks(relativeDoc, bashBlocksOf(relativeDoc), accounted);
 
-    expect(
-      formatUnaccounted('docs/docker-compose.md', offenders).trim(),
-      'these bash blocks of docs/docker-compose.md are neither scenario steps nor reasoned'
-        + ' exclusions in t/fixtures/install-scenario.json - the map has gone stale; map them'
-        + ' (with an honest reason) or extend the scenario:\n'
-        + formatUnaccounted('docs/docker-compose.md', offenders)
-    ).to.equal('');
+      expect(
+        formatUnaccounted(relativeDoc, offenders).trim(),
+        'these bash blocks of ' + relativeDoc + ' are neither scenario steps nor reasoned'
+          + ' exclusions in t/fixtures/install-scenario.json - the map has gone stale; map them'
+          + ' (with an honest reason) or extend the scenario:\n'
+          + formatUnaccounted(relativeDoc, offenders)
+      ).to.equal('');
+    });
   });
 
   // (3) NON-PHANTOM: every step and every exclusion resolves to a real
@@ -224,6 +248,10 @@ describe('install scenario manifest (companion gate, 06-01)', function() {
       if (inD05Section && entry.reason.indexOf('D-05') === -1) {
         phantoms.push(accountingKey(entry.doc, entry.heading, entry.blockIndex)
           + ' (exclusion): a block outside the D-05 community coverage must name D-05 in its reason');
+      }
+      if (entry.doc === D07_DOC && entry.reason.indexOf('D-07') === -1) {
+        phantoms.push(accountingKey(entry.doc, entry.heading, entry.blockIndex)
+          + ' (exclusion): a block outside the variant-A fast subset must name D-07 in its reason');
       }
     });
 
@@ -274,6 +302,60 @@ describe('install scenario manifest (companion gate, 06-01)', function() {
     expect(hasLogin, 'the docker slice no longer logs in (D-03)').to.equal(true);
     expect(hasCleanup, 'the docker slice no longer tears the stand down (docker compose down -v)').to.equal(true);
     expect(dockerSlice.length, 'the docker slice is suspiciously small').to.be.above(8);
+  });
+
+  // (4b) NON-VACUOUS npm slice (06-02, D-07): the cheap proof over the
+  // second install doc - dependencies from the doc's own block, migrations
+  // BEFORE the boot, the server started in the background (await:false -
+  // it must not block the scenario), the harness readiness wait, the
+  // SQLite dialect assert, and the background server stopped by name. A
+  // gutted npm slice must fail here, not pass quietly.
+  it('has a non-vacuous npm slice (install, migrate, background boot, sqlite check, stop)', function() {
+    var npmSlice = (fixture.slices || {}).npm || [];
+
+    var firstIndex = function(predicate) {
+      for (var i = 0; i < npmSlice.length; i += 1) {
+        if (predicate(npmSlice[i])) {
+          return i;
+        }
+      }
+      return -1;
+    };
+
+    var install = firstIndex(function(step) { return step.expectCommand === 'npm install'; });
+    var migrate = firstIndex(function(step) { return step.expectCommand === 'npm run db-update'; });
+    var boot = firstIndex(function(step) {
+      return step.expectCommand === 'npm start' && step.await === false;
+    });
+    var ready = firstIndex(function(step) { return step.harness === 'wait_http_302'; });
+    var dialect = firstIndex(function(step) { return step.harnessAssert === 'sqlite_dialect'; });
+    var stop = firstIndex(function(step) { return step.harness === 'stop_background_steps'; });
+
+    expect(npmSlice.length, 'the npm slice is suspiciously small').to.be.above(4);
+    expect(install, 'the npm slice no longer installs dependencies from the doc block').to.be.at.least(0);
+    expect(migrate, 'the npm slice no longer applies migrations (npm run db-update)').to.be.at.least(0);
+    expect(boot, 'the npm slice no longer boots the app in the background (npm start, await:false)').to.be.at.least(0);
+    expect(ready, 'the npm slice no longer waits for HTTP 302 readiness').to.be.at.least(0);
+    expect(dialect, 'the npm slice no longer asserts the SQLite dialect from the doc block').to.be.at.least(0);
+    expect(stop, 'the npm slice no longer stops the background server').to.be.at.least(0);
+
+    // The doc's own order is the contract (D-02): migrations run BEFORE
+    // the boot so the server starts on an applied schema; readiness
+    // precedes the dialect check so it runs against a live install; the
+    // background stop is the last thing the slice does.
+    expect(migrate, 'migrations must run before the background boot').to.be.below(boot);
+    expect(boot, 'the background boot must precede the readiness wait').to.be.below(ready);
+    expect(ready, 'the readiness wait must precede the dialect check').to.be.below(dialect);
+    expect(dialect, 'the dialect check must precede the background stop').to.be.below(stop);
+
+    // Single-doc slice: every doc step of the npm slice comes from
+    // docs/install-local-npm.md - the runner's --doc override contract
+    // (one referenced doc per slice) depends on it.
+    npmSlice.forEach(function(step) {
+      if (step.doc) {
+        expect(step.doc, 'the npm slice executes only docs/install-local-npm.md (D-07/D-08)').to.equal('docs/install-local-npm.md');
+      }
+    });
   });
 
   // (5) SYNTHETIC TEETH: the accounting really does flag an out-of-map
