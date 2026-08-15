@@ -314,6 +314,86 @@ describe('Feature licensing', function() {
     expect(features.getLicenseStatus().reason).to.equal('valid');
   });
 
+  /*
+    Unsigned-license trust root (WR-01 fold, D-20).
+
+    allowUnsignedLicenses() is the OEM gate's trust root: an unsigned
+    {"features":["custom_branding"]} payload activates the white-label
+    entitlement wherever it returns true. The matrix below pins the
+    tightened default - NODE_ENV=test only - with the explicit
+    ALLOW_UNSIGNED_LICENSES=true escape hatch preserved for dev boots:
+
+    - development alone no longer grants (pre-fix it did: the old default
+      was !productionLikeEnvironment());
+    - an unset NODE_ENV (bare `node app.js`, a misconfigured orchestrator)
+      no longer grants either;
+    - the env escape hatch remains the deliberate dev opt-in.
+  */
+  describe('unsigned license trust root (WR-01, D-20)', function() {
+    const unsignedLicense = () => JSON.stringify({
+      customer: 'Example Ltd',
+      features: ['time_balance'],
+      expires: '2999-12-31T23:59:59.000Z',
+    });
+
+    it('accepts unsigned licenses under NODE_ENV=test with no overrides', function() {
+      process.env.NODE_ENV = 'test';
+      process.env.TIMEOFF_LICENSE = unsignedLicense();
+
+      expect(features.isEnabled('time_balance')).to.equal(true);
+      expect(features.getLicenseStatus().reason).to.equal('valid');
+    });
+
+    it('rejects unsigned licenses under NODE_ENV=development with no overrides', function() {
+      process.env.NODE_ENV = 'development';
+      process.env.TIMEOFF_LICENSE = unsignedLicense();
+
+      expect(features.isEnabled('time_balance')).to.equal(false);
+      expect(features.getLicenseStatus().reason).to.equal('unsigned_not_allowed');
+    });
+
+    it('rejects unsigned licenses when NODE_ENV is unset entirely', function() {
+      process.env.TIMEOFF_LICENSE = unsignedLicense();
+
+      expect(features.isEnabled('time_balance')).to.equal(false);
+      expect(features.getLicenseStatus().reason).to.equal('unsigned_not_allowed');
+    });
+
+    it('accepts unsigned licenses in development only via the ALLOW_UNSIGNED_LICENSES=true escape hatch', function() {
+      process.env.NODE_ENV = 'development';
+      process.env.ALLOW_UNSIGNED_LICENSES = 'true';
+      process.env.TIMEOFF_LICENSE = unsignedLicense();
+
+      expect(features.isEnabled('time_balance')).to.equal(true);
+      expect(features.getLicenseStatus().reason).to.equal('valid');
+    });
+
+    it('rejects unsigned licenses in production-like environments even with the escape hatch', function() {
+      process.env.NODE_ENV = 'production';
+      process.env.ALLOW_UNSIGNED_LICENSES = 'true';
+      process.env.TIMEOFF_LICENSE = unsignedLicense();
+
+      expect(features.isEnabled('time_balance')).to.equal(false);
+      expect(features.getLicenseStatus().reason).to.equal('unsigned_not_allowed');
+
+      process.env.NODE_ENV = 'staging';
+
+      expect(features.isEnabled('time_balance')).to.equal(false);
+      expect(features.getLicenseStatus().reason).to.equal('unsigned_not_allowed');
+    });
+
+    it('rejects unsigned licenses in the commercial edition even under NODE_ENV=test with the escape hatch', function() {
+      process.env.NODE_ENV = 'test';
+      process.env.TIMEOFF_EDITION = 'commercial';
+      process.env.LEAVEPILOT_EDITION = 'commercial';
+      process.env.ALLOW_UNSIGNED_LICENSES = 'true';
+      process.env.TIMEOFF_LICENSE = unsignedLicense();
+
+      expect(features.isEnabled('time_balance')).to.equal(false);
+      expect(features.getLicenseStatus().reason).to.equal('unsigned_not_allowed');
+    });
+  });
+
   it('rejects TIMEOFF_LICENSE payloads with mismatched signatures', function() {
     const signedPayload = {
       customer: 'Example Ltd',
