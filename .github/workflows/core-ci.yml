@@ -14,9 +14,13 @@ on:
 # (which rides the Actions runtime token, not the repository token). None of
 # them needs more than read access, so the token is scoped to the least that
 # satisfies every job in this file rather than inherited from the repository
-# default. The one observable price is named in line at the secret scanner.
+# default. gitleaks-action additionally needs pull-requests: read to enumerate
+# a pull request's commits for its PR scan — without it a current gitleaks
+# release aborts with "Resource not accessible by integration" before
+# scanning (still read-only; it gets no write scope).
 permissions:
   contents: read
+  pull-requests: read
 
 jobs:
   dco:
