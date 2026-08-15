@@ -50,11 +50,24 @@ describe('Overlapping leaverequest (with halfs)', function(){
     again, and for it to be visible after, so the timing of the fade is
     never the thing under test. Same stabilization class as 82ad934.
   */
+  var Key = require('selenium-webdriver').Key;
+
+  var wait_modal_closed = function(drv, timeout) {
+    return drv.wait(until.elementIsNotVisible(
+      drv.findElement(By.css('#book_leave_modal'))
+    ), timeout);
+  };
+
   var open_book_leave_modal = function(drv) {
-    return drv
-      .wait(until.elementIsNotVisible(
-        drv.findElement(By.css('#book_leave_modal'))
-      ), 1500)
+    // If a previous failed submission left the modal open, close it
+    // explicitly (Escape) and let the fade finish before clicking the
+    // navbar button — otherwise the click lands under the modal shell
+    // (ElementClickInterceptedError on a slow CI runner).
+    return wait_modal_closed(drv, 1200)
+      .catch(function() {
+        return drv.actions().sendKeys(Key.ESCAPE).perform()
+          .then(function(){ return wait_modal_closed(drv, 1500); });
+      })
       .then(function() {
         return drv.findElement(By.css('#book_time_off_btn'));
       })
