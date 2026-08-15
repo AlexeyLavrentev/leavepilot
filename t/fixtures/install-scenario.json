@@ -1,25 +1,99 @@
 {
-  "_comment": "Install-check scenario map (06-01; D-02 option a - scenario-map, runner owns order, doc owns step content). HOW BLOCKS ARE IDENTIFIED: each step references a bash fenced block of an install doc by (doc, heading text, blockIndex), where blockIndex counts fences of the SAME language tag inside the SAME heading section (adding a ```text/```json fence to a section cannot renumber its bash blocks). Block content is NEVER copied here - bin/install_check.js resolves and executes it from the doc at run time (D-02), so a drifted or gutted doc block fails the run instead of executing stale text. WHO CONSUMES IT: bin/install_check.js (slice execution order = this file's array order, doc order is not execution order), and t/unit/install_scenario_manifest.js (companion gate: every bash block of the doc is either a scenario step or an exclusion below, every step resolves to a real fence - orphan blocks and phantom steps both fail CI). WHERE IT IS CI-GATED: plan 06-02 wires .github/workflows/core-ci.yml install jobs to `node bin/install_check.js --slice docker` / `--slice npm`; the literal doc commands (e.g. `npm install`) never appear in workflow yml (t/unit/ci_install_commands.js guard, 05 D-15). SCOPE (D-08): exactly the two install docs - docs/docker-compose.md now, docs/install-local-npm.md from plan 06-02 (-slice npm). EXCLUSIONS (D-05): the parser executes only community install sections (env prep, normal start, migrations, health checks, first admin, teardown); every bash block outside that coverage is listed below with a reason. The premium-scheduler section (### 4) carries only ```env fences - no bash block exists there to exclude.",
+  "_comment": "Install-check scenario map (06-01; D-02 option a - scenario-map, runner owns order, doc owns step content). HOW BLOCKS ARE IDENTIFIED: each step references a bash fenced block of an install doc by (doc, heading text, blockIndex), where blockIndex counts fences of the SAME language tag inside the SAME heading section (adding a ```text/```json fence to a section cannot renumber its bash blocks). Block content is NEVER copied here - bin/install_check.js resolves and executes it from the doc at run time (D-02). DRIFT DETECTION: every doc step pins an expectCommand literal - the exact command line the step exists to run; the runner refuses to execute a resolved block that is empty or does not contain the literal, naming the step's heading + blockIndex and the missing literal (INSTALL-02). Output expectations are named via harnessAssert (mysql_dialect, redis_pong) and defined in the runner, never parsed from doc prose (D-06). WHO CONSUMES IT: bin/install_check.js (slice execution order = this file's array order, doc order is not execution order), and t/unit/install_scenario_manifest.js (companion gate: every bash block of the doc is either a scenario step or an exclusion below, every step resolves to a real fence - orphan blocks and phantom steps both fail CI). WHERE IT IS CI-GATED: plan 06-02 wires .github/workflows/core-ci.yml install jobs to `node bin/install_check.js --slice docker` / `--slice npm`; the literal doc commands (e.g. `npm install`) never appear in workflow yml (t/unit/ci_install_commands.js guard, 05 D-15). SCOPE (D-08): exactly the two install docs - docs/docker-compose.md now, docs/install-local-npm.md from plan 06-02 (-slice npm). EXCLUSIONS (D-05): the parser executes only community install sections (env prep, normal start, migrations, health checks, first admin, teardown); every bash block outside that coverage is listed below with a reason. The premium-scheduler section (### 4) carries only ```env fences - no bash block exists there to exclude.",
   "slices": {
     "docker": [
       {
         "doc": "docs/docker-compose.md",
         "heading": "1. Создайте `.env`",
         "blockIndex": 0,
+        "expectCommand": "cp .env.example .env",
         "role": "env"
+      },
+      {
+        "harness": "allow_create_new_accounts_on"
       },
       {
         "doc": "docs/docker-compose.md",
         "heading": "1. Соберите и поднимите контейнеры",
-        "blockIndex": 0
+        "blockIndex": 0,
+        "expectCommand": "docker compose up --build -d"
       },
       {
         "harness": "wait_http_302"
       },
       {
         "doc": "docs/docker-compose.md",
+        "heading": "2. Примените миграции",
+        "blockIndex": 0,
+        "expectCommand": "npm run db-update"
+      },
+      {
+        "doc": "docs/docker-compose.md",
+        "heading": "Статус контейнеров",
+        "blockIndex": 0,
+        "expectCommand": "docker compose ps"
+      },
+      {
+        "doc": "docs/docker-compose.md",
+        "heading": "Логи приложения",
+        "blockIndex": 0,
+        "expectCommand": "docker compose logs app"
+      },
+      {
+        "doc": "docs/docker-compose.md",
+        "heading": "Логи MySQL",
+        "blockIndex": 0,
+        "expectCommand": "docker compose logs db"
+      },
+      {
+        "doc": "docs/docker-compose.md",
+        "heading": "Логи Redis",
+        "blockIndex": 0,
+        "expectCommand": "docker compose logs redis"
+      },
+      {
+        "doc": "docs/docker-compose.md",
+        "heading": "Проверка из MySQL-контейнера",
+        "blockIndex": 0,
+        "expectCommand": "SHOW DATABASES"
+      },
+      {
+        "doc": "docs/docker-compose.md",
+        "heading": "Проверка из приложения",
+        "blockIndex": 0,
+        "expectCommand": "getDialect",
+        "harnessAssert": "mysql_dialect"
+      },
+      {
+        "doc": "docs/docker-compose.md",
+        "heading": "Базовая проверка",
+        "blockIndex": 0,
+        "expectCommand": "require('redis')",
+        "harnessAssert": "redis_pong"
+      },
+      {
+        "harness": "register_first_admin"
+      },
+      {
+        "harness": "allow_create_new_accounts_off"
+      },
+      {
+        "doc": "docs/docker-compose.md",
+        "heading": "Как создается первый администратор",
+        "blockIndex": 0,
+        "expectCommand": "docker compose restart app"
+      },
+      {
+        "harness": "wait_http_302"
+      },
+      {
+        "harness": "login_first_admin"
+      },
+      {
+        "doc": "docs/docker-compose.md",
         "heading": "Остановить и удалить тома",
         "blockIndex": 0,
+        "expectCommand": "docker compose down -v",
         "role": "cleanup"
       }
     ]
@@ -66,6 +140,12 @@
       "heading": "Просто остановить",
       "blockIndex": 0,
       "reason": "teardown sibling: the scenario tears the stand down with the -v block (Остановить и удалить тома) so a disposable stand never leaves test volumes behind; plain down is the operator's data-preserving stop and is meaningless against a stand the scenario removes."
+    },
+    {
+      "doc": "docs/docker-compose.md",
+      "heading": "Когда выключать `RUN_DB_MIGRATIONS`",
+      "blockIndex": 0,
+      "reason": "duplicate of the миграции block (2. Примените миграции) - the same db-update command shown in the RUN_DB_MIGRATIONS section for the controlled-rollout path; the scenario executes the миграции-section block."
     },
     {
       "doc": "docs/docker-compose.md",
