@@ -396,9 +396,20 @@ jobs:
         # build. The spec list is derived from the committed manifest so the
         # job cannot drift from what t/unit/dialect_sensitive_manifest.js
         # guards.
+        #
+        # Plan 05-06: the manifest now carries t/unit/db_migrations_data.js
+        # (sql-literals) - the data-rewriting migration replay specs with
+        # per-case MySQL databases, proven green on a local mysql:8.0.45
+        # contour before this job ever ran them. The grep below makes its
+        # presence an explicit contract: dropping it from the manifest
+        # fails this step instead of silently shrinking the job.
         run: |
+          set -o pipefail
           specs=$(node -e "console.log(require('./t/fixtures/dialect-sensitive-specs.json').specs.map(s => s.file).join(' '))")
           echo "Dialect run list: ${specs}"
+          echo "${specs}" | grep -q 'db_migrations_data' || {
+            echo "ERROR: the migration replay spec t/unit/db_migrations_data.js is missing from the dialect run list"; exit 1;
+          }
           node bin/test.js ${specs}
         env:
           NODE_ENV: test
