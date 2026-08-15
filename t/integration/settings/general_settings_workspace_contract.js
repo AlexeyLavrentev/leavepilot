@@ -208,8 +208,8 @@ async function assertMobileGeometry(driver, locale) {
   await driver.sleep(220);
   var geometry = await driver.executeScript(MOBILE_GEOMETRY_SCRIPT);
   var prefix = '[' + locale + '] ';
-  assert(geometry.surfaces === 6,
-    prefix + 'expected 6 surfaces, got ' + geometry.surfaces);
+  assert(geometry.surfaces === 7,
+    prefix + 'expected 7 surfaces, got ' + geometry.surfaces);
   assert(geometry.leaveRows > 0,
     prefix + 'expected non-vacuous leave-type rows');
   assert(geometry.ranges > 0 && geometry.boxes > 0,
@@ -242,12 +242,15 @@ describe('General Settings interaction, geometry and visual matrix (Stage 8F)', 
     if (driver) await driver.quit();
   });
 
-  it('renders one heading, six surfaces and every protected form endpoint', async function () {
+  it('renders one heading, seven surfaces and every protected form endpoint', async function () {
     await setViewport(driver, 1440, 900);
     await openSettings(driver, applicationHost);
 
     assert.strictEqual((await driver.findElements(By.css('main h1'))).length, 1);
-    assert.strictEqual((await driver.findElements(By.css('.general-settings-page .surface'))).length, 6);
+    // Seven surfaces since Phase 4 FUNNEL-01: the license & edition status
+    // banner renders for every unlicensed company (suppressed only under a
+    // valid custom_branding entitlement, where the count returns to six).
+    assert.strictEqual((await driver.findElements(By.css('.general-settings-page .surface'))).length, 7);
 
     var contracts = await driver.executeScript(function () {
       function form(id) {

@@ -7320,6 +7320,9 @@ td.current_day_cell.half_2nd {
   font-weight: 500;
   line-height: 1.4;
 }
+.general-settings-page .general-settings-license {
+  margin-bottom: var(--settings-space-5);
+}
 .general-settings-page .general-settings-workspace {
   display: grid;
   grid-template-columns: minmax(0, 2fr) minmax(320px, 1fr);

@@ -11,6 +11,15 @@
 
   {{> show_flash_messages }}
 
+  {{!--
+    License & edition status line sits ABOVE the two-column workspace as a
+    full-width banner: inside the grid it would take column 2 row 1 away
+    from .general-settings-operations and break the Stage 8F layout
+    contract (company and operations begin on the same row). Suppressed
+    entirely under OEM by the partial's own oemActive condition.
+  --}}
+  {{> settings_company_license}}
+
   <div class="general-settings-workspace">
     <section class="general-settings-company surface" aria-labelledby="general-settings-company-title">
       <div class="settings-section-heading">
@@ -89,8 +98,6 @@
         </div>
       </form>
     </section>
-
-    {{> settings_company_license}}
 
     <div class="general-settings-operations">
       <section class="general-settings-schedule surface" aria-labelledby="general-settings-schedule-title">
