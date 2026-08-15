@@ -294,8 +294,12 @@ docker compose exec app node -e "const db=require('./lib/model/db'); console.log
 
 ### Базовая проверка
 
+Сервис `redis` в compose — это Engram (RESP2-совместимый движок), в его
+образе нет `redis-cli`. Проверка выполняется из контейнера приложения
+тем же клиентом, которым пользуется само приложение:
+
 ```bash
-docker compose exec redis redis-cli ping
+docker compose exec app node -e "const redis=require('redis'); const c=redis.createClient({url: 'redis://redis:6379', RESP: 2}); c.connect().then(() => c.ping()).then(r => { console.log(r); c.quit(); }).catch(e => { console.error(e.message); process.exit(1); });"
 ```
 
 Ответ должен быть:
@@ -310,7 +314,7 @@ PONG
 2. Выполните:
 
 ```bash
-docker compose exec redis redis-cli KEYS 'sess:*'
+docker compose exec app node -e "const redis=require('redis'); const c=redis.createClient({url: 'redis://redis:6379', RESP: 2}); c.connect().then(() => c.keys('sess:*')).then(r => { console.log(r.join('\n')); c.quit(); }).catch(e => { console.error(e.message); process.exit(1); });"
 ```
 
 Если ключи есть, сессии пишутся в Redis.
