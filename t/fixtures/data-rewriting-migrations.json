@@ -1,0 +1,60 @@
+{
+  "_comment": "Data-rewriting migration manifest (D-08/D-10, phase 5 plan 05-06, QUAL-03). Audit-generated 2026-08-15 by reading every up() body in migrations/ (34 files) and portal/migrations/ (5 files) BEFORE the companion gate was written - the grep-before-test convention of t/fixtures/oem-leak-surfaces.json (04-03) and t/fixtures/dialect-sensitive-specs.json (05-04). Criterion (D-08): the up() body rewrites ROWS - bulkUpdate/raw UPDATE of existing rows, INSERT INTO ... SELECT backfills and table-rebuild row copies, bulkInsert of derived rows, findAll+update loops over existing rows, raw DELETE purges. Pure DDL (createTable/addColumn/removeColumn/renameColumn/changeColumn/addIndex) stays OUT and remains owned by the mysql-migration-smoke CI job; the down() body is not the upgrade path and is not scanned. Delegating migrations name their delegate module in 'delegate' and the companion gate scans the delegate's source together with the up() body (the encrypt-sso migration's transforms live in lib/sso_secret_backfill.js). Portal history: all five portal/migrations/ files are createIfMissing/addColumn DDL - zero qualifying entries, explained here rather than by a phantom entry; the gate still scans that history so a portal data-rewrite added later cannot escape the manifest. Consumer: t/unit/db_migrations_data.js iterates migrations[] and builds one replay case per entry on a fresh per-case schema, replaying migrations 1..N-1 through lib/model/migrator.js exports over a minimal original-shape base (the pre-migration-1 sync stand-in: Companies/Departments/Users/LeaveTypes/BankHolidays/EmailAudit/audit as of 2017 - the only schema the history itself can never produce), seeding synthetic rows (D-11), then executing N and asserting the dual D-09 proof: the migrator meta table carries N's record AND the transformed data shape; a sync-bootstrapped empty database carries no such meta rows. CI: the mysql-dialect job runs that spec (05-06 Task 3) beside the SQLite contours. The 20190118 entry records the historic rebuild; the migration itself now stands down unless the current model still carries a UUID token column (in-file guard, plan 05-06 D-02 triage) - the manifest lists it because its up() is the row-copy family and the case proves token values survive whichever branch runs.",
+  "migrations": [
+    {
+      "migration": "migrations/20170329060832-rename_allowence_to_allowance.js",
+      "history": "core",
+      "transforms": "SQLite branch rebuilds the Departments table through an explicit INSERT INTO ... SELECT row copy mapping allowence -> allowance; non-sqlite dialects rename the column in place. The copy list is the data-loss surface: a dropped or misnamed column silently loses every department's allowance.",
+      "spec": "t/unit/db_migrations_data.js"
+    },
+    {
+      "migration": "migrations/20171219-allowance-adjustment-per-year.js",
+      "history": "core",
+      "transforms": "Backfills the new user_allowance_adjustment table from Users.adjustment via INSERT INTO ... SELECT (one row per user, year 2017). The per-user adjustment values move out of the users table; a wrong SELECT loses every employee's allowance adjustment.",
+      "spec": "t/unit/db_migrations_data.js"
+    },
+    {
+      "migration": "migrations/20171220-drop-adjustment-column-from-user.js",
+      "history": "core",
+      "transforms": "SQLite branch rebuilds the Users table through an INSERT INTO ... SELECT row copy that drops the adjustment column (its values were moved out by 20171219); non-sqlite dialects drop the column with DDL. The copy list preserves every remaining users column or loses it.",
+      "spec": "t/unit/db_migrations_data.js"
+    },
+    {
+      "migration": "migrations/20190118-chnage-type-value-for-api-token.js",
+      "history": "core",
+      "transforms": "SQLite branch historically rebuilt the Companies table through an INSERT INTO ... SELECT row copy to retype integration_api_token to the 2019 UUID model; it now stands down unless the current model still carries a UUID token column (in-file guard, plan 05-06 D-02 triage), and non-sqlite dialects were always a no-op. The case proves company rows (token included) survive whichever branch runs on the honest pre-state.",
+      "spec": "t/unit/db_migrations_data.js"
+    },
+    {
+      "migration": "migrations/20191030-compress-email-audit.js",
+      "history": "core",
+      "transforms": "Loads every EmailAudit row through the model singleton and rewrites body from HTML to plain text (findAll + rec.update loop over existing rows, html-to-text). The rewrite is irreversible (down is a no-op): a broken conversion loses the original email bodies.",
+      "spec": "t/unit/db_migrations_data.js"
+    },
+    {
+      "migration": "migrations/20260627130000-encrypt-sso-client-secret.js",
+      "history": "core",
+      "delegate": "lib/sso_secret_backfill.js",
+      "transforms": "Delegates to lib/sso_secret_backfill.js, which SELECTs every Companies.sso_auth_config and bulkUpdates plaintext OIDC client_secret values to enc:v1:aes-256-gcm ciphertext inside one transaction. Wrong-key rows refuse the migration; the rewrite is irreversible by design.",
+      "spec": "t/unit/db_migrations_data.js"
+    },
+    {
+      "migration": "migrations/20260701150000-localize-existing-kz-ru-companies.js",
+      "history": "core",
+      "transforms": "For KZ/RU companies bulkUpdates date_format, the default department name, the two default leave-type names and the 2026 bank-holiday names from English to Russian, and bulkInserts the 2027 holiday rows. Untouched (already customized) rows must survive verbatim - the exact-match predicates are the data-safety surface.",
+      "spec": "t/unit/db_migrations_data.js"
+    },
+    {
+      "migration": "migrations/20260707100000-hash-integration-api-tokens.js",
+      "history": "core",
+      "transforms": "SELECTs every company token, bulkUpdates each into integration_api_token_hash (SHA-256) and nulls the plaintext column, backfills a discarded-token hash for companies without a token (plan 05-06 D-02 triage), then enforces NOT NULL on the hash column. Plaintext tokens are unrecoverable afterwards.",
+      "spec": "t/unit/db_migrations_data.js"
+    },
+    {
+      "migration": "migrations/20260803120000-purge-credential-audit-rows.js",
+      "history": "core",
+      "transforms": "DELETEs the audit rows whose attribute is in NEVER_AUDITED_ATTRIBUTES ('password') - credential hashes that the audit deny-list now keeps out but older releases wrote. The purge is irreversible: the wrong attribute list deletes innocent audit history.",
+      "spec": "t/unit/db_migrations_data.js"
+    }
+  ]
+}
