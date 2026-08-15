@@ -346,6 +346,87 @@ jobs:
         if: always()
         run: docker rm -f lp-mysql || true
 
+  install-docker:
+    name: Install check (docker compose path)
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+        env:
+          CHROMEDRIVER_SKIP_DOWNLOAD: 'true'
+          PUPPETEER_SKIP_DOWNLOAD: 'true'
+
+      # T-06-04: the gate is a fixed runner invocation - no doc-derived
+      # text ever enters a run: step of this file. The runner reads the
+      # bash fences from the checked-out install doc and executes them
+      # itself; doc drift fails the run naming the step and the missing
+      # command literal.
+      #
+      # D-04: the image is built from THIS pull request's sources via the
+      # doc's own up --build block. The published registry image is never
+      # pulled here - a registry pull would test the last released code
+      # and the gate would lie about this PR. Verifying the published
+      # image is a release-contour step, not a PR gate.
+      #
+      # D-22 ceiling, accepted: this job builds without a docker layer
+      # cache (gates over CI time; one job, one build). Upgrade path when
+      # the build time starts to hurt: build the image through a buildx
+      # builder with cache-from/cache-to type=gha ahead of the compose
+      # step and let compose consume the prebuilt image.
+      - name: Prove the docker install path from its own doc
+        run: node bin/install_check.js --slice docker
+
+      - name: Tear the compose stand down
+        # Belt-and-braces over the runner's own teardown: the scenario's
+        # last doc block already brings the stand down with its volumes
+        # on success and on failure alike; this step covers the paths
+        # where the runner itself died before reaching any teardown (the
+        # mysql-migration-smoke cleanup pattern).
+        if: always()
+        run: docker compose down -v --remove-orphans || true
+
+  install-npm:
+    name: Install check (npm + SQLite fast slice)
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+        env:
+          CHROMEDRIVER_SKIP_DOWNLOAD: 'true'
+          PUPPETEER_SKIP_DOWNLOAD: 'true'
+
+      # T-06-04: the same fixed-runner indirection. The doc's dependency
+      # step is a plain package-manager install command executed BY the
+      # runner from the checked-out doc at run time - the literal never
+      # appears in this file (the workflow install-command watchdog,
+      # 05 D-15). The skip flags keep that doc-executed install from
+      # pulling browser binaries the slice never uses.
+      - name: Prove the npm fast slice from its own doc
+        run: node bin/install_check.js --slice npm
+        env:
+          CHROMEDRIVER_SKIP_DOWNLOAD: 'true'
+          PUPPETEER_SKIP_DOWNLOAD: 'true'
+
   mysql-dialect:
     name: Dialect-sensitive specs on MySQL 8.0.45
     runs-on: ubuntu-24.04
