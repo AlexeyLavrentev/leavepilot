@@ -89,6 +89,7 @@
     "db-update": "node bin/db_update.js",
     "create-admin": "node bin/create_admin.js",
     "seed-demo": "node bin/seed_demo.js",
+    "demo": "node bin/demo.js",
     "sso-secret-backfill": "node bin/sso_secret_backfill.js",
     "dump-schema": "node bin/dump_schema.js",
     "diagnostics": "node bin/diagnostics.js",
