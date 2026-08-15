@@ -48,4 +48,15 @@ describe('runner env contract (bin/test.js child)', function() {
       expect(process.env.LEAVEPILOT_FEATURES).to.equal('all');
     }
   });
+
+  it('NODE_ENV is "test" when the runner drove this process', function() {
+    // The unsigned-license trust root accepts unsigned fixtures exactly
+    // under NODE_ENV=test (WR-01/D-20). The runner pins it so a bare local
+    // `node bin/test.js` cannot inherit the shell's NODE_ENV (or none) and
+    // fail the oem/branding suites for an environmental reason. Plain
+    // mocha runs may carry no NODE_ENV; the runner always sets one.
+    if (typeof process.env.NODE_ENV !== 'undefined') {
+      expect(process.env.NODE_ENV).to.equal('test');
+    }
+  });
 });

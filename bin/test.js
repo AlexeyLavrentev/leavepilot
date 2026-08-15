@@ -52,6 +52,13 @@ const baseTestEnv = Object.assign({}, process.env, {
   // Canonical prefix: the runner must never inject a deprecated name that
   // trips its own deprecation spec (D-19).
   LEAVEPILOT_FEATURES: 'all',
+  // The runner IS a test contour: the unsigned-license trust root keys on
+  // NODE_ENV === 'test' (WR-01/D-20), and every CI contour that drives this
+  // runner already sets NODE_ENV=test. A bare local `node bin/test.js`
+  // inherits whatever NODE_ENV the shell has - including none - which
+  // rejects the unsigned test-license fixtures and fails the oem/branding
+  // suites for a reason that has nothing to do with the code under test.
+  NODE_ENV: 'test',
   SE_SKIP_DRIVER_IN_PATH: 'true',
 });
 const serverEnv = Object.assign({}, baseTestEnv, {
