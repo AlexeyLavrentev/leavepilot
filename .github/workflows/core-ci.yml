@@ -493,3 +493,15 @@ jobs:
 
       - name: Dependency audit (production deps, high+)
         run: npm audit --omit=dev --audit-level=high
+
+      - name: Verify vendored JS checksums (jquery 1.11.2, bootstrap 3.3.4)
+        # D-16: jquery.min.js and bootstrap.min.js ship to every browser
+        # session outside any package manager, so their integrity is pinned
+        # by sha256 sidecars beside the files. The sidecar records the
+        # repo-relative path, so this runs from the checkout root; any byte
+        # that drifts from the committed checksum fails the job. The version
+        # pins live here and in t/unit/vendored_integrity.js because GNU
+        # sha256sum -c warns on non-checksum lines in the sidecar itself.
+        run: |
+          sha256sum -c public/js/jquery.min.js.sha256
+          sha256sum -c public/js/bootstrap.min.js.sha256
