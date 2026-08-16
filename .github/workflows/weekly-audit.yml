@@ -1,0 +1,57 @@
+name: Weekly dependency audit
+
+# D-17: this workflow is NOTIFICATION-ONLY and must never gate a pull
+# request - it has no pull_request/push triggers on purpose. The PR gate is
+# the tighter `npm audit --omit=dev --audit-level=high` step in the
+# core-ci.yml security job; this weekly run exists because dev-only
+# advisories still matter (they run on contributor machines and in CI
+# jobs) without being worth blocking every change on.
+#
+# Notification channel: the failing scheduled run itself. Actions emails
+# the repository owner when a scheduled workflow goes red, so a high+
+# finding anywhere in the graph (dev dependencies included) surfaces
+# within a week without any issue-creation machinery.
+#
+# A separate workflow file rather than an `on: schedule` entry on
+# core-ci.yml: adding schedule triggers to that file would fire ALL of its
+# jobs weekly (docker builds, MySQL contours, browser shards) unless every
+# job grew a per-trigger if-guard - a whole class of accidental weekly
+# load this file avoids by construction.
+
+on:
+  schedule:
+    # Mondays 03:23 UTC: early in the maintainers' week, off the busiest
+    # minute (:00) where GitHub's schedulers queue longest.
+    - cron: '23 3 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  full-audit:
+    name: Full npm audit (dev dependencies included)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+        env:
+          CHROMEDRIVER_SKIP_DOWNLOAD: 'true'
+          PUPPETEER_SKIP_DOWNLOAD: 'true'
+
+      # The full graph, no --omit=dev: a high+ advisory in a dev dependency
+      # fails this scheduled run, and the red run is the notification.
+      # Findings below the threshold still print in the log for triage.
+      - name: Full dependency audit (all deps, high+)
+        run: npm audit --audit-level=high

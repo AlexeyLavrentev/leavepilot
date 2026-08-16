@@ -14,6 +14,13 @@ on:
       - "release/**"
       - "inf/**"
 
+# Both external actions used here - actions/checkout and actions/setup-node -
+# need only read access to the repository's contents, and the browser suite
+# writes nothing back. The token is scoped to the least sufficient permission
+# rather than inherited from the repository default.
+permissions:
+  contents: read
+
 jobs:
   integration:
     name: Browser suite ${{ matrix.shard }}/4
@@ -86,6 +93,44 @@ jobs:
           # fails twice in a row still fails the run.
           TEST_RETRIES: '1'
           # Trace form steps: a wedged submit otherwise shows up as a bare mocha
-          # timeout with no indication of which command never came back, and the
-          # hang has not reproduced outside this runner.
+          # timeout with no indication of which command never came back, and
+          # the hang has not reproduced outside this runner.
           TEST_TRACE_FORMS: '1'
+          # D-21: the runner counts self-skipped spec files from the flake
+          # reporter's pending records and names them; with this env set the
+          # count is a gate (locally the same breach only warns).
+          TEST_ENFORCE_SKIP_HONESTY: 'true'
+
+      - name: Write flake report to the job summary
+        # D-06: the summary exists on every build, red included - the runner
+        # writes flake-report.json on its failure path too. Zero records are
+        # stated explicitly, so an empty report reads as "nothing retried",
+        # not as "nothing checked".
+        if: always()
+        run: |
+          node -e '
+            const fs = require("fs");
+            const report = JSON.parse(fs.readFileSync("flake-report.json", "utf8"));
+            const lines = ["## Flake report (shard ${{ matrix.shard }})", ""];
+            if (report.length === 0) {
+              lines.push("Zero retry records: no integration batch and no single test needed a second attempt.");
+            } else {
+              lines.push(report.length + " retry record(s):", "");
+              report.forEach(record => {
+                lines.push("- **" + record.contour + "** (attempt " + record.attempt + "): " + record.spec);
+                (record.tests || []).forEach(name => lines.push("  - " + name));
+              });
+            }
+            fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, lines.join("\n") + "\n");
+          '
+
+      - name: Upload flake report
+        # Every shard build publishes the artifact, empty included: a missing
+        # file is a defect of the runner contract, not an empty flake
+        # (hence if-no-files-found: error rather than ignore).
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: flake-report-shard-${{ matrix.shard }}
+          path: flake-report.json
+          if-no-files-found: error

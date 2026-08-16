@@ -1,0 +1,149 @@
+{
+  "_comment": "Dialect-sensitive spec manifest (D-01, phase 5). Audit-generated 2026-08-15 by grepping the whole tree BEFORE the companion test was written (the 04-03 leak-manifest pattern: grep-before-test, fixed in the repo, gated in CI). Method (reproducible): grep t/ and lib/ for six signal families — (1) sequelize.literal/Sequelize.literal, (2) raw sequelize.query(, (3) Op.between or a 'X BETWEEN a AND b' predicate line, (4) SQL date functions DATEDIFF/DATE_ADD/DATE_SUB/DATE_FORMAT/strftime/julianday, (5) sequelize.transaction / .transaction(, (6) explicit TZ arithmetic (moment-timezone require, moment().tz('...'), .tz('...')); families 1 and 4 matched nothing in t/ at audit time and are kept for teeth and future watch — every file matching families 2, 3, 5, 6 is an entry below. Families 2/3/5/6 name the spec itself; day-calculation and the year-boundary half of date-arithmetic live in lib modules (lib/model/db/leave.js get_days()/get_deducted_days(), lib/model/calendar_month.js, lib/model/user_allowance.js), so the specs exercising them are listed with the module in the 'module' field and named in the reason, and the companion gate verifies the module path exists when the spec file itself carries no grep-able signal. Consumer: the MySQL dialect CI job (plan 05-05) runs this specs[] list as its run list, and t/unit/dialect_sensitive_manifest.js re-derives the grep-able half from code so the manifest cannot go stale (out-of-manifest signal fails the build; phantom entries fail it too). CI gate: every PR via .github/workflows/core-ci.yml (npm run test:coverage -> nyc mocha --recursive t/unit). Audit honesty note: lib/licensing/seat_limit.js withCompanySeatLocks (sequelize.transaction + LOCK.UPDATE row locks, invoked from lib/model/db/user.js:149/173) has NO spec exercising it today — the manifest lists specs, so it has no entry; recorded here so the locking category is not mistaken for complete coverage of the transaction carriers. See docs/dialect-sensitive-specs.md for the human-readable pointer.",
+  "categories": [
+    "day-calculation",
+    "date-arithmetic",
+    "locking-transactions",
+    "sql-literals"
+  ],
+  "specs": [
+    {
+      "file": "t/unit/leave_overlap_validation.js",
+      "category": "date-arithmetic",
+      "reason": "Header documents the SQL predicate 'date_start BETWEEN from_date AND to_date + 1' and drives validate_overlapping (lib/model/mixin/user/absence_aware.js), whose Op.lte/Op.gte overlap window is built from moment.utc(...).endOf('day').format('YYYY-MM-DD HH:mm') bounds compared against date_start/date_end DATE columns that Sequelize maps to DATETIME.",
+      "module": "lib/model/mixin/user/absence_aware.js"
+    },
+    {
+      "file": "t/unit/user_activity_boundary.js",
+      "category": "date-arithmetic",
+      "reason": "Requires moment-timezone and builds real db models with end_date values to prove company-timezone vs UTC day boundaries (Company.get_today -> moment_tz.utc().tz(self.timezone).format('YYYY-MM-DD') in lib/model/db/company.js:479); also asserts the active-user filter's end_date[Op.gte] shape (explicit TZ arithmetic on a date column).",
+      "module": "lib/model/db/user.js"
+    },
+    {
+      "file": "t/integration/calendar/leave_details_popover.js",
+      "category": "date-arithmetic",
+      "reason": "Builds the booked day as moment().tz('Europe/London').add(10, 'days').startOf('day') and books it through the real app, so the date value round-trips through the live dialect's DATE storage (explicit TZ arithmetic feeding a date column).",
+      "module": "lib/model/db/leave.js"
+    },
+    {
+      "file": "t/integration/deactivate_and_activate_user.js",
+      "category": "date-arithmetic",
+      "reason": "Pins the employee's end_date with moment().tz('Europe/London') and asserts the active/deactivated boundary through the real app — the same boundary t/unit/user_activity_boundary.js proved was timezone-sensitive (explicit TZ arithmetic on a date column).",
+      "module": "lib/model/db/user.js"
+    },
+    {
+      "file": "t/integration/inactivate_user.js",
+      "category": "date-arithmetic",
+      "reason": "Ends employment with moment().tz('Europe/London') and expects the Deactivated badge and calendar state through the real app (explicit TZ arithmetic on the end_date column).",
+      "module": "lib/model/db/user.js"
+    },
+    {
+      "file": "t/integration/leave_request/book_leave_request_form.js",
+      "category": "date-arithmetic",
+      "reason": "Pins booking dates via moment().tz('Europe/London') for the book-leave form flow, so submitted from/to dates cross the driver's timezone handling on their way into date_start/date_end (explicit TZ arithmetic feeding date columns).",
+      "module": "lib/model/db/leave.js"
+    },
+    {
+      "file": "t/integration/leave_request/employee_summary_popover.js",
+      "category": "date-arithmetic",
+      "reason": "Pins dates with moment().tz('Europe/London') for the summary popover's deducted-days figures, which read leaves back out of the database (explicit TZ arithmetic; the read-back path is where dialects diverge).",
+      "module": "lib/model/db/leave.js"
+    },
+    {
+      "file": "t/integration/team_view/deducted_days_popover.js",
+      "category": "date-arithmetic",
+      "reason": "Requires moment-timezone to pin the team-view day the deducted-days popover opens on; the popover's numbers come from get_deducted_days arithmetic over stored leaves (explicit TZ arithmetic feeding day-calculation read-back).",
+      "module": "lib/model/db/leave.js"
+    },
+    {
+      "file": "t/integration/team_view/sticky_header.js",
+      "category": "date-arithmetic",
+      "reason": "Requires moment-timezone for the date range the sticky team-view header covers; the range renders days read back from stored leaves (explicit TZ arithmetic over date columns).",
+      "module": "lib/model/calendar_month.js"
+    },
+    {
+      "file": "t/integration/carryOver/justAddedUsers.js",
+      "category": "date-arithmetic",
+      "reason": "Selenium flow that recalculates carried-over allowance for a user who started mid-year; asserts the carry-over figure stays 0 across the year boundary through a real database round-trip (lib/model/user_allowance.js year arithmetic).",
+      "module": "lib/model/user_allowance.js"
+    },
+    {
+      "file": "t/integration/carryOver/negativeWhenSwitchedOff.js",
+      "category": "date-arithmetic",
+      "reason": "Books last-year leave, sets carry-over to None, recalculates, and asserts no negative allowance is carried into the current year — lib/model/user_allowance.js year-boundary arithmetic through a real database round-trip.",
+      "module": "lib/model/user_allowance.js"
+    },
+    {
+      "file": "t/unit/model/user_allowance.js",
+      "category": "date-arithmetic",
+      "reason": "Exercises UserAllowance employement_range_adjustment prorating over start_date/end_date (lib/model/user_allowance.js: now.clone().startOf('year')/endOf('year') range arithmetic).",
+      "module": "lib/model/user_allowance.js"
+    },
+    {
+      "file": "t/unit/route/departments_validation.js",
+      "category": "locking-transactions",
+      "reason": "Asserts lib/route/departments.js source contains 'department.constructor.sequelize.transaction' — secondary-supervisor replacement runs inside one transaction, whose atomicity and locking behaviour differs between SQLite and InnoDB.",
+      "module": "lib/route/departments.js"
+    },
+    {
+      "file": "t/unit/route/user_error_messages.js",
+      "category": "locking-transactions",
+      "reason": "Asserts lib/model/company/remover.js source contains 'Models.sequelize.transaction' and 'company.destroy({transaction})' — whole-company data removal inside one transaction.",
+      "module": "lib/model/company/remover.js"
+    },
+    {
+      "file": "t/unit/sso_secret_backfill.js",
+      "category": "sql-literals",
+      "reason": "Raw sequelize.query('CREATE TABLE `Companies` ...'), INSERT and SELECT with backtick-quoted identifiers in the spec itself; drives lib/sso_secret_backfill.js whose readRows() issues \"SELECT id, sso_auth_config FROM `Companies`\" and whose apply() wraps the bulkUpdate in sequelize.transaction — one spec crossing the raw-SQL and transaction families.",
+      "module": "lib/sso_secret_backfill.js"
+    },
+    {
+      "file": "t/unit/integration_api_token_storage.js",
+      "category": "sql-literals",
+      "reason": "Raw sequelize.query('SELECT integration_api_token, integration_api_token_hash FROM Companies') verifies the one-way-token migration (20260707100000-hash-integration-api-tokens) outcome against a real table.",
+      "module": "migrations/20260707100000-hash-integration-api-tokens.js"
+    },
+    {
+      "file": "t/unit/localize_existing_companies_migration.js",
+      "category": "sql-literals",
+      "reason": "Raw sequelize.query('SELECT ... FROM Companies/Departments/LeaveTypes/BankHolidays') plus bulkInsert of DATE-column rows verifies the kz/ru localization data migration.",
+      "module": "migrations/20260701150000-localize-existing-kz-ru-companies.js"
+    },
+    {
+      "file": "t/unit/portal/trial.js",
+      "category": "sql-literals",
+      "reason": "Raw models.sequelize.query('SELECT data FROM portal_sessions') on loadPortalModels({storage: ':memory:'}) asserts the trial verification token never persists in the session store rows.",
+      "module": "portal/models/index.js"
+    },
+    {
+      "file": "t/unit/portal/migrator.js",
+      "category": "sql-literals",
+      "reason": "Raw models.sequelize.query('INSERT INTO portal_sessions ...' / 'SELECT sid, data FROM portal_sessions WHERE sid = ?') seeds and inspects legacy rows across runPortalMigrations() on loadPortalModels.",
+      "module": "portal/models/index.js"
+    },
+    {
+      "file": "t/unit/model/db/leave.js",
+      "category": "day-calculation",
+      "reason": "Builds Leave records from date strings and exercises fit_with_leave_request()/get_days() (lib/model/db/leave.js: moment.utc(this.date_start) then end_date.diff(start_date,'days') day-list expansion) — the arithmetic a dialect's DATE/DATETIME round-trip feeds.",
+      "module": "lib/model/db/leave.js"
+    },
+    {
+      "file": "t/unit/leave_deducted_days_ends.js",
+      "category": "day-calculation",
+      "reason": "Exercises get_deducted_days_number()/get_deducted_days() in lib/model/db/leave.js, including the year filter (moment.utc(leave_day.date).year() !== year.year()) and half-day end corrections across the new-year boundary.",
+      "module": "lib/model/db/leave.js"
+    },
+    {
+      "file": "t/unit/calendar.js",
+      "category": "day-calculation",
+      "reason": "Constructs CalendarMonth('2015-01-10', ...) and asserts month-start normalization, weekday and blank-cell arithmetic from lib/model/calendar_month.js (moment.utc(day).startOf('month'), get_base_date().date(day) indexing).",
+      "module": "lib/model/calendar_month.js"
+    },
+    {
+      "file": "t/unit/db_migrations_data.js",
+      "category": "sql-literals",
+      "reason": "Plan 05-06: spawns t/lib/db_migrations_data_case.js per data-rewriting migration; the child replays migrations 1..N-1 and executes N with raw sequelize.query('SELECT ... FROM SequelizeMeta') meta-table inspection, raw INSERT/DELETE seeding and table-rebuild SQL from the migration files themselves, on SQLite in the unit contour and on MySQL in this dialect job (per-case databases).",
+      "module": "t/lib/db_migrations_data_case.js"
+    }
+  ]
+}

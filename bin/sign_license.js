@@ -4,6 +4,7 @@
 
 const argv = require('minimist')(process.argv.slice(2));
 const fs = require('fs');
+const envResolver = require('../lib/env_resolver');
 const features = require('../lib/features');
 
 const parseList = value => String(value || '')
@@ -59,10 +60,10 @@ const printUsageAndExit = () => {
   process.exit(1);
 };
 
-const secret = argv.secret || process.env.TIMEOFF_LICENSE_SECRET;
+const secret = argv.secret || envResolver.resolve('LICENSE_SECRET');
 const privateKey = argv['private-key']
   || (argv['private-key-file'] ? fs.readFileSync(argv['private-key-file'], 'utf8') : '')
-  || process.env.TIMEOFF_LICENSE_PRIVATE_KEY;
+  || envResolver.resolve('LICENSE_PRIVATE_KEY');
 
 let licenseFeatures;
 let resolvedPlan = null;

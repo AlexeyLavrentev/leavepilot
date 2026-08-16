@@ -90,5 +90,41 @@
     "clear": "Очистити",
     "weekStart": 1,
     "format": "dd.mm.yyyy"
+  },
+  "licenseStatus": {
+    "sectionTitle": "Ліцензія та редакція",
+    "community": "{{brand}} Community Edition — безкоштовно.",
+    "upsellCommunity": "Дізнатися про Premium",
+    "active": "Premium активний ({{plan}}).",
+    "manage": "Керувати підпискою",
+    "expiring": "Premium активний — завершується через {{days}} дн. ({{expires}}).",
+    "upsellRenew": "Продовжити підписку",
+    "grace": "Premium завершився {{expires}} — функції працюють до {{graceEndsAt}}, продовжіть.",
+    "expired": "Premium завершився — преміум-функції вимкнено.",
+    "revoked": "Ліцензію відкликано — преміум-функції вимкнено.",
+    "upsellContact": "Зв'язатися з підтримкою",
+    "error": "Помилка ліцензії ({{reason}}) — перевстановіть або оновіть ліцензійний файл."
+  },
+  "reminderSchedules": {
+    "errors": {
+      "featureDisabled": "Функція нагадувань недоступна",
+      "listFailed": "Помилка при отриманні розкладів",
+      "createFailed": "Помилка при створенні розкладу",
+      "updateFailed": "Помилка при оновленні розкладу",
+      "deleteFailed": "Помилка при видаленні розкладу",
+      "historyFailed": "Помилка при отриманні історії",
+      "testSendFailed": "Помилка при надсиланні тестового листа",
+      "scheduleNotFound": "Розклад не знайдено",
+      "leaveNotFound": "Відпустку не знайдено",
+      "leaveForbidden": "Немає доступу до цієї відпустки",
+      "duplicateSchedule": "Такий розклад уже існує",
+      "invalidLeaveType": "Некоректний тип відсутності",
+      "daysBeforeRange": "daysBefore має бути від 1 до 365",
+      "recipientRequired": "Має бути обраний хоча б один одержувач",
+      "leaveIdRequired": "leaveId обов'язковий"
+    },
+    "status": {
+      "testEmailSent": "Тестовий лист надіслано"
+    }
   }
 }

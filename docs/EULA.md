@@ -1,8 +1,9 @@
 # End User License Agreement (EULA)
 
 **LeavePilot**  
-**Last updated:** 2026-06-29  
-**Version:** 1.0
+**Licensor:** Alexey Lavrentev  
+**Last updated:** 2026-08-11  
+**Version:** 1.1
 
 ---
 
@@ -22,9 +23,16 @@ the Software.
 
 ### 2.1 Community Edition
 
-LeavePilot Community Edition is licensed under the MIT License. You are
-free to use, modify, and distribute the software subject to the MIT
-License terms.
+The terms of the LeavePilot Community Edition are set by
+[LICENSE.md](../LICENSE.md) in the root of the software distribution:
+the Elastic License 2.0 (SPDX identifier `Elastic-2.0`). Those terms are
+not restated here, so that there is a single authoritative text of them.
+
+For the licensor's reading of the "hosted or managed service" limitation,
+with worked examples, see [licensing-faq.md](licensing-faq.md).
+
+Where this EULA and [LICENSE.md](../LICENSE.md) disagree about the terms
+of the Community Edition, LICENSE.md governs.
 
 ### 2.2 Premium Edition
 
@@ -38,17 +46,45 @@ license grants you:
 Premium licenses are **per-organization** and **non-transferable**
 without explicit written permission.
 
+### 2.3 How LICENSE.md and this EULA relate
+
+LICENSE.md (the Elastic License 2.0) is the sole authoritative text of the
+rights granted for the Community Edition. It provides the copyright licence -
+to use, copy, modify, and distribute the software, including as derivative
+works - and it carries its own Limitations, including the prohibition on
+providing the software to third parties as a hosted or managed service, and
+the obligation to retain the licensor's notices. This EULA does not restate
+or replace those rights: they live in LICENSE.md.
+
+This EULA adds what LICENSE.md does not address: the Premium Edition grant
+(§2.2), the restrictions that bind the Premium Edition (§3), and the
+conditions that apply to both Editions - warranty disclaimer (§6),
+termination (§8), governing law (§9), and the remaining sections below.
+
+The §3 restrictions bind only the Premium Edition, because the Community
+Edition is already governed by the Elastic License 2.0, including its own
+Limitations. The precedence clause in §2.1 resolves any overlap for the
+Community Edition: where this EULA and LICENSE.md disagree about the
+Community Edition, LICENSE.md governs. LICENSE.md does not address the
+Premium Edition; the Premium Edition is governed by this EULA.
+
 ---
 
 ## 3. License Restrictions
 
+The restrictions in this section apply to the LeavePilot
+Premium Edition. The prohibition on removing or altering copyright,
+licensing, or licence-data notices (item 3) applies to
+both Editions, because LICENSE.md imposes the same obligation on the
+Community Edition.
+
 You MAY NOT:
 
 1. **Distribute or sublicense** the Premium Edition source code
-2. **Reverse engineer** the Software or attempt to derive source code
+2. **Reverse engineer** the Premium Edition or attempt to derive its source code
 3. **Remove or alter** copyright notices, license information, or
    license verification mechanisms
-4. **Use the Software** to provide competing services (SaaS resale)
+4. **Use the Premium Edition** to provide competing services (SaaS resale)
 5. **Exceed** the licensed number of users or organizations
 6. **Circumvent** license verification or run without valid license
 
@@ -160,12 +196,12 @@ LeavePilot is not liable for compliance violations by Licensees.
 
 ## 11. Third-Party Software
 
-This Software includes third-party components licensed under:
+This Software includes inherited and third-party components distributed
+under their own licenses. All notices and attributions for those
+components are collected in the NOTICE file in the root of the software
+distribution, which is the single place they are maintained.
 
-- MIT License (see LICENSE file)
-- Other open-source licenses (see NOTICE file)
-
-These licenses continue to apply to their respective components.
+Those licenses continue to apply to their respective components.
 
 ---
 

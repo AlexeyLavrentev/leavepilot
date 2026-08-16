@@ -90,5 +90,41 @@
     "clear": "Ачысціць",
     "weekStart": 1,
     "format": "dd.mm.yyyy"
+  },
+  "licenseStatus": {
+    "sectionTitle": "Ліцэнзія і рэдакцыя",
+    "community": "{{brand}} Community Edition — бясплатна.",
+    "upsellCommunity": "Даведацца пра Premium",
+    "active": "Premium актыўны ({{plan}}).",
+    "manage": "Кіраваць падпіскай",
+    "expiring": "Premium актыўны — заканчваецца праз {{days}} дн. ({{expires}}).",
+    "upsellRenew": "Працягнуць падпіску",
+    "grace": "Premium скончыўся {{expires}} — функцыі працуюць да {{graceEndsAt}}, працягніце.",
+    "expired": "Premium скончыўся — прэміум-функцыі адключаны.",
+    "revoked": "Ліцэнзія адклікана — прэміум-функцыі адключаны.",
+    "upsellContact": "Звязацца з падтрымкай",
+    "error": "Памылка ліцэнзіі ({{reason}}) — пераўстанавіце або абнавіце ліцэнзійны файл."
+  },
+  "reminderSchedules": {
+    "errors": {
+      "featureDisabled": "Функцыя напамінкаў недаступная",
+      "listFailed": "Памылка пры атрыманні раскладаў",
+      "createFailed": "Памылка пры стварэнні раскладу",
+      "updateFailed": "Памылка пры абнаўленні раскладу",
+      "deleteFailed": "Памылка пры выдаленні раскладу",
+      "historyFailed": "Памылка пры атрыманні гісторыі",
+      "testSendFailed": "Памылка пры адпраўцы тэставага ліста",
+      "scheduleNotFound": "Расклад не знойдзены",
+      "leaveNotFound": "Водпуск не знойдзены",
+      "leaveForbidden": "Няма доступу да гэтага водпуску",
+      "duplicateSchedule": "Такі расклад ужо існуе",
+      "invalidLeaveType": "Некарэктны тып адсутнасці",
+      "daysBeforeRange": "daysBefore павінен быць ад 1 да 365",
+      "recipientRequired": "Павінен быць абраны хаця б адзін атрымальнік",
+      "leaveIdRequired": "leaveId абавязковы"
+    },
+    "status": {
+      "testEmailSent": "Тэставы ліст адпраўлены"
+    }
   }
 }

@@ -38,9 +38,9 @@ ENV NODE_ENV=production
 RUN groupadd --system --gid 1001 nodejs \
   && useradd --system --uid 1001 --gid nodejs --create-home appuser
 
-LABEL org.opencontainers.image.source="https://github.com/AlexeyLavrentev/timeoff" \
-      org.opencontainers.image.description="LeavePilot Community — open-source leave management system" \
-      org.opencontainers.image.licenses="MIT"
+LABEL org.opencontainers.image.source="https://github.com/AlexeyLavrentev/leavepilot" \
+      org.opencontainers.image.description="LeavePilot Community — source-available leave management system" \
+      org.opencontainers.image.licenses="Elastic-2.0"
 
 COPY package.json package-lock.json ./
 COPY --from=deps /app/node_modules ./node_modules
@@ -56,6 +56,7 @@ COPY --chown=appuser:nodejs locales ./locales
 COPY --chown=appuser:nodejs migrations ./migrations
 COPY --chown=appuser:nodejs views ./views
 COPY --from=build --chown=appuser:nodejs /app/public ./public
+COPY --chown=appuser:nodejs LICENSE.md NOTICE ./
 RUN chmod +x /app/docker/*.sh \
   && chown appuser:nodejs /app
 

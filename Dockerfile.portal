@@ -21,6 +21,7 @@ RUN npm ci
 
 FROM deps AS portal
 
+COPY LICENSE.md NOTICE ./
 COPY bin/license_portal.js bin/portal_admin.js ./bin/
 COPY portal/ ./portal/
 COPY config/plan_presets.json ./config/

@@ -2,6 +2,7 @@
 
 const crypto = require('crypto');
 const fs = require('fs');
+const envResolver = require('../../lib/env_resolver');
 const { SigningProvider } = require('./signing_provider');
 
 const normalizePem = value => String(value || '').replace(/\\n/g, '\n');
@@ -31,8 +32,8 @@ class FileSigningProvider extends SigningProvider {
       this._privateKeyPem = options.privateKeyPem;
     } else if (process.env.LICENSE_SIGNING_KEY_PATH) {
       this._privateKeyPem = fs.readFileSync(process.env.LICENSE_SIGNING_KEY_PATH, 'utf8');
-    } else if (process.env.TIMEOFF_LICENSE_PRIVATE_KEY) {
-      this._privateKeyPem = process.env.TIMEOFF_LICENSE_PRIVATE_KEY;
+    } else if (envResolver.resolve('LICENSE_PRIVATE_KEY')) {
+      this._privateKeyPem = envResolver.resolve('LICENSE_PRIVATE_KEY');
     }
 
     if (options.publicKeyPath) {
@@ -41,8 +42,8 @@ class FileSigningProvider extends SigningProvider {
       this._publicKeyPem = options.publicKeyPem;
     } else if (process.env.LICENSE_PUBLIC_KEY_PATH) {
       this._publicKeyPem = fs.readFileSync(process.env.LICENSE_PUBLIC_KEY_PATH, 'utf8').trim();
-    } else if (process.env.TIMEOFF_LICENSE_PUBLIC_KEY) {
-      this._publicKeyPem = normalizePem(process.env.TIMEOFF_LICENSE_PUBLIC_KEY);
+    } else if (envResolver.resolve('LICENSE_PUBLIC_KEY')) {
+      this._publicKeyPem = normalizePem(envResolver.resolve('LICENSE_PUBLIC_KEY'));
     }
 
     if (!this._privateKeyPem) {

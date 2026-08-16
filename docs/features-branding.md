@@ -4,7 +4,7 @@ This fork keeps the original leave-management surface available by default and e
 
 ## Protection boundary
 
-This is an open-source, self-hosted codebase. Feature flags and signed licenses
+This is a source-available, self-hosted codebase. Feature flags and signed licenses
 raise the operational and contractual boundary for official builds, but they are
 not unbreakable DRM. Anyone with full source access can patch checks in their
 own fork. For stronger protection, keep premium implementation code in a private
@@ -16,8 +16,8 @@ Default branding lives in `config/app.json`:
 
 ```json
 "branding": {
-  "name": "Leave Management",
-  "shortName": "Leave",
+  "name": "LeavePilot",
+  "shortName": "LeavePilot",
   "logoUrl": "",
   "faviconUrl": "/favicon.ico"
 }
@@ -33,6 +33,62 @@ Deployment-specific branding can be supplied through environment variables:
 - `PROMOTION_WEBSITE_DOMAIN`
 
 The app reads these values in `lib/branding.js` and exposes them to templates as `branding`. Email links and the visible product name use the same source.
+
+> `TIMEOFF_*` environment names remain supported as deprecated aliases and are resolved to their `LEAVEPILOT_*` equivalent; a deprecation warning is emitted once at boot when any are set. New deployments should use the canonical `LEAVEPILOT_*` names.
+
+## Name and spacing
+
+The product name is spelled two ways on purpose. Human-readable titles, this
+README, and prose use "Leave Pilot" (with a space). The brand token — the
+package name, the `LEAVEPILOT_` environment-variable prefix, and the
+`branding.get().name` value that templates and feeds render — is "LeavePilot"
+(no space). One spelling is for people to read; the other is the
+machine-stable identifier that configuration, environment, and UI labels key
+off. A rebrand changes both through `branding.get()` and the `BRAND_NAME`
+environment override, never by editing strings in templates or locale files.
+
+## Contract
+
+`branding.get()` (in `lib/branding.js`) returns a stable object. The fields it
+returns today are the contract:
+
+- `name`
+- `shortName`
+- `applicationDomain`
+- `promotionWebsiteDomain`
+- `logoUrl`
+- `faviconUrl`
+- `faviconPng32Url`
+- `faviconPng16Url`
+- `appIconUrl`
+- `appleTouchIconUrl`
+- `manifestUrl`
+- `senderEmail`
+- `senderName`
+- `emailFrom` (derived from `senderName` and `senderEmail` when not set
+  explicitly)
+- `oemActive` (boolean control flag — the OEM suppression signal from the
+  license-aware gate in `get()`; **not** a brand-display field. `true` only
+  when a valid, non-grace license carries the `custom_branding` entitlement
+  **and** the brand config is COMPLETE: every vendor-identity field (`name`,
+  `shortName`, `applicationDomain`, `promotionWebsiteDomain`, `senderEmail`)
+  is explicitly rebranded via `BRAND_*`/config (a value still equal to the
+  shipped default/placeholder does not count). This is the atomic application
+  rule (CR-01): a partial custom brand never renders as a hybrid — the whole
+  custom brand is applied or the whole default brand is returned (`oemActive`
+  `false`, the rejection reason logged once at decision time). Under
+  `oemActive` the operator's configured brand surfaces; otherwise `get()`
+  returns the default brand regardless of `BRAND_*`/config, and the Phase 3
+  upsell section stays visible.)
+
+Backward compatibility: adding a field is a non-breaking change. Removing or
+renaming a field is a breaking change that requires a major version bump.
+Future consumers — the PDF renderer, premium modules, and custom templates —
+may depend on the full return shape, so every field above is part of the
+public surface.
+
+`logoUrl` is a contracted field but is intentionally empty (`''`) until brand
+artwork is supplied; the field is present and stable, the value is not.
 
 ## Feature Flags
 
@@ -51,13 +107,13 @@ Current feature names:
 Enable all features for development or tests:
 
 ```sh
-TIMEOFF_FEATURES=all npm test
+LEAVEPILOT_FEATURES=all npm test
 ```
 
 Enable selected features:
 
 ```sh
-TIMEOFF_FEATURES=sso_authentication,integration_api npm start
+LEAVEPILOT_FEATURES=sso_authentication,integration_api npm start
 ```
 
 Enable or disable a single feature explicitly:
@@ -67,7 +123,7 @@ FEATURE_TIME_BALANCE=true npm start
 FEATURE_VACATION_PLANNING=false npm start
 ```
 
-`TIMEOFF_FEATURES`, `FEATURE_*`, and `features` in config are development/test
+`LEAVEPILOT_FEATURES`, `FEATURE_*`, and `features` in config are development/test
 overrides. Production-like environments (`production` and `staging`) always
 ignore positive unlicensed overrides.
 
@@ -87,7 +143,7 @@ Production-like environments always ignore it.
 
 ## License Payload
 
-`TIMEOFF_LICENSE` may contain JSON or base64-encoded JSON. In development and test environments, an unsigned payload is accepted:
+`LEAVEPILOT_LICENSE` may contain JSON or base64-encoded JSON. In development and test environments, an unsigned payload is accepted:
 
 ```json
 {
@@ -121,7 +177,7 @@ openssl rsa -in license_private.pem -pubout -out license_public.pem
 ```
 
 Keep `license_private.pem` only on your signing machine. Put the public key into
-commercial deployments with `TIMEOFF_LICENSE_PUBLIC_KEY` or `license_public_key`.
+commercial deployments with `LEAVEPILOT_LICENSE_PUBLIC_KEY` or `license_public_key`.
 When storing a PEM key in an environment variable, encode line breaks as `\n`.
 
 Generate an RSA signed license:
@@ -130,7 +186,7 @@ Generate an RSA signed license:
 node bin/sign_license.js --customer "Example Ltd" --features sso_authentication,integration_api,employee_groups,work_calendars,leave_start_reminders,time_balance,vacation_planning --expires 2027-12-31T23:59:59.000Z --private-key-file license_private.pem
 ```
 
-Add `--base64` when the deployment expects a compact value for `TIMEOFF_LICENSE`.
+Add `--base64` when the deployment expects a compact value for `LEAVEPILOT_LICENSE`.
 
 Legacy HMAC signed envelopes remain readable for development and compatibility
 outside commercial startup validation:
@@ -147,12 +203,12 @@ outside commercial startup validation:
 }
 ```
 
-The signature is HMAC-SHA256 over canonical JSON of `payload`. The signing secret is read from `TIMEOFF_LICENSE_SECRET` or `license_secret`.
+The signature is HMAC-SHA256 over canonical JSON of `payload`. The signing secret is read from `LEAVEPILOT_LICENSE_SECRET` or `license_secret`.
 
 Generate a legacy HMAC signed license:
 
 ```sh
-node bin/sign_license.js --customer "Example Ltd" --features sso_authentication,integration_api,employee_groups,work_calendars,leave_start_reminders,time_balance,vacation_planning --expires 2027-12-31T23:59:59.000Z --secret "$TIMEOFF_LICENSE_SECRET"
+node bin/sign_license.js --customer "Example Ltd" --features sso_authentication,integration_api,employee_groups,work_calendars,leave_start_reminders,time_balance,vacation_planning --expires 2027-12-31T23:59:59.000Z --secret "$LEAVEPILOT_LICENSE_SECRET"
 ```
 
 Prefer RSA for self-hosted commercial deployments, because the customer
@@ -176,22 +232,22 @@ NODE_ENV=production
 SESSION_SECRET=replace-with-long-random-value
 CRYPTO_SECRET=replace-with-another-long-random-value
 
-TIMEOFF_LICENSE=PASTE_BASE64_LICENSE_HERE
-TIMEOFF_LICENSE_PUBLIC_KEY=PASTE_PUBLIC_KEY_WITH_ESCAPED_NEWLINES_HERE
+LEAVEPILOT_LICENSE=PASTE_BASE64_LICENSE_HERE
+LEAVEPILOT_LICENSE_PUBLIC_KEY=PASTE_PUBLIC_KEY_WITH_ESCAPED_NEWLINES_HERE
 
-TIMEOFF_PREMIUM_MODULE=@your-company/timeoff-premium
-TIMEOFF_PREMIUM_MODULE_REQUIRED=true
+LEAVEPILOT_PREMIUM_MODULE=@your-company/timeoff-premium
+LEAVEPILOT_PREMIUM_MODULE_REQUIRED=true
 ```
 
 For local development with the private premium repository:
 
 ```env
-TIMEOFF_PREMIUM_MODULE=/path/to/timeoff-premium
+LEAVEPILOT_PREMIUM_MODULE=/path/to/timeoff-premium
 ```
 
 For commercial delivery, prefer the private package name or the path where the
 private package is installed in the image.
 
-Commercial startup with `TIMEOFF_PREMIUM_MODULE_REQUIRED=true` accepts only a
+Commercial startup with `LEAVEPILOT_PREMIUM_MODULE_REQUIRED=true` accepts only a
 valid RSA-SHA256 license. Development-only overrides such as
-`TIMEOFF_FEATURES=all` are ignored in production and staging.
+`LEAVEPILOT_FEATURES=all` are ignored in production and staging.

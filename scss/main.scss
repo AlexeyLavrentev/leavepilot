@@ -7856,6 +7856,13 @@ td.current_day_cell.half_2nd {
     line-height: 1.4;
   }
 
+  // License & edition status banner (Phase 4 FUNNEL-01): rendered above the
+  // workspace, so it only needs the workspace's own rhythm below it. Under OEM
+  // the partial is absent and this rule is inert.
+  .general-settings-license {
+    margin-bottom: var(--settings-space-5);
+  }
+
   .general-settings-workspace {
     display: grid;
     grid-template-columns: minmax(0, 2fr) minmax(320px, 1fr);
@@ -11728,6 +11735,47 @@ td.current_day_cell.half_2nd {
   height: 7px;
   border-radius: 50%;
   background: currentColor;
+}
+
+/* License & edition status line (FUNNEL-01/02/03).
+   Scoped rules only — NO new CSS custom properties / design tokens (UI-SPEC).
+   The four color values are the UI-SPEC Color map (Bootstrap palette); they
+   fill the warning gap that the diagnostics vars (positive/negative/neutral
+   only) do not cover. */
+.license-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.license-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+  display: inline-block;
+  flex: 0 0 auto;
+}
+
+.license-status-dot.is-neutral {
+  color: #777;
+}
+
+.license-status-dot.is-positive {
+  color: #5cb85c;
+}
+
+.license-status-dot.is-warning {
+  color: #f0ad4e;
+}
+
+.license-status-dot.is-negative {
+  color: #d9534f;
+}
+
+.license-status-link {
+  margin-left: 8px;
 }
 
 .diagnostics-page .diagnostics-detail-list {

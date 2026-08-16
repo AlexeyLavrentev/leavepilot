@@ -2,6 +2,7 @@
 'use strict';
 
 const minimist = require('minimist');
+const envResolver = require('../lib/env_resolver');
 
 const args = minimist(process.argv.slice(2), {
   boolean: ['apply', 'dry-run', 'help'],
@@ -31,7 +32,7 @@ if (args.apply && args['dry-run']) {
 const mode = args.apply ? 'apply' : 'dry-run';
 const productionLike = ['production', 'staging'].indexOf(process.env.NODE_ENV) !== -1;
 
-if (args.apply && productionLike && !process.env.TIMEOFF_SECRET_KEY && !process.env.CRYPTO_SECRET) {
+if (args.apply && productionLike && !envResolver.resolve('SECRET_KEY') && !process.env.CRYPTO_SECRET) {
   process.stderr.write('SSO secret backfill refused: encryption key is not configured\n');
   process.exit(1);
 }

@@ -41,6 +41,44 @@ describe('Overlapping leaverequest (with halfs)', function(){
 
   var non_admin_user_email, new_user_email, driver;
 
+  /*
+    The book-leave modal fades out asynchronously after a failed submission
+    (Bootstrap keeps the semi-transparent shell mounted while animating), and
+    on a slow two-core CI runner the next test's click on the navbar button
+    lands under that shell — ElementClickInterceptedError, the modal-title
+    h4 receives the click. Wait for the modal to be gone before opening it
+    again, and for it to be visible after, so the timing of the fade is
+    never the thing under test. Same stabilization class as 82ad934.
+  */
+  var Key = require('selenium-webdriver').Key;
+
+  var wait_modal_closed = function(drv, timeout) {
+    return drv.wait(until.elementIsNotVisible(
+      drv.findElement(By.css('#book_leave_modal'))
+    ), timeout);
+  };
+
+  var open_book_leave_modal = function(drv) {
+    // If a previous failed submission left the modal open, close it
+    // explicitly (Escape) and let the fade finish before clicking the
+    // navbar button — otherwise the click lands under the modal shell
+    // (ElementClickInterceptedError on a slow CI runner).
+    return wait_modal_closed(drv, 1200)
+      .catch(function() {
+        return drv.actions().sendKeys(Key.ESCAPE).perform()
+          .then(function(){ return wait_modal_closed(drv, 1500); });
+      })
+      .then(function() {
+        return drv.findElement(By.css('#book_time_off_btn'));
+      })
+      .then(function(el){ return el.click(); })
+      .then(function() {
+        return drv.wait(until.elementIsVisible(
+          drv.findElement(By.css('#book_leave_modal'))
+        ), 1500);
+      });
+  };
+
   it('Create new company', function(done){
     register_new_user_func({
       application_host : application_host,
@@ -105,8 +143,7 @@ describe('Overlapping leaverequest (with halfs)', function(){
 
   it("Request new leave", function(done){
     driver
-      .findElement(By.css('#book_time_off_btn'))
-      .then(function(el){ return el.click() })
+      .then(function(){ return open_book_leave_modal(driver) })
 
       // Create new leave request
       .then(function(){
@@ -145,8 +182,7 @@ describe('Overlapping leaverequest (with halfs)', function(){
 
   it("Try to request overlapping leave request (new request overlaps with half by the full end)", function(done){
     driver
-      .findElement(By.css('#book_time_off_btn'))
-      .then(function(el){ return el.click() })
+      .then(function(){ return open_book_leave_modal(driver) })
 
       // Create new leave request
       .then(function(){
@@ -171,8 +207,7 @@ describe('Overlapping leaverequest (with halfs)', function(){
   it("Try to create new request that overlaps with existing one: new request's " +
     "half end colides with full part of existing one", function(done){
     driver
-      .findElement(By.css('#book_time_off_btn'))
-      .then(function(el){ return el.click() })
+      .then(function(){ return open_book_leave_modal(driver) })
 
       // Create new leave request
       .then(function(){
@@ -199,8 +234,7 @@ describe('Overlapping leaverequest (with halfs)', function(){
 
   it("Try to create new leave request that colides with existing by halfs", function(done){
     driver
-      .findElement(By.css('#book_time_off_btn'))
-      .then(function(el){ return el.click() })
+      .then(function(){ return open_book_leave_modal(driver) })
 
       // Create new leave request
       .then(function(){
@@ -228,8 +262,7 @@ describe('Overlapping leaverequest (with halfs)', function(){
 
   it("And create correct one", function(done){
     driver
-      .findElement(By.css('#book_time_off_btn'))
-      .then(function(el){ return el.click() })
+      .then(function(){ return open_book_leave_modal(driver) })
 
       // Create new leave request
       .then(function(){

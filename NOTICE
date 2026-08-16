@@ -1,0 +1,63 @@
+LeavePilot Community
+Copyright (c) 2026 Alexey Lavrentev
+
+================================================================================
+Licensing history
+================================================================================
+
+Versions of this software up to and including 2.x were distributed under the MIT
+License. Copies obtained under those terms remain governed by them: this notice
+does not restate, replace, or withdraw the license under which any already
+distributed version was received.
+
+Beginning with version 3.0.0, this software is distributed under the Elastic
+License 2.0 (SPDX: Elastic-2.0). The full text of that license is in LICENSE.md.
+
+For guidance on what the Elastic License 2.0 permits — in particular the
+"hosted or managed service" limitation — see:
+https://github.com/AlexeyLavrentev/timeoff/blob/master/docs/licensing-faq.md
+
+================================================================================
+Origin and upstream attribution
+================================================================================
+
+This software is a fork of TimeOff.Management
+(https://github.com/timeoff-management/timeoff-management-application),
+originally published under the MIT License. Development has been independent
+since the fork; substantial portions of this software have been modified,
+replaced, or newly written. The original MIT permission notice is reproduced
+below in full, as that license requires.
+
+--------------------------------------------------------------------------------
+Copyright (c) 2015-2017 TimeOff.Management
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+--------------------------------------------------------------------------------
+
+================================================================================
+Third-party components
+================================================================================
+
+This distribution carries third-party components under their own licenses.
+The bundled Font Awesome fonts are licensed under the SIL Open Font License
+1.1; the license text accompanies them in public/fonts/OFL.txt. The complete,
+regenerable third-party component inventory — npm dependency licenses,
+vendored JavaScript and fonts, and the container base image — is maintained
+in the source repository:
+https://github.com/AlexeyLavrentev/timeoff/blob/master/docs/third-party-inventory.md

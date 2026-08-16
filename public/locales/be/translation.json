@@ -109,14 +109,6 @@
       "migrations": "Шляхі міграцый"
     }
   },
-  "licenseWarnings": {
-    "title": "Прэміум-ліцэнзія:",
-    "expiring": "заканчваецца праз {{days}} дзён., {{expires}}.",
-    "grace": "скончыўся {{expires}}. Льготны перыяд скончыцца {{graceEndsAt}}.",
-    "expired": "скончыўся {{expires}}. Прэміум-функцыі адключаныя; Community і доступ да дадзеных працуюць.",
-    "revoked": "адклікана. Прэміум-функцыі адключаныя; Community і доступ да дадзеных працуюць.",
-    "details": "Адкрыць дыягностыку"
-  },
   "notifications": {
     "pendingRequest_one": "{{count}} заяўка на водпуск",
     "pendingRequest_few": "{{count}} заяўкі на водпуск",
@@ -144,7 +136,7 @@
     "groupDetails": "Дэталі групы",
     "conflictRules": "Правілы канфліктаў",
     "conflictRulesDetails": "Дэталі правілы канфлікту",
-    "login": "LeavePilot"
+    "login": ""
   },
   "userPopup": {
     "available": "Даступна",
@@ -572,8 +564,8 @@
     "timezoneHelp": "Выкарыстоўваецца для разліку працоўных дзён і часу адпраўкі апавяшчэнняў."
   },
   "home": {
-    "title": "LeavePilot",
-    "subtitle": "Open-source сістэма кіравання адсутнасцямі для каманд любога памеру.",
+    "title": "",
+    "subtitle": "Source-available сістэма кіравання адсутнасцямі для каманд любога памеру.",
     "signUp": "Зарэгістравацца",
     "orFork": "або форкніце на",
     "features": {
@@ -741,7 +733,27 @@
       "leaveType": "Тып адсутнасці",
       "actions": "Дзеянні",
       "saved": "Расклад напамінкаў захаваны.",
-      "deleted": "Расклад напамінкаў выдалены."
+      "deleted": "Расклад напамінкаў выдалены.",
+      "errors": {
+        "featureDisabled": "Функцыя напамінкаў недаступная",
+        "listFailed": "Памылка пры атрыманні раскладаў",
+        "createFailed": "Памылка пры стварэнні раскладу",
+        "updateFailed": "Памылка пры абнаўленні раскладу",
+        "deleteFailed": "Памылка пры выдаленні раскладу",
+        "historyFailed": "Памылка пры атрыманні гісторыі",
+        "testSendFailed": "Памылка пры адпраўцы тэставага ліста",
+        "scheduleNotFound": "Расклад не знойдзены",
+        "leaveNotFound": "Водпуск не знойдзены",
+        "leaveForbidden": "Няма доступу да гэтага водпуску",
+        "duplicateSchedule": "Такі расклад ужо існуе",
+        "invalidLeaveType": "Некарэктны тып адсутнасці",
+        "daysBeforeRange": "daysBefore павінен быць ад 1 да 365",
+        "recipientRequired": "Павінен быць абраны хаця б адзін атрымальнік",
+        "leaveIdRequired": "leaveId абавязковы"
+      },
+      "status": {
+        "testEmailSent": "Тэставы ліст адпраўлены"
+      }
     }
   },
   "teamView": {
@@ -1118,7 +1130,7 @@
     "message": "Упс! Мы не можам знайсці старонку, якую вы шукаеце."
   },
   "meta": {
-    "description": "Open source сістэма кіравання адсутнасцямі супрацоўнікаў"
+    "description": "Source-available сістэма кіравання адсутнасцямі супрацоўнікаў"
   },
   "brand": {
     "name": "Кіраванне водпускамі",
@@ -1239,5 +1251,19 @@
     "messages": {
       "disabled": "Гэтая функцыя не ўключана для гэтай устаноўкі."
     }
+  },
+  "licenseStatus": {
+    "sectionTitle": "Ліцэнзія і рэдакцыя",
+    "community": "{{brand}} Community Edition — бясплатна.",
+    "upsellCommunity": "Даведацца пра Premium",
+    "active": "Premium актыўны ({{plan}}).",
+    "manage": "Кіраваць падпіскай",
+    "expiring": "Premium актыўны — заканчваецца праз {{days}} дн. ({{expires}}).",
+    "upsellRenew": "Працягнуць падпіску",
+    "grace": "Premium скончыўся {{expires}} — функцыі працуюць да {{graceEndsAt}}, працягніце.",
+    "expired": "Premium скончыўся — прэміум-функцыі адключаны.",
+    "revoked": "Ліцэнзія адклікана — прэміум-функцыі адключаны.",
+    "upsellContact": "Звязацца з падтрымкай",
+    "error": "Памылка ліцэнзіі ({{reason}}) — пераўстанавіце або абнавіце ліцэнзійны файл."
   }
 }

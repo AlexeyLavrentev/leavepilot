@@ -1,0 +1,113 @@
+{
+  "_comment": "OEM leak-surface manifest (D-08). Grep-generated over LeavePilot / Leave Pilot / TimeOff / timeoff / timeoff.management BEFORE the test was written (re-ran the grep at authoring time: every rendered surface is dynamic via branding.get(); only one actionable hardcoded rendered literal remained — the SSO client_id placeholder, recorded below in hardcoded[]). Consumed directly by t/unit/oem_no_vendor_leak.js, which ITERATES dynamic[] and renders each surface under a sentinel custom brand + oemActive:true, asserting BOTH custom-PRESENT and vendor-ABSENT. CI-gated every PR via .github/workflows/core-ci.yml (npm run test:coverage -> nyc mocha --recursive t/unit). See docs/oem-leak-surfaces.md for the human-readable pointer.",
+  "scanStrings": [
+    "LeavePilot",
+    "Leave Pilot",
+    "TimeOff",
+    "timeoff.management"
+  ],
+  "dynamic": [
+    {
+      "surface": "views/layouts/main.hbs",
+      "lines": "9-15,26",
+      "renders": "favicons, apple-touch-icon, manifest link, page <title> (title falls back to {{brand_name}} when no page title is set)",
+      "consumes": "branding.get() (faviconUrl, faviconPng32Url, faviconPng16Url, appIconUrl, appleTouchIconUrl, manifestUrl) + {{brand_name}} helper -> branding.get().name (lib/view/helpers.js)",
+      "renderMethod": "handlebars"
+    },
+    {
+      "surface": "views/partials/header.hbs",
+      "lines": "3,13",
+      "renders": "navbar brand link (aria-label + logo alt + visible text)",
+      "consumes": "{{brand_name}} helper -> branding.get().name + branding.logoUrl",
+      "renderMethod": "handlebars"
+    },
+    {
+      "surface": "views/partials/footer.hbs",
+      "lines": "19",
+      "renders": "footer copyright line (brand.nameLower)",
+      "consumes": "{{t 'brand.nameLower'}} intercepted by lib/view/helpers.js -> branding.get().name.toLowerCase()",
+      "renderMethod": "handlebars"
+    },
+    {
+      "surface": "app.js",
+      "lines": "95-118",
+      "renders": "GET /manifest.webmanifest JSON (name, short_name, icons)",
+      "consumes": "branding.get() directly (L96)",
+      "renderMethod": "http"
+    },
+    {
+      "surface": "lib/route/login.js",
+      "lines": "80,105",
+      "renders": "login + login/sso page <title> (branding.get().name)",
+      "consumes": "branding.get().name (L80, L105)",
+      "renderMethod": "http"
+    },
+    {
+      "surface": "lib/route/feed.js",
+      "lines": "38,89,105",
+      "renders": "iCal feed PRODID (//-<name>-//-<shortName>-//EN) and X-WR-CALNAME ({name}: ...)",
+      "consumes": "branding.get() (L38) -> brand.name / brand.shortName",
+      "renderMethod": "http"
+    },
+    {
+      "surface": "lib/email.js",
+      "lines": "136,167,205,225,266,286,329,351,384,410,439,458,500",
+      "renders": "email From: address across 13 send sites",
+      "consumes": "branding.getEmailFrom() (13 call sites)",
+      "renderMethod": "email"
+    },
+    {
+      "surface": "views/partials/settings_company_license.hbs",
+      "lines": "15-31",
+      "renders": "admin license-status line / upsell section (SUPPRESSED under oemActive — renders nothing)",
+      "consumes": "branding.oemActive (the {{#unless branding.oemActive}} gate; also reads branding.name via the {{brand}} placeholder)",
+      "renderMethod": "handlebars"
+    }
+  ],
+  "hardcoded": [
+    {
+      "surface": "views/settings_company_authentication.hbs",
+      "line": 154,
+      "literal": "timeoff-management",
+      "rendered": true,
+      "adminOnly": true,
+      "disposition": "replaced-with-neutral-placeholder",
+      "before": "<input ... placeholder=\"timeoff-management\">",
+      "after": "<input ... placeholder=\"client-id\">"
+    }
+  ],
+  "excluded": [
+    {
+      "surface": "lib/branding.js",
+      "reason": "the brand layer / D-05 gate itself; DEFAULT_BRANDING constants (L7-21) are the fallback-of-record shown when OEM is NOT active OR the brand config is INCOMPLETE (the CR-01 atomic rule: every vendor-identity field must be rebranded or the WHOLE custom brand is rejected to the default, so no operator-value/vendor-default hybrid can render); the rejection path is pinned by the t/unit/oem_gate.js CR-01 matrix; getEmailFrom() is the email surface's source (already listed in dynamic[] as lib/email.js), not a separate rendered surface"
+    },
+    {
+      "surface": "lib/view/helpers.js",
+      "reason": "the render MECHANISM for the .hbs dynamic surfaces ({{brand_name}} helper -> branding.get().name; t('brand.name'/'brand.nameLower') interception -> branding.get().name); it is how surfaces main.hbs/header.hbs/footer.hbs reach the brand, not a separate rendered surface itself"
+    },
+    {
+      "surface": "lib/route/settings.js",
+      "reason": "SSR wiring that attaches branding.get() to res.locals for the /settings/general/ license-status line; it FEEDS settings_company_license.hbs (listed in dynamic[]), not a separate rendered surface"
+    },
+    {
+      "surface": "lib/route/login.js:46",
+      "reason": "host-comparison logic ('app.timeoff') that decides url_to_the_site_root for anonymous sessions; returns '/' for non-app.timeoff hosts so no vendor link renders — logic-only, never displayed"
+    },
+    {
+      "surface": "public/js/*",
+      "reason": "JS runtime namespace window.timeoff / id=\"timeoff-config\" / timeoff-theme localStorage (global.js, config_boot.js, theme_boot.js, leave_forecast.js, reminder_schedules.js); D-11 one-way scope decision: devtools-observable code identifier, NOT rendered text — OUT of leak scope. Renaming the namespace is a separate large phase (much client JS references it)"
+    },
+    {
+      "surface": "lib/secret_store.js",
+      "reason": "internal storage key ('timeoff-core-secret-store:v1'), never rendered"
+    },
+    {
+      "surface": "lib/config.js",
+      "reason": "internal config paths/keys ('timeoff-development-...'), never rendered"
+    },
+    {
+      "surface": "lib/edition/commercial_mode.js",
+      "reason": "internal edition marker ('.timeoff-commercial'), never rendered"
+    }
+  ]
+}

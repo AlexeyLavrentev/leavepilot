@@ -90,5 +90,41 @@
     "clear": "Очистить",
     "weekStart": 1,
     "format": "dd.mm.yyyy"
+  },
+  "licenseStatus": {
+    "sectionTitle": "Лицензия и редакция",
+    "community": "{{brand}} Community Edition — бесплатно.",
+    "upsellCommunity": "Узнать о Premium",
+    "active": "Premium активен ({{plan}}).",
+    "manage": "Управлять подпиской",
+    "expiring": "Premium активен — истекает через {{days}} дн. ({{expires}}).",
+    "upsellRenew": "Продлить подписку",
+    "grace": "Premium истёк {{expires}} — функции работают до {{graceEndsAt}}, продлите.",
+    "expired": "Premium истёк — премиум-функции отключены.",
+    "revoked": "Лицензия отозвана — премиум-функции отключены.",
+    "upsellContact": "Связаться с поддержкой",
+    "error": "Ошибка лицензии ({{reason}}) — переустановите или обновите лицензионный файл."
+  },
+  "reminderSchedules": {
+    "errors": {
+      "featureDisabled": "Функция напоминаний не доступна",
+      "listFailed": "Ошибка при получении расписаний",
+      "createFailed": "Ошибка при создании расписания",
+      "updateFailed": "Ошибка при обновлении расписания",
+      "deleteFailed": "Ошибка при удалении расписания",
+      "historyFailed": "Ошибка при получении истории",
+      "testSendFailed": "Ошибка при отправке тестового письма",
+      "scheduleNotFound": "Расписание не найдено",
+      "leaveNotFound": "Отпуск не найден",
+      "leaveForbidden": "Нет доступа к этому отпуску",
+      "duplicateSchedule": "Такое расписание уже существует",
+      "invalidLeaveType": "Некорректный тип отсутствия",
+      "daysBeforeRange": "daysBefore должен быть от 1 до 365",
+      "recipientRequired": "Должен быть выбран хотя бы один получатель",
+      "leaveIdRequired": "leaveId обязателен"
+    },
+    "status": {
+      "testEmailSent": "Тестовое письмо отправлено"
+    }
   }
 }

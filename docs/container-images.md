@@ -27,6 +27,15 @@ docker compose -f docker-compose.community-image.yml up -d
 The standalone Compose file pulls the published image and does not require a
 local source checkout to build the application.
 
+## Tag support policy
+
+Published tags remain pullable indefinitely: GHCR does not delete tags or
+images, so every version tag (full, minor, major) ever published stays
+available. The `latest` tag tracks the last stable release and moves on each
+new release; it is convenient for evaluation but is not reproducible.
+Production deployments should pin a full version tag (for example `2.1.0`) so
+an image pull is byte-stable across hosts and over time.
+
 ## Publishing
 
 The Community workflow runs automatically for new semantic version tags. An
@@ -61,7 +70,7 @@ Verify release identity and SBOM attestation with Cosign:
 
 ```sh
 IMAGE=ghcr.io/alexeylavrentev/leavepilot-community:2.1.0
-IDENTITY='^https://github.com/AlexeyLavrentev/timeoff/.github/workflows/publish-community-container.yml@refs/(tags/v[0-9]+\.[0-9]+\.[0-9]+|heads/master)$'
+IDENTITY='^https://github.com/AlexeyLavrentev/leavepilot/.github/workflows/publish-community-container.yml@refs/(tags/v[0-9]+\.[0-9]+\.[0-9]+|heads/master)$'
 ISSUER='https://token.actions.githubusercontent.com'
 
 cosign verify "$IMAGE" \

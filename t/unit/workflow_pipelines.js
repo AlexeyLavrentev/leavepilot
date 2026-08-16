@@ -76,6 +76,23 @@ const pipesIntoAnotherCommand = body => body
   .filter(line => !/^\s*#/.test(line))
   .some(line => /[^|]\|[^|]/.test(line));
 
+// A loop (or any consumer) whose input arrives through process substitution
+// from git - the form `done < <(git ...)` - is invisible to `set -euo
+// pipefail`: the substitution's own exit status never reaches the shell, so a
+// failing git looks like an empty input and zero iterations. The DCO gate was
+// exactly this shape until plan 01-08 replaced it with an assignment to a
+// variable. Comments are stripped first, so the paragraph that explains why
+// does not trip the very check it documents.
+const readsGitViaProcessSubstitution = body => body
+  .split('\n')
+  .filter(line => !/^\s*#/.test(line))
+  .some(line => /<\(\s*[^)]*\bgit\b/.test(line));
+
+// Single-value `permissions:` grants that hand the token every scope at once.
+// Declared next to the assertion that forbids them, not hidden in a helper, so
+// the next reader sees the bargain by name.
+const BROAD_PERMISSION_VALUES = ['read-all', 'write-all'];
+
 describe('Workflow shell pipelines', function() {
 
   const allBlocks = workflows.reduce((blocks, workflow) => blocks.concat(runBlocks(workflow)), []);
@@ -94,6 +111,46 @@ describe('Workflow shell pipelines', function() {
     expect(offenders).to.deep.equal(
       [],
       'the left-hand side of these pipelines can fail without failing the step'
+    );
+  });
+
+  it('declares token permissions at the top level of every workflow, as a narrow scope', function() {
+    // Every workflow must say what its jobs may do with the repository token,
+    // instead of inheriting the repo default. A missing block is the first
+    // thing to flag, because that is the silent inheritance this assertion
+    // exists to catch.
+    const missing = workflows
+      .filter(workflow => !/^permissions:/m.test(workflow.source))
+      .map(workflow => workflow.name);
+
+    expect(missing).to.deep.equal(
+      [],
+      'these workflows have no top-level `permissions:` block, so every job in them inherits the repository default token'
+    );
+
+    // A single broad value is the other shape to refuse: it technically
+    // declares permissions but hands back everything the default did, so the
+    // narrowing is theatrical. Each job's scopes are named explicitly instead.
+    const broad = workflows
+      .filter(workflow => BROAD_PERMISSION_VALUES.some(value =>
+        new RegExp('^permissions:\\s*' + value + '\\s*$', 'm').test(workflow.source)
+      ))
+      .map(workflow => workflow.name);
+
+    expect(broad).to.deep.equal(
+      [],
+      'these workflows grant the token with a single broad value (`' + BROAD_PERMISSION_VALUES.join('`, `') + '`); name the specific scopes each job needs instead'
+    );
+  });
+
+  it('does not feed git output into a loop through process substitution', function() {
+    const offenders = allBlocks
+      .filter(block => readsGitViaProcessSubstitution(block.body))
+      .map(block => block.workflow + ':' + block.line);
+
+    expect(offenders).to.deep.equal(
+      [],
+      'these steps consume git via process substitution, whose exit status is invisible to `set -euo pipefail`; assign the output to a variable first so a failing git fails the step'
     );
   });
 

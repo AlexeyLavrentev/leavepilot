@@ -6,6 +6,7 @@ const fs = require('fs');
 const path = require('path');
 const { spawn } = require('child_process');
 const { spawnInGroup, killGroup, terminateGroup } = require('./lib/spawn_group');
+const skipHonesty = require('../t/lib/skip_honesty');
 
 /*
   Every batch this runner has going, so an interrupt can take their browsers
@@ -26,22 +27,154 @@ const testHost = process.env.TEST_HOST || '127.0.0.1';
 const host = `http://${testHost}:${port}`;
 const node = process.execPath;
 const dbStorage = process.env.TEST_DB_STORAGE || path.join(process.cwd(), 'db.test.sqlite');
+
+/*
+  TEST_DB_DIALECT selects the database contour the children run against
+  (D-05). 'mysql' switches the child env to DB_DIALECT=mysql; every other
+  value - including unset - keeps sqlite, which remains the default contour.
+  The DB_* connection variables (DB_HOST, DB_PORT, DB_NAME, DB_USER,
+  DB_PASSWORD) ride process.env through the Object.assign base untouched, so
+  pointing them at a server is all a MySQL contour takes; DB_STORAGE is the
+  sqlite file path and is simply ignored under mysql.
+*/
+const dbDialect = process.env.TEST_DB_DIALECT === 'mysql' ? 'mysql' : 'sqlite';
+
 const baseTestEnv = Object.assign({}, process.env, {
   PORT: port,
   HOST: testHost,
   TEST_HOST: testHost,
-  DB_DIALECT: 'sqlite',
+  DB_DIALECT: dbDialect,
   DB_STORAGE: dbStorage,
   DISABLE_NOTIFICATIONS_POLLING: 'true',
   SILENCE_PRETEND_EMAILS: 'true',
   SILENCE_HTTP_LOGS: 'true',
   LOG_LEVEL: 'error',
-  TIMEOFF_FEATURES: 'all',
+  // Canonical prefix: the runner must never inject a deprecated name that
+  // trips its own deprecation spec (D-19).
+  LEAVEPILOT_FEATURES: 'all',
+  // The runner IS a test contour: the unsigned-license trust root keys on
+  // NODE_ENV === 'test' (WR-01/D-20), and every CI contour that drives this
+  // runner already sets NODE_ENV=test. A bare local `node bin/test.js`
+  // inherits whatever NODE_ENV the shell has - including none - which
+  // rejects the unsigned test-license fixtures and fails the oem/branding
+  // suites for a reason that has nothing to do with the code under test.
+  NODE_ENV: 'test',
   SE_SKIP_DRIVER_IN_PATH: 'true',
 });
 const serverEnv = Object.assign({}, baseTestEnv, {
   ALLOW_CREATE_NEW_ACCOUNTS: 'true',
   DISABLE_AUTH_RATE_LIMIT: 'true',
+});
+
+/*
+  Flake artifact (D-06): every completed run - empty included - leaves a
+  flake-report.json at the repo root describing everything this run had to
+  retry, from BOTH retry layers:
+
+  - the batch layer, recorded here (one record per integration batch that
+    failed its first whole-batch attempt and was re-run);
+  - the mocha layer, recorded inside each mocha child by
+    t/lib/flake_reporter.js (retry runner events) and flushed to a JSON
+    sidecar whose path travels to the child as FLAKE_ARTIFACT_PATH.
+
+  The merge below folds the sidecars into the final report and cleans them
+  up. A write failure must never change the run's exit code: the report is a
+  diagnostic artifact, not a gate, so it warns and lets the run's own
+  verdict stand.
+
+  Every mocha invocation this runner starts carries the flake reporter, so
+  skip honesty (D-21) can count distinct skipped spec files from the same
+  pending records - one rule (t/lib/skip_honesty.js) for both carriers: this
+  runner for runner-driven contours, the require-module for the CI coverage
+  contour.
+*/
+const flakeReportPath = path.join(process.cwd(), 'flake-report.json');
+
+const FLAKE_REPORTER = path.join('t', 'lib', 'flake_reporter.js');
+
+const flaky = [];
+const flakeSidecars = [];
+let flakeSidecarCounter = 0;
+
+const flakeSidecarPath = contour => {
+  flakeSidecarCounter += 1;
+  // One sidecar per mocha process; a retried batch reuses its own path so
+  // the sidecar always reflects the batch's latest attempt.
+  const sidecarPath = path.join(
+    process.cwd(),
+    `flake-sidecar-${process.pid}-${flakeSidecarCounter}.json`
+  );
+  flakeSidecars.push({ path: sidecarPath, contour });
+
+  return sidecarPath;
+};
+
+const buildFlakeRecords = () => flaky.map(entry => ({
+  contour: entry.contour,
+  layer: 'batch',
+  spec: entry.spec,
+  tests: [],
+  attempt: 1,
+}));
+
+const readFlakeSidecars = () => {
+  const mochaRecords = [];
+  const skippedSpecFiles = [];
+
+  flakeSidecars.forEach(sidecar => {
+    let payload;
+
+    try {
+      payload = JSON.parse(fs.readFileSync(sidecar.path, 'utf8'));
+    } catch (error) {
+      if (error.code !== 'ENOENT') {
+        // A sidecar killed with its batch (watchdog timeout) or that failed
+        // to parse contributes no records rather than failing the report.
+        console.warn(`Could not read flake sidecar ${sidecar.path}: ${error.message}`);
+      }
+      return;
+    }
+
+    try {
+      fs.unlinkSync(sidecar.path);
+    } catch (alreadyGone) { /* cleanup is best-effort; the file is gitignored */ }
+
+    (payload.retries || []).forEach(entry => mochaRecords.push({
+      contour: sidecar.contour,
+      layer: 'mocha',
+      spec: entry.spec,
+      tests: [entry.title],
+      attempt: entry.attempt,
+      error: entry.error,
+    }));
+
+    (payload.pending || []).forEach(entry => skippedSpecFiles.push(entry.spec));
+  });
+
+  return { mochaRecords, skippedSpecFiles };
+};
+
+const writeFlakeReport = () => new Promise(resolve => {
+  const merged = readFlakeSidecars();
+  const records = buildFlakeRecords().concat(merged.mochaRecords);
+
+  try {
+    fs.writeFileSync(flakeReportPath, JSON.stringify(records, null, 2) + '\n');
+  } catch (error) {
+    console.warn(`Could not write flake report to ${flakeReportPath}: ${error.message}`);
+  }
+
+  // Skip honesty (D-21), runner carrier: the same rule the CI coverage
+  // contour loads via --require, fed from the reporter's pending records.
+  // Locally a breach warns; only contours that set TEST_ENFORCE_SKIP_HONESTY
+  // (CI steps) turn the count into this process exiting non-zero.
+  const evaluation = skipHonesty.reportSkipHonesty(merged.skippedSpecFiles);
+  if (evaluation.enforce) {
+    console.error(skipHonesty.breachMessage(evaluation));
+    process.exitCode = 1;
+  }
+
+  resolve();
 });
 
 /*
@@ -160,6 +293,16 @@ const reportQuarantine = () => {
 const FAIL_FAST = ['--require', path.join('t', 'lib', 'fail_fast.js')];
 
 const runMochaSuite = () => {
+  // Mocha's own --retries repeats a single test inside the process it is
+  // already in. Both carriers below read the same TEST_RETRIES knob, so a
+  // runner-driven contour - the CI integration shards, the MySQL dialect
+  // job - gets the identical retry discipline whether it runs integration
+  // batches or an explicit path list (D-04: one policy, no second one).
+  const configuredRetries = Number(process.env.TEST_RETRIES);
+  const retryArgs = Number.isInteger(configuredRetries) && configuredRetries > 0
+    ? ['--retries', String(configuredRetries)]
+    : [];
+
   if (mochaArgs.length) {
     // Paths given on the command line replace the default root rather than
     // adding to it. Passing both meant "one spec" quietly ran the whole tree
@@ -168,7 +311,28 @@ const runMochaSuite = () => {
     const roots = explicitPaths.length ? explicitPaths : ['t'];
     const flags = mochaArgs.filter(arg => arg.startsWith('-'));
 
-    return run(node, ['node_modules/mocha/bin/mocha', '--recursive', '--exit'].concat(FAIL_FAST, roots, flags));
+    // One sidecar for the whole explicit run, stable across the retry below:
+    // the sidecar always reflects the latest attempt.
+    const explicitSidecarPath = flakeSidecarPath('explicit-paths-mocha-retry');
+
+    const mochaExplicit = () => run(
+      node,
+      ['node_modules/mocha/bin/mocha', '--recursive', '--exit']
+        .concat(FAIL_FAST, retryArgs, ['--reporter', FLAKE_REPORTER], roots, flags),
+      { env: Object.assign({}, baseTestEnv, { FLAKE_ARTIFACT_PATH: explicitSidecarPath }) }
+    );
+
+    // D-04 parity: an explicit-path run gets the same one-retry-per-file
+    // discipline the integration batch branch has. Re-running the whole list
+    // gives every file a fresh process (and a browser spec its fresh
+    // browser), which is the granularity the flake lives at. The retry is
+    // named on the console and recorded in the flake report's batch layer -
+    // never silent - and a list that fails twice in a row fails the runner.
+    return mochaExplicit().catch(error => {
+      console.error(`Explicit-path run failed, retrying the whole list: ${error.message}`);
+      flaky.push({ contour: 'explicit-paths-batch-retry', spec: roots.join(', ') });
+      return mochaExplicit();
+    });
   }
 
   const allIntegrationFiles = collectJavaScriptFiles(path.join('t', 'integration'));
@@ -210,17 +374,6 @@ const runMochaSuite = () => {
 
   const failures = [];
 
-  // Browser specs wait on animations and network, and a shared runner makes
-  // those waits tighter than they are on a developer machine. One retry keeps a
-  // single missed wait from failing the run without weakening any assertion; a
-  // spec that fails twice in a row is reported.
-  const configuredRetries = Number(process.env.TEST_RETRIES);
-  const retryArgs = Number.isInteger(configuredRetries) && configuredRetries > 0
-    ? ['--retries', String(configuredRetries)]
-    : [];
-
-  const flaky = [];
-
   // A ceiling on one batch, not on one test. The slowest single file observed
   // takes about 30s, so this is generous by an order of magnitude and only ever
   // fires on a process that has stopped making progress.
@@ -241,15 +394,29 @@ const runMochaSuite = () => {
     on its own timeout, and the batch ceiling above still kills a wedged
     process. This only makes finishing mean exiting.
   */
-  const mocha = batch => runWithTimeout(
+  const mocha = (batch, sidecarPath) => runWithTimeout(
     node,
-    ['node_modules/mocha/bin/mocha', '--exit'].concat(FAIL_FAST).concat(retryArgs).concat(batch),
-    {},
+    ['node_modules/mocha/bin/mocha', '--exit']
+      .concat(FAIL_FAST)
+      .concat(retryArgs)
+      .concat([
+        '--reporter', FLAKE_REPORTER,
+        // A2 fallback: if a mocha upgrade ever stops carrying test.file on
+        // retry/pending events, the reporter still knows which batch it
+        // rendered for.
+        '--reporter-option', 'fallbackSpec=' + batch.join(', '),
+      ])
+      .concat(batch),
+    { env: Object.assign({}, baseTestEnv, { FLAKE_ARTIFACT_PATH: sidecarPath }) },
     batchTimeoutMs
   );
 
   const runBatch = (batch, index) => {
     console.log(`Running integration batch ${index + 1}/${batches.length} (${batch.length} files)`);
+
+    // One sidecar per batch, stable across the retry below: the sidecar
+    // always reflects the batch's latest attempt.
+    const batchSidecarPath = flakeSidecarPath('integration-mocha-retry');
 
     // Mocha's own --retries repeats a single test inside the process it is
     // already in, which does not help the failure this suite actually sees:
@@ -259,10 +426,10 @@ const runMochaSuite = () => {
     // fresh browser and a freshly registered company, which is the granularity
     // the flake lives at. Retried files are named at the end of the run: a
     // real regression fails twice and must not hide behind a green tick.
-    const attempt = mocha(batch).catch(error => {
+    const attempt = mocha(batch, batchSidecarPath).catch(error => {
       console.error(`Integration batch ${index + 1} failed, retrying the whole batch: ${error.message}`);
-      flaky.push(batch.join(', '));
-      return mocha(batch);
+      flaky.push({ contour: 'integration-batch-retry', spec: batch.join(', ') });
+      return mocha(batch, batchSidecarPath);
     });
 
     if (!keepGoing) {
@@ -282,11 +449,16 @@ const runMochaSuite = () => {
     )
     .then(() => (integrationOnly
       ? null
-      : run(node, ['node_modules/mocha/bin/mocha', '--recursive', '--exit'].concat(FAIL_FAST, ['t/unit']))))
+      : run(
+        node,
+        ['node_modules/mocha/bin/mocha', '--recursive', '--exit']
+          .concat(FAIL_FAST, ['--reporter', FLAKE_REPORTER], ['t/unit']),
+        { env: Object.assign({}, baseTestEnv, { FLAKE_ARTIFACT_PATH: flakeSidecarPath('unit-mocha-retry') }) }
+      )))
     .then(() => {
       if (flaky.length) {
-        console.log(`Integration specs that needed a second run (${flaky.length}):`);
-        flaky.forEach(entry => console.log(`  - ${entry}`));
+        console.log(`Spec files that needed a second run (${flaky.length}):`);
+        flaky.forEach(entry => console.log(`  - [${entry.contour}] ${entry.spec}`));
       }
 
       if (failures.length) {
@@ -395,7 +567,13 @@ run(node, ['bin/db_update.js'])
   })
   .then(() => runMochaSuite())
   .then(() => stopServer(server))
-  .catch(error => stopServer(server).then(() => {
-    console.error(error && error.stack || error);
-    process.exit(1);
-  }));
+  // The flake report is written on the failure path too: a red run is exactly
+  // when what got retried matters most, and the CI upload treats a missing
+  // file as a defect of its own (if-no-files-found: error).
+  .then(() => writeFlakeReport())
+  .catch(error => stopServer(server)
+    .then(() => writeFlakeReport())
+    .then(() => {
+      console.error(error && error.stack || error);
+      process.exit(1);
+    }));

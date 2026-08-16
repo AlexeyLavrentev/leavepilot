@@ -222,23 +222,18 @@ http://localhost:3000
 - `EXTERNAL_CONNECTORS_SCHEDULER_TIMEZONE`
 - `JIRA_DC_PRIVATE_HOST_ALLOWLIST`
 
-## Когда включать `RUN_DB_MIGRATIONS=true`
+## Когда выключать `RUN_DB_MIGRATIONS`
 
-По умолчанию в compose стоит:
+Из коробки контейнер приложения сам применяет миграции при старте:
+`docker-compose.yml` подставляет `${RUN_DB_MIGRATIONS:-true}`, а
+`.env.example` задаёт `RUN_DB_MIGRATIONS=true`. Эффективное значение по
+умолчанию — `true`: после `docker compose up --build -d` база сразу
+получает актуальную схему, отдельных команд не нужно.
 
-```text
-RUN_DB_MIGRATIONS=false
-```
-
-Это безопаснее для контролируемых выкладок.
-
-Если хотите, чтобы контейнер приложения сам запускал миграции при старте, можно поставить:
-
-```text
-RUN_DB_MIGRATIONS=true
-```
-
-Но для рабочей корпоративной среды обычно лучше запускать миграции явно отдельной командой:
+Отключают автозапуск обычно в одном случае: контролируемые выкладки, где
+схему базы меняют только вручную и в согласованное окно. Для этого
+поставьте в `.env` для `RUN_DB_MIGRATIONS` значение `false` — и
+применяйте миграции явной командой:
 
 ```bash
 docker compose run --rm app npm run db-update
@@ -299,8 +294,12 @@ docker compose exec app node -e "const db=require('./lib/model/db'); console.log
 
 ### Базовая проверка
 
+Сервис `redis` в compose — это Engram (RESP2-совместимый движок), в его
+образе нет `redis-cli`. Проверка выполняется из контейнера приложения
+тем же клиентом, которым пользуется само приложение:
+
 ```bash
-docker compose exec redis redis-cli ping
+docker compose exec app node -e "const redis=require('redis'); const c=redis.createClient({url: 'redis://redis:6379', RESP: 2}); c.connect().then(() => c.ping()).then(r => { console.log(r); c.quit(); }).catch(e => { console.error(e.message); process.exit(1); });"
 ```
 
 Ответ должен быть:
@@ -315,7 +314,7 @@ PONG
 2. Выполните:
 
 ```bash
-docker compose exec redis redis-cli KEYS 'sess:*'
+docker compose exec app node -e "const redis=require('redis'); const c=redis.createClient({url: 'redis://redis:6379', RESP: 2}); c.connect().then(() => c.keys('sess:*')).then(r => { console.log(r.join('\n')); c.quit(); }).catch(e => { console.error(e.message); process.exit(1); });"
 ```
 
 Если ключи есть, сессии пишутся в Redis.

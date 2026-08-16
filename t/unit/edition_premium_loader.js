@@ -88,7 +88,7 @@ describe('Premium edition loader', function() {
         registry: createRegistry(),
         logger: { warn: function() {} },
       });
-    }).to.throw(/TIMEOFF_PREMIUM_MODULE is not configured/);
+    }).to.throw(/LEAVEPILOT_PREMIUM_MODULE is not configured/);
   });
 
   it('loads premium modules that export a function', function() {

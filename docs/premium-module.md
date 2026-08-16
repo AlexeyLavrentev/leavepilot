@@ -1,7 +1,7 @@
 # Premium Module Contract
 
 The community application can optionally load a private premium module at
-startup. This keeps the open source core runnable on its own while giving the
+startup. This keeps the source-available core runnable on its own while giving the
 commercial build one stable extension point.
 
 ## Configuration
@@ -295,7 +295,7 @@ licenses, signatures, signing secrets, API tokens, or customer-private data.
 
 ## Moving a Feature Into a Private Module
 
-Use this path when extracting a premium feature out of the open-source tree:
+Use this path when extracting a premium feature out of the source-available tree:
 
 1. Move registration into a private module that follows the same contract.
 2. Move the route implementation, views, models, jobs, and feature-specific

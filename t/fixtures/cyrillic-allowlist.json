@@ -1,0 +1,50 @@
+{
+  "_comment": "Cyrillic literal allowlist (D-14, QUAL-05). Every entry names a string literal that carries Cyrillic and is sanctioned to keep it. Consumed by t/unit/locale_cyrillic_watchdog.js: an entry exempts exactly one file+line, an entry whose line no longer holds a Cyrillic string literal is PHANTOM and fails the build (an allowlist entry must keep matching a real anchor, T-05-07), and every entry carries a mandatory reason so growth shows up in review diffs. Two shapes live here by design: (1) model-level seed defaults that become stored per-row data rather than request-locale-rendered text, and (2) model validator/invariant messages that have no request context and never reach an API payload directly (the routes emit translated req.t() errors for the same conditions).",
+  "entries": [
+    {
+      "file": "lib/model/db/company.js",
+      "line": 342,
+      "reason": "Seed default department name ('Продажи' for CIS countries, 'Sales' otherwise) chosen at company creation: stored as per-row data, not request-locale-rendered text — translating per request would corrupt stored rows (D-14 sanctioned shape 2)"
+    },
+    {
+      "file": "lib/model/db/leave_type.js",
+      "line": 61,
+      "reason": "Seed default leave-type name ('Отпуск' for KZ/RU, 'Holiday' otherwise) written by generate_leave_types bulkCreate: becomes stored per-row data, not request-locale-rendered text (D-14 sanctioned shape 2)"
+    },
+    {
+      "file": "lib/model/db/leave_type.js",
+      "line": 62,
+      "reason": "Seed default leave-type name ('Больничный' for KZ/RU, 'Sick Leave' otherwise) written by generate_leave_types bulkCreate: becomes stored per-row data, not request-locale-rendered text (D-14 sanctioned shape 2)"
+    },
+    {
+      "file": "lib/model/db/reminder_schedule.js",
+      "line": 32,
+      "reason": "Sequelize validator message (days_before min): the model definition has no request context; routes pre-validate daysBefore with a translated req.t() error so this backstop never reaches an API payload directly (D-14 sanctioned)"
+    },
+    {
+      "file": "lib/model/db/reminder_schedule.js",
+      "line": 36,
+      "reason": "Sequelize validator message (days_before max): the model definition has no request context; routes pre-validate daysBefore with a translated req.t() error so this backstop never reaches an API payload directly (D-14 sanctioned)"
+    },
+    {
+      "file": "lib/model/db/reminder_schedule.js",
+      "line": 113,
+      "reason": "Legacy instanceMethods.validateRecipients throw (Sequelize 6 ignores instanceMethods — dead config kept as documentation): model invariant with no request context and no consumer; routes enforce the same rule with req.t() (D-14 sanctioned)"
+    },
+    {
+      "file": "lib/model/db/reminder_schedule.js",
+      "line": 119,
+      "reason": "Legacy instanceMethods.getDisplayName fallback 'Все типы' (all leave types; Sequelize 6 ignores instanceMethods — dead config): no request context and no consumer; the settings page renders its own translated allTypes key (D-14 sanctioned)"
+    },
+    {
+      "file": "lib/model/db/reminder_schedule.js",
+      "line": 193,
+      "reason": "ReminderSchedule.prototype.validateRecipients throw (Sequelize 6 live method): model invariant with no request context and no consumer today; routes enforce the same rule with req.t() (D-14 sanctioned)"
+    },
+    {
+      "file": "lib/model/db/reminder_schedule.js",
+      "line": 197,
+      "reason": "ReminderSchedule.prototype.getDisplayName fallback 'Все типы' (all leave types; Sequelize 6 live method): no request context and no consumer today; the settings page renders its own translated allTypes key (D-14 sanctioned)"
+    }
+  ]
+}

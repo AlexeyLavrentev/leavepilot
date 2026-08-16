@@ -36,6 +36,43 @@ describe('Overlapping bookings', function(){
 
   var non_admin_user_email, new_user_email, driver;
 
+  /*
+    Same stabilization as in ovelapping_bookings_halfs.js: a failed
+    submission leaves the book-leave modal open with the error flash, and
+    Bootstrap keeps the fading shell mounted while it animates. On a slow
+    two-core CI runner the next test's click on the navbar button lands
+    under that shell (ElementClickInterceptedError). Wait for the modal to
+    be gone before opening it again, and for it to be visible after.
+  */
+  var Key = require('selenium-webdriver').Key;
+
+  var wait_modal_closed = function(drv, timeout) {
+    return drv.wait(until.elementIsNotVisible(
+      drv.findElement(By.css('#book_leave_modal'))
+    ), timeout);
+  };
+
+  var open_book_leave_modal = function(drv) {
+    // If a previous failed submission left the modal open, close it
+    // explicitly (Escape) and let the fade finish before clicking the
+    // navbar button — otherwise the click lands under the modal shell
+    // (ElementClickInterceptedError on a slow CI runner).
+    return wait_modal_closed(drv, 1200)
+      .catch(function() {
+        return drv.actions().sendKeys(Key.ESCAPE).perform()
+          .then(function(){ return wait_modal_closed(drv, 1500); });
+      })
+      .then(function() {
+        return drv.findElement(By.css('#book_time_off_btn'));
+      })
+      .then(function(el){ return el.click(); })
+      .then(function() {
+        return drv.wait(until.elementIsVisible(
+          drv.findElement(By.css('#book_leave_modal'))
+        ), 1500);
+      });
+  };
+
   it('Create new company', function(done){
     register_new_user_func({
       application_host : application_host,
@@ -100,8 +137,7 @@ describe('Overlapping bookings', function(){
 
   it("Request new leave", function(done){
     driver
-      .findElement(By.css('#book_time_off_btn'))
-      .then(function(el){ return el.click() })
+      .then(function(){ return open_book_leave_modal(driver) })
 
       // Create new leave request
       .then(function(){
@@ -135,8 +171,7 @@ describe('Overlapping bookings', function(){
 
   it("Try to request overlapping leave request", function(done){
     driver
-      .findElement(By.css('#book_time_off_btn'))
-      .then(function(el){ return el.click() })
+      .then(function(){ return open_book_leave_modal(driver) })
 
       // Create new leave request
       .then(function(){

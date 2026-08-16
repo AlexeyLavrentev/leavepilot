@@ -90,5 +90,41 @@
     "clear": "Таза",
     "weekStart": 1,
     "format": "кк.мм.жжж"
+  },
+  "licenseStatus": {
+    "sectionTitle": "Лицензия және нұсқа",
+    "community": "{{brand}} Community Edition — тегін.",
+    "upsellCommunity": "Premium туралы білу",
+    "active": "Premium белсенді ({{plan}}).",
+    "manage": "Жазылымды басқару",
+    "expiring": "Premium белсенді — {{days}} күннен кейін аяқталады ({{expires}}).",
+    "upsellRenew": "Жазылымды жаңарту",
+    "grace": "Premium аяқталды {{expires}} — функциялар {{graceEndsAt}} дейін жұмыс істейді, жаңартыңыз.",
+    "expired": "Premium аяқталды — премиум функциялар өшірілді.",
+    "revoked": "Лицензия күшінен айырылды — премиум функциялар өшірілді.",
+    "upsellContact": "Қолдау қызметімен байланысу",
+    "error": "Лицензия қатесі ({{reason}}) — лицензиялық файлды қайта орнатыңыз немесе жаңартыңыз."
+  },
+  "reminderSchedules": {
+    "errors": {
+      "featureDisabled": "Еске салу функциясы қолжетімсіз",
+      "listFailed": "Кестелерді алу кезінде қате кетті",
+      "createFailed": "Кесте жасау кезінде қате кетті",
+      "updateFailed": "Кестені жаңарту кезінде қате кетті",
+      "deleteFailed": "Кестені жою кезінде қате кетті",
+      "historyFailed": "Тарихты алу кезінде қате кетті",
+      "testSendFailed": "Сынақ хатын жіберу кезінде қате кетті",
+      "scheduleNotFound": "Кесте табылмады",
+      "leaveNotFound": "Демалыс табылмады",
+      "leaveForbidden": "Бұл демалысқа рұқсат жоқ",
+      "duplicateSchedule": "Мұндай кесте қазірдің өзінде бар",
+      "invalidLeaveType": "Жарамсыз болмау түрі",
+      "daysBeforeRange": "daysBefore 1-ден 365-ке дейін болуы тиіс",
+      "recipientRequired": "Кем дегенде бір алушы таңдалуы керек",
+      "leaveIdRequired": "leaveId міндетті"
+    },
+    "status": {
+      "testEmailSent": "Сынақ хаты жіберілді"
+    }
   }
 }

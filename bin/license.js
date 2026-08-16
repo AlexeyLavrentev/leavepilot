@@ -6,6 +6,7 @@ const argv = require('minimist')(process.argv.slice(2));
 const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
+const envResolver = require('../lib/env_resolver');
 const features = require('../lib/features');
 
 const subcommand = argv._[0];
@@ -122,7 +123,7 @@ const handleVerify = () => {
       process.exit(1);
     }
 
-    process.env.TIMEOFF_LICENSE_PUBLIC_KEY = publicKey;
+    process.env.LEAVEPILOT_LICENSE_PUBLIC_KEY = publicKey;
     const result = features.verifyLicenseEnvelope(envelope, 'cli');
 
     if (!result.valid) {
@@ -136,13 +137,13 @@ const handleVerify = () => {
   }
 
   if (algorithm === 'HMAC-SHA256') {
-    const secret = argv.secret || process.env.TIMEOFF_LICENSE_SECRET;
+    const secret = argv.secret || envResolver.resolve('LICENSE_SECRET');
     if (!secret) {
       process.stderr.write('HMAC verification requires --secret or TIMEOFF_LICENSE_SECRET.\n');
       process.exit(1);
     }
 
-    process.env.TIMEOFF_LICENSE_SECRET = secret;
+    process.env.LEAVEPILOT_LICENSE_SECRET = secret;
     const result = features.verifyLicenseEnvelope(envelope, 'cli');
 
     if (!result.valid) {

@@ -372,6 +372,32 @@ describe('Interactive leave details popover — all first-party surfaces', funct
     await openPage({url: `${applicationHost}calendar/teamview/?months=12`, driver});
     const triggers = await driver.findElements(By.css('.team-view-leave-details-trigger'));
     expect(triggers.length).to.be.at.least(2);
+    /*
+      Center the second trigger BEFORE any pointer or focus activity, and
+      start from a closed popover state. The grid this test drives scrolls
+      horizontally (12 months do not fit a 1024px viewport), and focusing
+      triggers[1] auto-scrolls it into view. On a host whose Chrome
+      re-evaluates hover after a scroll under a stationary pointer
+      (observed with Chrome for Testing 151; the CI runners' Chrome and
+      geometry never land the pointer on another trigger) that layout
+      shift fires mouseenter on an unrelated third trigger, whose fresh
+      700ms hover then opens a second popover right inside this test's
+      800ms wait. The product hides the first popover when that second
+      one opens, but the assertion sampled the 150ms Bootstrap crossfade
+      between the two and read a count of 2 where the interaction under
+      test has exactly one - a host-only red the dialect contours cannot
+      explain, because it reproduces identically on SQLite. Scrolling
+      first means the focus below needs no scroll at all, so the only
+      pending hover that exists is the one on triggers[0], and its
+      cancellation by the other trigger opening stays what is asserted.
+    */
+    await driver.executeScript(function(second) {
+      second.scrollIntoView({block: 'center', inline: 'center'});
+    }, triggers[1]);
+    await driver.actions().move({origin: await driver.findElement(By.css('h1'))}).perform();
+    await driver.wait(async function() {
+      return (await visibleLeavePopoverCount()) === 0;
+    }, 3000, 'a popover from the page setup stayed open');
     await driver.actions().move({origin: triggers[0]}).perform();
     await driver.sleep(60);
     const pendingBefore = await driver.executeScript(function(element) {
@@ -581,8 +607,19 @@ describe('Interactive leave details popover — all first-party surfaces', funct
         const trigger = await driver.findElement(By.css(surface.selector));
         await driver.executeScript(function(element) { element.focus(); }, trigger);
         await waitVisible(trigger, true, 1800);
+        // Wait for the exact precondition the matrix measures. On a slow
+        // two-core CI runner the initial focus can be re-evaluated after the
+        // focus-induced grid scroll (the same Chrome hover/focus re-evaluation
+        // class 82ad934 stabilized in the sibling test), which closes the
+        // popover after the text-only wait below has already passed — the
+        // measurement then reads aria-expanded="false". Re-focus on each poll
+        // and require the open state itself, not just its rendered text.
         await driver.wait(async function() {
           const info = await popoverInfo(trigger);
+          if (info.expanded !== 'true') {
+            await driver.executeScript(function(element) { element.focus(); }, trigger);
+            return false;
+          }
           return info.text.length > 0 && !/loading/i.test(info.text);
         }, 4000);
 
