@@ -93,7 +93,7 @@ master». Хоть одна красная — тег не ставить.
 - [авто: merge] мультиплатформенный манифест собран и подписан, инспект
   манифеста зелёный.
 - [руки] Проверить опубликованное своими глазами:
-  `docker buildx imagetools inspect ghcr.io/alexeylavrentev/leavepilot-community:v3.0.0`
+  `docker buildx imagetools inspect ghcr.io/alexeylavrentev/leavepilot-community:3.0.0`
   — в манифесте обе платформы; затем `cosign verify` и
   `cosign verify-attestation` по командам из docs/container-images.md
   (раздел про проверку подписи и SBOM). Пакет в GHCR публичный.
@@ -104,7 +104,7 @@ master». Хоть одна красная — тег не ставить.
   интерфейс; workflow релиз не создаёт). Release notes — на английском,
   текст пишет владелец. Обязательно указать: что вошло в релиз; упоминание
   миграций (есть ли новые и что делать при обновлении); ссылку на образ
-  ghcr.io/alexeylavrentev/leavepilot-community:v3.0.0; отметку, что релизный
+  ghcr.io/alexeylavrentev/leavepilot-community:3.0.0; отметку, что релизный
   чеклист пройден целиком.
 
 ## 8. Premium — после community-релиза
@@ -121,3 +121,26 @@ master». Хоть одна красная — тег не ставить.
   из бэкапа базы, снятого до обновления; ручные деструктивные правки БД — не
   первый путь. До релиза убедиться, что предыдущий тег образа существует
   (теги в GHCR не удаляются) и бэкап снят.
+
+## 10. Факт прохода
+
+- **2026-08-16** — чеклист пройден целиком. Релизный SHA
+  `34a3ab7260594a61ebcbdb1f76c1ab27d2d9a3ef` (merge PR #225), git-тег
+  `v3.0.0`, образ `ghcr.io/alexeylavrentev/leavepilot-community:3.0.0`
+  (манифест `sha256:ce13cb46…`), Release:
+  <https://github.com/AlexeyLavrentev/leavepilot/releases/tag/v3.0.0>.
+- Все [авто] пункты зелёные на релизном SHA: Core CI (test, docker-build,
+  portal-docker-build, mysql-migration-smoke, mysql-dialect, security,
+  install-docker, install-npm; dco на push-прогоне skipped по дизайну —
+  его область PR-диапазоны) и Core integration (4/4 шарда); publish-прогон
+  тега зелёный: мультиарх amd64+arm64, cosign-подпись манифеста проверена,
+  SPDX SBOM обеих платформ верифицирован.
+- Эррата: тег образа в GHCR не содержит префикса `v` (схема тегов:
+  `3.0.0`/`3.0`/`3`/`latest`/`sha-*`) — отсюда исправленные ссылки в
+  разделах 6–7. Аттестации SBOM релиза 3.0.0 привязаны к per-platform
+  digest'ам (provenance-wrapped index: `sha256:0bbfef5f…` arm64,
+  `sha256:e300d12b…` amd64), а не к digest'ам из `imagetools inspect`;
+  для будущих релизов привязка чинится PR #226, для 3.0.0 проверка — по
+  указанным digest'ам.
+- Каноническая публичная запись прохода — notes GitHub Release v3.0.0
+  (D-17); этот блок — датированная памятка о факте и эррате.
