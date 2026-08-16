@@ -18,6 +18,7 @@
     "!bin/test.js",
     "!bin/install_check.js",
     "!bin/screenshots.js",
+    "!bin/demo.js",
     "config",
     "docker",
     "lib",

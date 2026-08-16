@@ -87,7 +87,13 @@ function compose(args, options) {
 
     child.on('exit', code => {
       currentChild = null;
-      if (options && options.echo && output.trim()) {
+      const failed = (code === null ? 1 : code) !== 0;
+      // Echo on demand (`options.echo`) but ALWAYS echo a failure's output:
+      // compose diagnostics (interpolation errors, pull failures, exec
+      // crashes) arrive on the failed command's stdout/stderr, and swallowing
+      // them leaves the operator with a generic step message that points at
+      // the wrong cause entirely.
+      if (output.trim() && (failed || (options && options.echo))) {
         console.log(output.trim().split('\n').map(line => '    ' + line).join('\n'));
       }
       resolve({ code: code === null ? 1 : code, output });

@@ -184,6 +184,21 @@ describe('Published package contents', function() {
     ).to.not.include('docs/license-portal-design.md');
   });
 
+  // Repo/CI-only bin scripts: their `npm run` entries target the checkout,
+  // but the files they drive are (deliberately) not in the tarball, so
+  // shipping the script itself only advertises a broken entry
+  // (bin/demo.js drives docker-compose.demo.yml; bin/screenshots.js drives
+  // bin/demo.js; bin/install_check.js drives the repo's own docs and
+  // fixtures). Same class as the already-excluded bin/test.js.
+  it('does not ship the repo-only demo/screenshots/install-check bin scripts', function() {
+    ['bin/demo.js', 'bin/screenshots.js', 'bin/install_check.js'].forEach(script => {
+      expect(
+        paths,
+        script + ' must stay out of the tarball: its target files (compose file, docs, fixtures) are not shipped, so the packaged script would only crash'
+      ).to.not.include(script);
+    });
+  });
+
   it('does not ship bin scripts whose own dependencies reach outside the package', function() {
     const offenders = deadEntryOffenders(paths);
 

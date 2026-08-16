@@ -14,7 +14,14 @@
 #     instead of the community template's hardcoded `always` (D-21): before
 #     the first tag the stand boots a locally built image carrying the same
 #     tag, and a mandatory pull of a GHCR tag that does not exist yet would
-#     fail. Post-tag, an operator can `export LEAVEPILOT_DEMO_PULL_POLICY=always`.
+#     fail. Post-tag, an operator can `export LEAVEPILOT_DEMO_PULL_POLICY=always`;
+#   - SESSION_SECRET/CRYPTO_SECRET carry demo-only `:-` defaults instead of
+#     the template's `${VAR:?}` guards: `npm run demo` is a one-command
+#     promise, so a fresh clone with no `.env` and no exported secrets must
+#     interpolate cleanly (a `:?` guard fails interpolation for EVERY compose
+#     command, including the wrapper's step-1 reset, before anything runs).
+#     The `not-for-production` markers keep the values from being mistaken
+#     for real secrets; the production compose files keep the hard guards.
 #
 # No demo-seed logic lives here or in the image (D-11): seeding is done from
 # the host wrapper via `docker compose exec app node bin/seed_demo.js`.
@@ -67,8 +74,10 @@ services:
       DB_USER: ${MYSQL_USER:-timeoff}
       DB_PASSWORD: ${MYSQL_PASSWORD:-timeoff_password}
       DB_LOGGING: ${DB_LOGGING:-false}
-      SESSION_SECRET: ${SESSION_SECRET:?SESSION_SECRET is required}
-      CRYPTO_SECRET: ${CRYPTO_SECRET:?CRYPTO_SECRET is required}
+      # Demo-only defaults (see the header): the stand is disposable, the
+      # markers scream "not a real secret", and a fresh clone interpolates.
+      SESSION_SECRET: ${SESSION_SECRET:-demo-session-secret-not-for-production}
+      CRYPTO_SECRET: ${CRYPTO_SECRET:-demo-crypto-secret-not-for-production}
       TRUST_PROXY: ${TRUST_PROXY:-1}
       SESSION_COOKIE_SECURE: ${SESSION_COOKIE_SECURE:-false}
       SESSION_COOKIE_SAME_SITE: ${SESSION_COOKIE_SAME_SITE:-lax}

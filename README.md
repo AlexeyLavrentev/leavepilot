@@ -62,7 +62,7 @@ Community остаётся полноценным приложением для 
 
 ### Для установки через npm
 
-- `Node.js 22` (диапазон из `package.json`: `>=22.0.0 <23`)
+- `Node.js 22` (диапазон из `package.json`: `>=22.12.0 <23`)
 - `npm`
 
 ### Для установки через Docker
@@ -241,6 +241,10 @@ npm run demo
 Команда поднимет локальный стенд и наполнит его демо-данными: компания
 «Демо компания», 4 отдела, 12 сотрудников и отпуска — уже одобренные и
 ожидающие согласования.
+
+Секреты `SESSION_SECRET` и `CRYPTO_SECRET` стенд получает демонстрационными
+значениями по умолчанию — отдельная настройка не нужна. Для реального
+развёртывания задайте собственные секреты (раздел «Файл `.env`» выше).
 
 Откройте в браузере:
 
@@ -434,8 +438,12 @@ node -e "const db=require('./lib/model/db'); console.log({dialect: db.sequelize.
 
 ### Проверка самого Redis
 
+Сервис `redis` в compose — это Engram (RESP2-совместимый движок), в его
+образе нет `redis-cli`. Проверка выполняется из контейнера приложения
+тем же клиентом, которым пользуется само приложение:
+
 ```bash
-docker compose exec redis redis-cli ping
+docker compose exec app node -e "const redis=require('redis'); const c=redis.createClient({url: 'redis://redis:6379', RESP: 2}); c.connect().then(() => c.ping()).then(r => { console.log(r); c.quit(); }).catch(e => { console.error(e.message); process.exit(1); });"
 ```
 
 Ожидаемый ответ:
@@ -450,7 +458,7 @@ PONG
 2. Выполните:
 
 ```bash
-docker compose exec redis redis-cli KEYS 'sess:*'
+docker compose exec app node -e "const redis=require('redis'); const c=redis.createClient({url: 'redis://redis:6379', RESP: 2}); c.connect().then(() => c.keys('sess:*')).then(r => { console.log(r.join('\n')); c.quit(); }).catch(e => { console.error(e.message); process.exit(1); });"
 ```
 
 Если ключи появились, сессии пишутся в Redis.

@@ -18,8 +18,15 @@
     community template's hardcoded `always`: a mandatory GHCR pull of a tag
     that does not exist yet would fail `up` on the pre-tag local build - the
     exact lever the deliberate divergence from the template exists for;
-  - the ${VAR:?required} secret guards keep an accidental guard-free boot of
-    the stand from coming up with placeholder-less sessions;
+  - SESSION_SECRET/CRYPTO_SECRET carry demo-only
+    ${VAR:-demo-...-not-for-production} defaults, NOT the template's
+    ${VAR:?required} guards: `npm run demo` is a one-command promise, so a
+    fresh clone with no .env and no exported secrets must interpolate
+    cleanly - a `:?` guard fails interpolation for EVERY compose command
+    (the wrapper's step-1 reset included) before anything runs (CR-01). The
+    not-for-production markers keep the placeholder values from being
+    mistaken for real secrets, and the production compose files keep the
+    hard guards (pinned below so the loosening cannot leak there);
   - the host port must default to 3001 (DEMO_PORT lever) so the
     demo stand coexists with the install-check stand / a dev server on 3000;
   - the brand env passthrough must keep EMPTY defaults so the demo renders
@@ -84,12 +91,31 @@ const hasExactLine = (content, line) => {
 
 // True when `content` carries `NAME: ${NAME:?...}` - the compose required-
 // variable guard. The message content is free; the :? form is the contract.
+// Used for the PRODUCTION compose files; the demo file deliberately does not
+// carry these (fresh-clone interpolation, CR-01).
 const hasRequiredGuard = (content, name) => {
   return new RegExp(
     '^[ \\t]*' + escapeRegexp(name) + ':[ \\t]*\\$\\{' + escapeRegexp(name) + ':\\?[^}]+\\}[ \\t]*$',
     'm'
   ).test(content);
 };
+
+// True when `content` carries `NAME: ${NAME:-demo-...-not-for-production}` -
+// the demo-only secret default. The `:-` form (not the production `:?`
+// guard) is the fresh-clone contract; the non-empty default prefixed with
+// `demo-` and suffixed `not-for-production` is the "never mistakable for a
+// real secret, never an empty value" contract.
+const hasDemoSecretDefault = (content, name) => {
+  return new RegExp(
+    '^[ \\t]*' + escapeRegexp(name) + ':[ \\t]*\\$\\{' + escapeRegexp(name)
+      + ':-demo-[^}]*not-for-production\\}[ \\t]*$',
+    'm'
+  ).test(content);
+};
+
+// The production compose files that must keep the hard ${VAR:?} guards: the
+// demo-only `:-` loosening exists ONLY for the disposable local stand.
+const PRODUCTION_COMPOSE_FILES = ['docker-compose.yml', 'docker-compose.community-image.yml'];
 
 // True when `content` carries `NAME: ${NAME:-}` - empty-default passthrough.
 // Same predicate shape as compose_brand_env.js hasBrandVar.
@@ -177,14 +203,45 @@ describe('demo compose contract (docker-compose.demo.yml, plan 06-03)', function
     expect(hasExactLine(templateStyle, PULL_POLICY_LINE)).to.equal(false);
   });
 
-  it('keeps the ${VAR:?required} guards for SESSION_SECRET and CRYPTO_SECRET', function() {
+  it('defaults SESSION_SECRET and CRYPTO_SECRET to demo-only not-for-production values (fresh clone interpolates with no .env)', function() {
     const content = read();
 
     ['SESSION_SECRET', 'CRYPTO_SECRET'].forEach(name => {
       expect(
-        hasRequiredGuard(content, name),
-        name + ' must use the ${' + name + ':?...} required-variable guard (no placeholder-less demo boot)'
+        hasDemoSecretDefault(content, name),
+        name + ' must use the ${' + name + ':-demo-...-not-for-production} demo default - the production files\' :? guard fails compose interpolation on a fresh clone (no .env, no exported secrets) for every command, including the wrapper\'s step-1 reset (CR-01)'
       ).to.equal(true);
+    });
+
+    // The fresh-clone contract is interpolation-level: not a single
+    // ${VAR:?...} required guard may remain anywhere in the demo file - any
+    // one of them kills every compose command when the variable is unset.
+    // Comment lines are excluded: prose mentioning the guard (like the file
+    // header explaining why the demo file dropped it) never reaches the
+    // interpolator.
+    const effectiveLines = content
+      .split('\n')
+      .filter(line => !/^[ \t]*#/.test(line))
+      .join('\n');
+    expect(
+      /\$\{[^}]+:\?/.test(effectiveLines),
+      'docker-compose.demo.yml still carries a ${VAR:?} required-variable guard - with the variable unset, compose interpolation fails before anything runs (CR-01)'
+    ).to.equal(false);
+  });
+
+  it('keeps the hard ${VAR:?required} guards for SESSION_SECRET and CRYPTO_SECRET in the production compose files', function() {
+    // The demo-only `:-` loosening must not leak: real deployments must not
+    // boot on placeholder secrets, so the production templates keep the
+    // guards the demo file deliberately dropped.
+    PRODUCTION_COMPOSE_FILES.forEach(file => {
+      const content = fs.readFileSync(path.join(root, file), 'utf8');
+
+      ['SESSION_SECRET', 'CRYPTO_SECRET'].forEach(name => {
+        expect(
+          hasRequiredGuard(content, name),
+          file + ' must keep the ${' + name + ':?...} required-variable guard - a real deployment booting on placeholder secrets is the failure the guard exists for'
+        ).to.equal(true);
+      });
     });
   });
 
@@ -231,17 +288,19 @@ describe('demo compose contract (docker-compose.demo.yml, plan 06-03)', function
       'the image-line pin has no teeth: a copy without the lever line still passes'
     ).to.equal(false);
 
-    const withoutGuard = content.replace(
-      new RegExp('^[ \t]*SESSION_SECRET:[ \t]*\\$\\{SESSION_SECRET:\\?[^}]+\\}[ \t]*$', 'm'),
-      '      SESSION_SECRET: placeholder'
+    // The exact CR-01 regression: re-tightening the demo file to the
+    // template's :? guard must fail the demo-default pin above.
+    const reGuarded = content.replace(
+      new RegExp('^[ \\t]*SESSION_SECRET:[ \\t]*\\$\\{SESSION_SECRET:-demo-[^}]*not-for-production\\}[ \\t]*$', 'm'),
+      '      SESSION_SECRET: ${SESSION_SECRET:?SESSION_SECRET is required}'
     );
     expect(
-      withoutGuard,
-      'sanity check: replacing the SESSION_SECRET guard must change the fabricated copy'
+      reGuarded,
+      'sanity check: replacing the SESSION_SECRET demo default must change the fabricated copy'
     ).to.not.equal(content);
     expect(
-      hasRequiredGuard(withoutGuard, 'SESSION_SECRET'),
-      'the secret-guard pin has no teeth: a plain value still passes'
+      hasDemoSecretDefault(reGuarded, 'SESSION_SECRET'),
+      'the demo-secret-default pin has no teeth: a copy re-tightened to the :? guard (the exact CR-01 fresh-clone breaker) still passes'
     ).to.equal(false);
   });
 
