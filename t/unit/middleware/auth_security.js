@@ -289,8 +289,15 @@ describe('global CSRF verifier', function() {
     expect(authSecurity.CSRF_EXEMPT_EXACT_PATHS).to.deep.equal([
       '/login',
       '/register',
-      '/forgot-password',
-      '/reset-password',
+      /*
+        G-05-3/WR-02: the trailing-slash forms are the mounted ones
+        (lib/route/login.js registers router.post('/forgot-password/') and
+        router.post('/reset-password/')). The slash-less spellings never
+        matched includes(req.path), so those routes were verified twice
+        while the constant claimed they were exempt.
+      */
+      '/forgot-password/',
+      '/reset-password/',
       /*
         Fifth entry, not in the original D-13 list of four: the SAML
         assertion consumer. The identity provider POSTs the response
@@ -329,7 +336,16 @@ describe('global CSRF verifier', function() {
   });
 
   it('rejects prefixed non-members - there are no startsWith semantics', function() {
-    ['/login-extra', '/register-foo', '/forgot-passwordx', '/login/sso/callback/saml/extrapath'].forEach(path => {
+    [
+      '/login-extra',
+      '/register-foo',
+      '/forgot-passwordx',
+      // G-05-3: the slash-less spellings are drift, not membership - only
+      // the exact mounted forms are exempt.
+      '/forgot-password',
+      '/reset-password',
+      '/login/sso/callback/saml/extrapath',
+    ].forEach(path => {
       const req = createPostReq({path: path, originalUrl: path, session: {}});
       const res = createRes();
 

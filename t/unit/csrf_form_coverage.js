@@ -51,6 +51,14 @@ describe('CSRF form coverage', function() {
     THIRD_PARTY_POST_BINDINGS with the reason - if the declaration outlives
     its route, this spec fails too.
 
+  Every exempt entry is matched against the real router.post mount
+  character-for-character, trailing slash included (G-05-3/WR-02): the
+  runtime exemption is includes(req.path), so an entry spelled differently
+  from its mount - the old /forgot-password entry against the
+  /forgot-password/ mount - never matched and silently degraded into
+  double verification while this watchdog's normalizeMountPath made the
+  contract look satisfied. The normalization is gone; drift now fails.
+
   Prefix exemptions (req.path.startsWith('/login') and friends) are the
   defect class that created the accidental-exemption hole in the first
   place: the detector below fails the build on any direct req.path prefix
@@ -114,23 +122,23 @@ function extractPostMounts(source) {
   return mounts;
 }
 
-function normalizeMountPath(mountPath) {
-  return mountPath.length > 1 && mountPath.endsWith('/')
-    ? mountPath.slice(0, -1)
-    : mountPath;
-}
-
 /*
-  Returns the exempt paths (sorted, deterministic) that are justified neither
-  by a route-local verifyCsrfToken mount nor by a declared third-party POST
-  binding whose route still exists.
+  Returns the exempt paths (sorted, deterministic) that match no real
+  router.post mount character-for-character, or whose mount is justified
+  neither by a route-local verifyCsrfToken nor by a declared third-party
+  POST binding.
+
+  Matching is exact on purpose (G-05-3/WR-02): the old normalizeMountPath
+  stripped trailing slashes on both sides, which made the constant's
+  /forgot-password entry look covered by the /forgot-password/ mount while
+  the runtime includes(req.path) check never matched it. The runtime has
+  no normalizer, so neither does the watchdog.
 */
 function findOrphanExemptPaths(exemptPaths, loginSource) {
   const mounts = extractPostMounts(loginSource);
 
   return exemptPaths.filter(exemptPath => {
-    const normalized = normalizeMountPath(exemptPath);
-    const mountForPath = mounts.filter(mount => normalizeMountPath(mount.path) === normalized);
+    const mountForPath = mounts.filter(mount => mount.path === exemptPath);
 
     const protectedByRouteLocalMount = mountForPath.some(mount => mount.hasRouteLocalVerifier);
     const declaredThirdPartyBinding = Object.prototype.hasOwnProperty.call(THIRD_PARTY_POST_BINDINGS, exemptPath)
@@ -174,7 +182,7 @@ describe('CSRF exemption watchdog', function() {
 
     expect(exemptPaths).to.be.an('array');
     expect(exemptPaths.length).to.be.at.least(4);
-    ['/login', '/register', '/forgot-password', '/reset-password'].forEach(pathName => {
+    ['/login', '/register', '/forgot-password/', '/reset-password/'].forEach(pathName => {
       expect(exemptPaths, pathName + ' must stay in the exemption constant').to.include(pathName);
     });
     exemptPaths.forEach(pathName => {
@@ -184,12 +192,12 @@ describe('CSRF exemption watchdog', function() {
     expect(LOGIN_ROUTE_SOURCE.length).to.be.above(0);
   });
 
-  it('every globally-exempt path is protected route-locally or is a declared third-party binding', function() {
+  it('every globally-exempt path exactly matches a protected mount or a declared third-party binding', function() {
     const orphans = findOrphanExemptPaths(authSecurity.CSRF_EXEMPT_EXACT_PATHS, LOGIN_ROUTE_SOURCE);
 
     expect(
-      orphans.map(orphan => orphan + ' is exempt from the global verifier without route-local protection'),
-      'exempt paths must map to a verifyCsrfToken mount in lib/route/login.js or a declared binding'
+      orphans.map(orphan => orphan + ' does not exactly match a route-local-protected router.post mount or a declared binding'),
+      'exempt entries must equal their router.post mounts in lib/route/login.js character-for-character (trailing slash included) and be protected route-locally or declared as a third-party binding'
     ).to.deep.equal([]);
   });
 
@@ -214,6 +222,18 @@ describe('CSRF exemption watchdog', function() {
     const synthetic = "router.post('/login', authSecurity.verifyCsrfToken, function() {});";
 
     expect(findOrphanExemptPaths(['/evil'], synthetic)).to.deep.equal(['/evil']);
+  });
+
+  it('teeth: flags an exempt entry missing the trailing slash its mount has (G-05-3 drift, synthetic source)', function() {
+    const synthetic = "router.post('/forgot-password/', authSecurity.verifyCsrfToken, function() {});";
+
+    expect(findOrphanExemptPaths(['/forgot-password'], synthetic)).to.deep.equal(['/forgot-password']);
+  });
+
+  it('teeth: flags an exempt entry carrying a trailing slash its mount lacks (synthetic source)', function() {
+    const synthetic = "router.post('/forgot-password', authSecurity.verifyCsrfToken, function() {});";
+
+    expect(findOrphanExemptPaths(['/forgot-password/'], synthetic)).to.deep.equal(['/forgot-password/']);
   });
 
   it('teeth: accepts a declared third-party binding whose route still exists (synthetic source)', function() {
