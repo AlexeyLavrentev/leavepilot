@@ -161,6 +161,18 @@ jobs:
           cosign sign --yes "${IMAGE}@${DIGEST}"
           cosign attest --yes --type spdxjson --predicate "${SBOM}" "${IMAGE}@${DIGEST}"
 
+          # build-push-action pushes a provenance-wrapped per-arch index; the
+          # final multi-arch manifest embeds that index's inner image manifest
+          # instead, and that inner digest is what `docker buildx imagetools
+          # inspect` shows consumers. Sign and attest it too so the documented
+          # verification (docs/container-images.md) works on the visible digest.
+          inner_digest="$(docker buildx imagetools inspect --raw "${IMAGE}@${DIGEST}" \
+            | jq -r 'if .manifests then ([.manifests[] | select(.platform.os == "linux")] | .[0].digest // empty) else empty end')"
+          if [[ -n "${inner_digest}" && "${inner_digest}" != "${DIGEST}" ]]; then
+            cosign sign --yes "${IMAGE}@${inner_digest}"
+            cosign attest --yes --type spdxjson --predicate "${SBOM}" "${IMAGE}@${inner_digest}"
+          fi
+
       - name: Upload platform SBOM
         uses: actions/upload-artifact@v7
         with:

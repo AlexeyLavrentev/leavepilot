@@ -17,7 +17,7 @@ Release tags include the full version, minor version, major version, `latest`,
 and the source commit SHA. Production deployments should pin the full version:
 
 ```sh
-export LEAVEPILOT_IMAGE=ghcr.io/alexeylavrentev/leavepilot-community:2.1.0
+export LEAVEPILOT_IMAGE=ghcr.io/alexeylavrentev/leavepilot-community:3.0.0
 export SESSION_SECRET=replace-with-a-long-random-session-secret
 export CRYPTO_SECRET=replace-with-a-long-random-crypto-secret
 
@@ -33,7 +33,7 @@ Published tags remain pullable indefinitely: GHCR does not delete tags or
 images, so every version tag (full, minor, major) ever published stays
 available. The `latest` tag tracks the last stable release and moves on each
 new release; it is convenient for evaluation but is not reproducible.
-Production deployments should pin a full version tag (for example `2.1.0`) so
+Production deployments should pin a full version tag (for example `3.0.0`) so
 an image pull is byte-stable across hosts and over time.
 
 ## Publishing
@@ -46,12 +46,16 @@ The workflow:
 
 1. verifies that the tag matches `package.json`;
 2. builds `amd64` and `arm64` images in parallel on native GitHub-hosted runners;
-3. publishes each platform by immutable digest;
+3. publishes each platform by immutable digest (a provenance-wrapped
+   per-platform manifest);
 4. checks the LeavePilot branding and Community/Premium boundary against the
    `amd64` digest;
-5. combines both verified digests into the versioned multi-platform tags.
-6. generates and attests an SPDX JSON SBOM for each platform digest;
-7. signs each platform digest and the final manifest with keyless Cosign.
+5. combines both verified platform images into the versioned multi-platform
+   tags;
+6. generates an SPDX JSON SBOM per platform and attests it, with keyless
+   Cosign, to both the pushed platform manifest and the inner image digest
+   that `docker buildx imagetools inspect` shows;
+7. signs the final multi-platform manifest with keyless Cosign.
 
 The first GHCR package is private by default. After its first successful
 publication, change `leavepilot-community` visibility to **Public** in the
@@ -61,7 +65,7 @@ After publishing, verify the manifest:
 
 ```sh
 docker buildx imagetools inspect \
-  ghcr.io/alexeylavrentev/leavepilot-community:2.1.0
+  ghcr.io/alexeylavrentev/leavepilot-community:3.0.0
 ```
 
 The output must include both `linux/amd64` and `linux/arm64`.
@@ -69,7 +73,7 @@ The output must include both `linux/amd64` and `linux/arm64`.
 Verify release identity and SBOM attestation with Cosign:
 
 ```sh
-IMAGE=ghcr.io/alexeylavrentev/leavepilot-community:2.1.0
+IMAGE=ghcr.io/alexeylavrentev/leavepilot-community:3.0.0
 IDENTITY='^https://github.com/AlexeyLavrentev/leavepilot/.github/workflows/publish-community-container.yml@refs/(tags/v[0-9]+\.[0-9]+\.[0-9]+|heads/master)$'
 ISSUER='https://token.actions.githubusercontent.com'
 
@@ -78,6 +82,8 @@ cosign verify "$IMAGE" \
   --certificate-oidc-issuer "$ISSUER"
 
 # Copy the required amd64 or arm64 digest from `imagetools inspect`.
+# The SBOM attestation is bound to that inner image digest (and to the
+# platform manifest the build pushed).
 PLATFORM_IMAGE=ghcr.io/alexeylavrentev/leavepilot-community@sha256:PLATFORM_DIGEST
 
 cosign verify-attestation "$PLATFORM_IMAGE" \
