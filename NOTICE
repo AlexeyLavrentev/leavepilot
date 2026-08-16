@@ -15,7 +15,7 @@ License 2.0 (SPDX: Elastic-2.0). The full text of that license is in LICENSE.md.
 
 For guidance on what the Elastic License 2.0 permits — in particular the
 "hosted or managed service" limitation — see:
-https://github.com/AlexeyLavrentev/timeoff/blob/master/docs/licensing-faq.md
+https://github.com/AlexeyLavrentev/leavepilot/blob/master/docs/licensing-faq.md
 
 ================================================================================
 Origin and upstream attribution
@@ -60,4 +60,4 @@ The bundled Font Awesome fonts are licensed under the SIL Open Font License
 regenerable third-party component inventory — npm dependency licenses,
 vendored JavaScript and fonts, and the container base image — is maintained
 in the source repository:
-https://github.com/AlexeyLavrentev/timeoff/blob/master/docs/third-party-inventory.md
+https://github.com/AlexeyLavrentev/leavepilot/blob/master/docs/third-party-inventory.md

@@ -166,13 +166,47 @@ and its redistribution terms are those of the component projects (Node.js
 under the MIT license; Debian packages under their individual DFSG-free
 licenses).
 
+**One-time base-image breakdown (LEGAL-11 verdict tail, Q5 — closed
+2026-08-16).** The release build of 3.0.0 (Core CI job «Docker image build
+(runtime target)» on the release merge commit) resolved the floating tag to
+`node:22-bookworm-slim@sha256:d649c27dae7ba0137b3cef5dd75baa422c08dc3d9e3fc0c23dfb172dc3cc6436`
+(amd64 platform manifest; recorded in the build log line `#5 [base 1/2]
+FROM …@sha256:d649c…`). That exact digest — not the floating tag — was
+scanned with syft 1.51.0 (SPDX JSON output, 288 packages):
+
+- 90 ISC, 78 MIT, 16 NOASSERTION (debian copyright-file fragments syft
+  could not map to an SPDX id), 10 Apache-2.0, 8 BlueOak-1.0.0,
+  8 BSD-2-Clause, 6 BSD-3-Clause, 5 CC0-1.0 — plus ~60 Debian system
+  packages whose `debian/copyright` offers GPL-2.0/GPL-3.0/LGPL among
+  their licensing options (bash, coreutils, util-linux, apt, perl-base,
+  libpam, gpgv and similar base-system tooling).
+- **No AGPL and no SSPL package appears in the image** (checked: zero
+  matches over the full SPDX output).
+- The GPL/LGPL options belong to unmodified Debian 12 («bookworm») system
+  packages, redistributed as shipped by Debian (DFSG-free). Those licenses
+  bind the packages themselves, not the ELv2-licensed application layered
+  on top; mere aggregation in a container image is the standard
+  distribution mode of every official Debian-based image, and source
+  availability for the deb packages is satisfied by the Debian archive
+  (`deb.debian.org`, `sources.debian.org`).
+
+The full machine-readable SPDX JSON (2.9 MB) of this one-time scan is
+attached to the 3.0.0 GitHub Release as
+`base-image-node22-bookworm-slim-d649c27d.spdx.json`; the numbers above are
+the durable summary. With this single pass the accepted depth ceiling for
+the base image is closed for the 3.0.0 distribution: the ceiling statement
+below applies unchanged to future releases until a base-image bump makes a
+re-scan necessary.
+
 **Accepted depth ceiling (owner-confirmed, conscious simplification):** this
 inventory does not enumerate the individual deb packages inside the base
 image layers. A full package-level breakdown of the image is possible with
 syft (`https://github.com/anchore/syft`); that is the agreed upgrade path if
 deeper provenance is requested. Until then, the base-image statement above
 is the ceiling of what this document claims — it is an accepted limitation
-stated here deliberately, not an omission.
+stated here deliberately, not an omission. For the 3.0.0 release itself the
+ceiling was met once: the one-time breakdown above closes it for the digest
+this release actually shipped.
 
 ## Release-time companion
 
