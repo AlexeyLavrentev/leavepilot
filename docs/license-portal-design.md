@@ -36,8 +36,9 @@ LeavePilot Premium.
 
 ### Что остаётся офлайн у клиента
 
-- `TIMEOFF_LICENSE` — подписанный blob (JSON или base64).
-- `TIMEOFF_LICENSE_PUBLIC_KEY` — публичный ключ RSA.
+- Подписанный лицензионный blob (JSON или base64) и публичный ключ RSA —
+  через переменные окружения; env-контракт нормативно определён
+  [LICENSE-CONTRACT.md](../LICENSE-CONTRACT.md).
 - `lib/features.js` — локальная проверка подписи при старте приложения.
 - Никакой сети, phone-home, активации или heartbeat.
 
@@ -66,7 +67,8 @@ LeavePilot Premium.
 - Heartbeat / периодическая проверка.
 - Отзыв лицензий до истечения срока.
 - Клиентский лицензионный сервер.
-- Жёсткий лимит мест/инсталляций (seats enforcement).
+- Жёсткий лимит инсталляций (лимит активных пользователей `maxActiveUsers`
+  энфорсится community-верификатором — [LICENSE-CONTRACT.md](../LICENSE-CONTRACT.md)).
 - Интеграция с LicenseAPI.
 - Интеграция с биллингом/CRM.
 - Мультитенантная SaaS-экспозиция.
@@ -277,62 +279,23 @@ KMS API.
 
 ## 6. Модель лицензионного payload
 
-### Текущий формат (Phase 2A)
-
-```json
-{
-  "payload": {
-    "customer": "ООО Ромашка",
-    "features": ["sso_authentication", "integration_api"],
-    "expires": "2027-12-31",
-    "plan": "pro"
-  },
-  "algorithm": "RSA-SHA256",
-  "signature": "<base64>"
-}
-```
-
-### Расширенный формат (Phase 2B+, обратно совместимый)
-
-```json
-{
-  "payload": {
-    "licenseVersion": 2,
-    "licenseId": "a1b2c3d4-...",
-    "customer": "ООО Ромашка",
-    "customerId": "f5e6d7c8-...",
-    "plan": "pro",
-    "features": ["sso_authentication", "integration_api", "employee_groups", "work_calendars"],
-    "expires": "2027-12-31",
-    "seats": 50,
-    "domains": ["romashka.example.com"],
-    "issuedAt": "2026-06-27T10:00:00.000Z"
-  },
-  "algorithm": "RSA-SHA256",
-  "signature": "<base64>"
-}
-```
-
-### Обратная совместимость
-
-- `licenseVersion` — отсутствие = версия 1 (текущий формат). Наличие = версия
-  из поля. Рантайм-верификатор игнорирует неизвестные поля.
-- `features[]` — по-прежнему единственный источник истины для `isEnabled()`.
-  Новые поля (`seats`, `domains`, `customerId`) — информативные.
-- `plan` — информативное поле, не влияет на верификацию.
-- `seats` — мягкое предупреждение, не enforcement (офлайн-ограничение).
-- `domains` — снижает случайное копирование, не предотвращает намеренное.
-- `issuedAt` — для аудита, не проверяется рантаймом.
-- Старые лицензии (без новых полей) продолжают работать без изменений.
+Формат лицензионного конверта и payload — поля, типы, семантика, алгоритм
+подписи, канонизация, версии схемы — нормативно определён контрактом
+[LICENSE-CONTRACT.md](../LICENSE-CONTRACT.md) в корне репозитория (сегодня —
+schemaVersion 2). Контракт — единственный норматив формата: этот раздел
+сознательно не дублирует таблицы полей и примеры payload.
 
 ### Правила формирования payload на портале
 
+Портал заполняет поля контракта из собственных данных (имена и семантика
+полей — LICENSE-CONTRACT.md):
+
 1. `features[]` берётся из плана, если не переопределён вручную.
-2. `customer` берётся из записи Customer.
-3. `expires` задаётся при выпуске.
-4. Новые поля добавляются только если рантайм их поддерживает
-   (проверяется версией).
-5. Канонический JSON подписывается через `RSA-SHA256`.
+2. `customerName`/`customerId` берутся из записи Customer.
+3. Срок действия (`expiresAt`) задаётся при выпуске.
+4. Лимит активных пользователей на компанию (`maxActiveUsers`) заполняется
+   из поля портала `metadata.seats`.
+5. Подпись — по правилам контракта (канонизация + `RSA-SHA256`).
 
 ## 7. Проектирование подписи
 
@@ -626,7 +589,6 @@ GET    /license-portal/audit                   Аудит-лог (с фильт�
     "customer": "ООО Ромашка",
     "plan": "pro",
     "features": ["sso_authentication", "integration_api"],
-    "expires": "2027-12-31",
     "algorithm": "RSA-SHA256",
     "issuedAt": "2026-06-27T10:00:00.000Z",
     "issuedBy": "alekse",
@@ -727,7 +689,7 @@ Sequelize уже используется в LeavePilot, поэтому ORM-сл
 | **Утечка БД портала** | Низкая | Высокое | БД не содержит приватных ключей; лицензии — подписанные blob (не секреты); пароли — scrypt |
 | **Утечка registry.json** | Средняя | Среднее | Содержит только метаданные; нет подписей, нет ключей |
 | **Компрометация аккаунта админа** | Низкая | Высокое | Аудит-лог; роли; 2FA (будущее); VPN/SSO gating |
-| **Копирование лицензии клиентом** | Неизбежная | Среднее | Офлайн-ограничение; `customerId`/`domains` в payload снижают случайное копирование |
+| **Копирование лицензии клиентом** | Неизбежная | Среднее | Офлайн-ограничение; идентификация клиента в payload (`customerId`, формат — LICENSE-CONTRACT.md) |
 | **Откат часов** | Низкая | Среднее | Короткий срок лицензии; `issuedAt` в payload |
 | **Отсутствие отзыва** | Архитектурное | Среднее | Осознанный выбор; смягчение — короткий срок + ре-выпуск |
 | **Подделка аудит-лога** | Низкая | Среднее | Append-only таблица; отдельные права на DELETE; будущее — хэш-цепочка |
@@ -842,7 +804,8 @@ secrets:
 
 ### Phase 3: расширенные метаданные
 
-- Поля `seats`, `domains`, `customerId` в payload.
+- Поля `maxActiveUsers` (из `metadata.seats`) и `customerId` в payload —
+  по контракту [LICENSE-CONTRACT.md](../LICENSE-CONTRACT.md).
 - Валидация в рантайме (опционально).
 - UI для заполнения полей.
 
@@ -855,7 +818,7 @@ secrets:
 
 Будущий Portal MVP считается принятым только если:
 
-1. Генерирует лицензии, совместимые с текущим `TIMEOFF_LICENSE`.
+1. Генерирует лицензии в формате [LICENSE-CONTRACT.md](../LICENSE-CONTRACT.md).
 2. Рантайм-верификация (`lib/features.js`) не изменена.
 3. Приватный ключ не хранится в БД портала.
 4. Клиент-сайд сервис не вводится.
@@ -1106,17 +1069,22 @@ Detail — operational metadata only, не влияет на рантайм.
 
 Реализовано:
 - **License metadata**: JSON-поле `metadata` на модели License. Поля:
-  `seats` (int 1..1M), `customerDomains` (массив доменов, нормализация,
-  дедупликация), `externalCustomerId` (строка), `operatorNotes` (строка).
+  `metadata.seats` (int 1..1M; в лицензию попадает как `maxActiveUsers` —
+  по контракту [LICENSE-CONTRACT.md](../LICENSE-CONTRACT.md)),
+  `customerDomains` (массив доменов, нормализация, дедупликация),
+  `externalCustomerId` (строка), `operatorNotes` (строка).
 - **Валидация**: `portal/services/license_metadata.js` — проверка типов,
   длин, форматов, доменных паттернов. Валидация перед записью в БД.
 - **Issue flow**: форма выпуска лицензии с опциональными metadata полями.
-  Metadata хранится на License, но НЕ входит в payload/signature.
-- **License detail**: показывает seats, domains, externalCustomerId,
-  operatorNotes (escaped). operatorNotes не экспортируется.
-- **Registry export**: включает seats, customerDomains, externalCustomerId.
-  Исключает operatorNotes, licensePayload, signature.
-- **Audit**: `seats`, `domainCount`, `externalCustomerIdPresent`,
+  Metadata хранится на License; в payload/signature попадает только
+  `maxActiveUsers` (из `metadata.seats`), остальные поля metadata в payload
+  НЕ входят.
+- **License detail**: показывает `metadata.seats`, customerDomains,
+  externalCustomerId, operatorNotes (escaped). operatorNotes не
+  экспортируется.
+- **Registry export**: включает `metadata.seats`, customerDomains,
+  externalCustomerId. Исключает operatorNotes, licensePayload, signature.
+- **Audit**: `metadata.seats`, `domainCount`, `externalCustomerIdPresent`,
   operatorNotesPresent. operatorNotes значение не в деталях.
 - Тесты: 8 новых (metadata storage, detail, export, audit, safety).
 
@@ -1138,7 +1106,7 @@ Detail — operational metadata only, не влияет на рантайм.
 - **Metadata filters**: `externalCustomerId` (contains), `domain` (exact,
   normalized), `minSeats`, `maxSeats` — query params на `/licenses`.
 - **Filter safety**: wildcard-only значения → пустой результат; невалидные
-  домены → пустой результат; min/max seats валидируются как integers.
+  домены → пустой результат; minSeats/maxSeats валидируются как integers.
 - **UI**: новые поля фильтров в licenses list (compact layout).
 - **Audit safety**: operatorNotes не ищется через q, не экспортируется.
 - Тесты: 13 новых (metadata filters, safety, regression).
@@ -1179,6 +1147,8 @@ Detail — operational metadata only, не влияет на рантайм.
 
 ## Связанные материалы
 
+- [Контракт формата лицензии](../LICENSE-CONTRACT.md) — норматив формата
+  payload, подписи и env-имён (schemaVersion 2)
 - [Операции с лицензиями](license-operations.md) — CLI workflow
 - [Развёртывание портала](license-portal-deployment.md) — Docker, admin CLI, backup
 - [Premium-модуль](premium-module.md) — установка и конфигурация
