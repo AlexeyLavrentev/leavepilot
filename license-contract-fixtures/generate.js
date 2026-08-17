@@ -263,6 +263,36 @@ const OUTPUT_FILES = [
   'revocation-list.json',
 ];
 
+// The contract version this package pins (must equal the Contract-Version
+// line in the LICENSE-CONTRACT.md header — the spec asserts the equality).
+const CONTRACT_VERSION = '1.0';
+
+// Everything the MANIFEST pins, as repo-root-relative POSIX paths (the
+// package sits at the repository root in BOTH repositories, so the paths are
+// identical on both sides). MANIFEST.json is deliberately absent — a file
+// cannot contain its own hash (Pitfall 9); the spec's bidirectional set
+// equality tooth enforces the exclusion. Fixed list, same fail-closed
+// discipline as OUTPUT_FILES.
+const PINNED_FILES = [
+  '../LICENSE-CONTRACT.md',
+  'generate.js',
+  'keys/test-license.private.testkey',
+  'keys/test-license.public.testkey',
+  'keys/test-revocation.private.testkey',
+  'keys/test-revocation.public.testkey',
+].concat(OUTPUT_FILES);
+
+// Repo-root-relative POSIX form for the MANIFEST keys.
+const manifestKey = packageRelative =>
+  packageRelative === '../LICENSE-CONTRACT.md'
+    ? 'LICENSE-CONTRACT.md'
+    : 'license-contract-fixtures/' + packageRelative;
+
+const sha256Hex = buffer =>
+  crypto.createHash('sha256').update(buffer).digest('hex');
+
+const MANIFEST_COMMENT = 'License contract package manifest (Phase 8, D-19). SHA256-pins LICENSE-CONTRACT.md and every file of license-contract-fixtures/ except this MANIFEST itself (self-hashing is impossible). Regeneration procedure (D-20): (1) change the package in the COMMUNITY repository only; (2) run node license-contract-fixtures/generate.js — it rewrites the fixtures and this manifest; (3) copy LICENSE-CONTRACT.md and license-contract-fixtures/ byte-for-byte into the portal repository; (4) both repositories CI green before either merge. All fixture dates are hard constants around the frozen now 2026-06-01T00:00:00.000Z (D-16) — regeneration never moves them. Consumed by t/unit/license_contract_fixtures.js (community mocha spec) and scripts/license_contract_check.js (portal check script); CI-gated via the license-contract job in core-ci.yml (community) and ci.yml (portal). The test keys are fixtures marked test-only (keyId test-license-do-not-trust) — nobody trusts them; the owner genesis pair is never copied into this package in any form (D-13).';
+
 // ---------------------------------------------------------------------------
 // Run.
 // ---------------------------------------------------------------------------
@@ -281,4 +311,29 @@ OUTPUT_FILES.forEach(relPath => {
   });
 });
 
-process.stdout.write('license-contract-fixtures: wrote ' + OUTPUT_FILES.join(', ') + ' (frozen now: ' + FROZEN_ISO + ')\n');
+// ---------------------------------------------------------------------------
+// MANIFEST (D-19): pin the document + the whole package, self-excluded.
+// Each value is an object {"sha256": "<hex>"} rather than a bare hex string:
+// gitleaks' generic-api-key rule false-positives on the bare form, because
+// the pinned paths for the key files (".../keys/*.testkey") read as a
+// "key: <high-entropy-token>" pair next to the digest. Nesting the digest
+// removes the false positive at the root — nothing is allowlisted.
+// ---------------------------------------------------------------------------
+
+const files = {};
+PINNED_FILES
+  .map(manifestKey)
+  .sort()
+  .forEach(key => {
+    files[key] = {sha256: sha256Hex(fs.readFileSync(path.join(REPO_ROOT, key)))};
+  });
+
+writeJson('MANIFEST.json', {
+  _comment: MANIFEST_COMMENT,
+  contractVersion: CONTRACT_VERSION,
+  files,
+});
+
+process.stdout.write(
+  'license-contract-fixtures: wrote ' + OUTPUT_FILES.join(', ')
+  + ' + MANIFEST.json (' + Object.keys(files).length + ' pinned files, frozen now: ' + FROZEN_ISO + ')\n');

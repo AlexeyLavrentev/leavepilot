@@ -227,6 +227,34 @@ jobs:
           PORTAL_PRIVATE_KEY_FILE: /tmp/portal-secrets/license_private.pem
           PORTAL_PUBLIC_KEY_FILE: /tmp/portal-secrets/license_public_key.pem
 
+  license-contract:
+    name: License contract fixtures and manifest
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+        env:
+          CHROMEDRIVER_SKIP_DOWNLOAD: 'true'
+          PUPPETEER_SKIP_DOWNLOAD: 'true'
+
+      # D-21: the mandatory license-contract gate. The spec itself iterates
+      # the license-contract-fixtures/ package and the MANIFEST, so this job
+      # cannot drift from the package: every fixture outcome runs through the
+      # real verifier at the frozen now, and any silent edit to the document
+      # or the package without MANIFEST regeneration fails here.
+      - name: Run license contract spec
+        run: ./node_modules/.bin/mocha t/unit/license_contract_fixtures.js --timeout 10000
+
   docker-build:
     name: Docker image build (runtime target)
     runs-on: ubuntu-24.04

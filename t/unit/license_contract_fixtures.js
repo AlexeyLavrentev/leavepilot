@@ -168,3 +168,108 @@ describe('License contract fixtures (Plan 08-01)', function() {
       .to.equal(list.envelope.payload.expiresAt);
   });
 });
+
+/*
+  MANIFEST teeth (Plan 08-01 Task 3, D-19) — the five tooth classes of the
+  dialect_sensitive_manifest / vendored_integrity precedents applied to the
+  license contract package: surfaces-exist, hash recompute with a FULL report
+  (no early exit), bidirectional non-phantom set equality (MANIFEST.json
+  self-excluded), contractVersion == document header, and a synthetic tamper
+  proof that never touches disk.
+*/
+
+const crypto = require('crypto');
+
+const loadManifest = () => JSON.parse(
+  fs.readFileSync(path.join(PKG_DIR, 'MANIFEST.json'), 'utf8'));
+
+const sha256Hex = buffer =>
+  crypto.createHash('sha256').update(buffer).digest('hex');
+
+// Recompute EVERY listed hash and report ALL mismatches — a full report is
+// more useful than the first thing that broke (verify-artifact-licenses.sh
+// discipline). Deterministic order: keys sorted, never lexicographic on the
+// formatted message.
+function collectHashMismatches(filesMap) {
+  return Object.keys(filesMap).sort().filter(key => {
+    const target = path.join(root, key);
+    if (!fs.existsSync(target)) {
+      return true;
+    }
+    return sha256Hex(fs.readFileSync(target)) !== filesMap[key].sha256;
+  }).map(key => key + ': pinned ' + filesMap[key].sha256
+    + (fs.existsSync(path.join(root, key))
+      ? ' != actual ' + sha256Hex(fs.readFileSync(path.join(root, key)))
+      : ' but the file is MISSING'));
+}
+
+// Files on disk the MANIFEST must cover: everything under the package plus
+// the root LICENSE-CONTRACT.md, excluding MANIFEST.json itself
+// (self-hashing is impossible — Pitfall 9).
+function onDiskExpectation() {
+  const entries = fs.readdirSync(PKG_DIR, {recursive: true})
+    .filter(rel => fs.statSync(path.join(PKG_DIR, rel)).isFile() && rel !== 'MANIFEST.json')
+    .map(rel => 'license-contract-fixtures/' + String(rel).split(path.sep).join('/'));
+  entries.push('LICENSE-CONTRACT.md');
+  return entries.sort();
+}
+
+describe('License contract MANIFEST (Plan 08-01)', function() {
+  const manifest = loadManifest();
+
+  it('pins a non-trivial file set (surfaces-exist)', function() {
+    expect(
+      Object.keys(manifest.files).length,
+      'the manifest pins too few files — an emptied or broken manifest would make every other tooth vacuously green'
+    ).to.be.above(10);
+  });
+
+  it('every pinned SHA256 matches the bytes on disk (full report, no early exit)', function() {
+    const mismatches = collectHashMismatches(manifest.files);
+    expect(
+      mismatches,
+      'these files drifted from MANIFEST.json — restore them or regenerate the manifest deliberately via node license-contract-fixtures/generate.js (D-20 procedure):\n'
+        + mismatches.join('\n')
+    ).to.deep.equal([]);
+  });
+
+  it('files map and on-disk package are set-equal in BOTH directions (MANIFEST self-excluded)', function() {
+    const pinned = Object.keys(manifest.files).sort();
+    const onDisk = onDiskExpectation();
+    const listedMissing = pinned.filter(key => onDisk.indexOf(key) === -1);
+    const unlistedPresent = onDisk.filter(key => pinned.indexOf(key) === -1);
+
+    expect(listedMissing, 'MANIFEST lists files that do not exist (phantoms):\n' + listedMissing.join('\n')).to.deep.equal([]);
+    expect(unlistedPresent, 'files exist on disk but are NOT pinned in MANIFEST.json (silent additions — regenerate the manifest or remove them):\n' + unlistedPresent.join('\n')).to.deep.equal([]);
+  });
+
+  it('contractVersion equals the Contract-Version of the LICENSE-CONTRACT.md header', function() {
+    const documentHead = fs.readFileSync(path.join(root, 'LICENSE-CONTRACT.md'), 'utf8');
+    const match = documentHead.match(/^Contract-Version:\s*(\d+\.\d+)/m);
+
+    expect(match, 'LICENSE-CONTRACT.md header must carry a Contract-Version: <major.minor> line').to.not.equal(null);
+    expect(
+      manifest.contractVersion,
+      'MANIFEST.contractVersion must equal the document header version (D-19)'
+    ).to.equal(match[1]);
+  });
+
+  it('synthetic tamper tooth: one flipped hash byte is flagged by the same checker (in-memory only)', function() {
+    const pristine = collectHashMismatches(manifest.files);
+    expect(pristine, 'the real manifest must recompute clean before the tamper proof means anything').to.deep.equal([]);
+
+    const tamperedFiles = JSON.parse(JSON.stringify(manifest.files));
+    const someKey = Object.keys(tamperedFiles).sort()[0];
+    const hash = tamperedFiles[someKey].sha256;
+    const flipped = (hash[0] === '0' ? '1' : '0') + hash.slice(1);
+    tamperedFiles[someKey].sha256 = flipped;
+
+    const flagged = collectHashMismatches(tamperedFiles);
+    expect(flagged.length, 'a tampered pin must be flagged').to.equal(1);
+    expect(flagged[0]).to.contain(someKey);
+    expect(flagged[0]).to.contain(flipped);
+
+    // Disk untouched: the real manifest still recomputes clean.
+    expect(collectHashMismatches(manifest.files)).to.deep.equal([]);
+  });
+});

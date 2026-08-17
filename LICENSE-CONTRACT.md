@@ -219,3 +219,92 @@ Verification order and semantics:
 The legacy `HMAC-SHA256` envelope is accepted by the license verifier for
 existing deployments (see Signature algorithm), but revocation lists, like
 inter-repository license exchange, are `RSA-SHA256` only.
+
+## 5. Environment Contract
+
+The verifier reads license material from the environment (the same values may
+also be provided through configuration; environment variables win). The
+runtime reads **content only** — a value that is a file path is never opened
+by the runtime; file paths belong to the CLI/deployment zone (`bin/license.js
+inspect|verify <license-file-or-string>`, `--public-key-file`, portal secrets
+mounts).
+
+| Variable                                   | Semantics |
+|--------------------------------------------|-----------|
+| `LEAVEPILOT_LICENSE`                       | The license envelope as JSON text, or base64-encoded JSON (both are parsed). Never a file path. The generation-1 alias `TIMEOFF_LICENSE` is supported forever and warns once at boot; when both are set, `LEAVEPILOT_LICENSE` wins. |
+| `LEAVEPILOT_LICENSE_PUBLIC_KEY`            | Single PEM public key, used for payloads without `keyId`. |
+| `LEAVEPILOT_LICENSE_PUBLIC_KEYS`           | JSON map of `keyId` -> PEM public key: the ordered rotation ring (see Key Rotation). |
+| `LEAVEPILOT_LICENSE_REVOCATION_LIST`       | The revocation-list envelope (JSON text or base64-encoded JSON). Absent skips the revocation check. |
+| `LEAVEPILOT_LICENSE_REVOCATION_PUBLIC_KEY` | PEM public key of the revocation list. Unset falls back to the single license public key. |
+| `LEAVEPILOT_LICENSE_GRACE_DAYS`            | Grace window in days: 0..14, default 14. Operators may lower it, never raise it (see Grace). |
+| `ALLOW_UNSIGNED_LICENSES`                  | The unsigned-payload test door. **Unprefixed** — it is read directly from `process.env`, not through the generation resolver; no prefixed spelling of this name exists. Honored only where `NODE_ENV` is neither `production` nor `staging` and not in the commercial edition; an explicit value is respected in those non-production modes; the default is `true` only when `NODE_ENV === 'test'`. This door is what makes the verifier NOT verify in test environments — it is part of the contract precisely so the document does not stay silent about it. |
+
+## 6. Test Keys
+
+The `license-contract-fixtures/keys/*.testkey` files are **fixtures, not
+secrets**. They exist so that both repositories can regenerate and verify the
+fixture package without access to any real key material:
+
+- Nobody trusts these keys. The `keyId` stamped in every fixture
+  (`test-license-do-not-trust`) makes any accidental use visible in every
+  license-status surface.
+- Operators install **their own portal's** public key
+  (`LEAVEPILOT_LICENSE_PUBLIC_KEY(S)`). Configuring a test key as a
+  verification key grants nothing but test entitlements and is visible as
+  such.
+- The owner's genesis key pair (the real signing pair from the portal
+  extraction) is **never** copied into this package in any form — not the
+  private half, not the public half, not embedded in the generator.
+- The private halves are committed deliberately (D-13): they are allowlisted
+  in `.gitleaksignore` by fingerprint scoped to exactly those two files; any
+  other private-key finding in either repository fails its secret scan.
+
+## 7. Change Procedure
+
+The community repository is the **single source of changes** to this contract
+and its fixture package. Every change — document, fixtures, keys, generator —
+follows the same four steps:
+
+1. **Change the package in the community repository** (LICENSE-CONTRACT.md
+   and/or `license-contract-fixtures/`, never the portal copy).
+2. **Regenerate the manifest**: `node license-contract-fixtures/generate.js`
+   rewrites the fixtures and `MANIFEST.json` deterministically (all dates are
+   hard constants around the frozen now `2026-06-01T00:00:00.000Z`; the
+   output never depends on the runtime clock).
+3. **Copy byte-for-byte into the portal repository**: LICENSE-CONTRACT.md and
+   the whole `license-contract-fixtures/` directory are identical in both
+   repositories.
+4. **Both sides green before merge**: the `license-contract` CI job must pass
+   in both repositories. A one-sided change fails on the changed side
+   (manifest mismatch) or on the other side (its own manifest no longer
+   matches the mirrored files) — that is the point.
+
+A **contract-major** step additionally requires a Changelog entry stating the
+date support for the old version is removed.
+
+Operational rule (community major bumps): when the community edition's major
+version changes, the fixture package MUST be regenerated with an updated
+`allowedMajorVersions` (e.g. moving to `[3, 4]` or `[4]`) as part of that
+release — otherwise every "valid" fixture starts failing with
+`unsupported_major_version`. Because previously issued licenses remain valid
+when the new major is added alongside the old, this regeneration is a
+contract-**minor** step, not a major one.
+
+## 8. Versioning
+
+Contract versions are `major.minor`, recorded in the header line and the
+Changelog above.
+
+- **Major (breaking)**: a change after which a verifier on either side would
+  reject the other side's licenses — removing or renaming a field, changing
+  the canonicalization byte rule, changing the signature algorithm, altering
+  grace or revocation semantics incompatibly. Both repositories MUST step to
+  the new major version in the same change; there is no window where the
+  sides disagree. A major step records in the Changelog the date support for
+  the old version is removed.
+- **Minor (additive)**: adding a payload field, a reason outcome, or an env
+  variable — old licenses and old lists stay valid. One repository may step
+  first (recording the addition in its copy of this document and manifest);
+  the other records it in its next mirror step. The `MANIFEST.json`
+  `contractVersion` always equals the document header version (asserted in
+  CI on both sides).
