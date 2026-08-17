@@ -71,9 +71,12 @@ MongoDB + React, MIT). Ключевые проблемы для клиентск
 виде (sidecar/self-host). Его ценность — концепции UI/модели данных для
 внутреннего портала вендора.
 
-## Будущий LeavePilot License Portal (целевая модель)
+## LeavePilot License Portal (вендорская инфраструктура)
 
 Назначение: автоматизировать выпуск и учёт лицензий **на стороне вендора**.
+Портал реализован и эксплуатируется вне этого репозитория, в приватном
+репозитории вендора ([docs/license-portal.md](license-portal.md)); ниже —
+целевая модель, под которую он строился.
 
 - **Только vendor-side**, во внутреннем периметре (за SSO/VPN вендора), без
   публичной экспозиции.
@@ -149,6 +152,7 @@ projects → редакции/продукт; licenses → лицензии кл
 - CLI для проверки/просмотра: `bin/license.js`.
 - Тарифные планы: `config/plan_presets.json`.
 - Операции с лицензиями: [docs/license-operations.md](license-operations.md).
-- Проектирование License Portal MVP: [docs/license-portal-design.md](license-portal-design.md).
+- License Portal: [docs/license-portal.md](license-portal.md) — вендорская
+  инфраструктура вне этого репозитория.
 - Нормативный контракт формата лицензии (payload, подпись, env-имена):
   [LICENSE-CONTRACT.md](../LICENSE-CONTRACT.md).
