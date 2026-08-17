@@ -221,16 +221,26 @@ describe('D-02 invariant: no portal surface returns to the public repository', f
   var identifierOffenders = allIdentifierOffenders();
 
   // surfaces-exist guard: a watchdog whose scan resolved to nothing is green
-  // for the wrong reason. The working tree holds well over a thousand files;
-  // the threshold is deliberately modest so a legitimate edit never trips it,
-  // while an empty/broken walk does (env_read_invariant L221-226 shape).
+  // for the wrong reason. The floor is the PRISTINE CI CHECKOUT, not a
+  // developer tree: a fresh actions/checkout holds the 689 tracked files (at
+  // calibration time), the unit-test job measures 881 mid-run once coverage
+  // instrumentation has written its output, and a developer tree sits near
+  // 1169 only because local run artifacts (flake sidecars, outputs) are
+  // untracked-but-present. The original >1000 threshold was calibrated
+  // against that inflated dev tree and went red on the very first CI run of
+  // this file. 500 sits safely under the pristine-checkout floor and far
+  // above the handful of files a broken walk resolves to (wrong root or a
+  // failed existsSync collapses to ~0), so a legitimate edit never trips it
+  // while an empty/broken walk does (env_read_invariant L221-226 shape). If
+  // the repository ever legitimately shrinks near the floor, recalibrate
+  // here — do not delete the guard.
   it('has tree surfaces to check', function() {
     var files = [];
     collectTreeFiles(root, files);
     expect(
       files.length,
       'the path watchdog lost its input — the tree walk resolved to too few files, so a green run proves nothing'
-    ).to.be.above(1000);
+    ).to.be.above(500);
   });
 
   // Same guard for the identifier half: the workflow directory must exist and
