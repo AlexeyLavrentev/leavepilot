@@ -49,7 +49,7 @@ var read = function(relativePath) {
 
 // Production source surfaces the resolver contract covers. Recursed with
 // listJsFiles (edition_community_boundary.js scanPath shape).
-var scannedPaths = ['app.js', 'lib', 'bin', 'portal'];
+var scannedPaths = ['app.js', 'lib', 'bin'];
 
 // The single permitted read site — a file path (posix-relative), not a glob.
 // Every exemption carries a teeth assertion (prohibition P against broad globs).

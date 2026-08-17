@@ -110,18 +110,6 @@
       "module": "migrations/20260701150000-localize-existing-kz-ru-companies.js"
     },
     {
-      "file": "t/unit/portal/trial.js",
-      "category": "sql-literals",
-      "reason": "Raw models.sequelize.query('SELECT data FROM portal_sessions') on loadPortalModels({storage: ':memory:'}) asserts the trial verification token never persists in the session store rows.",
-      "module": "portal/models/index.js"
-    },
-    {
-      "file": "t/unit/portal/migrator.js",
-      "category": "sql-literals",
-      "reason": "Raw models.sequelize.query('INSERT INTO portal_sessions ...' / 'SELECT sid, data FROM portal_sessions WHERE sid = ?') seeds and inspects legacy rows across runPortalMigrations() on loadPortalModels.",
-      "module": "portal/models/index.js"
-    },
-    {
       "file": "t/unit/model/db/leave.js",
       "category": "day-calculation",
       "reason": "Builds Leave records from date strings and exercises fit_with_leave_request()/get_days() (lib/model/db/leave.js: moment.utc(this.date_start) then end_date.diff(start_date,'days') day-list expansion) — the arithmetic a dialect's DATE/DATETIME round-trip feeds.",

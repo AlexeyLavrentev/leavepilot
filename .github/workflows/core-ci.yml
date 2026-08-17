@@ -216,17 +216,6 @@ jobs:
           CRYPTO_SECRET: ci-crypto-secret
           TIMEOFF_PREMIUM_MODULE_HOST_PATH: ../timeoff-premium
 
-      - name: Validate portal compose
-        run: |
-          mkdir -p /tmp/portal-secrets
-          openssl genpkey -algorithm RSA -out /tmp/portal-secrets/license_private.pem -pkeyopt rsa_keygen_bits:2048 2>/dev/null
-          openssl rsa -in /tmp/portal-secrets/license_private.pem -pubout -out /tmp/portal-secrets/license_public_key.pem 2>/dev/null
-          docker compose -f docker-compose.portal.yml config --quiet
-        env:
-          PORTAL_SESSION_SECRET: ci-portal-session-secret
-          PORTAL_PRIVATE_KEY_FILE: /tmp/portal-secrets/license_private.pem
-          PORTAL_PUBLIC_KEY_FILE: /tmp/portal-secrets/license_public_key.pem
-
   license-contract:
     name: License contract fixtures and manifest
     runs-on: ubuntu-24.04
@@ -268,20 +257,6 @@ jobs:
 
       - name: Verify licence files inside the runtime image
         run: scripts/verify-artifact-licenses.sh leavepilot-ce:ci
-
-  portal-docker-build:
-    name: Portal Docker image build
-    runs-on: ubuntu-24.04
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-
-      - name: Build portal image
-        run: docker build -f Dockerfile.portal -t leavepilot-portal:ci .
-
-      - name: Verify licence files inside the portal image
-        run: scripts/verify-artifact-licenses.sh leavepilot-portal:ci
 
   mysql-migration-smoke:
     name: Fresh MySQL 8 migration smoke test
