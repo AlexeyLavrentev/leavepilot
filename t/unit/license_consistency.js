@@ -75,7 +75,10 @@ const inheritedLicenceName = /\bMIT\b/;
   ALLOW_UNSIGNED_LICENSES and some sixty more across docs/) are not offenders,
   because an underscore is a word character and there is no boundary there.
 */
-const removedRootLicenceFile = /\bLICENSE\b(?!\.md)/;
+// LICENSE-CONTRACT.md (v1.1) is a sibling contract doc, not a dangling
+// reference to the removed bare LICENSE file - the hyphen is a word boundary,
+// so the lookahead must exclude the whole contract filename explicitly.
+const removedRootLicenceFile = /\bLICENSE\b(?!\.md)(?!-CONTRACT\.md)/;
 
 /*
   The single exemption, and it is a line rather than a file. This one names the
