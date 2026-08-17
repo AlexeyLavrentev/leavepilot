@@ -1,0 +1,35 @@
+{
+  "envelope": {
+    "payload": {
+      "schemaVersion": 2,
+      "licenseId": "00000000-0000-4000-8000-000000000001",
+      "customerId": "00000000-0000-4000-8000-0000000000a1",
+      "customerName": "LeavePilot Contract Fixture Customer",
+      "customer": "LeavePilot Contract Fixture Customer",
+      "features": [
+        "ldap_authentication",
+        "sso_authentication",
+        "integration_api",
+        "employee_groups",
+        "work_calendars",
+        "custom_branding"
+      ],
+      "issuedAt": "2026-06-01T00:00:00.000Z",
+      "allowedMajorVersions": [
+        3
+      ],
+      "plan": "pro",
+      "expiresAt": "2020-01-01T00:00:00.000Z",
+      "maxActiveUsers": 25,
+      "keyId": "test-license-do-not-trust"
+    },
+    "algorithm": "RSA-SHA256",
+    "signature": "ncQ2/Fr9jUQQDbMMxdmDXTaRpCQBons1UcCv05S7ov7So4uhjN6QStRD7amlSyIapU6uykbZXdWZ/VeO2zbeKnvq82FeFJ8g14mr8ZOWCWT7TQ+ntPvL+qe5P1wU5VwiSUNzhkpXS+JkNvHrSUaEyttcPZiHWFds52zbOLhtZyh/4Aqs30aa91ntvSFeVYD88vI5nnmaoeeigkdQa5LMjOQdOdtATVJARsZMuiRd6WSIb0VlHYS84gzcaH7CdKI7+MvcfGuomIE9zRySg3qmLrDt8KsXs4mzkPiUshu49pcu0PbILUbkYNpApQme5LS1xXD88Mn8MmAJPNLeyKvPoA=="
+  },
+  "meta": {
+    "outcome": "expired",
+    "expectedReason": "expired",
+    "env": [],
+    "why": "Expiry beyond any grace window: 2020-01-01 plus the default 14 days is far before the frozen now, so the license must be rejected as expired (community functionality is never blocked, only entitlements)."
+  }
+}

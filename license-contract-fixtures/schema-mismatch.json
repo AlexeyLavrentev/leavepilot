@@ -1,0 +1,35 @@
+{
+  "envelope": {
+    "payload": {
+      "schemaVersion": 3,
+      "licenseId": "00000000-0000-4000-8000-000000000001",
+      "customerId": "00000000-0000-4000-8000-0000000000a1",
+      "customerName": "LeavePilot Contract Fixture Customer",
+      "customer": "LeavePilot Contract Fixture Customer",
+      "features": [
+        "ldap_authentication",
+        "sso_authentication",
+        "integration_api",
+        "employee_groups",
+        "work_calendars",
+        "custom_branding"
+      ],
+      "issuedAt": "2026-06-01T00:00:00.000Z",
+      "allowedMajorVersions": [
+        3
+      ],
+      "plan": "pro",
+      "expiresAt": "2099-06-01T00:00:00.000Z",
+      "maxActiveUsers": 25,
+      "keyId": "test-license-do-not-trust"
+    },
+    "algorithm": "RSA-SHA256",
+    "signature": "LuTXJtnV8/VjqJWjEpv09RTb4He5OTFGWNf+bBhOmhI22+kJkqnYwsJz2LzVB+YtRbiOEv/NqDpJm0ywS/KdRKRFvwB7mXsMUwTH4OO/7l7APeQoHURYv1l8J6b0DYSwG2WhVoDRUgvmPY8EBt+Uthj2KWhJ1llo+NHhCC2/aUlbRS5EJXz7Pd3sMaadV/jPd7W2uPXLroG6C5GgU38IXvaZwoD5jYMcSdA3lSJPwVHXVpADEO2mSevR1s7vvniqNlKmeyKqXKhc+afZFUXSUC0cH1BaYQOeJnRb7RgkYDvCzDf4javIeqHHSpJquvs2nVfxktSjA6WFt9zxYuAjaQ=="
+  },
+  "meta": {
+    "outcome": "schema-mismatch",
+    "expectedReason": "unsupported_schema_version",
+    "env": [],
+    "why": "Defensive: a payload claiming schemaVersion 3 (correctly signed) is a format this verifier does not know — it must be rejected, never best-effort parsed."
+  }
+}

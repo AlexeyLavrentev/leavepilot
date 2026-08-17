@@ -1,0 +1,38 @@
+{
+  "envelope": {
+    "payload": {
+      "schemaVersion": 2,
+      "licenseId": "00000000-0000-4000-8000-000000000003",
+      "customerId": "00000000-0000-4000-8000-0000000000a1",
+      "customerName": "LeavePilot Contract Fixture Customer",
+      "customer": "LeavePilot Contract Fixture Customer",
+      "features": [
+        "ldap_authentication",
+        "sso_authentication",
+        "integration_api",
+        "employee_groups",
+        "work_calendars",
+        "custom_branding"
+      ],
+      "issuedAt": "2026-06-01T00:00:00.000Z",
+      "allowedMajorVersions": [
+        3
+      ],
+      "plan": "pro",
+      "expiresAt": "2099-06-01T00:00:00.000Z",
+      "maxActiveUsers": 25,
+      "keyId": "test-license-do-not-trust"
+    },
+    "algorithm": "RSA-SHA256",
+    "signature": "bSc2Epln0DYvF0NBXTuZYFAm+KMf+6EAWC2L6tUfP3sCBT3+UvqpUAbSoSGamlDSVBajASfw0hKY63iOT+veNtnx0NO1BguY+DVOj++cY8N+OVUj99x2q4EQ3XOQntwdIw3U8sFRD4ZO10cOCl8iaeGME5ycjbPDm9zFiNy6ucvexgspsIO6paWIKE7LwyVBHhstZcCF8P9woO1nAlRANn9XJYlWy1h5WDDsWHQVEWV7fqANlVGlBx0lbqTCQsxgNOlraQVAMp15NR1ijM0kxwivUkq1OOSfURk4BweJBCJEHwQU2trBeuFcngMhW9mXM1SdnhsSR0jD5W/q3NJ3zg=="
+  },
+  "meta": {
+    "outcome": "revocation-miss",
+    "expectedReason": "valid",
+    "env": [
+      "LEAVEPILOT_LICENSE_REVOCATION_LIST",
+      "LEAVEPILOT_LICENSE_REVOCATION_PUBLIC_KEY"
+    ],
+    "why": "Positive control for the list path: this licenseId is NOT in the signed list, so the license stays valid AND the status surfaces revocationListIssuedAt/ExpiresAt — proving the list was actually consulted, not skipped."
+  }
+}

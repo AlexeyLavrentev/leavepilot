@@ -1,0 +1,35 @@
+{
+  "envelope": {
+    "payload": {
+      "schemaVersion": 2,
+      "licenseId": "00000000-0000-4000-8000-000000000001",
+      "customerId": "00000000-0000-4000-8000-0000000000a1",
+      "customerName": "LeavePilot Contract Fixture Customer",
+      "customer": "LeavePilot Contract Fixture Customer",
+      "features": [
+        "ldap_authentication",
+        "sso_authentication",
+        "integration_api",
+        "employee_groups",
+        "work_calendars",
+        "custom_branding"
+      ],
+      "issuedAt": "2026-06-01T00:00:00.000Z",
+      "allowedMajorVersions": [
+        3
+      ],
+      "plan": "pro",
+      "expiresAt": "2099-06-01T00:00:00.000Z",
+      "maxActiveUsers": 25,
+      "keyId": "test-license-do-not-trust"
+    },
+    "algorithm": "RSA-SHA256",
+    "signature": "QCdTe/s2ZVt0I6zJF0mIyfDvpWEnDBW6Bj2WNiv9gmvRiJR1Wt8QzJjq1FgAqtqU5N9tIAQnQaynQU7uyNvbaSrhJWJYRwBn1y/c6/IFWtsNsyAvrYJEX7qlUwJqCTQ1/l4prbj+cd3SisJPtfe0c96fft4cnH+e3B4VrvjbdLyLLKObSRlbYcVGvHZLXRgzsWrVpIpjl9QjD54OhgnPtiXY4cwTKnL5lDFGPNAOeO/FJ8iKUVrxuoZKBVd4KWMpcft+VXa7BjFE7as16XpYUlWakLGtRQ9eGN+MyXfHluyiRJGGCa+yveBkVLU5KmJs7UMIBavqNhi61Dbzs8KsjQ=="
+  },
+  "meta": {
+    "outcome": "valid",
+    "expectedReason": "valid",
+    "env": [],
+    "why": "Baseline positive: a correctly signed schemaVersion-2 payload with keyId resolves through the key ring and verifies valid at the frozen now (2026-06-01, before the 2099 expiry)."
+  }
+}

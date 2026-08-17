@@ -1,0 +1,51 @@
+{
+  "_comment": "License contract package manifest (Phase 8, D-19). SHA256-pins LICENSE-CONTRACT.md and every file of license-contract-fixtures/ except this MANIFEST itself (self-hashing is impossible). Regeneration procedure (D-20): (1) change the package in the COMMUNITY repository only; (2) run node license-contract-fixtures/generate.js — it rewrites the fixtures and this manifest; (3) copy LICENSE-CONTRACT.md and license-contract-fixtures/ byte-for-byte into the portal repository; (4) both repositories CI green before either merge. All fixture dates are hard constants around the frozen now 2026-06-01T00:00:00.000Z (D-16) — regeneration never moves them. Consumed by t/unit/license_contract_fixtures.js (community mocha spec) and scripts/license_contract_check.js (portal check script); CI-gated via the license-contract job in core-ci.yml (community) and ci.yml (portal). The test keys are fixtures marked test-only (keyId test-license-do-not-trust) — nobody trusts them; the owner genesis pair is never copied into this package in any form (D-13).",
+  "contractVersion": "1.0",
+  "files": {
+    "LICENSE-CONTRACT.md": {
+      "sha256": "318b8a52b47926859758360510b0d24a7410e9cb647ead44eba0845b4f518b55"
+    },
+    "license-contract-fixtures/expired.json": {
+      "sha256": "022fb863a355e2dc35d3c2fe3b20bec7a4994e84a834676188febf33fe187996"
+    },
+    "license-contract-fixtures/generate.js": {
+      "sha256": "74fdc737e1a20b95c3394d90a3acec470025ad32d1dc2fb5697fc96d4b4e6296"
+    },
+    "license-contract-fixtures/grace.json": {
+      "sha256": "d10feee08e05ce7a329495281477233cfd650913d67792811ce64adb5c0385b6"
+    },
+    "license-contract-fixtures/invalid-signature.json": {
+      "sha256": "55a6102649b6aecca85aedce872666cbdccea2ad413c7251e503f9bde44d2c5c"
+    },
+    "license-contract-fixtures/keys/test-license.private.testkey": {
+      "sha256": "ebe3f81bf84eb0657d198654aed7115c4db507c1afd69411db657e4623aec280"
+    },
+    "license-contract-fixtures/keys/test-license.public.testkey": {
+      "sha256": "528e8b4adb5a6a7ed3059bb9128d9f73df9851c4252923341ce51dc5dda394ba"
+    },
+    "license-contract-fixtures/keys/test-revocation.private.testkey": {
+      "sha256": "0641a1f962a383f696364cebba930241b49cf06d7bd893d433aad80711dafe76"
+    },
+    "license-contract-fixtures/keys/test-revocation.public.testkey": {
+      "sha256": "0f754efbf17771c3dade1ca73b8e7d463710f35d3a6425115f88cb825dae4b7d"
+    },
+    "license-contract-fixtures/major-mismatch.json": {
+      "sha256": "169ac842a0ca4e97d5e65f940c874cb9fa8e0a30a5af7ee4a897a3364c9b028b"
+    },
+    "license-contract-fixtures/revocation-list.json": {
+      "sha256": "8c3205a5feca5a43741155de2b5a589e49473e5881c01a3c67c07b30e792d00f"
+    },
+    "license-contract-fixtures/revocation-miss.json": {
+      "sha256": "f32cdf20acaa54145eb1235c68fe08e64bfd0c6a3da0975a809457befc7d71c3"
+    },
+    "license-contract-fixtures/revoked.json": {
+      "sha256": "a4dc21765d13ffe15e344b08e22a860afc66c5d1169a4b11764c308aadb16750"
+    },
+    "license-contract-fixtures/schema-mismatch.json": {
+      "sha256": "bedb3f01f15d19c79151c7ecfe7ac176851c66d6a83a3e22e62d82a667ffc25d"
+    },
+    "license-contract-fixtures/valid.json": {
+      "sha256": "7e05cb73afff89ec73ce08e465d17bc861b5b845ee3b5ed094c3525b7dc223bb"
+    }
+  }
+}

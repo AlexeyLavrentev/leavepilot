@@ -2,3 +2,5 @@
 6673e7f0609ecdd451546f86b381f897b5fa3e70:docs/license-portal-deployment.md:generic-api-key:117
 06125c2381cf9f88712c8804935e1c085e235ca6:lib/model/db/user.js:generic-api-key:4
 704a55b77655c6c90cc2ed461f73550fee3b27da:lib/model/db/user.js:generic-api-key:4
+8f3683432570eedf686cc3413c6e47ccb1c57124:license-contract-fixtures/keys/test-license.private.testkey:private-key:1
+0865a737df42d5f76543cefb9c27aebf4a4f8da5:license-contract-fixtures/keys/test-revocation.private.testkey:private-key:1

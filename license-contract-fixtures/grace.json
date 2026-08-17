@@ -1,0 +1,35 @@
+{
+  "envelope": {
+    "payload": {
+      "schemaVersion": 2,
+      "licenseId": "00000000-0000-4000-8000-000000000001",
+      "customerId": "00000000-0000-4000-8000-0000000000a1",
+      "customerName": "LeavePilot Contract Fixture Customer",
+      "customer": "LeavePilot Contract Fixture Customer",
+      "features": [
+        "ldap_authentication",
+        "sso_authentication",
+        "integration_api",
+        "employee_groups",
+        "work_calendars",
+        "custom_branding"
+      ],
+      "issuedAt": "2026-06-01T00:00:00.000Z",
+      "allowedMajorVersions": [
+        3
+      ],
+      "plan": "pro",
+      "expiresAt": "2026-05-25T00:00:00.000Z",
+      "maxActiveUsers": 25,
+      "keyId": "test-license-do-not-trust"
+    },
+    "algorithm": "RSA-SHA256",
+    "signature": "dCKH45LaPnyraOJ53Acfx8Lz9IA29AGguIFeSxFDKDWUkDjk4CHaNXhFBdm6n1CFpVqYGtAeiPuLhCOBCnVr6Fz76xAME1Sc1Umm2YDQzBwqnI6yBwDa1CniIxzN3Ros6k1gJsngK21kPhcLcbc3JoJu3fsJHWL2atRCudabscMGpGL1/QNDb5cWHMC4YghpXZ2TqbWRjTU99Zekd0qWDNnCW0cDMjFlLAzcu1hQVtm3sLbiUMtApWhgKUNDHZ9bwBzUzzW3U6h6CXrxWpD20tRxQOUuh4kLEkHn7rxLccr/4qXei5Xg1xephinWxrHgyEu0/IAXfyInuHStuNibIQ=="
+  },
+  "meta": {
+    "outcome": "grace",
+    "expectedReason": "expired_in_grace",
+    "env": [],
+    "why": "Grace window interior: expiry 2026-05-25 is 7 days before the frozen now, inside the default 14-day window — the license stays valid (premium features live, custom_branding suppressed) with reason expired_in_grace."
+  }
+}
