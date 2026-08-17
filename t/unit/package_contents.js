@@ -19,12 +19,15 @@
  * ship unless listed, on the operator documents named one by one, and on the
  * assertions about absence.
  *
- * An honest caveat about the absence assertions. Two of the forbidden prefixes
- * - the local planning directory and the editor settings directory - are not
- * tracked by git and are therefore absent from a clean CI checkout by
- * themselves; there those assertions hold trivially and their teeth are in the
- * local run. The remaining ones - t/, portal/, scripts/, .github/, outputs/,
- * deploy/, scss/ - are in git, so those assertions work in CI as well.
+ * An honest caveat about the absence assertions. Three of the forbidden
+ * prefixes - the local planning directory, the editor settings directory and
+ * the portal/ tree removed from the repository by the phase-9 surgery - are
+ * not tracked by git and are therefore absent from a clean CI checkout by
+ * themselves; there those assertions hold trivially (the portal/ prefix
+ * stays listed as the tarball-side second line of defence against the tree
+ * ever regaining portal code). The remaining ones - t/, scripts/, .github/,
+ * outputs/, deploy/, scss/ - are in git, so those assertions work in CI as
+ * well.
  *
  * No assertion is made about the total number of entries: that figure drifts
  * with every commit and has already moved several times while this phase was

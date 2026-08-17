@@ -1,21 +1,19 @@
 {
   "all": true,
   "include": [
-    "lib/**/*.js",
-    "portal/**/*.js"
+    "lib/**/*.js"
   ],
   "exclude": [
-    "lib/db/migrations/**",
-    "portal/migrations/**"
+    "lib/db/migrations/**"
   ],
   "reporter": [
     "text-summary",
     "json-summary"
   ],
   "check-coverage": true,
-  "branches": 52.87,
-  "functions": 46.93,
-  "lines": 59.05,
-  "statements": 58.69,
+  "branches": 51.80,
+  "functions": 50.87,
+  "lines": 59.87,
+  "statements": 59.66,
   "cache": false
 }
