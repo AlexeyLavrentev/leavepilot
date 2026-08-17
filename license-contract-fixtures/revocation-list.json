@@ -1,0 +1,21 @@
+{
+  "envelope": {
+    "payload": {
+      "schemaVersion": 1,
+      "listId": "00000000-0000-4000-8000-0000000000b1",
+      "issuedAt": "2020-01-01T00:00:00.000Z",
+      "expiresAt": "2099-06-01T00:00:00.000Z",
+      "revokedLicenseIds": [
+        "00000000-0000-4000-8000-000000000002"
+      ]
+    },
+    "algorithm": "RSA-SHA256",
+    "signature": "fcdYEmSyJASSV7GfR2gYviHkOa8S0nuvI47hnqRUg6jsuM0191Af4hum853sPZRMBtCK6XZ15IarsVc1dMrdZ+SoeXow7CC8Sf8BybjFAsINnpvY8vehw3BNVEQAVDyLYhPG3WiEdqbOczVIKVDzd4nCknpphK/NviuKcN0M3k69OHciO55XIEmWL1S0U/1heV13uLprfkVRQ7gHiYRP7ofp21N2VcDRZ4W0c+Mv6PrAqN/+pTEyStzgc50e/a+dT5dR6ED4uBfsJhVPMb2xzqwAYgEhZ5g2oVyD6E9zjk9mvjD68TKJxT7CHeubEheWEQ4UaFSXhvEpizbfgUMfyQ=="
+  },
+  "meta": {
+    "outcome": "revocation-list",
+    "expectedReason": null,
+    "env": [],
+    "why": "The signed test revocation list (schemaVersion 1, signed by the separate revocation test pair): revokes revoked.json licenseId only; consumed via env by the revoked and revocation-miss outcomes."
+  }
+}

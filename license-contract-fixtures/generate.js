@@ -137,22 +137,138 @@ const fixtures = {
       why: 'Baseline positive: a correctly signed schemaVersion-2 payload with keyId resolves through the key ring and verifies valid at the frozen now (2026-06-01, before the 2099 expiry).',
     },
   },
+
+  'invalid-signature.json': {
+    // The valid payload signed with the WRONG key (the revocation pair) —
+    // deterministic, and exactly the "signature does not match the trusted
+    // public key" class.
+    envelope: (licenseKey, revocationKey) => buildEnvelope(buildPayload(), revocationKey),
+    meta: {
+      outcome: 'invalid-signature',
+      expectedReason: 'invalid_signature',
+      env: [],
+      why: 'Tamper class: the payload is well-formed and signed, but by a key the verifier does not trust for licenses — verification must fail closed on the signature itself.',
+    },
+  },
+
+  'expired.json': {
+    envelope: licenseKey => buildEnvelope(
+      buildPayload({expiresAt: EXPIRES_LONG_PAST}), licenseKey),
+    meta: {
+      outcome: 'expired',
+      expectedReason: 'expired',
+      env: [],
+      why: 'Expiry beyond any grace window: 2020-01-01 plus the default 14 days is far before the frozen now, so the license must be rejected as expired (community functionality is never blocked, only entitlements).',
+    },
+  },
+
+  'grace.json': {
+    envelope: licenseKey => buildEnvelope(
+      buildPayload({expiresAt: EXPIRES_GRACE}), licenseKey),
+    meta: {
+      outcome: 'grace',
+      expectedReason: 'expired_in_grace',
+      env: [],
+      why: 'Grace window interior: expiry 2026-05-25 is 7 days before the frozen now, inside the default 14-day window — the license stays valid (premium features live, custom_branding suppressed) with reason expired_in_grace.',
+    },
+  },
+
+  'revoked.json': {
+    envelope: licenseKey => buildEnvelope(
+      buildPayload({licenseId: LICENSE_ID_REVOKED}), licenseKey),
+    meta: {
+      outcome: 'revoked',
+      expectedReason: 'revoked',
+      env: [
+        'LEAVEPILOT_LICENSE_REVOCATION_LIST',
+        'LEAVEPILOT_LICENSE_REVOCATION_PUBLIC_KEY',
+      ],
+      why: 'Revocation hit: this licenseId is a member of the signed test revocation list, so an otherwise valid license must fail with reason revoked and revokedAt set to the list issuedAt.',
+    },
+  },
+
+  'schema-mismatch.json': {
+    envelope: licenseKey => buildEnvelope(
+      buildPayload({schemaVersion: 3}), licenseKey),
+    meta: {
+      outcome: 'schema-mismatch',
+      expectedReason: 'unsupported_schema_version',
+      env: [],
+      why: 'Defensive: a payload claiming schemaVersion 3 (correctly signed) is a format this verifier does not know — it must be rejected, never best-effort parsed.',
+    },
+  },
+
+  'major-mismatch.json': {
+    envelope: licenseKey => buildEnvelope(
+      buildPayload({allowedMajorVersions: [2]}), licenseKey),
+    meta: {
+      outcome: 'major-mismatch',
+      expectedReason: 'unsupported_major_version',
+      env: [],
+      why: 'Defensive: the payload allows only community major 2 while the verifying core is major 3 — the version coupling must reject the license instead of running unsupported combinations.',
+    },
+  },
+
+  'revocation-miss.json': {
+    envelope: licenseKey => buildEnvelope(
+      buildPayload({licenseId: LICENSE_ID_MISS}), licenseKey),
+    meta: {
+      outcome: 'revocation-miss',
+      expectedReason: 'valid',
+      env: [
+        'LEAVEPILOT_LICENSE_REVOCATION_LIST',
+        'LEAVEPILOT_LICENSE_REVOCATION_PUBLIC_KEY',
+      ],
+      why: 'Positive control for the list path: this licenseId is NOT in the signed list, so the license stays valid AND the status surfaces revocationListIssuedAt/ExpiresAt — proving the list was actually consulted, not skipped.',
+    },
+  },
+};
+
+// The signed revocation list itself (schemaVersion 1, D-17). Wide window
+// (2020 -> 2099) so the list can never expire relative to FROZEN (Pitfall 3).
+const revocationListPayload = {
+  schemaVersion: 1,
+  listId: REVOCATION_LIST_ID,
+  issuedAt: EXPIRES_LONG_PAST, // 2020-01-01: long before FROZEN
+  expiresAt: EXPIRES_FAR_FUTURE, // 2099-06-01: long after FROZEN
+  revokedLicenseIds: [LICENSE_ID_REVOKED],
+};
+
+fixtures['revocation-list.json'] = {
+  envelope: (licenseKey, revocationKey) => ({
+    payload: revocationListPayload,
+    algorithm: 'RSA-SHA256',
+    signature: signPayload(revocationListPayload, revocationKey),
+  }),
+  meta: {
+    outcome: 'revocation-list',
+    expectedReason: null,
+    env: [],
+    why: 'The signed test revocation list (schemaVersion 1, signed by the separate revocation test pair): revokes revoked.json licenseId only; consumed via env by the revoked and revocation-miss outcomes.',
+  },
 };
 
 // Deliberately a fixed list, not a directory walk: regeneration must fail
 // loudly when a required fixture disappears, and a dynamic list would simply
 // shrink with it (scripts/verify-artifact-licenses.sh discipline).
-const OUTPUT_FILES = ['valid.json'];
+const OUTPUT_FILES = [
+  'valid.json',
+  'invalid-signature.json',
+  'expired.json',
+  'grace.json',
+  'revoked.json',
+  'schema-mismatch.json',
+  'major-mismatch.json',
+  'revocation-miss.json',
+  'revocation-list.json',
+];
 
 // ---------------------------------------------------------------------------
 // Run.
 // ---------------------------------------------------------------------------
 
 const licensePrivateKey = fs.readFileSync(LICENSE_PRIVATE_KEY_FILE, 'utf8');
-let revocationPrivateKey = null;
-if (fs.existsSync(REVOCATION_PRIVATE_KEY_FILE)) {
-  revocationPrivateKey = fs.readFileSync(REVOCATION_PRIVATE_KEY_FILE, 'utf8');
-}
+const revocationPrivateKey = fs.readFileSync(REVOCATION_PRIVATE_KEY_FILE, 'utf8');
 
 OUTPUT_FILES.forEach(relPath => {
   const definition = fixtures[relPath];

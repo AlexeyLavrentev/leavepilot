@@ -1,0 +1,35 @@
+{
+  "envelope": {
+    "payload": {
+      "schemaVersion": 2,
+      "licenseId": "00000000-0000-4000-8000-000000000001",
+      "customerId": "00000000-0000-4000-8000-0000000000a1",
+      "customerName": "LeavePilot Contract Fixture Customer",
+      "customer": "LeavePilot Contract Fixture Customer",
+      "features": [
+        "ldap_authentication",
+        "sso_authentication",
+        "integration_api",
+        "employee_groups",
+        "work_calendars",
+        "custom_branding"
+      ],
+      "issuedAt": "2026-06-01T00:00:00.000Z",
+      "allowedMajorVersions": [
+        2
+      ],
+      "plan": "pro",
+      "expiresAt": "2099-06-01T00:00:00.000Z",
+      "maxActiveUsers": 25,
+      "keyId": "test-license-do-not-trust"
+    },
+    "algorithm": "RSA-SHA256",
+    "signature": "KrdOJHgMg8qwkPtmfkm4m/NWbazhlkNGcUBRF2pTwP9UA9mnLIPHtj1Et8CDnnEbc84LuAjHZjKUV3Iix4jmyhEeswTlOPk47wRd2htEq7wTr/oq8oxk8Lrjl3CT3fd855nisz6neAbhnbr0OvvGGLNw0sbMI91liFjAatSJouVyUzVRsfIeS8/yvqlCs86SCjI+o3w4U5L0alMKSyjqApD9DVbxYHILaHD3hHECZWq1mxUyR88XcBuEHuM7TRCtqDG6pEAC7myM6B1M1+mAii5pofw3oQ1jnMIIX2uB5yhTHhLafuQS641EsGMhWRoYzvPA1xSbhYPi7db1V7Ehhw=="
+  },
+  "meta": {
+    "outcome": "major-mismatch",
+    "expectedReason": "unsupported_major_version",
+    "env": [],
+    "why": "Defensive: the payload allows only community major 2 while the verifying core is major 3 — the version coupling must reject the license instead of running unsupported combinations."
+  }
+}

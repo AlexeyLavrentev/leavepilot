@@ -132,3 +132,90 @@ that would make a verifier on either side reject the other side's licenses is
 a breaking (contract-major) change that requires both repositories to step to
 the new major version **in the same change** (see Versioning and Change
 Procedure).
+
+## 2. Grace
+
+Expiry is a commercial condition, not a tamper signal. When `expiresAt` is in
+the past, the license enters a grace window of `LICENSE_GRACE_DAYS` days
+(default **14**) counted from `expiresAt`:
+
+- Inside the window the license stays **valid**: `valid: true`, reason
+  `expired_in_grace`, `inGrace: true`, and `graceEndsAt` surfaced on the
+  status. The signed payload is still read, so **premium features keep
+  working** — with one exception: `custom_branding` is suppressed during
+  grace per the `FEATURE_CATALOG` rule (the white-label entitlement is never
+  granted by grace).
+- After the window: `valid: false`, reason `expired`. Community functionality
+  and data access are **never blocked** by expiry — only entitlements go
+  dark.
+
+`LEAVEPILOT_LICENSE_GRACE_DAYS` is operator tuning **inside** the contract:
+accepted range 0..14, default 14. An operator may **lower** the window (down
+to 0) but can never raise it — the verifier caps the configured value at 14
+(`Math.min`), so a commercial entitlement cannot be extended via an
+environment variable.
+
+## 3. Key Rotation (`keyId`)
+
+Keys rotate without breaking licenses in the field:
+
+- A payload carrying `keyId` selects its verification key from the
+  `LEAVEPILOT_LICENSE_PUBLIC_KEYS` environment variable — a JSON map of
+  `keyId` -> PEM public key (the rotation ring). The portal stamps `keyId`
+  from its `LICENSE_SIGNING_KEY_ID` when issuing.
+- An **ordered ring**: a newly added key serves new licenses while previously
+  issued licenses keep verifying against the old key until they expire —
+  rotation with no break.
+- A payload with `keyId` but no matching ring entry fails closed with reason
+  `unknown_key_id`.
+- A payload without `keyId` verifies against the single
+  `LEAVEPILOT_LICENSE_PUBLIC_KEY`.
+
+## 4. Revocation List (schemaVersion 1)
+
+Revocation is a separate signed artifact fed through its own environment
+variable, verified with its own key (a compromised license-signing key must
+not be able to forge revocations, and vice versa).
+
+```json
+{
+  "payload": {
+    "schemaVersion": 1,
+    "listId": "<uuid>",
+    "issuedAt": "<ISO 8601>",
+    "expiresAt": "<ISO 8601>",
+    "revokedLicenseIds": ["<licenseId>", "..."]
+  },
+  "algorithm": "RSA-SHA256",
+  "signature": "<base64>"
+}
+```
+
+| Field                 | Semantics (as the verifier behaves) |
+|-----------------------|-------------------------------------|
+| `schemaVersion`       | Must be exactly 1. |
+| `listId`              | UUID, informative. |
+| `issuedAt`            | ISO 8601. A future value fails the list (`revocation_list_not_yet_valid`). |
+| `expiresAt`           | ISO 8601. A past value fails the list (`revocation_list_expired`) — the list lives in a window and must be re-issued. |
+| `revokedLicenseIds`   | Array of non-empty strings. Membership by `licenseId` yields `valid: false`, reason `revoked`, with `revokedAt` set to the list's `issuedAt`. |
+| envelope              | Same canonicalization byte rule and RSA-SHA256 algorithm as licenses. There is **no keyId ring** for lists — a single key. |
+
+Verification order and semantics:
+
+- The list check applies **only to an already-valid license**; an invalid
+  license reports its own failure reason.
+- The list key comes from `LEAVEPILOT_LICENSE_REVOCATION_PUBLIC_KEY`, with
+  fallback to the single license public key when unset.
+- An invalid, stale, or unsigned list **invalidates the license** (fail
+  closed: `invalid_revocation_list` / `invalid_revocation_list_payload` /
+  `revocation_list_not_yet_valid` / `revocation_list_expired`) — a missing or
+  broken list can never silently un-revoke.
+- When the list is absent from the environment, the check is skipped
+  entirely.
+- When a valid list does NOT contain the license's `licenseId`, the status
+  surfaces `revocationListIssuedAt` and `revocationListExpiresAt` — positive
+  proof the list was consulted.
+
+The legacy `HMAC-SHA256` envelope is accepted by the license verifier for
+existing deployments (see Signature algorithm), but revocation lists, like
+inter-repository license exchange, are `RSA-SHA256` only.

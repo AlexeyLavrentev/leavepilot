@@ -1,0 +1,35 @@
+{
+  "envelope": {
+    "payload": {
+      "schemaVersion": 2,
+      "licenseId": "00000000-0000-4000-8000-000000000001",
+      "customerId": "00000000-0000-4000-8000-0000000000a1",
+      "customerName": "LeavePilot Contract Fixture Customer",
+      "customer": "LeavePilot Contract Fixture Customer",
+      "features": [
+        "ldap_authentication",
+        "sso_authentication",
+        "integration_api",
+        "employee_groups",
+        "work_calendars",
+        "custom_branding"
+      ],
+      "issuedAt": "2026-06-01T00:00:00.000Z",
+      "allowedMajorVersions": [
+        3
+      ],
+      "plan": "pro",
+      "expiresAt": "2099-06-01T00:00:00.000Z",
+      "maxActiveUsers": 25,
+      "keyId": "test-license-do-not-trust"
+    },
+    "algorithm": "RSA-SHA256",
+    "signature": "rOqkgAGVim+sjmS+bKf9cTQs+l79xyYp5bMET0Dpea+b4pZoJf/Gf3J+89HBte2XEt1EgUsbm+yWh4u0ev6U0+MaQu3IzIMZe9XcboCfMnzTR6wNd8fGJ72bbA/+O+8W/f9WY0NH0kIvhfi/dy9zbuD6kjxdRAzhAjS1074CXT0HzLCleSAkWWkSbRZnltv8Xa2L+xj5oS6MVvXZOQREXYxucy+PqIBzS1GE1HUh/wnzAvRwV/FcCfiwK2q712x/94de4jrnHndUDdauWZHYObBRofRdC4DteMviTxe1djiMOwhDjxf1xABLcMpQonFgpiJOdjql3kVIP2K6LZ2EpA=="
+  },
+  "meta": {
+    "outcome": "invalid-signature",
+    "expectedReason": "invalid_signature",
+    "env": [],
+    "why": "Tamper class: the payload is well-formed and signed, but by a key the verifier does not trust for licenses — verification must fail closed on the signature itself."
+  }
+}

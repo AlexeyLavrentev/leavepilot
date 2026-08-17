@@ -1,0 +1,38 @@
+{
+  "envelope": {
+    "payload": {
+      "schemaVersion": 2,
+      "licenseId": "00000000-0000-4000-8000-000000000002",
+      "customerId": "00000000-0000-4000-8000-0000000000a1",
+      "customerName": "LeavePilot Contract Fixture Customer",
+      "customer": "LeavePilot Contract Fixture Customer",
+      "features": [
+        "ldap_authentication",
+        "sso_authentication",
+        "integration_api",
+        "employee_groups",
+        "work_calendars",
+        "custom_branding"
+      ],
+      "issuedAt": "2026-06-01T00:00:00.000Z",
+      "allowedMajorVersions": [
+        3
+      ],
+      "plan": "pro",
+      "expiresAt": "2099-06-01T00:00:00.000Z",
+      "maxActiveUsers": 25,
+      "keyId": "test-license-do-not-trust"
+    },
+    "algorithm": "RSA-SHA256",
+    "signature": "eeFWl1Jxm547V9nBmhAUhhakAoXw0Xhak+C5fKnPpJhmN0NrVHvYZdWuIZYJgxPk1Y/c2C2rQv+Juh/T0D99OS/o0b0b7hGeSr12ACyVai6v9Jw5kIJ8zZX/D+w3i3OvRmqb7dBnA5maJyzy1Fr6sAN2SuaxtajjaspH3LAAGKkhGI0X/D8VEV/z4otfZLF5tYcIy/0493pXtX4SflQVuFRNtEFLvMVfYoyfflzmolKjbBq71Q5QKqdlrqn6GO1jpaR0JCqV7fpQ6lCiRWaaKgfGtu5Y2BT6CxyGC/Of1+ULG5POIZyD3L2DUlXLvAcAfv7sKQXYBLT9jXlEpuYNCg=="
+  },
+  "meta": {
+    "outcome": "revoked",
+    "expectedReason": "revoked",
+    "env": [
+      "LEAVEPILOT_LICENSE_REVOCATION_LIST",
+      "LEAVEPILOT_LICENSE_REVOCATION_PUBLIC_KEY"
+    ],
+    "why": "Revocation hit: this licenseId is a member of the signed test revocation list, so an otherwise valid license must fail with reason revoked and revokedAt set to the list issuedAt."
+  }
+}

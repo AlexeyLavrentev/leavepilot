@@ -31,9 +31,40 @@ const FROZEN_ISO = '2026-06-01T00:00:00.000Z';
 
 const LICENSE_PUBLIC_PEM = fs.readFileSync(
   path.join(PKG_DIR, 'keys', 'test-license.public.testkey'), 'utf8');
+const REVOCATION_PUBLIC_PEM = fs.readFileSync(
+  path.join(PKG_DIR, 'keys', 'test-revocation.public.testkey'), 'utf8');
 
 const loadFixture = name =>
   JSON.parse(fs.readFileSync(path.join(PKG_DIR, name), 'utf8'));
+
+// The license fixtures the matrix iterates: every package JSON except the
+// manifest and the revocation list itself (the list is not a license — it is
+// consumed via env by the revoked / revocation-miss outcomes). Derived from
+// the package directory, not hand-typed, so the spec cannot drift from the
+// package (anti-drift principle: the CI job runs this spec, which iterates
+// the package).
+const LICENSE_FIXTURES = fs.readdirSync(PKG_DIR)
+  .filter(name => /\.json$/.test(name) && name !== 'MANIFEST.json' && name !== 'revocation-list.json')
+  .sort();
+
+// meta.env names beyond the defaults (LEAVEPILOT_LICENSE + the key ring) the
+// child must inject, and where each value comes from. An unknown name in a
+// fixture's meta.env fails the run — it would mean the package and the spec
+// drifted apart.
+const EXTRA_ENV_SOURCES = {
+  LEAVEPILOT_LICENSE_REVOCATION_LIST: () =>
+    JSON.stringify(loadFixture('revocation-list.json').envelope),
+  LEAVEPILOT_LICENSE_REVOCATION_PUBLIC_KEY: () => REVOCATION_PUBLIC_PEM,
+};
+
+// Expected validity per reason. Only two reasons keep the license valid: the
+// plain 'valid' case and 'expired_in_grace' (D-03: grace keeps valid:true —
+// premium features live, custom_branding suppressed). Every other reason in
+// the matrix fails closed.
+const REASON_VALIDITY = {
+  valid: true,
+  expired_in_grace: true,
+};
 
 // The child script. Order is load-bearing: FrozenDate is installed and
 // crypto.randomUUID pinned BEFORE require('./lib/features') so module-level
@@ -71,6 +102,16 @@ function runFixtureOutcome(fixtureName) {
     'test-license-do-not-trust': LICENSE_PUBLIC_PEM,
   });
 
+  // Additional env the fixture's meta block demands (revocation cases).
+  (fixture.meta.env || []).forEach(name => {
+    const source = EXTRA_ENV_SOURCES[name];
+    if (!source) {
+      throw new Error(fixtureName + ': meta.env names "' + name
+        + '" but the spec has no source for it — package/spec drift');
+    }
+    childEnv[name] = source();
+  });
+
   return JSON.parse(childProcess.execFileSync(process.execPath, ['-e', CHILD_SCRIPT], {
     cwd: root,
     env: childEnv,
@@ -81,12 +122,49 @@ function runFixtureOutcome(fixtureName) {
 describe('License contract fixtures (Plan 08-01)', function() {
   this.timeout(10000);
 
-  it('valid.json verifies through the real lib/features.js verifier at the frozen now', function() {
-    const fixture = loadFixture('valid.json');
-    const status = runFixtureOutcome('valid.json');
+  it('has license fixtures to iterate (surfaces-exist)', function() {
+    expect(
+      LICENSE_FIXTURES.length,
+      'the package walk resolved to too few license fixtures — the matrix would be green for the wrong reason'
+    ).to.be.above(5);
+    expect(LICENSE_FIXTURES).to.include('valid.json');
+    expect(LICENSE_FIXTURES).to.include('revocation-miss.json');
+  });
 
-    expect(status.valid, 'valid.json -> valid').to.equal(true);
-    expect(status.reason, 'valid.json -> reason (verbatim from meta.expectedReason)')
-      .to.equal(fixture.meta.expectedReason);
+  // Outcome matrix: every license fixture through the REAL verifier, reason
+  // asserted verbatim against the fixture's own meta.expectedReason, validity
+  // derived from that reason (only 'valid' and 'expired_in_grace' stay
+  // valid — every other reason fails closed).
+  LICENSE_FIXTURES.forEach(name => {
+    it(name + ' yields its meta.expectedReason through the real lib/features.js verifier at the frozen now', function() {
+      const fixture = loadFixture(name);
+      const status = runFixtureOutcome(name);
+
+      expect(status.valid, name + ' -> valid (reason "' + fixture.meta.expectedReason + '")')
+        .to.equal(REASON_VALIDITY[fixture.meta.expectedReason] === true);
+      expect(status.reason, name + ' -> reason (verbatim from meta.expectedReason)')
+        .to.equal(fixture.meta.expectedReason);
+    });
+  });
+
+  it('non-vacuous grace tooth: grace.json genuinely lands valid AND inGrace AND expired_in_grace (cannot silently degrade into plain-expired)', function() {
+    const status = runFixtureOutcome('grace.json');
+
+    expect(status.valid, 'grace fixture IS a valid license').to.equal(true);
+    expect(status.inGrace, 'grace fixture IS inside the grace window').to.equal(true);
+    expect(status.reason).to.equal('expired_in_grace');
+    expect(status.graceEndsAt, 'grace surfaces graceEndsAt').to.be.a('string');
+  });
+
+  it('revocation-miss positive control: the signed list is consulted and leaves the license valid with list timestamps', function() {
+    const status = runFixtureOutcome('revocation-miss.json');
+    const list = loadFixture('revocation-list.json');
+
+    expect(status.valid, 'miss license stays valid').to.equal(true);
+    expect(status.reason).to.equal('valid');
+    expect(status.revocationListIssuedAt, 'status must surface revocationListIssuedAt — its absence would mean the list check was skipped')
+      .to.equal(list.envelope.payload.issuedAt);
+    expect(status.revocationListExpiresAt)
+      .to.equal(list.envelope.payload.expiresAt);
   });
 });
