@@ -194,7 +194,8 @@ node bin/license.js generate \
 ### Регистр выданных лицензий (`--registry`)
 
 Регистр — локальный JSON-файл вендора для учёта выпущенных лицензий. Это
-прекурсор будущего License Portal MVP: пока без веб-UI и БД, только файл.
+ручная вендорская альтернатива License Portal
+([docs/license-portal.md](license-portal.md)): без веб-UI и БД, только файл.
 
 ```bash
 node bin/license.js generate \
@@ -362,25 +363,21 @@ docker compose logs app | grep -i license
 >
 > Храните приватный ключ в защищённом хранилище (KMS, HSM, зашифрованный vault).
 
-## Регистр как прекурсор License Portal
+## Регистр и License Portal
 
-Текущий workflow с `--registry` — это ручная версия того, что в будущем станет
-License Portal MVP:
+License Portal — вендорская инфраструктура: он не входит в community-редакцию
+и живёт в приватном репозитории вендора
+([docs/license-portal.md](license-portal.md)). Регистр (`--registry` у
+`bin/license.js`) остаётся ручным вендорским инструментом учёта: JSON-файл на
+диске, без веб-UI и БД.
 
-| Сейчас (Phase 2B-0)           | Portal MVP (Phase 2B)            |
-|-------------------------------|----------------------------------|
-| JSON-файл на диске            | БД (SQLite/Postgres)             |
-| CLI generate + --registry     | Веб-форма + KMS-подпись          |
-| Ручной просмотр registry      | Веб-UI со списком и поиском      |
-| Локальный файл у вендора      | Сервис за SSO/VPN вендора        |
-| SHA-256 хэши для поиска       | Тот же формат + индексы          |
-
-Формат записей регистра совместим: при миграции на Portal достаточно
-импортировать существующий JSON в БД.
+Формат записей регистра совместим с моделью данных портала (историческая
+правда проектирования): и регистр, и портал ведут лицензии в едином формате
+контракта — [LICENSE-CONTRACT.md](../LICENSE-CONTRACT.md).
 
 ## Дополнительные материалы
 
 - [Архитектура лицензирования](licensing-architecture.md) — ADR с обоснованием модели
-- [Проектирование License Portal MVP](license-portal-design.md) — архитектура и план реализации
+- [License Portal](license-portal.md) — портал как вендорская инфраструктура
 - [Premium-модуль](premium-module.md) — установка и конфигурация
 - [Docker Compose](docker-compose.md) — развёртывание

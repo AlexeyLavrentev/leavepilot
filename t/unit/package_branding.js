@@ -40,13 +40,6 @@ describe('Package and image identity contract', function() {
     );
   });
 
-  it('leaves Dockerfile.portal without an OCI source label (documented D-10 no-op)', function() {
-    // D-10 conditions the portal-label update on "if there is a label". There
-    // is none today, so the decision is no-op. Pinning the absence makes a
-    // future contributor adding one a deliberate change, not silent drift.
-    expect(read('Dockerfile.portal')).to.not.match(/org\.opencontainers\.image\.source/);
-  });
-
   it('states the container tag-support policy in docs/container-images.md', function() {
     const doc = read('docs/container-images.md');
     expect(doc, 'docs/container-images.md should state the tag-support policy (D-11)').to.include('Tag support policy');

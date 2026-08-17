@@ -629,7 +629,7 @@ AES-256-GCM (authenticated encryption). Сейчас это **OIDC client secret
 - [SSO через Keycloak](docs/sso-keycloak.md)
 - [Архитектура лицензирования](docs/licensing-architecture.md)
 - [Операции с лицензиями](docs/license-operations.md)
-- [Проектирование License Portal MVP](docs/license-portal-design.md)
+- [License Portal](docs/license-portal.md)
 - [Чеклист оператора: бэкап и восстановление](docs/operator-backup-checklist.md)
 - [Компрометация ключа подписи лицензий](docs/license-key-compromise.md)
 

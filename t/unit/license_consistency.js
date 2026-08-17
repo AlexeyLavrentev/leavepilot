@@ -46,13 +46,13 @@ const read = relativePath => fs.readFileSync(path.join(root, relativePath), 'utf
   stops carrying the attributions the exclusion was written for, this guard
   goes red rather than excluding a file that no longer needs it.
 
-  Both Dockerfiles are in scope. The OCI label is the machine-readable licence
-  claim, and it is what corporate image scanners read - leaving it out would
-  keep the guard green while the published image said otherwise.
+  The community Dockerfile is in scope. The OCI label is the machine-readable
+  licence claim, and it is what corporate image scanners read - leaving it out
+  would keep the guard green while the published image said otherwise.
 */
 const thirdPartyInventoryFile = 'docs/third-party-inventory.md';
 
-const surfaces = ['README.md', 'Dockerfile', 'Dockerfile.portal'].concat(
+const surfaces = ['README.md', 'Dockerfile'].concat(
   fs.readdirSync(path.join(root, 'docs'))
     .filter(name => name.endsWith('.md'))
     .map(name => path.posix.join('docs', name))
@@ -71,7 +71,7 @@ const inheritedLicenceName = /\bMIT\b/;
   Both halves of this one are load-bearing. Without the lookahead every mention
   of LICENSE.md would be an offender, because a dot is not a word character and
   \b matches right after LICENSE. With the word boundary, the licence-key
-  environment variables (TIMEOFF_LICENSE, PORTAL_LICENSE_PRIVATE_KEY_FILE,
+  environment variables (TIMEOFF_LICENSE, TIMEOFF_LICENSE_PUBLIC_KEY,
   ALLOW_UNSIGNED_LICENSES and some sixty more across docs/) are not offenders,
   because an underscore is a word character and there is no boundary there.
 */

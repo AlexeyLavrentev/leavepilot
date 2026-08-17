@@ -24,17 +24,17 @@
   one (the encrypt-sso migration's transforms live in
   lib/sso_secret_backfill.js).
 
-  Scope of the scan: the two migration histories (migrations/,
-  portal/migrations/) - NOT the t/ tree, so this gate does not need the
+  Scope of the scan: the core migration history (migrations/) - NOT the
+  t/ tree, so this gate does not need the
   self-exclusion dialect_sensitive_manifest.js carries; its own detector
-  signatures live outside the scanned directories. Both histories are
-  scanned even though portal currently has zero qualifying files: the
-  surfaces-exist guard plus the scan itself mean a portal data-rewrite added
-  later cannot escape the manifest.
+  signatures live outside the scanned directory. The portal history left
+  this repository in the phase-9 surgery (it was all DDL anyway, which is
+  why the manifest never carried a portal entry), so the scan covers the
+  one migration history this repository still has.
 
   Manifest entry contract (non-phantom): every entry's migration file
-  exists, its history field matches the path prefix (core -> migrations/,
-  portal -> portal/migrations/), its up() body (or delegate) carries at
+  exists, its history field matches the path prefix (core -> migrations/),
+  its up() body (or delegate) carries at
   least one detector-visible signal, a delegate entry names an existing
   module that the migration source actually requires, transforms is a
   non-empty string, and every entry points at the single replay spec. A
@@ -54,7 +54,6 @@ var manifest = JSON.parse(
 
 var HISTORIES = {
   core: 'migrations',
-  portal: 'portal/migrations',
 };
 
 var REPLAY_SPEC = 't/unit/db_migrations_data.js';
@@ -278,7 +277,7 @@ function phantomProblems(entries, exists, readSource) {
 
     var historyDir = HISTORIES[entry.history];
     if (!historyDir) {
-      problems.push(entry.migration + ': unknown history "' + entry.history + '" (core or portal)');
+      problems.push(entry.migration + ': unknown history "' + entry.history + '" (core)');
     } else if (entry.migration.indexOf(historyDir + '/') !== 0) {
       problems.push(
         entry.migration + ': history "' + entry.history + '" does not match the path prefix ' + historyDir + '/'
@@ -327,7 +326,6 @@ function phantomProblems(entries, exists, readSource) {
 describe('D-10 data-rewriting migration manifest (companion gate)', function() {
 
   var coreFiles = collectHistoryFiles(HISTORIES.core);
-  var portalFiles = collectHistoryFiles(HISTORIES.portal);
   var accounted = accountedSet();
   var realRead = function(rel) {
     return fs.readFileSync(path.join(root, rel), 'utf8');
@@ -335,32 +333,31 @@ describe('D-10 data-rewriting migration manifest (companion gate)', function() {
   var realExists = function(rel) {
     return fs.existsSync(path.join(root, rel));
   };
-  var offenders = offendersAmong(coreFiles.concat(portalFiles), realRead, accounted);
+  var offenders = offendersAmong(coreFiles, realRead, accounted);
 
-  // (1) SURFACES-EXIST: both histories are scanned. A broken walk resolves
+  // (1) SURFACES-EXIST: the migration history is scanned. A broken walk resolves
   // to nothing and the staleness contract below would be green for the
   // wrong reason (license_consistency / env_read_invariant guard). The
-  // thresholds track the audited repo (34 core files, 5 portal files) with
-  // headroom so a legitimate edit never trips them.
-  it('has both migration histories to scan (surfaces-exist)', function() {
+  // threshold tracks the audited repo (34 core files) with
+  // headroom so a legitimate edit never trips it.
+  it('has the migration history to scan (surfaces-exist)', function() {
     expect(coreFiles.length, 'the core history walk resolved to too few files').to.be.above(30);
-    expect(portalFiles.length, 'the portal history walk resolved to too few files').to.be.above(4);
   });
 
-  it('has a non-empty manifest with only core or portal histories', function() {
+  it('has a non-empty manifest with only core history entries', function() {
     expect(
       manifest.migrations.length,
       'the manifest is empty - no data-rewriting migration would ever be replayed'
     ).to.be.above(0);
     manifest.migrations.forEach(function(entry) {
-      expect(entry.history, entry.migration + ' history').to.be.oneOf(['core', 'portal']);
+      expect(entry.history, entry.migration + ' history').to.be.oneOf(['core']);
     });
   });
 
-  // The portal history is all DDL today; its absence from the manifest is
-  // an audited fact recorded in _comment, not an omission this gate would
-  // paper over - which is exactly why the surfaces-exist guard above scans
-  // that directory too.
+  // Generic contract kept after the phase-9 surgery: a history added to
+  // HISTORIES whose files carry no manifest entries must be explained in
+  // the manifest _comment. Core is fully represented today, so the loop
+  // passes by representation, not by an empty scan.
   it('explains a history with zero entries in the manifest _comment', function() {
     var represented = {};
     manifest.migrations.forEach(function(entry) {
@@ -565,6 +562,7 @@ describe('D-10 data-rewriting migration manifest (companion gate)', function() {
   it('rejects fabricated phantom entries', function() {
     var files = {
       'migrations/__real_ddl__.js': 'module.exports = { up: (qi) => qi.addColumn("C", "x", {}), down: () => {} };',
+      'vendor/__misplaced__.js': 'module.exports = { up: (qi) => qi.addColumn("C", "x", {}), down: () => {} };',
       'migrations/__delegating__.js': 'const delegate = require(\'../lib/__delegate__\');\nmodule.exports = { up: () => delegate.apply({}), down: () => {} };',
       'lib/__delegate__.js': 'module.exports = { apply: () => queryInterface.bulkUpdate("C", {}, {}) };',
     };
@@ -578,7 +576,7 @@ describe('D-10 data-rewriting migration manifest (companion gate)', function() {
     var problems = phantomProblems([
       {migration: 'migrations/__missing__.js', history: 'core', transforms: 'x', spec: REPLAY_SPEC},
       {migration: 'migrations/__real_ddl__.js', history: 'core', transforms: 'x', spec: REPLAY_SPEC},
-      {migration: 'migrations/__real_ddl__.js', history: 'portal', transforms: 'x', spec: REPLAY_SPEC},
+      {migration: 'vendor/__misplaced__.js', history: 'core', transforms: 'x', spec: REPLAY_SPEC},
       {migration: 'migrations/__real_ddl__.js', history: 'core', transforms: '  ', spec: REPLAY_SPEC},
       {
         migration: 'migrations/__delegating__.js',
@@ -598,14 +596,14 @@ describe('D-10 data-rewriting migration manifest (companion gate)', function() {
 
     var joined = problems.join('\n');
     // One problem for the missing file; one for the pure-DDL entry; two for
-    // the wrong history (prefix mismatch + no signal); two for the empty
+    // the misplaced file (path prefix mismatch + no signal); two for the empty
     // transforms (empty + no signal); two for the missing delegate (missing
     // + no signal); one for the wrong spec (the good delegate carries the
     // signal, so only the spec contract fails).
     expect(problems, 'every fabricated phantom shape must be named:\n' + joined).to.have.lengthOf(9);
     expect(joined).to.contain('__missing__.js: file does not exist');
     expect(joined).to.contain('migrations/__real_ddl__.js: no transform signal');
-    expect(joined).to.contain('does not match the path prefix portal/migrations/');
+    expect(joined).to.contain('does not match the path prefix migrations/');
     expect(joined).to.contain('empty transforms description');
     expect(joined).to.contain('delegate lib/__missing_delegate__.js does not exist');
     expect(joined).to.contain('spec must be exactly ' + REPLAY_SPEC);
