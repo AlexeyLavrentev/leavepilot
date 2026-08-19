@@ -9,7 +9,7 @@ See: .planning/PROJECT.md (updated 2026-08-19)
 
 ## Status
 
-- **Phase**: 1 of 5
+- **Phase**: 1 of 5 — COMPLETE
 - **Milestone**: License Activation System
 - **Started**: 2026-08-19
 
@@ -20,8 +20,9 @@ See: .planning/PROJECT.md (updated 2026-08-19)
 - [x] REQUIREMENTS.md defined
 - [x] ROADMAP.md created
 - [x] Phase 1 planned (2 plans, 5 tasks)
+- [x] Phase 1 executed — hardcoded key + machine fingerprint
 
 ## Next Actions
 
-1. `/gsd-execute-phase 1` — execute Phase 1 (hardcoded key + fingerprint)
-2. Then Phase 3 in parallel (license file storage)
+1. `/gsd-plan-phase 2` — Hardware-Bound License (fingerprint in payload)
+2. `/gsd-plan-phase 3` — License File Storage (can run in parallel)

@@ -1,8 +1,8 @@
 # Roadmap — License Activation System
 
-_Last updated: 2026-08-19 after initialization_
+_Last updated: 2026-08-19 after Phase 1 completion_
 
-## Phase 1: Security Hardening (R1, R2)
+## Phase 1: Security Hardening (R1, R2) ✅ COMPLETE
 
 Укрепление фундамента: hardcoded public key + machine fingerprint.
 
@@ -13,6 +13,7 @@ _Last updated: 2026-08-19 after initialization_
 
 **Dependencies:** None
 **Estimated:** 1-2 plans
+**Completed:** 2026-08-19
 
 ---
 
@@ -83,10 +84,10 @@ Machine fingerprint в payload лицензии + integrity check.
 
 ## Phase Summary
 
-| Phase | Focus | Requirements | Dependencies |
-|---|---|---|---|
-| 1 | Security Hardening | R1, R2 | None |
-| 2 | Hardware-Bound License | R3, R7 | Phase 1 |
-| 3 | License File Storage | R6 | None |
-| 4 | Online Activation | R4 | Phase 3, Portal |
-| 5 | Offline Activation | R5 | Phase 3, Phase 4 |
+| Phase | Focus | Requirements | Dependencies | Status |
+|---|---|---|---|---|
+| 1 | Security Hardening | R1, R2 | None | ✅ Complete |
+| 2 | Hardware-Bound License | R3, R7 | Phase 1 | Pending |
+| 3 | License File Storage | R6 | None | Pending |
+| 4 | Online Activation | R4 | Phase 3, Portal | Pending |
+| 5 | Offline Activation | R5 | Phase 3, Phase 4 | Pending |
