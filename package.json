@@ -94,6 +94,7 @@
     "dump-schema": "node bin/dump_schema.js",
     "diagnostics": "node bin/diagnostics.js",
     "sign-revocation-list": "node bin/sign_revocation_list.js",
+    "activate": "node bin/activate.js",
     "carry-over-allowance": "node bin/calculate_carry_over_allowance_for_all_users.js",
     "send-upcoming-leave-reminders": "node bin/send_upcoming_leave_reminders.js",
     "compile-sass": "sass scss/main.scss public/css/style.css",
