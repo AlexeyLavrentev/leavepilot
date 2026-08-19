@@ -35,7 +35,7 @@ Machine fingerprint в payload лицензии + integrity check.
 
 ---
 
-## Phase 3: License File Storage (R6)
+## Phase 3: License File Storage (R6) ✅ COMPLETE
 
 Переход от env-only к файловому хранению лицензии.
 
@@ -48,6 +48,7 @@ Machine fingerprint в payload лицензии + integrity check.
 
 **Dependencies:** None (можно делать параллельно с Phase 1)
 **Estimated:** 1-2 plans
+**Completed:** 2026-08-19
 
 ---
 
@@ -89,6 +90,6 @@ Machine fingerprint в payload лицензии + integrity check.
 |---|---|---|---|---|
 | 1 | Security Hardening | R1, R2 | None | ✅ Complete |
 | 2 | Hardware-Bound License | R3, R7 | Phase 1 | ✅ Complete |
-| 3 | License File Storage | R6 | None | Pending |
+| 3 | License File Storage | R6 | None | ✅ Complete |
 | 4 | Online Activation | R4 | Phase 3, Portal | Pending |
 | 5 | Offline Activation | R5 | Phase 3, Phase 4 | Pending |
