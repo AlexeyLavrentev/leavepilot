@@ -19,9 +19,9 @@ See: .planning/PROJECT.md (updated 2026-08-19)
 - [x] PROJECT.md initialized
 - [x] REQUIREMENTS.md defined
 - [x] ROADMAP.md created
+- [x] Phase 1 planned (2 plans, 5 tasks)
 
 ## Next Actions
 
-1. `/gsd-plan-phase 1` — create detailed plan for Phase 1
-2. Execute Phase 1: hardcoded public key + machine fingerprint
-3. Then Phase 3 in parallel (license file storage)
+1. `/gsd-execute-phase 1` — execute Phase 1 (hardcoded key + fingerprint)
+2. Then Phase 3 in parallel (license file storage)
