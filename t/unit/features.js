@@ -200,7 +200,9 @@ describe('Feature licensing', function() {
     });
 
     expect(features.isEnabled('time_balance')).to.equal(false);
-    expect(features.getLicenseStatus().reason).to.equal('missing_signature_or_public_key');
+    // Hardcoded public key is always present, so the error is invalid_signature
+    // (signed with a different key), not missing_signature_or_public_key.
+    expect(features.getLicenseStatus().reason).to.equal('invalid_signature');
   });
 
   it('keeps signed TIMEOFF_LICENSE payloads with future expiry enabled', function() {
@@ -799,6 +801,29 @@ describe('Feature licensing', function() {
       expect(status.valid).to.equal(true);
       expect(status.revocationListExpiresAt).to.equal(crlPayload.expiresAt);
       expect(features.isEnabled('time_balance')).to.equal(true);
+    });
+  });
+
+  describe('hardcoded public key', function() {
+    it('getLicensePublicKey returns hardcoded key when no env or config set', function() {
+      const key = features.getLicensePublicKey();
+      expect(key).to.be.a('string');
+      expect(key).to.include('BEGIN PUBLIC KEY');
+      expect(key).to.include('END PUBLIC KEY');
+    });
+
+    it('getLicensePublicKey returns env key when set', function() {
+      const envKey = '-----BEGIN PUBLIC KEY-----\nTEST\n-----END PUBLIC KEY-----';
+      process.env.LEAVEPILOT_LICENSE_PUBLIC_KEY = envKey;
+      const key = features.getLicensePublicKey();
+      expect(key).to.equal(envKey);
+    });
+
+    it('getLicensePublicKey returns config key when set', function() {
+      const configKey = '-----BEGIN PUBLIC KEY-----\nCONFIG\n-----END PUBLIC KEY-----';
+      config.set('license_public_key', configKey);
+      const key = features.getLicensePublicKey();
+      expect(key).to.equal(configKey);
     });
   });
 });

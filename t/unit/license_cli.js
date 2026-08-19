@@ -632,20 +632,22 @@ describe('License CLI', function() {
       expect(verifyResult.stderr).to.contain('expired');
     });
 
-    it('fails gracefully without public key', function() {
+    it('fails gracefully with mismatched public key', function() {
       const generateResult = runCli('sign_license.js', [
         '--customer', 'NoKeyTest',
         '--features', 'sso_authentication',
         '--private-key', privateKey,
       ]);
 
+      // Hardcoded public key is always available as fallback, so "missing key"
+      // is no longer possible. Instead, the signature won't match the hardcoded key.
       const verifyResult = runCli('license.js', [
         'verify',
         generateResult.stdout,
       ], { TIMEOFF_LICENSE_PUBLIC_KEY: '' });
 
       expect(verifyResult.status).to.not.equal(0);
-      expect(verifyResult.stderr).to.contain('public-key');
+      expect(verifyResult.stderr).to.contain('signature');
     });
   });
 
