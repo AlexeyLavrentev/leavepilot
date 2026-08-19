@@ -175,7 +175,8 @@ app.use(function(req,res,next){
   res.locals.default_language = config.get('default_language') || 'en';
   res.locals.branding = branding.get();
   res.locals.features = features.getEnabledMap();
-  res.locals.primary_premium_nav_items = edition.getNavigationItems({location: 'primary'});
+  res.locals.primary_premium_nav_items = edition.getNavigationItems({location: 'primary'})
+    .filter(item => !item.adminOnly || (req.user && req.user.admin));
   res.locals.settings_department_premium_nav_items = edition.getNavigationItems({location: 'settings_departments'});
   res.locals.settings_company_premium_nav_items = edition.getNavigationItems({location: 'settings_company'});
   res.locals.disable_notifications = process.env.DISABLE_NOTIFICATIONS_POLLING === 'true';
