@@ -826,4 +826,83 @@ describe('Feature licensing', function() {
       expect(key).to.equal(configKey);
     });
   });
+
+  describe('hardware binding (machineFingerprint)', function() {
+    it('accepts license without machineFingerprint (backward compatible)', function() {
+      const keyPair = crypto.generateKeyPairSync('rsa', {modulusLength: 2048});
+      const privateKey = keyPair.privateKey.export({type: 'pkcs1', format: 'pem'});
+      const publicKey = keyPair.publicKey.export({type: 'pkcs1', format: 'pem'});
+      const payload = {
+        schemaVersion: 2,
+        licenseId: 'lic-no-fp',
+        customerName: 'Test',
+        issuedAt: new Date().toISOString(),
+        features: ['time_balance'],
+      };
+
+      process.env.NODE_ENV = 'production';
+      process.env.LEAVEPILOT_LICENSE = JSON.stringify({
+        payload,
+        algorithm: 'RSA-SHA256',
+        signature: features.signLicensePayloadWithPrivateKey(payload, privateKey),
+      });
+      process.env.LEAVEPILOT_LICENSE_PUBLIC_KEY = publicKey;
+
+      const status = features.getLicenseStatus();
+      expect(status.valid).to.equal(true);
+      expect(status.machineFingerprint).to.be.null;
+    });
+
+    it('rejects license with invalid machineFingerprint format', function() {
+      const keyPair = crypto.generateKeyPairSync('rsa', {modulusLength: 2048});
+      const privateKey = keyPair.privateKey.export({type: 'pkcs1', format: 'pem'});
+      const publicKey = keyPair.publicKey.export({type: 'pkcs1', format: 'pem'});
+      const payload = {
+        schemaVersion: 2,
+        licenseId: 'lic-bad-fp',
+        customerName: 'Test',
+        issuedAt: new Date().toISOString(),
+        features: ['time_balance'],
+        machineFingerprint: 'not-a-valid-hash',
+      };
+
+      process.env.NODE_ENV = 'production';
+      process.env.LEAVEPILOT_LICENSE = JSON.stringify({
+        payload,
+        algorithm: 'RSA-SHA256',
+        signature: features.signLicensePayloadWithPrivateKey(payload, privateKey),
+      });
+      process.env.LEAVEPILOT_LICENSE_PUBLIC_KEY = publicKey;
+
+      const status = features.getLicenseStatus();
+      expect(status.valid).to.equal(false);
+      expect(status.reason).to.equal('invalid_machine_fingerprint');
+    });
+
+    it('includes machineFingerprint in license status', function() {
+      const keyPair = crypto.generateKeyPairSync('rsa', {modulusLength: 2048});
+      const privateKey = keyPair.privateKey.export({type: 'pkcs1', format: 'pem'});
+      const publicKey = keyPair.publicKey.export({type: 'pkcs1', format: 'pem'});
+      const fingerprint = 'a'.repeat(64);
+      const payload = {
+        schemaVersion: 2,
+        licenseId: 'lic-fp-status',
+        customerName: 'Test',
+        issuedAt: new Date().toISOString(),
+        features: ['time_balance'],
+        machineFingerprint: fingerprint,
+      };
+
+      process.env.NODE_ENV = 'production';
+      process.env.LEAVEPILOT_LICENSE = JSON.stringify({
+        payload,
+        algorithm: 'RSA-SHA256',
+        signature: features.signLicensePayloadWithPrivateKey(payload, privateKey),
+      });
+      process.env.LEAVEPILOT_LICENSE_PUBLIC_KEY = publicKey;
+
+      const status = features.getLicenseStatus();
+      expect(status.machineFingerprint).to.equal(fingerprint);
+    });
+  });
 });
