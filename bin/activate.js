@@ -165,14 +165,27 @@ if (!fingerprint) {
 
 const activate = async () => {
   try {
-    // Get CSRF token first
-    const csrfResponse = await fetch(portalUrl + '/api/v1/csrf', {
+    // Simple cookie jar for session management
+    const cookies = {};
+    const cookieHeader = () => Object.entries(cookies).map(([k, v]) => k + '=' + v).join('; ');
+    const saveCookies = response => {
+      const setCookies = response.headers.getSetCookie ? response.headers.getSetCookie() : [];
+      for (const cookie of setCookies) {
+        const [pair] = cookie.split(';');
+        const [name, ...valueParts] = pair.split('=');
+        cookies[name.trim()] = valueParts.join('=').trim();
+      }
+    };
+
+    // Get CSRF token (requires session cookie)
+    const csrfResponse = await fetch(portalUrl + '/api/v1/auth/csrf', {
       method: 'GET',
-      credentials: 'include',
+      headers: { 'Cookie': cookieHeader() },
     });
+    saveCookies(csrfResponse);
 
     if (!csrfResponse.ok) {
-      process.stderr.write('Error: could not get CSRF token from portal.\n');
+      process.stderr.write('Error: could not get CSRF token from portal (status ' + csrfResponse.status + ').\n');
       process.exit(1);
     }
 
@@ -185,6 +198,7 @@ const activate = async () => {
       headers: {
         'Content-Type': 'application/json',
         'x-csrf-token': csrfToken,
+        'Cookie': cookieHeader(),
       },
       body: JSON.stringify({
         token: token,
