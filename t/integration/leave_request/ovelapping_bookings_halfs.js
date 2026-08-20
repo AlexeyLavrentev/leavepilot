@@ -73,10 +73,10 @@ describe('Overlapping leaverequest (with halfs)', function(){
     // explicitly (Escape) and let the fade finish before clicking the
     // navbar button — otherwise the click lands under the modal shell
     // (ElementClickInterceptedError on a slow CI runner).
-    return wait_modal_closed(drv, 1200)
+    return wait_modal_closed(drv, 4000)
       .catch(function() {
         return drv.actions().sendKeys(Key.ESCAPE).perform()
-          .then(function(){ return wait_modal_closed(drv, 1500); });
+          .then(function(){ return wait_modal_closed(drv, 4000); });
       })
       .then(function() {
         return drv.findElement(By.css('#book_time_off_btn'));
