@@ -3,17 +3,17 @@
   "entries": [
     {
       "file": "lib/model/db/company.js",
-      "line": 342,
+      "line": 351,
       "reason": "Seed default department name ('Продажи' for CIS countries, 'Sales' otherwise) chosen at company creation: stored as per-row data, not request-locale-rendered text — translating per request would corrupt stored rows (D-14 sanctioned shape 2)"
     },
     {
       "file": "lib/model/db/leave_type.js",
-      "line": 61,
+      "line": 66,
       "reason": "Seed default leave-type name ('Отпуск' for KZ/RU, 'Holiday' otherwise) written by generate_leave_types bulkCreate: becomes stored per-row data, not request-locale-rendered text (D-14 sanctioned shape 2)"
     },
     {
       "file": "lib/model/db/leave_type.js",
-      "line": 62,
+      "line": 67,
       "reason": "Seed default leave-type name ('Больничный' for KZ/RU, 'Sick Leave' otherwise) written by generate_leave_types bulkCreate: becomes stored per-row data, not request-locale-rendered text (D-14 sanctioned shape 2)"
     },
     {
