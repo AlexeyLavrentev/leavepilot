@@ -36,7 +36,7 @@ describe('Interactive leave details popover trigger contract', function() {
     expect(read('views/partials/team_view_table.hbs'))
       .to.contain('{{> team_view_calendar_cell day=this employee=employeeRow.user}}');
     expect(read('views/partials/team_view_calendar_cell.hbs'))
-      .to.contain("{{full_name employee}}, {{as_date_formatted day.moment 'D MMMM YYYY'}}");
+      .to.contain("{{full_name employee}}, {{as_date_formatted day.dayjs 'D MMMM YYYY'}}");
   });
 
   it('uses semantic color tokens and minimum target sizes', function() {
