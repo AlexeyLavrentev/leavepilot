@@ -69,20 +69,43 @@ describe('Coloring of half days', function(){
       ), 5000));
   }
 
+  // findElements (not findElement) so a page navigation in progress
+  // returns an empty array immediately instead of hanging.  See the
+  // same pattern in ovelapping_bookings_halfs.js.
+  function wait_modal_closed(drv, timeout) {
+    return drv.wait(function(){
+      return drv.findElements(By.css('#book_leave_modal'))
+        .then(function(els){
+          if (!els.length) return true;
+          return els[0].isDisplayed().then(function(v){ return !v; });
+        });
+    }, timeout);
+  }
+
   function open_book_leave_modal(attempts_left) {
     attempts_left = attempts_left === undefined ? 3 : attempts_left;
 
-    return driver
-      .findElement(By.css('#book_time_off_btn'))
-      .then(el => el.click())
-      .catch(err => {
-        if (attempts_left <= 0) {
-          throw err;
-        }
-
+    // Wait for any modal left open by a previous test to close.
+    // If it does not close on its own, dismiss it with Escape.
+    return wait_modal_closed(driver, 2000)
+      .catch(function(){
+        return driver.actions()
+          .sendKeys(require('selenium-webdriver').Key.ESCAPE).perform()
+          .then(function(){ return wait_modal_closed(driver, 2000); });
+      })
+      .then(function(){
         return driver
-          .sleep(250)
-          .then(() => open_book_leave_modal(attempts_left - 1));
+          .findElement(By.css('#book_time_off_btn'))
+          .then(el => el.click())
+          .catch(err => {
+            if (attempts_left <= 0) {
+              throw err;
+            }
+
+            return driver
+              .sleep(250)
+              .then(() => open_book_leave_modal(attempts_left - 1));
+          });
       })
       .then(() => driver.wait(() => (
         driver

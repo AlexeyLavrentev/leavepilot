@@ -53,9 +53,16 @@ describe('Overlapping leaverequest (with halfs)', function(){
   var Key = require('selenium-webdriver').Key;
 
   var wait_modal_closed = function(drv, timeout) {
-    return drv.wait(until.elementIsNotVisible(
-      drv.findElement(By.css('#book_leave_modal'))
-    ), timeout);
+    // findElements (not findElement) so a page navigation in progress
+    // returns an empty array immediately instead of hanging on a
+    // findElement that nobody cancels.
+    return drv.wait(function(){
+      return drv.findElements(By.css('#book_leave_modal'))
+        .then(function(els){
+          if (!els.length) return true;
+          return els[0].isDisplayed().then(function(v){ return !v; });
+        });
+    }, timeout);
   };
 
   var open_book_leave_modal = function(drv) {
