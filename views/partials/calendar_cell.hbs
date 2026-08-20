@@ -18,7 +18,7 @@
     class="leave-details-summary-trigger interactive-leave-details-summary-trigger calendar-leave-details-trigger"
     data-leave-id="{{day.leave_obj.id}}"
     aria-expanded="false"
-    aria-label="{{t 'leave.leaveSummary'}}: {{as_date_formatted day.moment 'D MMMM YYYY'}}"
+    aria-label="{{t 'leave.leaveSummary'}}: {{as_date_formatted day.dayjs 'D MMMM YYYY'}}"
     data-original-title="
       {{~#if day.leaveLabel ~}}{{~day.leaveLabel~}}: {{/if~}}
       {{~#if day.is_current_day}}{{t "calendar.tooltip.today"}}{{/if~}}

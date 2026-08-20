@@ -4,7 +4,7 @@
       class="leave-details-summary-trigger interactive-leave-details-summary-trigger calendar-leave-details-trigger team-view-leave-details-trigger"
       data-leave-id="{{day.leave_obj.id}}"
       aria-expanded="false"
-      aria-label="{{t 'leave.leaveSummary'}}: {{full_name employee}}, {{as_date_formatted day.moment 'D MMMM YYYY'}}"
+      aria-label="{{t 'leave.leaveSummary'}}: {{full_name employee}}, {{as_date_formatted day.dayjs 'D MMMM YYYY'}}"
     >{{day.val}}</button>
   {{else}}
     <span{{#if day.is_current_day}} data-toggle="tooltip" data-placement="top" title="{{t "calendar.tooltip.today"}}"{{/if}}{{#if day.is_bank_holiday}} data-toggle="tooltip" data-placement="top" title="{{t "calendar.tooltip.bankHoliday" name=day.bank_holiday_name}}"{{/if}}>{{day.val}}</span>
