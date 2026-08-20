@@ -176,7 +176,7 @@ app.use(function(req,res,next){
   res.locals.branding = branding.get();
   res.locals.features = features.getEnabledMap();
   res.locals.primary_premium_nav_items = edition.getNavigationItems({location: 'primary'})
-    .filter(item => !item.adminOnly || (req.user && req.user.admin));
+    .filter(item => !item.adminOnly || (req.user && (req.user.admin || req.user.isDepartmentBoss)));
   res.locals.settings_department_premium_nav_items = edition.getNavigationItems({location: 'settings_departments'});
   res.locals.settings_company_premium_nav_items = edition.getNavigationItems({location: 'settings_company'});
   res.locals.disable_notifications = process.env.DISABLE_NOTIFICATIONS_POLLING === 'true';
