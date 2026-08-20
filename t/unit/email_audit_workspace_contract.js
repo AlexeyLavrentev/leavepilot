@@ -107,8 +107,8 @@ describe('Email Audit workspace contract (Stage 8N)', function () {
 
     it('keeps company scoping, inclusive dates, ordering, and pagination', function () {
       expect(route).to.include('company_id: req.user.companyId');
-      expect(route).to.include("moment.utc(start_date).startOf('day').toDate()");
-      expect(route).to.include("moment.utc(end_date).endOf('day').toDate()");
+      expect(route).to.include("dayjs.utc(start_date).startOf('day').toDate()");
+      expect(route).to.include("dayjs.utc(end_date).endOf('day').toDate()");
       expect(route).to.include("[ 'id', 'DESC']");
       expect(route).to.include('limit : items_per_page');
       expect(route).to.include('offset : items_per_page * (page - 1)');

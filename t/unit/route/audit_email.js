@@ -62,7 +62,7 @@ describe("Email audit route", function() {
       "utf8"
     );
 
-    expect(source).to.contain("moment.utc(start_date).startOf('day').toDate()");
-    expect(source).to.contain("moment.utc(end_date).endOf('day').toDate()");
+    expect(source).to.contain("dayjs.utc(start_date).startOf('day').toDate()");
+    expect(source).to.contain("dayjs.utc(end_date).endOf('day').toDate()");
   });
 });
