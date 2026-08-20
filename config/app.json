@@ -6,8 +6,8 @@
     "host" : "localhost",
     "port" : 25,
     "auth" : {
-      "user" : "user",
-      "pass" : "pass"
+      "user" : "",
+      "pass" : ""
     }
   },
   "sessionStore": {
