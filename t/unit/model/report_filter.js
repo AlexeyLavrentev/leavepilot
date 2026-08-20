@@ -1,15 +1,15 @@
 "use strict";
 
 const expect = require("chai").expect;
-const moment = require("moment");
+const dayjs = require("../../../lib/util/date");
 const validator = require("../../../lib/util/validator");
 const { parseReportFilters } = require("../../../lib/model/report_filter");
 
 describe("Report filter validation", function() {
   const defaults = {
-    defaultStartDate: moment.utc("2026-06-01"),
-    defaultEndDate: moment.utc("2026-06-30"),
-    moment,
+    defaultStartDate: dayjs.utc("2026-06-01"),
+    defaultEndDate: dayjs.utc("2026-06-30"),
+    dayjs,
     validator,
   };
 

@@ -3,7 +3,7 @@
 
 const
   expect        = require('chai').expect,
-  moment        = require('moment'),
+  dayjs = require('../../../lib/util/date'),
   UserAllowance = require('../../../lib/model/user_allowance'),
   model         = require('../../../lib/model/db');
 
@@ -11,14 +11,14 @@ describe('employement_range_adjustment attribute', function(){
 
   describe('Employee start day is in previouse year and no end date',function(){
     let employee = model.User.build({
-      start_date : moment('2015-07-14'),
+      start_date : dayjs.utc('2015-07-14'),
     });
 
     it('no automatic adjustment', function(){
 
       let ul = new UserAllowance({
         user : employee,
-        now  : moment('2016-07-20'),
+        now  : dayjs.utc('2016-07-20'),
 
         // Rest of parameters do not really matter
         number_of_days_taken_from_allowance : 0,
@@ -33,13 +33,13 @@ describe('employement_range_adjustment attribute', function(){
 
   describe('Employee start date is in prevouse year but end date is in current year', function(){
     let employee = model.User.build({
-      start_date : moment('2015-04-23'),
-      end_date   : moment('2016-04-01'),
+      start_date : dayjs.utc('2015-04-23'),
+      end_date   : dayjs.utc('2016-04-01'),
     });
 
     let ul = new UserAllowance({
       user : employee,
-      now  : moment('2016-02-20'),
+      now  : dayjs.utc('2016-02-20'),
 
       number_of_days_taken_from_allowance : 0,
       manual_adjustment                   : 0,
@@ -54,13 +54,13 @@ describe('employement_range_adjustment attribute', function(){
 
   describe('Employee start date is in previouse year and end date is in next year', function(){
    let employee = model.User.build({
-      start_date : moment('2015-04-23'),
-      end_date   : moment('2017-04-01'),
+      start_date : dayjs.utc('2015-04-23'),
+      end_date   : dayjs.utc('2017-04-01'),
     });
 
     let ul = new UserAllowance({
       user : employee,
-      now  : moment('2016-07-20'),
+      now  : dayjs.utc('2016-07-20'),
 
       number_of_days_taken_from_allowance : 0,
       manual_adjustment                   : 0,
@@ -75,12 +75,12 @@ describe('employement_range_adjustment attribute', function(){
 
   describe('Start date is in current year, no end date', function(){
     let employee = model.User.build({
-      start_date : moment('2018-04-01'),
+      start_date : dayjs.utc('2018-04-01'),
     });
 
     let ul = new UserAllowance({
       user : employee,
-      now  : moment('2018-07-20'),
+      now  : dayjs.utc('2018-07-20'),
 
       number_of_days_taken_from_allowance : 0,
       manual_adjustment                   : 0,
@@ -95,13 +95,13 @@ describe('employement_range_adjustment attribute', function(){
 
   describe('Start date is in current year, end date is in current year either',function(){
     let employee = model.User.build({
-      start_date : moment('2016-04-01'),
-      end_date   : moment('2016-10-01'),
+      start_date : dayjs.utc('2016-04-01'),
+      end_date   : dayjs.utc('2016-10-01'),
     });
 
     let ul = new UserAllowance({
       user : employee,
-      now  : moment('2016-07-20'),
+      now  : dayjs.utc('2016-07-20'),
 
       number_of_days_taken_from_allowance : 0,
       manual_adjustment                   : 0,
@@ -116,13 +116,13 @@ describe('employement_range_adjustment attribute', function(){
 
   describe('Start date is in current year, end date is in next year', function(){
     let employee = model.User.build({
-      start_date : moment('2018-04-01'),
-      end_date   : moment('2019-10-01'),
+      start_date : dayjs.utc('2018-04-01'),
+      end_date   : dayjs.utc('2019-10-01'),
     });
 
     let ul = new UserAllowance({
       user : employee,
-      now  : moment('2018-07-20'),
+      now  : dayjs.utc('2018-07-20'),
 
       number_of_days_taken_from_allowance : 0,
       manual_adjustment                   : 0,
@@ -137,12 +137,12 @@ describe('employement_range_adjustment attribute', function(){
 
   describe('Start date is in next year, no end date', function(){
     let employee = model.User.build({
-      start_date : moment('2018-04-01'),
+      start_date : dayjs.utc('2018-04-01'),
     });
 
     let ul = new UserAllowance({
       user : employee,
-      now  : moment('2016-07-20'),
+      now  : dayjs.utc('2016-07-20'),
 
       number_of_days_taken_from_allowance : 0,
       manual_adjustment                   : 0,
@@ -157,13 +157,13 @@ describe('employement_range_adjustment attribute', function(){
 
   describe('Start date is in next year, end date is defined',function(){
     let employee = model.User.build({
-      start_date : moment('2017-04-01'),
-      end_date   : moment('2017-10-01'),
+      start_date : dayjs.utc('2017-04-01'),
+      end_date   : dayjs.utc('2017-10-01'),
     });
 
     let ul = new UserAllowance({
       user : employee,
-      now  : moment('2016-07-20'),
+      now  : dayjs.utc('2016-07-20'),
 
       number_of_days_taken_from_allowance : 0,
       manual_adjustment                   : 0,
@@ -182,12 +182,12 @@ describe('accrued_adjustment attribute', function(){
 
   describe('Employee started last year, today is is beginning of Feb', () => {
     let employee = model.User.build({
-      start_date : moment('2016-10-01'),
+      start_date : dayjs.utc('2016-10-01'),
     });
 
     let ul = new UserAllowance({
       user : employee,
-      now  : moment('2017-02-01'),
+      now  : dayjs.utc('2017-02-01'),
 
       number_of_days_taken_from_allowance : 0,
       manual_adjustment                   : 0,
@@ -206,12 +206,12 @@ describe('accrued_adjustment attribute', function(){
 
   describe('Started in Apr, today is Jul', () => {
     let employee = model.User.build({
-      start_date : moment('2016-04-01'),
+      start_date : dayjs.utc('2016-04-01'),
     });
 
     let ul = new UserAllowance({
       user : employee,
-      now  : moment('2016-07-01'),
+      now  : dayjs.utc('2016-07-01'),
 
       number_of_days_taken_from_allowance : 0,
       manual_adjustment                   : 0,
@@ -230,12 +230,12 @@ describe('accrued_adjustment attribute', function(){
 
   describe('Started in Apr, today is Jul: carry over is ignored in accrual adjustment', () => {
     let employee = model.User.build({
-      start_date : moment('2016-04-01'),
+      start_date : dayjs.utc('2016-04-01'),
     });
 
     let ul = new UserAllowance({
       user : employee,
-      now  : moment('2016-07-01'),
+      now  : dayjs.utc('2016-07-01'),
 
       number_of_days_taken_from_allowance : 0,
       manual_adjustment                   : 0,
@@ -257,12 +257,12 @@ describe('accrued_adjustment attribute', function(){
 
   describe('Started in Apr, today is Jul: manual adjustments is taked into consideration', () => {
     let employee = model.User.build({
-      start_date : moment('2016-04-01'),
+      start_date : dayjs.utc('2016-04-01'),
     });
 
     let ul = new UserAllowance({
       user : employee,
-      now  : moment('2016-07-01'),
+      now  : dayjs.utc('2016-07-01'),
 
       number_of_days_taken_from_allowance : 0,
       manual_adjustment                   : 4,
@@ -281,12 +281,12 @@ describe('accrued_adjustment attribute', function(){
 
   describe('Started last year, today is 1 of January', () => {
     let employee = model.User.build({
-      start_date : moment('2016-04-01'),
+      start_date : dayjs.utc('2016-04-01'),
     });
 
     let ul = new UserAllowance({
       user : employee,
-      now  : moment('2017-01-01'),
+      now  : dayjs.utc('2017-01-01'),
 
       number_of_days_taken_from_allowance : 0,
       manual_adjustment                   : 0,
@@ -305,12 +305,12 @@ describe('accrued_adjustment attribute', function(){
 
   describe('Started last year, today is 14th of January', () => {
     let employee = model.User.build({
-      start_date : moment('2016-04-01'),
+      start_date : dayjs.utc('2016-04-01'),
     });
 
     let ul = new UserAllowance({
       user : employee,
-      now  : moment('2017-01-14'),
+      now  : dayjs.utc('2017-01-14'),
 
       number_of_days_taken_from_allowance : 0,
       manual_adjustment                   : 0,
@@ -329,12 +329,12 @@ describe('accrued_adjustment attribute', function(){
 
   describe('Started last year, today is 31th of December', () => {
     let employee = model.User.build({
-      start_date : moment('2016-04-01'),
+      start_date : dayjs.utc('2016-04-01'),
     });
 
     let ul = new UserAllowance({
       user : employee,
-      now  : moment('2017-12-31'),
+      now  : dayjs.utc('2017-12-31'),
 
       number_of_days_taken_from_allowance : 0,
       manual_adjustment                   : 0,
@@ -353,12 +353,12 @@ describe('accrued_adjustment attribute', function(){
 
   describe('Started last year, today is 15th of December', () => {
     let employee = model.User.build({
-      start_date : moment('2016-04-01'),
+      start_date : dayjs.utc('2016-04-01'),
     });
 
     let ul = new UserAllowance({
       user : employee,
-      now  : moment('2017-12-15'),
+      now  : dayjs.utc('2017-12-15'),
 
       number_of_days_taken_from_allowance : 0,
       manual_adjustment                   : 0,
@@ -377,7 +377,7 @@ describe('accrued_adjustment attribute', function(){
 
   describe('Started this year, calculate available allowance for previous year', () => {
     const employee = model.User.build({
-      start_date: moment.utc('2019-01-01'),
+      start_date: dayjs.utc('2019-01-01'),
     });
 
     const department = model.Department.build({
@@ -388,7 +388,7 @@ describe('accrued_adjustment attribute', function(){
 
     const ul = new UserAllowance({
       user : employee,
-      now  : moment('2018-01-01'),
+      now  : dayjs.utc('2018-01-01'),
 
       number_of_days_taken_from_allowance : 0,
       manual_adjustment                   : 0,
@@ -403,7 +403,7 @@ describe('accrued_adjustment attribute', function(){
 
   describe('Started this year, calculate available allowance for current year', () => {
     const employee = model.User.build({
-      start_date: moment.utc('2019-01-01'),
+      start_date: dayjs.utc('2019-01-01'),
     });
 
     const department = model.Department.build({
@@ -414,7 +414,7 @@ describe('accrued_adjustment attribute', function(){
 
     const ul = new UserAllowance({
       user : employee,
-      now  : moment('2019-06-01'),
+      now  : dayjs.utc('2019-06-01'),
 
       number_of_days_taken_from_allowance : 0,
       manual_adjustment                   : 0,
