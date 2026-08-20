@@ -1,167 +1,153 @@
 # LeavePilot
 
-Source-available система для управления отпусками, больничными, отгулами и другими отсутствиями сотрудников.
+Source-available leave management system for teams and growing businesses. Handles vacations, sick days, time-off requests, and other employee absences.
 
-Проект можно:
+- Quick local setup for evaluation and testing
+- Deploy as an internal company service
+- Run with MySQL and Redis via `docker compose`
+- Connect LDAP authentication
+- Premium: OIDC/SAML SSO and additional modules
 
-- быстро поднять локально для знакомства и тестирования;
-- запустить как внутренний сервис компании;
-- развернуть с `MySQL` и `Redis` через `docker compose`;
-- подключить LDAP-аутентификацию;
-- в Premium — подключить OIDC/SAML SSO и дополнительные модули.
+## Features
 
-## Что умеет приложение
+- Calendar and table views for absences
+- Employee, manager, and administrator roles
+- Leave request approval workflow
+- Multiple absence types
+- CSV export and reports
+- Calendar integration (iCal feed)
+- Interface localization
+- LDAP authentication
 
-- календарный и табличный просмотр отсутствий;
-- роли сотрудника, руководителя и администратора;
-- согласование отпусков;
-- разные типы отсутствий;
-- экспорт в CSV;
-- интеграция с календарями;
-- локализация интерфейса;
-- LDAP-аутентификация.
+## Community and Premium
 
-## Community и Premium
+Community is a fully functional leave management application. Premium adds enterprise features and requires a private premium module and a signed license in production.
 
-Community остаётся полноценным приложением для управления отсутствиями. Premium
-добавляет корпоративные функции и требует private premium module и подписанную
-лицензию в production.
-
-| Возможность | Community | Premium |
+| Feature | Community | Premium |
 |---|---:|---:|
-| Базовое управление отсутствиями | да | да |
-| Роли сотрудника, руководителя и администратора | да | да |
-| Согласование заявок | да | да |
-| CSV-экспорт и отчёты | да | да |
-| LDAP | да | да |
-| Напоминания перед отпуском | да | да |
-| OIDC/SAML SSO | нет | да |
-| Группы сотрудников | нет | да |
-| Рабочие календари | нет | да |
-| Integration API | нет | да |
-| Баланс времени | нет | да |
-| Планирование отпусков | нет | да |
+| Core leave management | yes | yes |
+| Employee, manager, admin roles | yes | yes |
+| Leave request approval | yes | yes |
+| CSV export and reports | yes | yes |
+| LDAP | yes | yes |
+| Leave start reminders | yes | yes |
+| OIDC/SAML SSO | no | yes |
+| Employee groups | no | yes |
+| Work calendars | no | yes |
+| Integration API | no | yes |
+| Time balance | no | yes |
+| Vacation planning | no | yes |
 
-Режимы запуска и правила лицензирования описаны в
+Launch modes and licensing rules are described in
 [docs/community-commercial-builds.md](docs/community-commercial-builds.md).
 
-## Какой способ установки выбрать
+## Choosing an installation method
 
-| Сценарий | Рекомендуемый способ |
+| Scenario | Recommended method |
 |---|---|
-| Просто посмотреть и протестировать приложение на одном ПК | `npm` + `SQLite` |
-| Разработка без Docker | `npm` + `SQLite` или внешний `MySQL` |
-| Корпоративный пилот / внутренний сервер | `docker compose` |
-| Нужны `MySQL` и `Redis` "из коробки" | `docker compose` |
+| Try the app on a single machine | `npm` + `SQLite` |
+| Development without Docker | `npm` + `SQLite` or external `MySQL` |
+| Corporate pilot / internal server | `docker compose` |
+| Need MySQL and Redis out of the box | `docker compose` |
 
-Если нужна самая простая установка для обычного пользователя, начинайте с `npm` + `SQLite`.
+For the simplest setup, start with `npm` + `SQLite`.
+For a configuration close to a production corporate environment, use `docker compose`.
 
-Если нужна конфигурация, похожая на рабочую корпоративную среду, используйте `docker compose`.
+## Prerequisites
 
-## Что понадобится заранее
+### npm installation
 
-### Для установки через npm
-
-- `Node.js 22` (диапазон из `package.json`: `>=22.12.0 <23`)
+- `Node.js 22` (range from `package.json`: `>=22.12.0 <23`)
 - `npm`
 
-### Для установки через Docker
+### Docker installation
 
 - `Docker`
 - `Docker Compose` plugin (`docker compose`)
 
-## Что нужно проверить и при необходимости отредактировать до первого запуска
+## Configuration before first launch
 
-### 1. Файл `.env`
+### 1. `.env` file
 
-Для `docker compose` это обязательный шаг.
-
-Скопируйте шаблон:
+Required for `docker compose`.
 
 ```bash
 cp .env.example .env
 ```
 
-Минимум, что нужно заменить:
+At minimum, replace:
 
 - `SESSION_SECRET`
 - `CRYPTO_SECRET`
 - `MYSQL_PASSWORD`
 - `MYSQL_ROOT_PASSWORD`
-- `SESSION_COOKIE_SECURE` — поставьте `true`, если TLS терминируется прокси
-  перед приложением. По умолчанию `false`, и тогда cookie сессии уходит без
-  атрибута `Secure`: любой запрос по обычному HTTP к этому домену унесёт
-  идентификатор сессии открытым текстом. Приложение предупреждает об этом при
-  старте строкой `security_posture:`, если `TRUST_PROXY` включён, а флаг — нет.
+- `SESSION_COOKIE_SECURE` -- set to `true` if TLS is terminated by a proxy
+  in front of the app. Defaults to `false`.
 
-Если нужно, также меняют:
+Optional overrides:
 
 - `APP_PORT`
-- `DB_NAME`
-- `DB_USER`
-- `DB_PASSWORD`
+- `DB_NAME`, `DB_USER`, `DB_PASSWORD`
 - `TRUST_PROXY`
 - `SESSION_COOKIE_SAME_SITE`
 
-### 2. Файл `config/app.json`
+### 2. `config/app.json`
 
-Нужно редактировать, если вы запускаете приложение напрямую через `npm`.
+Edit this file when running the app directly via `npm`.
 
-Чаще всего меняют:
+Common settings:
 
-- `application_domain` — адрес приложения, который видят пользователи;
-- `default_language` и `supported_languages`;
-- `allow_create_new_accounts` — разрешать ли самостоятельную регистрацию;
-- `send_emails` и `email_transporter` — если хотите реальные почтовые уведомления;
-- `sessionStore.useRedis` и `sessionStore.redisConnectionConfiguration` — если локальный запуск через `npm` должен использовать `Redis`.
+- `application_domain` -- the URL visible to users
+- `default_language` and `supported_languages`
+- `allow_create_new_accounts` -- whether self-registration is allowed
+- `send_emails` and `email_transporter` -- for real email notifications
+- `sessionStore.useRedis` and `sessionStore.redisConnectionConfiguration` -- for Redis with npm
 
-### 3. Файл `config/app.redis.json`
+### 3. `config/app.redis.json`
 
-Нужно редактировать, если вы запускаете приложение через `docker compose`.
+Edit this file when running via `docker compose`. This file is mounted into the container as the main `config/app.json`.
 
-Именно этот файл монтируется в контейнер как основной `config/app.json`.
+Common settings:
 
-Обычно меняют:
+- `application_domain`
+- `default_language` and `supported_languages`
+- `send_emails` and `email_transporter`
+- `allow_create_new_accounts` -- defaults to `false`
+- `sessionStore.redisConnectionConfiguration`
 
-- `application_domain`;
-- `default_language` и `supported_languages`;
-- `send_emails` и `email_transporter`;
-- `allow_create_new_accounts` — по умолчанию уже `false`;
-- `sessionStore.redisConnectionConfiguration`, если Redis будет не в контейнере `redis`.
+## Quick start 1: npm + SQLite
 
-## Быстрый старт №1: npm + SQLite
+The simplest way to try the app locally.
 
-Это самый простой способ попробовать приложение локально.
-
-### Шаг 1. Установите зависимости
+### Step 1. Install dependencies
 
 ```bash
 npm install
 ```
 
-### Шаг 2. Примените миграции
+### Step 2. Run migrations
 
 ```bash
 npm run db-update
 ```
 
-### Шаг 3. Запустите приложение
+### Step 3. Start the application
 
 ```bash
 npm start
 ```
 
-### Ежедневные напоминания перед отпуском
+### Leave start reminders
 
-После включения флага reminder-уведомлений в настройках отдела можно запустить рассылку вручную:
+After enabling reminder notifications in department settings, send reminders manually:
 
 ```bash
 npm run send-upcoming-leave-reminders
 ```
 
-По умолчанию команда ищет утверждённые отпуска, которые начнутся через 14 дней, и рассылает письма без дублей.
+By default, the command finds approved leaves starting in 14 days and sends emails without duplicates.
 
-Для автоматического запуска внутри приложения задайте:
+For automatic scheduling inside the app:
 
 ```bash
 LEAVE_REMINDER_SCHEDULER_ENABLED=true
@@ -169,12 +155,9 @@ LEAVE_REMINDER_SCHEDULER_TIME=09:00
 LEAVE_REMINDER_SCHEDULER_TIMEZONE=UTC
 ```
 
-Если scheduler включён, отдельный cron для reminder-уведомлений не требуется.
+### Premium external connectors
 
-### Внешние коннекторы Premium
-
-Встроенный scheduler внешних коннекторов по умолчанию выключен. Для ежедневной
-синхронизации задайте:
+The built-in external connector scheduler is disabled by default. For daily sync:
 
 ```bash
 EXTERNAL_CONNECTORS_SCHEDULER_ENABLED=true
@@ -182,123 +165,94 @@ EXTERNAL_CONNECTORS_SCHEDULER_TIME=08:00
 EXTERNAL_CONNECTORS_SCHEDULER_TIMEZONE=Asia/Yekaterinburg
 ```
 
-Jira Data Center часто доступна только во внутренней сети. Такие адреса
-запрещены по умолчанию. Оператор развёртывания может разрешить точные имена
-хостов или IP-адреса через запятую, например:
+Jira Data Center is often on an internal network. Allow specific hosts or IPs:
 
 ```bash
 JIRA_DC_PRIVATE_HOST_ALLOWLIST=jira.internal.example,10.20.30.40
 ```
 
-Не добавляйте в allowlist loopback, metadata или link-local адреса: они всегда
-блокируются. Настройка доступна только оператору контейнера и не управляется из
-интерфейса компании.
+Do not add loopback, metadata, or link-local addresses to the allowlist.
 
-### Шаг 4. Откройте приложение
+### Step 4. Open the application
 
-Откройте в браузере:
-
-```text
+```
 http://localhost:3000
 ```
 
-### Что происходит в этом режиме
+### What happens in this mode
 
-- по умолчанию используется `SQLite`;
-- база лежит в файле `db.development.sqlite`;
-- сессии по умолчанию хранятся в базе, а не в `Redis`;
-- секреты для `development` подставляются автоматически, если вы не задали их вручную.
+- SQLite is used by default
+- Database file: `db.development.sqlite`
+- Sessions are stored in the database, not Redis
+- Development secrets are applied automatically if not set manually
 
-### Как появляется первый администратор
+### Creating the first administrator
 
-Самый простой способ — команда `create-admin`:
+The simplest way:
 
 ```bash
-npm run create-admin -- --email admin@example.com --company "Моя компания"
+npm run create-admin -- --email admin@example.com --company "My Company"
 ```
 
-Команда создаст компанию и администратора. Если не передать `--password`,
-сгенерируется случайный пароль и будет показан один раз в терминале.
+The command creates a company and administrator. If `--password` is not provided, a random password is shown once in the terminal.
 
-Дополнительные опции: `--country RU|KZ|...`, `--timezone Europe/Moscow`,
-`--name`, `--lastname`.
+Additional options: `--country RU|KZ|...`, `--timezone Europe/Moscow`, `--name`, `--lastname`.
 
-Альтернатива: в этом режиме самостоятельная регистрация включена по умолчанию,
-поэтому можно открыть `/register/` и зарегистрировать компанию — первый
-пользователь автоматически станет администратором.
+Alternative: self-registration is enabled by default in this mode. Open `/register/` and register a company -- the first user automatically becomes an administrator.
 
-Подробная инструкция: [docs/install-local-npm.md](docs/install-local-npm.md)
+Detailed instructions: [docs/install-local-npm.md](docs/install-local-npm.md)
 
-### Демо: заполненный продукт одной командой
+### Demo: populated product in one command
 
-Самый быстрый способ увидеть работающий продукт — демо-стенд на той же
-Docker-поставке, которую получает клиент:
+The fastest way to see a working product:
 
 ```bash
 npm run demo
 ```
 
-Команда поднимет локальный стенд и наполнит его демо-данными: компания
-«Демо компания», 4 отдела, 12 сотрудников и отпуска — уже одобренные и
-ожидающие согласования.
+This starts a local instance populated with demo data: a company, 4 departments, 12 employees, and leave requests (approved and pending).
 
-Секреты `SESSION_SECRET` и `CRYPTO_SECRET` стенд получает демонстрационными
-значениями по умолчанию — отдельная настройка не нужна. Для реального
-развёртывания задайте собственные секреты (раздел «Файл `.env`» выше).
+Demo secrets are set automatically. For real deployments, set your own secrets.
 
-Откройте в браузере:
-
-```text
+```
 http://localhost:3001
 ```
 
-и войдите фиксированными демо-данными:
+Login:
 
-```text
-Логин:  demo-admin@leavepilot.local
-Пароль: DemoLeavePilot1!
+```
+Email:    demo-admin@leavepilot.local
+Password: DemoLeavePilot1!
 ```
 
-Убрать демо-стенд вместе со всеми его данными:
+Remove the demo:
 
 ```bash
 docker compose -f docker-compose.demo.yml down -v
 ```
 
-Вот как выглядит продукт с демо-данными:
+Screenshots are generated by `npm run screenshots`.
 
-![Календарь команды: отпуска сотрудников по отделам](docs/screenshots/calendar.png)
-
-![Список заявок: отпуска, ожидающие согласования](docs/screenshots/requests.png)
-
-Скриншоты снимаются скриптом `npm run screenshots` — та же команда
-обновит их перед релизом.
-
-Если Docker-стенд не нужен, те же демо-данные можно налить в уже
-развёрнутую девелоперскую установку:
+To seed demo data into an existing development installation:
 
 ```bash
 npm run seed-demo
 ```
 
-Команда создаст ту же демо-компанию. Логин и одноразовый пароль
-администратора будут показаны в терминале. Свои значения можно передать через
-`--email`, `--password`, `--company`, `--country`.
+## Quick start 2: npm + external MySQL and Redis
 
-## Быстрый старт №2: npm + внешний MySQL и Redis
+For development without Docker but with real services.
 
-Этот режим подходит, если Docker не нужен, но вы хотите работать не с `SQLite`, а с реальными сервисами.
+### Before starting
 
-### Перед запуском
+1. Set up your MySQL instance
+2. Set up your Redis instance
+3. Edit `config/app.json`:
+   - Set `sessionStore.useRedis: true`
+   - Configure the Redis address
+4. Set database environment variables
 
-1. Поднимите свой `MySQL`.
-2. Поднимите свой `Redis`.
-3. Отредактируйте `config/app.json`:
-   - включите `sessionStore.useRedis: true`;
-   - пропишите адрес `Redis`.
-4. Задайте переменные окружения для БД.
-
-Пример:
+Example:
 
 ```bash
 export DB_DIALECT=mysql
@@ -311,7 +265,7 @@ export SESSION_SECRET=replace-me
 export CRYPTO_SECRET=replace-me
 ```
 
-### Дальше
+### Then
 
 ```bash
 npm install
@@ -319,198 +273,136 @@ npm run db-update
 npm start
 ```
 
-## Быстрый старт №3: Docker Compose
+## Quick start 3: Docker Compose
 
-Это рекомендуемый способ для пилота, внутреннего сервера и "почти production" запуска.
+Recommended for pilots, internal servers, and near-production setups.
 
-### Шаг 1. Подготовьте `.env`
+### Step 1. Prepare `.env`
 
 ```bash
 cp .env.example .env
 ```
 
-Замените секреты и пароли.
+Replace secrets and passwords.
 
-### Шаг 2. При необходимости отредактируйте `config/app.redis.json`
+### Step 2. Edit `config/app.redis.json` if needed
 
-Обычно заранее меняют:
+Common changes: `application_domain`, email settings, interface languages, registration policy.
 
-- `application_domain`;
-- email-настройки;
-- языки интерфейса;
-- политику регистрации пользователей.
-
-### Шаг 3. Поднимите сервисы
+### Step 3. Start services
 
 ```bash
 docker compose up --build -d
 ```
 
-### Шаг 4. Примените миграции
+### Step 4. Run migrations
 
 ```bash
 docker compose run --rm app npm run db-update
 ```
 
-### Шаг 5. Откройте приложение
+### Step 5. Open the application
 
-```text
+```
 http://localhost:3000
 ```
 
-Или `http://localhost:<APP_PORT>`, если вы меняли порт в `.env`.
+Or `http://localhost:<APP_PORT>` if you changed the port in `.env`.
 
-### Как создать первого администратора в compose-сценарии
-
-Регистрацию через веб включать не нужно — создайте администратора командой
-внутри контейнера приложения:
+### Creating the first administrator in compose
 
 ```bash
-docker compose exec app npm run create-admin -- --email admin@example.com --company "Моя компания"
+docker compose exec app npm run create-admin -- --email admin@example.com --company "My Company"
 ```
 
-Команда создаст компанию и администратора и покажет сгенерированный пароль
-один раз в терминале (или передайте свой через `--password`).
+`allow_create_new_accounts` remains `false` -- public registration is not opened.
 
-`allow_create_new_accounts` при этом остаётся `false` — публичная регистрация
-не открывается вовсе.
+Detailed instructions: [docs/docker-compose.md](docs/docker-compose.md)
 
-Подробная инструкция: [docs/docker-compose.md](docs/docker-compose.md)
+## Verifying the application works
 
-## Как проверить, что приложение вообще работает
+### Quick manual check
 
-### Быстрая ручная проверка
+1. Login page opens
+2. No `500 Internal Server Error`
+3. After login, calendar and settings are accessible
 
-1. Открывается страница входа.
-2. Нет ошибки `500 Internal Server Error`.
-3. После входа доступны календарь и настройки.
-
-### Проверка контейнеров
+### Container check
 
 ```bash
 docker compose ps
 ```
 
-Ожидаемый результат: `app`, `db`, `redis` находятся в состоянии `running` или `healthy`.
+Expected: `app`, `db`, `redis` are `running` or `healthy`.
 
-### Проверка HTTP-ответа
+### HTTP response check
 
 ```bash
 curl -I http://localhost:3000
 ```
 
-Если приложение отвечает, вы увидите HTTP-статус и заголовки.
+## Verifying MySQL is used (not SQLite)
 
-## Как проверить, что используется MySQL, а не SQLite
-
-### В Docker Compose
-
-Проверьте диалект и параметры подключения изнутри контейнера приложения:
+### In Docker Compose
 
 ```bash
 docker compose exec app node -e "const db=require('./lib/model/db'); console.log({dialect: db.sequelize.getDialect(), host: db.sequelize.config.host, database: db.sequelize.config.database}); db.sequelize.close();"
 ```
 
-Ожидаемый результат:
+Expected: `dialect: 'mysql'`, `host: 'db'` or your MySQL host.
 
-- `dialect: 'mysql'`
-- `host: 'db'` или ваш MySQL-хост
-
-Дополнительно можно проверить сам MySQL:
-
-```bash
-docker compose exec db mysql -uroot -p"$MYSQL_ROOT_PASSWORD" -e "SHOW DATABASES;"
-```
-
-### В локальном запуске через npm
+### In local npm setup
 
 ```bash
 node -e "const db=require('./lib/model/db'); console.log({dialect: db.sequelize.getDialect(), host: db.sequelize.config.host, storage: db.sequelize.options.storage}); db.sequelize.close();"
 ```
 
-Признаки:
+## Verifying Redis is connected
 
-- если `dialect` равен `mysql`, приложение работает с `MySQL`;
-- если `dialect` равен `sqlite`, приложение работает с `SQLite`;
-- у `SQLite` обычно будет `storage: './db.development.sqlite'`.
-
-## Как проверить, что Redis подключен и работает нормально
-
-### Проверка самого Redis
-
-Сервис `redis` в compose — это Engram (RESP2-совместимый движок), в его
-образе нет `redis-cli`. Проверка выполняется из контейнера приложения
-тем же клиентом, которым пользуется само приложение:
+### Check Redis itself
 
 ```bash
 docker compose exec app node -e "const redis=require('redis'); const c=redis.createClient({url: 'redis://redis:6379', RESP: 2}); c.connect().then(() => c.ping()).then(r => { console.log(r); c.quit(); }).catch(e => { console.error(e.message); process.exit(1); });"
 ```
 
-Ожидаемый ответ:
+Expected: `PONG`
 
-```text
-PONG
-```
-
-### Проверка сессий в Redis
-
-1. Войдите в приложение в браузере.
-2. Выполните:
+### Check sessions in Redis
 
 ```bash
 docker compose exec app node -e "const redis=require('redis'); const c=redis.createClient({url: 'redis://redis:6379', RESP: 2}); c.connect().then(() => c.keys('sess:*')).then(r => { console.log(r.join('\n')); c.quit(); }).catch(e => { console.error(e.message); process.exit(1); });"
 ```
 
-Если ключи появились, сессии пишутся в Redis.
-
-### Проверка из логов приложения
-
-В логах приложения должна появляться строка:
-
-```text
-Connected to redis successfully
-```
-
-Посмотреть логи:
+### Check application logs
 
 ```bash
 docker compose logs app
 ```
 
-### Важно
+Look for: `Connected to redis successfully`
 
-При обычном локальном запуске через `npm` Redis по умолчанию не используется, потому что в `config/app.json` стоит:
+Note: Redis is not used by default with `npm`. Enable it in `config/app.json` if needed.
 
-```json
-"useRedis": false
-```
+## Testing the application
 
-Если вам нужен Redis в режиме `npm`, это нужно включить вручную.
+### Quick manual smoke test
 
-## Как протестировать приложение
+- Open the login page
+- Log in as administrator
+- Create an employee
+- Create an absence type
+- Submit a leave request
+- Verify calendar and list display correctly
 
-### 1. Быстрый ручной smoke test
-
-- открыть страницу входа;
-- войти под администратором;
-- создать сотрудника;
-- создать тип отсутствия;
-- завести заявку на отпуск;
-- убедиться, что календарь и список отображаются.
-
-### 2. Автотесты
+### Automated tests
 
 ```bash
 npm test
 ```
 
-В проекте часть тестов опирается на браузерный стек. Если хотите прогонять сценарии через Chrome, смотрите раздел в:
+## Updating an existing installation
 
-[docs/verification-and-troubleshooting.md](docs/verification-and-troubleshooting.md)
-
-## Обновление существующей установки
-
-### Для npm-установки
+### npm
 
 ```bash
 git fetch
@@ -520,7 +412,7 @@ npm run db-update
 npm start
 ```
 
-### Для Docker Compose
+### Docker Compose
 
 ```bash
 git fetch
@@ -529,145 +421,114 @@ docker compose up --build -d
 docker compose run --rm app npm run db-update
 ```
 
-Миграции пропускать нельзя: новая версия кода может ожидать уже изменённую схему БД.
+Migrations must not be skipped: new code may expect an updated database schema.
 
-## Готовый Community Docker-образ
+## Community Docker image
 
-Multi-platform образ публикуется в GitHub Container Registry:
+Multi-platform image published to GitHub Container Registry:
 
-```text
+```
 ghcr.io/alexeylavrentev/leavepilot-community
 ```
 
-Для production фиксируйте полную версию образа. Инструкция и отдельный Compose
-файл: [docs/container-images.md](docs/container-images.md).
+Pin the full image version for production. Instructions: [docs/container-images.md](docs/container-images.md).
 
-## Шифрование секретов в БД (at rest)
+## Secret encryption at rest
 
-Секреты, которые приложение хранит в базе, шифруются перед записью с помощью
-AES-256-GCM (authenticated encryption). Сейчас это **OIDC client secret** внутри
-`Companies.sso_auth_config`.
+Secrets stored in the database are encrypted with AES-256-GCM (authenticated encryption). Currently this covers the **OIDC client secret** in `Companies.sso_auth_config`.
 
-Формат хранения (версионированный): `enc:v1:aes-256-gcm:<iv>:<tag>:<ciphertext>`
-(части в base64).
+Storage format (versioned): `enc:v1:aes-256-gcm:<iv>:<tag>:<ciphertext>` (parts in base64).
 
-### Ключ шифрования
+### Encryption key
 
-Ключ выводится (SHA-256, с доменным разделением) из:
+Derived (SHA-256, with domain separation) from:
 
-- `TIMEOFF_SECRET_KEY` — опциональная выделенная переменная; если не задана,
-- используется общий `CRYPTO_SECRET`.
+- `TIMEOFF_SECRET_KEY` -- optional dedicated variable; if not set,
+- `CRYPTO_SECRET` is used.
 
-`CRYPTO_SECRET` уже является обязательным в production стабильным секретом
-приложения, поэтому новой обязательной переменной не вводится. Доменное
-разделение делает этот ключ независимым от других применений `CRYPTO_SECRET`
-(например, хеширования паролей).
+### Backward compatibility
 
-### Обратная совместимость и миграция
+- Existing plaintext values continue to be read; on next save they are overwritten encrypted.
+- Migration `20260627130000-encrypt-sso-client-secret.js` encrypts already-stored plaintext secrets.
+- The client secret field in the UI is no longer pre-filled: an empty field on save means "keep current secret", not "clear".
 
-- Существующие значения в открытом виде продолжают читаться; при следующем
-  сохранении они перезаписываются в зашифрованном виде.
-- Миграция `20260627130000-encrypt-sso-client-secret.js` шифрует уже сохранённые
-  plaintext-секреты. При отсутствующем или неверном ключе она завершается с
-  ошибкой, поэтому остаётся доступной для повторного запуска. Значение секрета
-  не логируется.
-- Для установок, где прежняя версия миграции уже отмечена применённой, доступна
-  независимая повторяемая команда. Сначала выполните безопасный аудит, затем
-  примените изменения:
+### Operational warnings
 
-  ```bash
-  npm run sso-secret-backfill -- --dry-run
-  npm run sso-secret-backfill -- --apply
-  ```
+- **Losing the key makes encrypted secrets unrecoverable.** Treat `CRYPTO_SECRET` / `TIMEOFF_SECRET_KEY` as a backup-critical secret.
+- **Backup/restore:** a database dump is only useful with the same key.
+- **Key rotation is not implemented.** Changing the key invalidates previously encrypted secrets.
 
-  Команда выводит только суммарные количества категорий. Повторный `--apply`
-  ничего не меняет. Строки с повреждённым JSON не перезаписываются.
-- Поле client secret в UI больше **не предзаполняется**: пустое поле при
-  сохранении означает «оставить текущий секрет», а не «очистить».
+## FAQ
 
-### Эксплуатационные предупреждения
+### Can I start with SQLite and migrate to MySQL later?
 
-- **Потеря ключа делает зашифрованные секреты невосстановимыми.** Относитесь к
-  `CRYPTO_SECRET` / `TIMEOFF_SECRET_KEY` как к критичному для бэкапа секрету.
-- **Бэкап/восстановление:** дамп БД пригоден только вместе с тем же ключом.
-  Восстановление БД в окружение с другим ключом не сможет расшифровать секреты.
-- **Ротация ключа не реализована.** Смена ключа инвалидирует ранее
-  зашифрованные секреты (их придётся ввести заново).
+Yes, but this is not an automatic data migration. Data and schema must be migrated separately.
 
-## Частые вопросы
+### Do I need to edit `.env` for npm?
 
-### Можно ли сначала работать на SQLite, а потом перейти на MySQL?
+No. Development mode uses safe fallback secrets. For real deployments, set your own values.
 
-Да, но это не автоматическая миграция данных. Нужно отдельно переносить данные и отдельно проверять схему.
+### What port is used?
 
-### Нужно ли редактировать `.env` при запуске через npm?
+- Local `npm start`: `3000` unless `PORT` is set
+- `docker compose`: container listens on `3000`, published as `${APP_PORT:-3000}`
 
-Нет, не обязательно. Для `development` приложение использует безопасные fallback-секреты. Но для реальной рабочей установки лучше задавать свои значения.
+### Why does Docker use `config/app.redis.json` instead of `config/app.json`?
 
-### Какой порт используется?
+Compose mounts the config with Redis session storage enabled.
 
-- локальный `npm start`: `3000`, если не задан `PORT`;
-- `docker compose`: контейнер слушает `3000`, наружу публикуется `${APP_PORT:-3000}`.
-
-### Почему через Docker используется `config/app.redis.json`, а не `config/app.json`?
-
-Потому что compose специально монтирует конфиг с включенным Redis-хранилищем сессий.
-
-### Где смотреть инструкции по SSO?
-
-Документ здесь:
+### Where are the SSO instructions?
 
 [docs/sso-keycloak.md](docs/sso-keycloak.md)
 
-## Карта документации
+## Documentation map
 
-- [Локальная установка через npm](docs/install-local-npm.md)
-- [Установка и запуск через Docker Compose](docs/docker-compose.md)
-- [Проверка работы, диагностика и типовые проблемы](docs/verification-and-troubleshooting.md)
-- [FAQ для пользователей и администраторов](docs/faq.md)
-- [Redis как хранилище сессий](docs/SessionStoreInRedis.md)
-- [SSO через Keycloak](docs/sso-keycloak.md)
-- [Архитектура лицензирования](docs/licensing-architecture.md)
-- [Операции с лицензиями](docs/license-operations.md)
+- [Local npm installation](docs/install-local-npm.md)
+- [Docker Compose setup](docs/docker-compose.md)
+- [Verification, troubleshooting](docs/verification-and-troubleshooting.md)
+- [User and admin FAQ](docs/faq.md)
+- [Redis session store](docs/SessionStoreInRedis.md)
+- [SSO via Keycloak](docs/sso-keycloak.md)
+- [Licensing architecture](docs/licensing-architecture.md)
+- [License operations](docs/license-operations.md)
 - [License Portal](docs/license-portal.md)
-- [Чеклист оператора: бэкап и восстановление](docs/operator-backup-checklist.md)
-- [Компрометация ключа подписи лицензий](docs/license-key-compromise.md)
+- [Operator backup checklist](docs/operator-backup-checklist.md)
+- [License key compromise](docs/license-key-compromise.md)
 
-## Лицензирование и использование
+## Licensing
 
 ### Community Edition
 
-LeavePilot Community Edition распространяется по лицензии Elastic License 2.0
-(SPDX: `Elastic-2.0`).
+LeavePilot Community Edition is distributed under the Elastic License 2.0
+(SPX: `Elastic-2.0`).
 
-Вы можете:
-- разворачивать систему у себя, в том числе для коммерческого использования внутри своей организации;
-- модифицировать исходный код;
-- распространять свои модификации.
+You may:
+- Deploy the system for your own use, including commercial use within your organization
+- Modify the source code
+- Distribute your modifications
 
-Вы не можете предоставлять систему третьим лицам как hosted or managed service,
-которая даёт пользователям доступ к существенной части возможностей системы.
+You may not provide the system to third parties as a hosted or managed service
+that gives users access to a substantial portion of the system's capabilities.
 
-Полный текст лицензии — [LICENSE.md](LICENSE.md). Разбор границы «hosted or
-managed service» с примерами по типовым сценариям —
-[docs/licensing-faq.md](docs/licensing-faq.md). История лицензирования и
-атрибуция апстрима — в файле NOTICE.
+Full license text: [LICENSE.md](LICENSE.md). Boundary analysis with examples:
+[docs/licensing-faq.md](docs/licensing-faq.md). Licensing history and upstream
+attribution: NOTICE file.
 
 ### Premium Edition
 
-LeavePilot Premium — это проприетарный модуль, требующий лицензии.
-Premium Edition включает:
-- OIDC/SAML SSO;
-- группы сотрудников;
-- рабочие календари;
-- Integration API;
-- баланс времени;
-- планирование отпусков.
+LeavePilot Premium is a proprietary module requiring a license.
+Premium Edition includes:
+- OIDC/SAML SSO
+- Employee groups
+- Work calendars
+- Integration API
+- Time balance
+- Vacation planning
 
-Для получения лицензии и условий использования см.:
-- [EULA](docs/EULA.md) — лицензионное соглашение
-- [Privacy Policy](docs/PRIVACY.md) — политика конфиденциальности
+For licensing and usage terms:
+- [EULA](docs/EULA.md)
+- [Privacy Policy](docs/PRIVACY.md)
 
-## Обратная связь
+## Feedback
 
-Если вы нашли ошибку в коде или документации, создайте issue в репозитории или обновите инструкции под свою рабочую схему развёртывания.
+If you find a bug in the code or documentation, create an issue in the repository or update the instructions for your deployment setup.
