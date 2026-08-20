@@ -3,7 +3,7 @@
 const expect = require('chai').expect;
 const fs = require('fs');
 const Handlebars = require('handlebars');
-const moment = require('moment');
+const dayjs = require('../../lib/util/date');
 const path = require('path');
 
 describe('Calendar cell view', function() {
@@ -32,7 +32,7 @@ describe('Calendar cell view', function() {
         current_year: '1900',
         day: {
           val                 : 7,
-          moment              : moment.utc('2031-07-07'),
+          dayjs: dayjs.utc('2031-07-07'),
           is_calendar_weekend : true,
           is_weekend          : true,
           is_leave_morning    : true,
@@ -63,7 +63,7 @@ describe('Calendar cell view', function() {
         employee: { full_name: 'Ada Lovelace' },
         day: {
           val                : 8,
-          moment             : moment.utc('2031-07-08'),
+          dayjs: dayjs.utc('2031-07-08'),
           is_bank_holiday    : true,
           bank_holiday_name  : 'Holiday',
           is_leave_morning   : true,
@@ -126,7 +126,7 @@ describe('Calendar cell view', function() {
       },
       day: {
         val              : 7,
-        moment           : moment.utc('2031-07-07'),
+        dayjs: dayjs.utc('2031-07-07'),
         is_leave_morning : true,
         leave_obj        : { id: 42 },
       },
@@ -145,7 +145,7 @@ describe('Calendar cell view', function() {
       current_year: '1900',
       day: {
         val              : 31,
-        moment           : moment.utc('2032-12-31'),
+        dayjs: dayjs.utc('2032-12-31'),
         is_leave_morning : true,
         leave_obj        : { id: 84 },
       },
