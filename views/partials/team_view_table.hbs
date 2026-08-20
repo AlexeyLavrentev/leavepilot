@@ -12,8 +12,8 @@
           </th>
 
         {{#each department.header_days }}
-          <th colspan="2" scope="col" class="team-view-header{{#if (is_calendar_weekend this.moment)}} calendar_weekend_header{{/if}}">
-            <div class="team-view-weekday">{{as_date_formatted this.moment 'ddd'}}</div>
+          <th colspan="2" scope="col" class="team-view-header{{#if (is_calendar_weekend this.dayjs)}} calendar_weekend_header{{/if}}">
+            <div class="team-view-weekday">{{as_date_formatted this.dayjs 'ddd'}}</div>
           </th>
         {{/each}}
         </tr>

@@ -108,11 +108,11 @@
 
     {{# each calendar}}
     <div class="col-md-3 month_container">
-        <table class="calendar_month month_{{ this.month }}" aria-label="{{#if ../show_full_year}}{{this.month}}{{else}}{{as_date_formatted this.moment 'MMMM, YYYY'}}{{/if}}">
-        <caption class="sr-only">{{#if ../show_full_year}}{{this.month}}{{else}}{{as_date_formatted this.moment 'MMMM, YYYY'}}{{/if}}</caption>
+        <table class="calendar_month month_{{ this.month }}" aria-label="{{#if ../show_full_year}}{{this.month}}{{else}}{{as_date_formatted this.dayjs 'MMMM, YYYY'}}{{/if}}">
+        <caption class="sr-only">{{#if ../show_full_year}}{{this.month}}{{else}}{{as_date_formatted this.dayjs 'MMMM, YYYY'}}{{/if}}</caption>
         <thead>
         <tr>
-            <th colspan="14" scope="colgroup">{{#if ../show_full_year}}{{this.month}}{{else}}{{as_date_formatted this.moment 'MMMM, YYYY'}}{{/if}}</th>
+            <th colspan="14" scope="colgroup">{{#if ../show_full_year}}{{this.month}}{{else}}{{as_date_formatted this.dayjs 'MMMM, YYYY'}}{{/if}}</th>
         </tr>
         <tr>
             <th colspan="2" scope="col">{{t "calendar.weekdayShort.mon"}}</th>
