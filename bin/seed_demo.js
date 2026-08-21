@@ -18,7 +18,7 @@
 
 var argv = require('minimist')(process.argv.slice(2));
 var crypto = require('crypto');
-var moment = require('moment');
+var dayjs = require('../lib/util/date');
 
 var models = require('../lib/model/db');
 
@@ -113,7 +113,7 @@ async function seed() {
     users.push(user);
   }
 
-  var today = moment.utc().startOf('day');
+  var today = dayjs.utc().startOf('day');
   var leavesCreated = 0;
 
   async function createLeave(user, startOffsetDays, lengthDays, status, leaveType) {

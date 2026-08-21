@@ -5,7 +5,7 @@
 var assert = require('assert');
 var fs = require('fs');
 var path = require('path');
-var moment = require('moment');
+var dayjs = require('../../../lib/util/date');
 var webdriver = require('selenium-webdriver');
 var By = webdriver.By;
 var Key = webdriver.Key;
@@ -170,11 +170,11 @@ describe('Email Audit interaction and visual contract (Stage 8N)', function () {
     var data = await registerNewUser({ application_host: host });
     driver = data.driver;
     userEmail = data.email;
-    await setUserStart({ driver: driver, email: userEmail, year: moment.utc().year() });
+    await setUserStart({ driver: driver, email: userEmail, year: dayjs.utc().year() });
     await openPage({ url: host, driver: driver });
     await driver.findElement(By.css('#book_time_off_btn')).click();
     await driver.sleep(700);
-    var date = moment.utc().add(21, 'days');
+    var date = dayjs.utc().add(21, 'days');
     while (date.isoWeekday() > 5) date.add(1, 'day');
     await submitForm({
       driver: driver,

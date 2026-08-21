@@ -2,7 +2,7 @@
 'use strict';
 
 const By                 = require('selenium-webdriver').By,
-  moment                 = require('moment'),
+  dayjs = require('../../../lib/util/date'),
   addNewUserFunc         = require('../../lib/add_new_user'),
   config                 = require('../../lib/config'),
   loginUserFunc        = require('../../lib/login_with_user'),
@@ -13,7 +13,7 @@ const By                 = require('selenium-webdriver').By,
   userInfoFunc         = require('../../lib/user_info'),
   application_host       = config.get_application_host(),
   checkBookingFunc     = require('../../lib/check_booking_on_calendar'),
-  someWeekdayDate    =  moment().utc().startOf('year').add(1, 'week').startOf('isoWeek').add(2, 'day').format('YYYY-MM-DD');
+  someWeekdayDate    =  dayjs.utc().utc().startOf('year').add(1, 'week').startOf('isoWeek').add(2, 'day').format('YYYY-MM-DD');
 
 /*
  * Aim:
@@ -90,7 +90,7 @@ describe('Ensure employee calendar from admin section shows bookings', function(
 
     await checkBookingFunc({
       driver,
-      full_days: [moment(someWeekdayDate)],
+      full_days: [dayjs.utc(someWeekdayDate)],
       type: 'pended',
     })
   });

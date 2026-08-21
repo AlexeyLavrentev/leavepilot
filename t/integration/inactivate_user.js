@@ -4,8 +4,7 @@
 var By                     = require('selenium-webdriver').By,
   expect                 = require('chai').expect,
   _                      = require('underscore'),
-  moment                 = require('moment-timezone'),
-  bluebird               = require("bluebird"),
+  dayjs = require('../../lib/util/date'),
   until                  = require('selenium-webdriver').until,
   register_new_user_func = require('../lib/register_new_user'),
   login_user_func        = require('../lib/login_with_user'),
@@ -21,7 +20,7 @@ var By                     = require('selenium-webdriver').By,
   department_edit_form_id = '#department_edit_form';
 
 var company_today = function() {
-  return moment().tz('Europe/London');
+  return dayjs.utc().tz('Europe/London');
 };
 
 /*

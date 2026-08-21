@@ -1,10 +1,8 @@
 
 'use strict';
 
-
 var By                     = require('selenium-webdriver').By,
   expect                 = require('chai').expect,
-  Promise                = require("bluebird"),
   until                  = require('selenium-webdriver').until,
   _                      = require('underscore'),
   register_new_user_func = require('../../lib/register_new_user'),

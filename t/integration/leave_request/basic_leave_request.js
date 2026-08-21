@@ -6,8 +6,7 @@ const config           = require('../../lib/config'),
     By               = require('selenium-webdriver').By,
     expect           = require('chai').expect,
     _                = require('underscore'),
-    Promise          = require("bluebird"),
-    moment           = require('moment'),
+    dayjs = require('../../../lib/util/date'),
     until            = require('selenium-webdriver').until,
     login_user_func        = require('../../lib/login_with_user'),
     register_new_user_func = require('../../lib/register_new_user'),
@@ -19,7 +18,6 @@ const config           = require('../../lib/config'),
     user_info_func         = require('../../lib/user_info'),
     add_new_user_func      = require('../../lib/add_new_user'),
     userStartsAtTheBeginingOfYear = require('../../lib/set_user_to_start_at_the_beginning_of_the_year');
-
 
 /*
  *  Scenario to go in this test:
@@ -145,8 +143,8 @@ describe('Basic leave request', function(){
   it("Check that all days are marked as pended", function(done){
     check_booking_func({
       driver         : driver,
-      full_days      : [moment('2015-06-16')],
-      halfs_1st_days : [moment('2015-06-15')],
+      full_days      : [dayjs.utc('2015-06-16')],
+      halfs_1st_days : [dayjs.utc('2015-06-15')],
       type           : 'pended',
     })
     .then(function(){ done() })
@@ -246,8 +244,8 @@ describe('Basic leave request', function(){
   it("Check that all days are marked as pended", function(done){
     check_booking_func({
       driver         : driver,
-      full_days      : [moment('2015-06-16')],
-      halfs_1st_days : [moment('2015-06-15')],
+      full_days      : [dayjs.utc('2015-06-16')],
+      halfs_1st_days : [dayjs.utc('2015-06-15')],
       type           : 'approved',
     })
     .then(function(){ done() })
@@ -399,7 +397,7 @@ describe("Book the very last day of year to be a holiday", function(){
 
     .then(() => check_booking_func({
       driver         : driver,
-      full_days      : [moment('2018-12-31')],
+      full_days      : [dayjs.utc('2018-12-31')],
       type           : 'pended',
     }))
 

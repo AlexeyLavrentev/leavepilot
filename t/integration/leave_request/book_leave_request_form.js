@@ -6,8 +6,7 @@ var config           = require('../../lib/config'),
     By               = require('selenium-webdriver').By,
     expect           = require('chai').expect,
     _                = require('underscore'),
-    Promise          = require("bluebird"),
-    moment           = require('moment-timezone'),
+    dayjs = require('../../../lib/util/date'),
     until            = require('selenium-webdriver').until,
     login_user_func        = require('../../lib/login_with_user'),
     register_new_user_func = require('../../lib/register_new_user'),
@@ -19,7 +18,7 @@ var config           = require('../../lib/config'),
     add_new_user_func      = require('../../lib/add_new_user');
 
 var company_today = function() {
-  return moment().tz('Europe/London');
+  return dayjs.utc().tz('Europe/London');
 };
 
 describe("Check the client side logic to facilitate filling new absence form", function(){
@@ -96,7 +95,6 @@ describe("Check the client side logic to facilitate filling new absence form", f
       .catch(done);
 
   });
-
 
   it("Update FROM to be in past and make sure TO is stays unchanged", function(done){
 

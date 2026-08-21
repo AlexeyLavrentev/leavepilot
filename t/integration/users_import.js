@@ -5,7 +5,6 @@ const
   By                     = require('selenium-webdriver').By,
   expect                 = require('chai').expect,
   _                      = require('underscore'),
-  Promise                = require("bluebird"),
   fs                     = Promise.promisifyAll(require('fs')),
   csv                    = Promise.promisifyAll(require('csv')),
   register_new_user_func = require('../lib/register_new_user'),

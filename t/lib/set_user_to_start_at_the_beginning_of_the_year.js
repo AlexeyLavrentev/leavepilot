@@ -6,19 +6,18 @@ const
   userInfoFunc   = require('./user_info'),
   submitFormFunc = require('./submit_form'),
   config           = require('./config'),
-  bluebird         = require('bluebird'),
-  moment           = require('moment');
+  dayjs = require('../../lib/util/date');
 
 const getUserId = ({userId,email,driver}) => (!!userId)
-  ? bluebird.resolve(userId)
+  ? Promise.resolve(userId)
   : userInfoFunc({email,driver})
-    .then(({user : {id}}) => bluebird.resolve(id));
+    .then(({user : {id}}) => Promise.resolve(id));
 
 module.exports = ({
   driver,
   email,
   userId=null,
-  year=moment.utc().year(),
+  year=dayjs.utc().year(),
   applicationHost=config.get_application_host(),
   overwriteDate=null,
 }) =>
@@ -34,5 +33,5 @@ module.exports = ({
       message : /Details for .* were updated/,
     }))
     .then(() => openPageFunc({driver, url:applicationHost}))
-    .then(() => bluebird.resolve({driver}));
+    .then(() => Promise.resolve({driver}));
 

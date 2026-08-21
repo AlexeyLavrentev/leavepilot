@@ -3,7 +3,7 @@
 const config = require('../../lib/config');
 const setViewport = require('../../lib/set_viewport');
 const models = require('../../../lib/model/db');
-const moment = require('moment-timezone');
+const dayjs = require('../../../lib/util/date');
 const fs = require('fs');
 const path = require('path');
 const By = require('selenium-webdriver').By;
@@ -39,7 +39,7 @@ describe('Interactive leave details popover — all first-party surfaces', funct
   });
 
   function nextFriday() {
-    const date = moment().tz('Europe/London').add(10, 'days').startOf('day');
+    const date = dayjs.utc().tz('Europe/London').add(10, 'days').startOf('day');
     while (date.isoWeekday() !== 5) {
       date.add(1, 'day');
     }

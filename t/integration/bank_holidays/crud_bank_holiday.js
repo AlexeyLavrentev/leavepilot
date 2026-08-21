@@ -6,7 +6,7 @@ const
   open_page_func         = require('../../lib/open_page'),
   submit_form_func       = require('../../lib/submit_form'),
   check_elements_func    = require('../../lib/check_elements'),
-  moment                 = require('moment'),
+  dayjs = require('../../../lib/util/date'),
   By                     = require('selenium-webdriver').By,
   config                 = require('../../lib/config'),
   application_host       = config.get_application_host(),
@@ -66,7 +66,7 @@ describe('CRUD for bank holidays', function(){
   it("Go back to current year page of bank holidays", (done) => {
     open_page_func({
       driver,
-      url: `${application_host}settings/bankholidays/?year=${moment().year()}`,
+      url: `${application_host}settings/bankholidays/?year=${dayjs.utc().year()}`,
     })
     .then(() => done());
   });
@@ -79,7 +79,7 @@ describe('CRUD for bank holidays', function(){
         value    : 'Early May bank holiday',
       },{
         selector : bankholiday_form_id+' input[tom-test-hook="date__0"]',
-        value    : moment().format('YYYY-MM-DD'),
+        value    : dayjs.utc().format('YYYY-MM-DD'),
       }],
     })
     .then(() => done());

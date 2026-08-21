@@ -6,7 +6,6 @@ var config           = require('../../lib/config'),
     Key              = require('selenium-webdriver').Key,
     expect           = require('chai').expect,
     until            = require('selenium-webdriver').until,
-    Promise          = require('bluebird'),
     register_new_user_func = require('../../lib/register_new_user'),
     open_page_func         = require('../../lib/open_page');
 

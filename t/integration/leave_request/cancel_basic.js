@@ -3,8 +3,7 @@
 
 const By                 = require('selenium-webdriver').By,
   until                  = require('selenium-webdriver').until,
-  Promise                = require("bluebird"),
-  moment                 = require('moment'),
+  dayjs = require('../../../lib/util/date'),
   expect                 = require('chai').expect,
   add_new_user_func      = require('../../lib/add_new_user'),
   check_elements_func    = require('../../lib/check_elements'),
@@ -16,7 +15,7 @@ const By                 = require('selenium-webdriver').By,
   submit_form_func       = require('../../lib/submit_form'),
   user_info_func         = require('../../lib/user_info'),
   application_host       = config.get_application_host(),
-  some_weekday_date      = moment().utc().startOf('year').add(1, 'week').startOf('isoWeek').add(2, 'day').format('YYYY-MM-DD');
+  some_weekday_date      = dayjs.utc().utc().startOf('year').add(1, 'week').startOf('isoWeek').add(2, 'day').format('YYYY-MM-DD');
 
 /*
  *  Scenario:
@@ -42,7 +41,7 @@ describe('Leave request cancelation', function(){
   var driver, email_A, email_B, user_id_A, user_id_B;
 
   it('Check precondition', function(){
-    expect(moment().format('YYYY')).to.be.eq(moment(some_weekday_date).format('YYYY'));
+    expect(dayjs.utc().format('YYYY')).to.be.eq(dayjs.utc(some_weekday_date).format('YYYY'));
   });
 
   it("Register new company", function(done){

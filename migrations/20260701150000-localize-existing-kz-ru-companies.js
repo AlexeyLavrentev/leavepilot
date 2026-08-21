@@ -7,7 +7,7 @@
 // переименовала отдел, тип отсутствия, праздник или сменила формат даты —
 // её данные не трогаем.
 
-var moment = require('moment');
+var dayjs = require('../lib/util/date');
 
 var COUNTRIES = ['KZ', 'RU'];
 
@@ -126,7 +126,7 @@ var LEAVE_TYPE_RENAME = [
 ];
 
 function dateKey(value) {
-  return moment.utc(value).format('YYYY-MM-DD');
+  return dayjs.utc(value).format('YYYY-MM-DD');
 }
 
 module.exports = {

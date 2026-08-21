@@ -2,9 +2,8 @@
 'use strict';
 
 var By                     = require('selenium-webdriver').By,
-  Promise                = require("bluebird"),
   expect                 = require('chai').expect,
-  moment                 = require('moment'),
+  dayjs = require('../../../lib/util/date'),
   add_new_user_func      = require('../../lib/add_new_user'),
   check_elements_func    = require('../../lib/check_elements'),
   config                 = require('../../lib/config'),

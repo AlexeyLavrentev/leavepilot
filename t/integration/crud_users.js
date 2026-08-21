@@ -4,7 +4,6 @@
 var By                     = require('selenium-webdriver').By,
   expect                 = require('chai').expect,
   _                      = require('underscore'),
-  Promise                = require("bluebird"),
   register_new_user_func = require('../lib/register_new_user'),
   login_user_func        = require('../lib/login_with_user'),
   open_page_func         = require('../lib/open_page'),
@@ -36,7 +35,6 @@ var By                     = require('selenium-webdriver').By,
  *
  * */
 
-
 describe('CRUD for users', function(){
 
   this.timeout( config.get_execution_timeout() );
@@ -56,7 +54,6 @@ describe('CRUD for users', function(){
     })
     .catch(done);
   });
-
 
   it("Create ADMIN-to-be user", function(done){
     add_new_user_func({

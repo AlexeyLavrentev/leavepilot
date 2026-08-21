@@ -5,7 +5,6 @@
 const
   By                     = require('selenium-webdriver').By,
   expect                 = require('chai').expect,
-  Promise                = require('bluebird'),
   register_new_user_func = require('../../lib/register_new_user'),
   login_user_func        = require('../../lib/login_with_user'),
   logout_user_func       = require('../../lib/logout_user'),

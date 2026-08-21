@@ -5,8 +5,7 @@ var until            = require('selenium-webdriver').until,
     By               = require('selenium-webdriver').By,
     expect           = require('chai').expect,
     _                = require('underscore'),
-    Promise          = require("bluebird"),
-    moment           = require('moment'),
+    dayjs = require('../../../lib/util/date'),
     config                 = require('../../lib/config'),
     application_host       = config.get_application_host(),
     login_user_func        = require('../../lib/login_with_user'),
@@ -179,8 +178,8 @@ describe('Overlapping leaverequest (with halfs)', function(){
   it("Check that all days are marked as pended", function(done){
     check_booking_func({
       driver         : driver,
-      full_days      : [moment('2015-06-17')],
-      halfs_1st_days : [moment('2015-06-16')],
+      full_days      : [dayjs.utc('2015-06-17')],
+      halfs_1st_days : [dayjs.utc('2015-06-16')],
       type           : 'pended',
     })
     .then(function(){ done() })
@@ -298,7 +297,7 @@ describe('Overlapping leaverequest (with halfs)', function(){
   it("Check that all days are marked as pended", function(done){
     check_booking_func({
       driver    : driver,
-      full_days : [moment('2015-06-15'),moment('2015-06-16'),moment('2015-06-17')],
+      full_days : [dayjs.utc('2015-06-15'),dayjs.utc('2015-06-16'),dayjs.utc('2015-06-17')],
       type      : 'pended',
     })
     .then(function(){ done() })

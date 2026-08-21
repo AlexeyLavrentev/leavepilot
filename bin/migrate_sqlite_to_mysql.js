@@ -3,7 +3,7 @@
 var fs = require('fs');
 var path = require('path');
 var mysql = require('mysql2');
-var moment = require('moment');
+var dayjs = require('../lib/util/date');
 var sqlite3 = require('sqlite3').verbose();
 
 var sourceSqlitePath = process.argv[2];
@@ -82,7 +82,7 @@ function normalizeDateValue(value, mysqlColumnType) {
   }
 
   var normalizedType = String(mysqlColumnType || '').toLowerCase();
-  var parsed = moment.utc(value);
+  var parsed = dayjs.utc(value);
 
   if (!parsed.isValid()) {
     return value;

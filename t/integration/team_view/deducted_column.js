@@ -24,7 +24,6 @@
 var By                     = require('selenium-webdriver').By,
   Key                    = require('selenium-webdriver').Key,
   until                  = require('selenium-webdriver').until,
-  Promise                = require("bluebird"),
   expect                 = require('chai').expect,
   add_new_user_func      = require('../../lib/add_new_user'),
   check_elements_func    = require('../../lib/check_elements'),

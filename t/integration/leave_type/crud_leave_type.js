@@ -8,7 +8,6 @@ const
   check_elements_func    = require('../../lib/check_elements'),
   By                     = require('selenium-webdriver').By,
   config                 = require('../../lib/config'),
-  Bluebird               = require('bluebird'),
   expect                 = require('chai').expect,
   application_host       = config.get_application_host(),
   leave_type_edit_form_id='#leave_type_edit_form',
@@ -61,9 +60,9 @@ describe('CRUD for leave types', function(){
         expect(els.length, "Ensure number of colour pickers is the same as leave types")
           .to.be.equal(2);
 
-        return Bluebird.map(els, el => el.findElement(By.css('input[type="hidden"]')));
+        return Promise.all(Array.from(els).map(el => el.findElement(By.css('input[type="hidden"]'))))
       })
-      .then(els => Bluebird.map(els, el => el.getAttribute('value')))
+      .then(els => Promise.all(Array.from(els).map(el => el.getAttribute('value'))))
       .then(colours => {
         expect( colours.sort(), 'Check default colour values' )
           .to.be.deep.equal(['leave_type_color_1', 'leave_type_color_1']);
@@ -88,7 +87,7 @@ describe('CRUD for leave types', function(){
 
   it('Ensure that color class for Sick days was updated to be non-default', done => {
     driver.findElements(By.css('form#leave_type_edit_form [data-tom-color-picker] input[type="hidden"]'))
-      .then(els => Bluebird.map(els, el => el.getAttribute('value')))
+      .then(els => Promise.all(Array.from(els).map(el => el.getAttribute('value'))))
       .then(colours => {
         expect( colours.sort(), 'Check default colour values' )
           .to.be.deep.equal(['leave_type_color_1', 'leave_type_color_2']);
@@ -350,14 +349,14 @@ describe('CRUD for leave types', function(){
   it("Ensure AAA is a first and ZZZ is a last in a list on book holiday modal", function(done){
     driver
       .findElements(By.css('select#leave_type option'))
-      .then(options => Bluebird.map(options, option => {
+      .then(options => Promise.all(Array.from(options).map(option => {
         let option_info = {};
         return option.getAttribute('data-tom-index')
-          .then(val => Bluebird.resolve(option_info.value = val))
+          .then(val => Promise.resolve(option_info.value = val))
           .then(() => option.getAttribute('data-tom'))
-          .then(txt => Bluebird.resolve(option_info.text = txt))
-          .then(() => Bluebird.resolve(option_info));
-      }))
+          .then(txt => Promise.resolve(option_info.text = txt))
+          .then(() => Promise.resolve(option_info));
+      })))
       .then(option_infos => {
         expect(option_infos[0], 'AAA is first').to.include({ value : '0', text : 'AAA'});
         expect(option_infos[3], 'ZZZ is last').to.include({ value : '3', text : 'ZZZ'});
@@ -370,7 +369,7 @@ describe('CRUD for leave types', function(){
     driver
       .findElement(By.css(leave_type_edit_form_id+' input[data-tom-leave-type-order="name_3"]'))
       .then(inp => inp.getAttribute('name'))
-      .then(name => Bluebird.resolve(name.split('__')[1]))
+      .then(name => Promise.resolve(name.split('__')[1]))
       .then(id => submit_form_func({
           driver      : driver,
           form_params : [{
@@ -408,14 +407,14 @@ describe('CRUD for leave types', function(){
   it("Ensure ZZZ is a first and AAA is a second in a list on book holiday modal", function(done){
     driver
       .findElements(By.css('select#leave_type option'))
-      .then(options => Bluebird.map(options, option => {
+      .then(options => Promise.all(Array.from(options).map(option => {
         let option_info = {};
         return option.getAttribute('data-tom-index')
-          .then(val => Bluebird.resolve(option_info.value = val))
+          .then(val => Promise.resolve(option_info.value = val))
           .then(() => option.getAttribute('data-tom'))
-          .then(txt => Bluebird.resolve(option_info.text = txt))
-          .then(() => Bluebird.resolve(option_info));
-      }))
+          .then(txt => Promise.resolve(option_info.text = txt))
+          .then(() => Promise.resolve(option_info));
+      })))
       .then(option_infos => {
         expect(option_infos[0], 'ZZZ is first').to.include({ value : '0', text : 'ZZZ'});
         expect(option_infos[1], 'AAA is last').to.include({ value : '1', text : 'AAA'});

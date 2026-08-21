@@ -5,7 +5,6 @@ const setViewport = require('./set_viewport');
 var By        = require('selenium-webdriver').By,
     expect    = require('chai').expect,
     until     = require('selenium-webdriver').until,
-    Promise   = require("bluebird"),
     build_driver = require('./build_driver');
 
 

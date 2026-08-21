@@ -1,12 +1,11 @@
 'use strict';
 
+const { promisify } = require('util');
 var webdriver = require('selenium-webdriver'),
     _         = require('underscore'),
     By        = require('selenium-webdriver').By,
-    expect    = require('chai').expect,
-    Promise   = require("bluebird");
-
-var check_booking_func = Promise.promisify( function(args, callback){
+    expect    = require('chai').expect;
+var check_booking_func = promisify( function(args, callback){
 
   var driver          = args.driver,
       type            = args.type,

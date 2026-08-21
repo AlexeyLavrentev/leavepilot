@@ -30,7 +30,7 @@ const webdriver = require('selenium-webdriver');
 const By = webdriver.By;
 const until = webdriver.until;
 const Key = webdriver.Key;
-const moment = require('moment');
+const dayjs = require('../../../lib/util/date');
 const config = require('../../lib/config');
 const models = require('../../../lib/model/db');
 const register_new_user_func = require('../../lib/register_new_user');
@@ -303,7 +303,7 @@ describe('Requests workspace interaction, geometry & visual matrix (Stage 8D)', 
       await employee.update({ name: 'Ada', lastname: 'Lovelace' });
       await employee.reload();
       leaveType = await models.LeaveType.findOne({ where: { companyId: admin.companyId } });
-      leaveStart = moment.utc().add(40, 'days').startOf('day');
+      leaveStart = dayjs.utc().add(40, 'days').startOf('day');
 
       // Two pending leaves FROM the employee (populate the approval table) — pattern
       // from requests_decision_safety.js: create directly via the model so the test is

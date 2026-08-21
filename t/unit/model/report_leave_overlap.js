@@ -1,7 +1,7 @@
 'use strict';
 
 const {expect} = require('chai');
-const moment = require('moment');
+const dayjs = require('../../../lib/util/date');
 const {filterLeaves} = require('../../../lib/model/Report');
 
 const leave = (start, end) => ({
@@ -11,8 +11,8 @@ const leave = (start, end) => ({
 
 describe('Report leave interval filtering', function() {
   const filter = filterLeaves({
-    startDate: moment.utc('2026-07-10'),
-    endDate: moment.utc('2026-07-10'),
+    startDate: dayjs.utc('2026-07-10'),
+    endDate: dayjs.utc('2026-07-10'),
   });
 
   it('includes a leave spanning the complete report interval', function() {

@@ -4,7 +4,6 @@
 const
   By                  = require('selenium-webdriver').By,
   until               = require('selenium-webdriver').until,
-  Promise             = require("bluebird"),
   expect              = require('chai').expect,
   registerNewUserFunc = require('../../lib/register_new_user'),
   config              = require('../../lib/config'),

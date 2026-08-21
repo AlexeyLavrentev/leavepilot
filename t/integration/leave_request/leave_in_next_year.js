@@ -4,8 +4,7 @@
 const
     By               = require('selenium-webdriver').By,
   expect           = require('chai').expect,
-  Promise          = require("bluebird"),
-  moment           = require('moment'),
+  dayjs = require('../../../lib/util/date'),
   until            = require('selenium-webdriver').until,
   login_user_func        = require('../../lib/login_with_user'),
   register_new_user_func = require('../../lib/register_new_user'),
@@ -19,7 +18,7 @@ const
   application_host       = config.get_application_host(),
   userStartsAtTheBeginingOfYear = require('../../lib/set_user_to_start_at_the_beginning_of_the_year');
 
-const nextYear = moment().add(1, 'y').format('YYYY');
+const nextYear = dayjs.utc().add(1, 'y').format('YYYY');
 
 /*
  *  Scenario to go in this test:
@@ -49,7 +48,7 @@ describe(`Leave in the next year (${nextYear}) when no allowance in the current 
     userStartsAtTheBeginingOfYear({
       driver,
       email,
-      overwriteDate:moment.utc(`${nextYear-1}-12-20`),
+      overwriteDate:dayjs.utc(`${nextYear-1}-12-20`),
     })
     .then(() => done())
   });

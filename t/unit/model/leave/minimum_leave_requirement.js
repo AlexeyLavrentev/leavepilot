@@ -1,7 +1,7 @@
 'use strict';
 
 const expect = require('chai').expect;
-const moment = require('moment');
+const dayjs = require('../../../../lib/util/date');
 const model = require('../../../../lib/model/db');
 const { getMinimumLeaveRequirementStatus } = require('../../../../lib/model/leave/minimum_leave_requirement');
 
@@ -42,7 +42,7 @@ describe('Minimum consecutive leave requirement', function(){
     const status = await getMinimumLeaveRequirementStatus({
       user,
       leaveType,
-      year : moment.utc('2026-01-01'),
+      year : dayjs.utc('2026-01-01'),
     });
 
     expect(status).to.deep.equal({requiredDays : 2, year : '2026'});

@@ -1,9 +1,7 @@
 
 'use strict';
 
-var models = require('../lib/model/db'),
-  Promise = require('bluebird');
-
+var models = require('../lib/model/db');
 module.exports = {
   up: function (queryInterface, Sequelize) {
 

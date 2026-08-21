@@ -7,8 +7,7 @@ const
   By               = require('selenium-webdriver').By,
   expect           = require('chai').expect,
   _                = require('underscore'),
-  Promise          = require("bluebird"),
-  moment           = require('moment'),
+  dayjs = require('../../../lib/util/date'),
   login_user_func        = require('../../lib/login_with_user'),
   register_new_user_func = require('../../lib/register_new_user'),
   open_page_func         = require('../../lib/open_page'),
@@ -17,7 +16,6 @@ const
   check_booking_func     = require('../../lib/check_booking_on_calendar'),
   user_info_func         = require('../../lib/user_info'),
   userStartsAtTheBeginingOfYear = require('../../lib/set_user_to_start_at_the_beginning_of_the_year');
-
 
 /*
  *  Scenario to go in this test:
@@ -97,8 +95,8 @@ describe('Leave request with single user', function(){
   it("Check that all days are marked as pended", function(done){
     check_booking_func({
       driver         : driver,
-      full_days      : [moment('2015-06-16')],
-      halfs_1st_days : [moment('2015-06-15')],
+      full_days      : [dayjs.utc('2015-06-16')],
+      halfs_1st_days : [dayjs.utc('2015-06-15')],
       type           : 'pended',
     })
     .then(function(){ done() })

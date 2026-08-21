@@ -6,8 +6,7 @@ const
     until            = require('selenium-webdriver').until,
     expect           = require('chai').expect,
     _                = require('underscore'),
-    Promise          = require("bluebird"),
-    moment           = require('moment'),
+    dayjs = require('../../../lib/util/date'),
     login_user_func        = require('../../lib/login_with_user'),
     register_new_user_func = require('../../lib/register_new_user'),
     open_page_func         = require('../../lib/open_page'),
@@ -147,8 +146,8 @@ describe('Try to remove used leave type', function(){
   it("Check that all days are marked as pended", function(done){
     check_booking_func({
       driver         : driver,
-      full_days      : [moment('2015-06-16')],
-      halfs_1st_days : [moment('2015-06-15')],
+      full_days      : [dayjs.utc('2015-06-16')],
+      halfs_1st_days : [dayjs.utc('2015-06-15')],
       type           : 'pended',
     })
     .then(function(){ done() })

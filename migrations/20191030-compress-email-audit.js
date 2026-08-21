@@ -3,7 +3,6 @@
 
 const
   htmlToText = require('html-to-text'),
-  Promise = require('bluebird'),
   models = require('../lib/model/db');
 
 // html-to-text 10 removed fromString(); the model layer
@@ -18,10 +17,9 @@ const htmlToPlainText = htmlToText.convert || htmlToText.fromString;
 module.exports = {
   up: () => {
     return models.EmailAudit.findAll()
-      .then(records => Promise.map(
-        records,
-        rec => rec.update({body : htmlToPlainText(rec.body)}),
-        {concurrency: 1}
+      .then(records => records.reduce(
+        (p, rec) => p.then(() => rec.update({body : htmlToPlainText(rec.body)})),
+        Promise.resolve()
       ))
       .then(() => console.log('Done!'));
   },

@@ -10,7 +10,6 @@ var register_new_user_func = require('../../lib/register_new_user'),
   config                 = require('../../lib/config'),
   application_host       = config.get_application_host(),
   expect                 = require('chai').expect,
-  Bluebird               = require('bluebird'),
   add_new_user_func      = require('../../lib/add_new_user'),
   user_info_func         = require('../../lib/user_info'),
   new_department_form_id = '#add_new_department_form',
@@ -34,9 +33,9 @@ function wait_for_remove_supervisor_values(driver, expected_values) {
   return driver.wait(function() {
     return driver.findElements(By.css('button[name="remove_supervisor_id"]'))
       .then(function(els) {
-        return Bluebird.map(els, function(el) {
+        return Promise.all(Array.from(els).map(function(el) {
           return el.getAttribute('value');
-        });
+        }));
       })
       .then(function(values) {
         var sorted_values = values.sort();
@@ -163,7 +162,7 @@ describe('Check departments list page', function(){
   it('Ensure that newly added department AAA is on top of the list', function(done){
     driver
       .findElements(By.css('a[data-vpp-department-name="1"]'))
-      .then(function(els){ return Bluebird.map(els, function(el){ return el.getText() }) })
+      .then(function(els){ return Promise.all(Array.from(els).map(function(el){ return el.getText() })) })
       .then(function(texts){
         expect(texts).to.have.eql(['AAA', 'Sales'], 'Check the order of names');
         done();
@@ -201,7 +200,7 @@ describe('Check departments list page', function(){
   it('Ensure that departments respect alphabetical order', function(done){
     driver
       .findElements(By.css('a[data-vpp-department-name="1"]'))
-      .then(function(els){ return Bluebird.map(els, function(el){ return el.getText() }) })
+      .then(function(els){ return Promise.all(Array.from(els).map(function(el){ return el.getText() })) })
       .then(function(texts){
         expect(texts).to.have.eql(['AAA', 'Sales', 'ZZZ'], 'Check the order of names');
         done();
@@ -744,7 +743,7 @@ describe('CRUD for department secondary supervisers', function(){
             return driver.findElements(By.css('input[name="supervisor_id"]'));
           });
       })
-      .then(function(els){ return Bluebird.map(els, function(el){return el.getAttribute('value')})})
+      .then(function(els){ return Promise.all(Array.from(els).map(function(el){return el.getAttribute('value')}))})
       .then(function(vals){
         expect(vals.sort()).to.be.eql([user_id_B, user_id_C].map(function(e){return String(e)}).sort(), 'User list is expected');
         done();

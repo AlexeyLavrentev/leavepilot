@@ -4,8 +4,7 @@
 var By               = require('selenium-webdriver').By,
     expect           = require('chai').expect,
     _                = require('underscore'),
-    Promise          = require("bluebird"),
-    moment           = require('moment'),
+    dayjs = require('../../../lib/util/date'),
     login_user_func        = require('../../lib/login_with_user'),
     register_new_user_func = require('../../lib/register_new_user'),
     logout_user_func       = require('../../lib/logout_user'),
@@ -165,7 +164,7 @@ describe('Leave type limits in actoion', function(){
         .then(function(){
           check_booking_func({
             driver    : driver,
-            full_days : [moment('2015-06-16'),moment('2015-06-16'),moment('2015-06-17')],
+            full_days : [dayjs.utc('2015-06-16'),dayjs.utc('2015-06-16'),dayjs.utc('2015-06-17')],
             type      : 'pended',
           })
           .then(function(){ done() })

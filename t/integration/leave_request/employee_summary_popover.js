@@ -6,7 +6,7 @@ var config           = require('../../lib/config'),
     Key              = require('selenium-webdriver').Key,
     until            = require('selenium-webdriver').until,
     expect           = require('chai').expect,
-    moment           = require('moment-timezone'),
+    dayjs = require('../../../lib/util/date'),
 
     register_new_user_func = require('../../lib/register_new_user'),
     login_user_func        = require('../../lib/login_with_user'),
@@ -16,7 +16,7 @@ var config           = require('../../lib/config'),
     add_new_user_func      = require('../../lib/add_new_user');
 
 function company_today() {
-  return moment().tz('Europe/London');
+  return dayjs.utc().tz('Europe/London');
 }
 
 describe('Employee summary popover on the requests page (keyboard accessible)', function(){

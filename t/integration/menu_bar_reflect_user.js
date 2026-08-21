@@ -1,12 +1,10 @@
 
 'use strict';
 
-
 var register_new_user_func = require('../lib/register_new_user'),
   login_user_func        = require('../lib/login_with_user'),
   add_new_user_func      = require('../lib/add_new_user'),
   By                     = require('selenium-webdriver').By,
-  bluebird               = require("bluebird"),
   expect                 = require('chai').expect,
   _                      = require('underscore'),
   logout_user_func       = require('../lib/logout_user'),
@@ -59,7 +57,7 @@ describe('Menu bar reflect permissions of logged in user', function(){
       ],
     });
 
-    bluebird
+    Promise
       .all( promises_to_check )
       .then(function(){ done() })
       .catch(done);
@@ -109,7 +107,7 @@ describe('Menu bar reflect permissions of logged in user', function(){
       ],
     });
 
-    bluebird
+    Promise
       .all( promises_to_check)
       .then( function(){ done() });
   });
@@ -125,7 +123,7 @@ describe('Menu bar reflect permissions of logged in user', function(){
       ],
     });
 
-    bluebird
+    Promise
       .all( promises_to_check)
       .then( function(){ done() });
   });
@@ -149,7 +147,7 @@ function check_presense_promises(args){
         .findElements(By.css(selector))
         .then(function(elements){
           expect(elements.length > 0).to.be.equal(presense);
-          return bluebird.resolve();
+          return Promise.resolve();
         })
     }
   );

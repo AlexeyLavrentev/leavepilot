@@ -2,7 +2,7 @@
 
 const config = require('../../lib/config');
 const models = require('../../../lib/model/db');
-const moment = require('moment-timezone');
+const dayjs = require('../../../lib/util/date');
 const fs = require('fs');
 const path = require('path');
 const By = require('selenium-webdriver').By;
@@ -166,7 +166,7 @@ describe('Interactive Team View deducted-days popover', function() {
     admin = await models.User.findOne({where: {email: registration.email}});
     employee = await models.User.findOne({where: {email: employeeEmail}});
     const leaveType = await models.LeaveType.findOne({where: {companyId: admin.companyId}});
-    const start = moment.utc().startOf('month');
+    const start = dayjs.utc().startOf('month');
     while (start.isoWeekday() !== 1) {
       start.add(1, 'day');
     }
