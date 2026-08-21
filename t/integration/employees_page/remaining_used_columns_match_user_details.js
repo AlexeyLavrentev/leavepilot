@@ -3,9 +3,8 @@
 'use strict';
 
 var By                     = require('selenium-webdriver').By,
-  Promise                = require("bluebird"),
   expect                 = require('chai').expect,
-  moment                 = require('moment'),
+  dayjs = require('../../../lib/util/date'),
   add_new_user_func      = require('../../lib/add_new_user'),
   check_elements_func    = require('../../lib/check_elements'),
   config                 = require('../../lib/config'),
@@ -42,7 +41,7 @@ describe('Leave request cancelation', function(){
     return driver.wait(function(){
       return driver.findElements(By.css('div.alert'))
         .then(function(els){
-          return Promise.map(els, function(el){ return el.getText(); });
+          return Promise.all(els.map(function(el){ return el.getText(); }));
         })
         .then(function(texts){
           return texts.some(function(text){ return pattern.test(text); });
@@ -97,7 +96,7 @@ describe('Leave request cancelation', function(){
   });
 
   it("Submit new leave request for user A one weekday", function(done){
-    const currentYear = moment.utc().year();
+    const currentYear = dayjs.utc().year();
     submit_form_func({
       driver      : driver,
       form_params : [{

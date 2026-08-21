@@ -5,7 +5,6 @@
 const
   By                     = require('selenium-webdriver').By,
   expect                 = require('chai').expect,
-  Promise                = require('bluebird'),
   register_new_user_func = require('../../lib/register_new_user'),
   login_user_func        = require('../../lib/login_with_user'),
   logout_user_func       = require('../../lib/logout_user'),
@@ -226,7 +225,7 @@ describe("Remove company account", function(){
 
     .then(els => {
       expect(els.length, 'Ensure two elements with leave dates were found').to.be.equal(1);
-      return Promise.map(els, (el => el.getText()));
+      return Promise.all(els.map(el => el.getText()));
     })
     .then(dates_str => {
       expect(dates_str[0], 'Ensure that date range value is as expected')

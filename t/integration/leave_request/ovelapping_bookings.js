@@ -5,8 +5,7 @@ var until            = require('selenium-webdriver').until,
     By               = require('selenium-webdriver').By,
     expect           = require('chai').expect,
     _                = require('underscore'),
-    Promise          = require("bluebird"),
-    moment           = require('moment'),
+    dayjs = require('../../../lib/util/date'),
     login_user_func        = require('../../lib/login_with_user'),
     register_new_user_func = require('../../lib/register_new_user'),
     logout_user_func       = require('../../lib/logout_user'),
@@ -169,7 +168,7 @@ describe('Overlapping bookings', function(){
   it("Check that all days are marked as pended", function(done){
     check_booking_func({
       driver    : driver,
-      full_days : [moment('2015-06-15'), moment('2015-06-16')],
+      full_days : [dayjs.utc('2015-06-15'), dayjs.utc('2015-06-16')],
       type      : 'pended',
     })
     .then(function(){ done() })

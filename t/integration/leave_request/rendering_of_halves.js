@@ -5,8 +5,7 @@ var until            = require('selenium-webdriver').until,
     By               = require('selenium-webdriver').By,
     expect           = require('chai').expect,
     _                = require('underscore'),
-    Promise          = require("bluebird"),
-    moment           = require('moment'),
+    dayjs = require('../../../lib/util/date'),
     config                 = require('../../lib/config'),
     application_host       = config.get_application_host(),
     login_user_func        = require('../../lib/login_with_user'),
@@ -220,7 +219,7 @@ describe('Ensure that leaves with not full days are rendered properly', function
       .findElements(By.css('table.user-requests-table td[data-tom-leave-dates="1"]'))
       .then(els => {
         expect(els.length, 'Ensure two elements with leave dates were found').to.be.equal(4);
-        return Promise.map(els, (el => el.getText()));
+        return Promise.all(els.map(el => el.getText()));
       })
       .then(dates_str => {
         expect(dates_str.sort(), 'Ensure that date ranges values are as expected')
@@ -287,7 +286,7 @@ describe('Ensure that leaves with not full days are rendered properly', function
       .findElements(By.css('table.requests-to-approve-table td[data-tom-leave-dates="1"]'))
       .then(els => {
         expect(els.length, 'Ensure two elements with leave dates were found').to.be.equal(4);
-        return Promise.map(els, (el => el.getText()));
+        return Promise.all(els.map(el => el.getText()));
       })
       .then(dates_str => {
         expect(dates_str.sort(), 'Ensure that date ranges values are as expected')

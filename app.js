@@ -8,7 +8,7 @@ var path         = require('path');
 var favicon      = require('serve-favicon');
 var cookieParser = require('cookie-parser');
 var bodyParser   = require('body-parser');
-var moment       = require('moment');
+var dayjs        = require('./lib/util/date');
 var config       = require('./lib/config');
 var branding     = require('./lib/branding');
 var edition      = require('./lib/edition');
@@ -158,7 +158,7 @@ app.use(function(req,res,next){
   if ( req.user && req.user.company ) {
     today = req.user.company.get_today();
   } else {
-    today = moment.utc();
+    today = dayjs.utc();
   }
 
   res.locals.session     = req.session;

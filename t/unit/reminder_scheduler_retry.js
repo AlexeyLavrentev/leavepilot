@@ -1,7 +1,7 @@
 'use strict';
 
 const expect = require('chai').expect;
-const moment = require('moment');
+const dayjs = require('../../lib/util/date');
 const scheduler = require('../../lib/model/leave/reminder_scheduler');
 
 describe('Configurable reminder delivery retries', function() {
@@ -11,7 +11,7 @@ describe('Configurable reminder delivery retries', function() {
       what day it is so that it does not remind an employee who left yesterday
       in the office but not yet in UTC. The stand-in has to answer that too.
     */
-    const company = {id: 55, get_today: () => moment.utc('2026-06-05')};
+    const company = {id: 55, get_today: () => dayjs.utc('2026-06-05')};
     const employee = {
       id: 10,
       email: 'employee@example.com',

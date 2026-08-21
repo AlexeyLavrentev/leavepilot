@@ -4,7 +4,7 @@ const setViewport = require('../../lib/set_viewport');
 
 const config = require('../../lib/config');
 const models = require('../../../lib/model/db');
-const moment = require('moment');
+const dayjs = require('../../../lib/util/date');
 const By = require('selenium-webdriver').By;
 const Key = require('selenium-webdriver').Key;
 const until = require('selenium-webdriver').until;
@@ -49,7 +49,7 @@ describe('Requests decision-safety interaction', function() {
     const leaveType = await models.LeaveType.findOne({
       where: {companyId: admin.companyId},
     });
-    leaveStart = moment.utc().add(40, 'days').startOf('day');
+    leaveStart = dayjs.utc().add(40, 'days').startOf('day');
 
     for (let index = 0; index < 2; index += 1) {
       const start = leaveStart.clone().add(index * 7, 'days');

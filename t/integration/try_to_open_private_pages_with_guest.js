@@ -6,7 +6,6 @@ var config           = require('../lib/config'),
     By        = require('selenium-webdriver').By,
     expect    = require('chai').expect,
     _         = require('underscore'),
-    Promise   = require("bluebird"),
     until     = require('selenium-webdriver').until,
     login_user_func        = require('../lib/login_with_user'),
     register_new_user_func = require('../lib/register_new_user'),
@@ -85,8 +84,9 @@ describe('Try to access admin pages with non-admin user', function(){
       'settings/departments/'
     ];
 
-    return Promise.each(admin_pages, function(path){
-      return driver.get(application_host + path)
+    return admin_pages.reduce(function(p, path){
+      return p.then(function() {
+        return driver.get(application_host + path)
         .then(function(){
           return driver.wait(until.elementLocated(By.css('body')), 1000);
         })
@@ -100,7 +100,8 @@ describe('Try to access admin pages with non-admin user', function(){
             expect(url).to.be.equal(application_host + 'calendar/');
            }
         });
-    })
+    });
+    }, Promise.resolve())
   };
 
   it("Register new admin user", function(done){

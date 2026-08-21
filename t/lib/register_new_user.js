@@ -1,4 +1,5 @@
 const setViewport = require('./set_viewport');
+const { promisify } = require('util');
 /*
 
 */
@@ -8,7 +9,6 @@ const setViewport = require('./set_viewport');
 var By        = require('selenium-webdriver').By,
     until     = require('selenium-webdriver').until,
     expect    = require('chai').expect,
-    Promise   = require("bluebird"),
     open_page_func       = require('./open_page'),
     build_driver         = require('./build_driver'),
     company_edit_form_id = '#company_edit_form',
@@ -20,7 +20,7 @@ function is_transient_session_error(error) {
   return /invalid session id|browser has closed|disconnected/i.test(message || '');
 }
 
-var register_new_user_func = Promise.promisify( function(args, callback){
+var register_new_user_func = promisify( function(args, callback){
 
   var
     application_host      = args.application_host || args.applicationHost,

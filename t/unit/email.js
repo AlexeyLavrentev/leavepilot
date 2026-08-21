@@ -3,7 +3,6 @@
 
 var expect = require('chai').expect,
 _          = require('underscore'),
-bluebird   = require('bluebird'),
 Email      = require('../../lib/email');
 
 describe('Check Email', function(){
@@ -12,12 +11,12 @@ describe('Check Email', function(){
 
     var email = new Email();
 
-    bluebird.resolve(email.promise_rendered_email_template({
+    Promise.resolve(email.promise_rendered_email_template({
       template_name : 'foobar',
       context : {
         user : {
           name : 'FOO',
-          reload_with_session_details : function(){ bluebird.resolve(1); },
+          reload_with_session_details : function(){ Promise.resolve(1); },
         },
       },
     }))

@@ -3,11 +3,9 @@
 
 */
 
-'use strict';
+const { promisify } = require('util');
 
-var bluebird = require("bluebird");
-
-// Function that is executed on the client,
+'use strict';// Function that is executed on the client,
 // it relies on presence of jQuery and window.VPP_email
 var func_to_inject = function() {
   var callback = arguments[arguments.length - 1];
@@ -29,7 +27,7 @@ var func_to_inject = function() {
 };
 
 
-var user_info_func = bluebird.promisify( function(args, callback){
+var user_info_func = promisify( function(args, callback){
 
   var
     result_callback = callback,

@@ -32,7 +32,7 @@
 const expect = require('chai').expect;
 const fs = require('fs');
 const path = require('path');
-const moment = require('moment-timezone');
+const dayjs = require('../../lib/util/date');
 const Sequelize = require('sequelize');
 const Op = Sequelize.Op;
 
@@ -100,7 +100,7 @@ describe('Whether an employee is still with the company', function() {
     const user = models.User.build({end_date: endDate});
     const company = models.Company.build({timezone: 'Etc/UTC'});
 
-    company.get_today = () => moment.utc(companyToday);
+    company.get_today = () => dayjs.utc(companyToday);
     user.company = company;
 
     return user;
@@ -175,15 +175,15 @@ describe('Whether an employee is still with the company', function() {
     it('uses the date it was given', function() {
       const user = models.User.build({end_date: '2026-08-05'});
 
-      expect(user.is_active(moment.utc('2026-08-05'))).to.equal(true, 'their last day');
-      expect(user.is_active(moment.utc('2026-08-06'))).to.equal(false, 'the day after');
-      expect(user.is_active(moment.utc('2026-08-04'))).to.equal(true, 'the day before');
+      expect(user.is_active(dayjs.utc('2026-08-05'))).to.equal(true, 'their last day');
+      expect(user.is_active(dayjs.utc('2026-08-06'))).to.equal(false, 'the day after');
+      expect(user.is_active(dayjs.utc('2026-08-04'))).to.equal(true, 'the day before');
     });
 
     it('prefers what it was given over the company it carries', function() {
       const user = employeeEnding('2026-08-05', 'Europe/Moscow');
 
-      expect(user.is_active(moment.utc('2026-08-09'))).to.equal(false);
+      expect(user.is_active(dayjs.utc('2026-08-09'))).to.equal(false);
     });
   });
 
@@ -196,8 +196,8 @@ describe('Whether an employee is still with the company', function() {
   describe('with no company loaded', function() {
 
     it('falls back to UTC', function() {
-      const utcToday = moment.utc().format('YYYY-MM-DD');
-      const utcYesterday = moment.utc().subtract(1, 'day').format('YYYY-MM-DD');
+      const utcToday = dayjs.utc().format('YYYY-MM-DD');
+      const utcYesterday = dayjs.utc().subtract(1, 'day').format('YYYY-MM-DD');
 
       expect(employeeEnding(utcToday).is_active()).to.equal(true);
       expect(employeeEnding(utcYesterday).is_active()).to.equal(false);
@@ -218,12 +218,12 @@ describe('Whether an employee is still with the company', function() {
       .find(value => value !== undefined);
 
     it('bounds on the date it was given', function() {
-      expect(upperBound(models.User.get_active_user_filter(moment.utc('2030-06-17'))))
+      expect(upperBound(models.User.get_active_user_filter(dayjs.utc('2030-06-17'))))
         .to.equal('2030-06-17');
     });
 
     it('still lets through an employee with no end date', function() {
-      const withoutEndDate = parts(models.User.get_active_user_filter(moment.utc('2030-06-17')))
+      const withoutEndDate = parts(models.User.get_active_user_filter(dayjs.utc('2030-06-17')))
         .some(part => part.end_date[Op.eq] === null);
 
       expect(withoutEndDate).to.equal(true);
@@ -231,7 +231,7 @@ describe('Whether an employee is still with the company', function() {
 
     it('falls back to UTC for the callers that cannot know the company', function() {
       expect(upperBound(models.User.get_active_user_filter()))
-        .to.equal(moment.utc().startOf('day').format('YYYY-MM-DD'));
+        .to.equal(dayjs.utc().startOf('day').format('YYYY-MM-DD'));
     });
   });
 

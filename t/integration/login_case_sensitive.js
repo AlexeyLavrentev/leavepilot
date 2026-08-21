@@ -4,7 +4,6 @@
 var By               = require('selenium-webdriver').By,
     expect           = require('chai').expect,
     _                = require('underscore'),
-    Promise          = require("bluebird"),
     login_user_func        = require('../lib/login_with_user'),
     register_new_user_func = require('../lib/register_new_user'),
     logout_user_func       = require('../lib/logout_user'),

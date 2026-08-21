@@ -1,18 +1,15 @@
 'use strict';
 
+const { promisify } = require('util');
 var webdriver = require('selenium-webdriver'),
     By        = require('selenium-webdriver').By,
     expect    = require('chai').expect,
-    _         = require('underscore'),
-    Promise   = require("bluebird");
-
-
-var check_elements_func = Promise.promisify( function(args, callback){
+    _         = require('underscore');
+var check_elements_func = promisify( function(args, callback){
 
   var driver            = args.driver,
       result_callback   = callback,
       elements_to_check = args.elements_to_check || [];
-
 
     Promise.all([
         _.map(

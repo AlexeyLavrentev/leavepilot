@@ -5,7 +5,7 @@ var test             = require('selenium-webdriver/testing'),
     By               = require('selenium-webdriver').By,
     expect           = require('chai').expect,
     _                = require('underscore'),
-    Promise          = require("bluebird"),
+    Promise          = Promise,
     until            = require('selenium-webdriver').until,
     register_new_user_func = require('../t/lib/register_new_user'),
     login_user_func        = require('../t/lib/login_with_user'),
@@ -78,7 +78,7 @@ describe('Collect remaining days for employees', function(){
       driver
         .findElements(By.css('tr[data-vpp-user-row]'))
 
-        .then(els => Promise.map(els, el => {
+        .then(els => Promise.all(els.map(el => {
           let user_id;
 
           return el.getAttribute('data-vpp-user-row')
@@ -86,7 +86,7 @@ describe('Collect remaining days for employees', function(){
             .then(() => el.findElement(By.css('td.vpp-days-remaining')))
             .then(el => el.getText())
             .then(days => Promise.resolve( report[ user_id ] = days ));
-        }, { concurrency : 0 }))
+        })))
 
         .then(() => done())
     });

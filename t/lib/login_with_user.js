@@ -5,7 +5,6 @@ const setViewport = require('./set_viewport');
 var By        = require('selenium-webdriver').By,
     expect    = require('chai').expect,
     until     = require('selenium-webdriver').until,
-    Promise   = require("bluebird"),
     build_driver = require('./build_driver');
 
 
@@ -34,7 +33,7 @@ function login_with_user_func(args) {
       expect(text).to.be.equal('Login');
     })
     .then(function() {
-      return Promise.each([
+      return [
         {
           selector : '#local_login_form input[name="email"]',
           value    : user_email,
@@ -43,16 +42,18 @@ function login_with_user_func(args) {
           selector : '#local_login_form input[name="password"]',
           value    : password,
         },
-      ], function(test_case) {
-        return driver
-          .findElement(By.css(test_case.selector))
-          .then(function(el) {
-            return el.clear()
+      ].reduce(function(p, test_case) {
+        return p.then(function() {
+          return driver
+            .findElement(By.css(test_case.selector))
+            .then(function(el) {
+              return el.clear()
               .then(function() {
                 return el.sendKeys(test_case.value);
               });
           });
       });
+    }, Promise.resolve())
     })
     .then(function() {
       return driver.findElement(By.css('#local_login_form #submit_login'));

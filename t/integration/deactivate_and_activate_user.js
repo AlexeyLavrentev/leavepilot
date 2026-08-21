@@ -3,7 +3,7 @@
 
 var By                     = require('selenium-webdriver').By,
   expect                 = require('chai').expect,
-  moment                 = require('moment-timezone'),
+  dayjs = require('../../lib/util/date'),
   register_new_user_func = require('../lib/register_new_user'),
   login_user_func        = require('../lib/login_with_user'),
   open_page_func         = require('../lib/open_page'),
@@ -15,7 +15,7 @@ var By                     = require('selenium-webdriver').By,
   application_host       = config.get_application_host();
 
 var company_today = function() {
-  return moment().tz('Europe/London');
+  return dayjs.utc().tz('Europe/London');
 };
 
 /*

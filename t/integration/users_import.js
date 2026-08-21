@@ -5,9 +5,9 @@ const
   By                     = require('selenium-webdriver').By,
   expect                 = require('chai').expect,
   _                      = require('underscore'),
-  Promise                = require("bluebird"),
-  fs                     = Promise.promisifyAll(require('fs')),
-  csv                    = Promise.promisifyAll(require('csv')),
+  fs                     = require('fs').promises,
+  csv                    = require('csv'),
+  { promisify }          = require('util'),
   register_new_user_func = require('../lib/register_new_user'),
   login_user_func        = require('../lib/login_with_user'),
   logout_user_func       = require('../lib/logout_user'),
@@ -79,10 +79,10 @@ describe('Bulk import of users', function(){
     sample_email = csv_data[1][0];
 
     Promise.resolve()
-      .then(() => fs.unlinkAsync(test_users_filename))
+      .then(() => fs.unlink(test_users_filename))
       .catch(err => Promise.resolve())
-      .then(() => csv.stringifyAsync( csv_data ))
-      .then(data => fs.writeFileAsync(test_users_filename, data))
+      .then(() => promisify(csv.stringify)( csv_data ))
+      .then(data => fs.writeFile(test_users_filename, data))
       .then(() => done());
   });
 
@@ -109,13 +109,13 @@ describe('Bulk import of users', function(){
   it('Ensure that imported users are in the system', function(done){
     let users_ids;
     // Get IDs of newly added users
-    Promise.map(csv_data.slice(1).map(it => it[0]), email => {
+    Promise.all(csv_data.slice(1).map(it => it[0]).map(email => {
       return user_info_func({
         driver : driver,
         email : email,
       })
       .then(data => data.user.id);
-    })
+    }))
     // Open users page
     .then(ids => {
       users_ids = ids;
@@ -127,14 +127,14 @@ describe('Bulk import of users', function(){
     })
 
     // Ensure that IDs of newly added users are on th Users page
-    .then(() => Promise.map(users_ids, id => driver
+    .then(() => Promise.all(users_ids.map(id => driver
       .findElement(By.css('[data-vpp-user-row="'+id+'"]'))
       .then(el => {
         expect(el, 'Ensure that newly added user ID '+id+' exists on Users page')
           .to.exists;
         return Promise.resolve();
       })
-    ))
+    )))
 
     .then(() => done());
   });
@@ -162,7 +162,7 @@ describe('Bulk import of users', function(){
   after(function(done){
     Promise.resolve()
       .then(() => driver.quit())
-      .then(() => fs.unlinkAsync(test_users_filename))
+      .then(() => fs.unlink(test_users_filename))
       .catch(err => Promise.resolve())
       .then(() => done());
   });

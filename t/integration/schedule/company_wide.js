@@ -3,8 +3,7 @@
 
 const
   By                     = require('selenium-webdriver').By,
-  Promise                = require("bluebird"),
-  moment                 = require('moment'),
+  dayjs = require('../../../lib/util/date'),
   expect                 = require('chai').expect,
   register_new_user_func = require('../../lib/register_new_user'),
   open_page_func         = require('../../lib/open_page'),

@@ -8,7 +8,7 @@ var By                     = require('selenium-webdriver').By,
   open_page_func         = require('../lib/open_page'),
   submit_form_func       = require('../lib/submit_form'),
   config                 = require('../lib/config'),
-  moment                 = require('moment'),
+  dayjs = require('../../lib/util/date'),
   application_host       = config.get_application_host();
 
 
@@ -46,7 +46,7 @@ describe('Register new user', function(){
       driver      : driver,
       form_params : [{
         selector : 'input#start_date_inp',
-        value    : moment.utc().year() + '-06-01',
+        value    : dayjs.utc().year() + '-06-01',
       }],
       submit_button_selector : 'button#save_changes_btn',
       message : /Details for .* were updated/,
@@ -95,7 +95,7 @@ describe('Register new user', function(){
       driver      : driver,
       form_params : [{
         selector : 'input#start_date_inp',
-        value    : moment.utc().year() + '-01-01',
+        value    : dayjs.utc().year() + '-01-01',
       }],
       submit_button_selector : 'button#save_changes_btn',
       message : /Details for .* were updated/,

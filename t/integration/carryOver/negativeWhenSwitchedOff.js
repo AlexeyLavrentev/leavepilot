@@ -4,9 +4,8 @@
 const
   By                  = require('selenium-webdriver').By,
   until               = require('selenium-webdriver').until,
-  Promise             = require("bluebird"),
   expect              = require('chai').expect,
-  moment              = require('moment'),
+  dayjs = require('../../../lib/util/date'),
   registerNewUserFunc = require('../../lib/register_new_user'),
   checkElementsFunc   = require('../../lib/check_elements'),
   config              = require('../../lib/config'),
@@ -58,7 +57,7 @@ describe('No negative allowanca is carried overs', function(){
     userStartsAtTheBeginingOfYear({
       driver,
       email,
-      overwriteDate:moment.utc().add(-1,'y').startOf('year'),
+      overwriteDate:dayjs.utc().add(-1,'y').startOf('year'),
     })
     .then(() => done())
   });
@@ -82,7 +81,7 @@ describe('No negative allowanca is carried overs', function(){
   });
 
   it("Add and approve week long leave in last year", done => {
-    const lastYear = moment.utc().add(-1,'y').year();
+    const lastYear = dayjs.utc().add(-1,'y').year();
 
     openPageFunc({driver, url: applicationHost})
       .then(() => driver.findElement(By.css('#book_time_off_btn')))

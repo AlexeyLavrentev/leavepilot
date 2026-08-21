@@ -3,7 +3,6 @@
 
 var By                     = require('selenium-webdriver').By,
   until                  = require('selenium-webdriver').until,
-  Promise                = require("bluebird"),
   expect                 = require('chai').expect,
   add_new_user_func      = require('../../lib/add_new_user'),
   check_elements_func    = require('../../lib/check_elements'),
@@ -47,7 +46,7 @@ describe('Auto approvals', function(){
     return driver.wait(function(){
       return driver.findElements(By.css('div.alert'))
         .then(function(elements){
-          return Promise.map(elements, function(el){ return el.getText(); });
+          return Promise.all(elements.map(function(el){ return el.getText(); }));
         })
         .then(function(texts){
           return texts.some(function(text){ return pattern.test(text); });
@@ -255,9 +254,10 @@ describe('Auto approvals', function(){
     driver
       .findElements( By.css('tr.vpp-email-audit-entry-header a.collapsed') )
       .then(function(elements){
-        return Promise.map(
-          [elements[0], elements[1]],
-          function(el){ return el.getText() }
+        return Promise.all(
+          [elements[0], elements[1]].map(
+            function(el){ return el.getText() }
+          )
         );
       })
       .then(function(subjects){
@@ -386,9 +386,10 @@ describe('Auto approvals', function(){
     driver
       .findElements( By.css('tr.vpp-email-audit-entry-header a.collapsed') )
       .then(function(elements){
-        return Promise.map(
-          [elements[0], elements[1]],
-          function(el){ return el.getText() }
+        return Promise.all(
+          [elements[0], elements[1]].map(
+            function(el){ return el.getText() }
+          )
         );
       })
       .then(function(subjects){

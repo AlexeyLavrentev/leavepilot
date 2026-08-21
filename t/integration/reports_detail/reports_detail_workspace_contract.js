@@ -9,7 +9,7 @@ var webdriver = require('selenium-webdriver');
 var By = webdriver.By;
 var until = webdriver.until;
 var Key = webdriver.Key;
-var moment = require('moment');
+var dayjs = require('../../../lib/util/date');
 var config = require('../../lib/config');
 var models = require('../../../lib/model/db');
 var registerNewUser = require('../../lib/register_new_user');
@@ -197,7 +197,7 @@ describe('Reports detail workspace interaction, geometry & visual matrix (Stage 
       assert(employee, 'new report employee should exist');
       await employee.update({ name: 'Alexandria', lastname: 'International-Report-Example' });
       var leaveType = await models.LeaveType.findOne({ where: { companyId: admin.companyId } });
-      today = moment.utc();
+      today = dayjs.utc();
       await models.Leave.create({
         userId: employee.id,
         approverId: admin.id,

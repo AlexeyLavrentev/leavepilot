@@ -5,8 +5,7 @@ const
   By                     = require('selenium-webdriver').By,
   expect                 = require('chai').expect,
   _                      = require('underscore'),
-  moment                 = require('moment'),
-  Promise                = require("bluebird"),
+  dayjs = require('../../../lib/util/date'),
   until                  = require('selenium-webdriver').until,
   register_new_user_func = require('../../lib/register_new_user'),
   login_user_func        = require('../../lib/login_with_user'),
@@ -19,7 +18,7 @@ const
   config                 = require('../../lib/config'),
   application_host       = config.get_application_host(),
   department_edit_form_id = '#department_edit_form',
-  currentYear = moment.utc().year();
+  currentYear = dayjs.utc().year();
 
 /*
  *  Scenario to check:
@@ -207,8 +206,8 @@ describe('Revoke leave request', function(){
   it("Check that all days are marked as pended", function(done){
     check_booking_func({
       driver         : driver,
-      full_days      : [moment.utc(`${currentYear}-05-12`)],
-      halfs_1st_days : [moment.utc(`${currentYear}-05-11`)],
+      full_days      : [dayjs.utc(`${currentYear}-05-12`)],
+      halfs_1st_days : [dayjs.utc(`${currentYear}-05-11`)],
       type           : 'pended',
     })
     .then(function(){ done() })

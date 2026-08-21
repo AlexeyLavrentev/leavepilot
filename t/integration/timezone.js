@@ -10,8 +10,7 @@ const
   config                 = require('../lib/config'),
   application_host       = config.get_application_host(),
   expect                 = require('chai').expect,
-  Bluebird               = require('bluebird'),
-  moment                 = require('moment'),
+  dayjs = require('../../lib/util/date'),
   company_edit_form_id   ='#company_edit_form',
   userStartsAtTheBeginingOfYear = require('../lib/set_user_to_start_at_the_beginning_of_the_year');
 
@@ -105,8 +104,8 @@ describe('Check Time zones', function(){
       driver : driver,
     })
     .then(() => driver.findElement(By.css(
-      'table.month_'+moment(today_tonga).format('MMMM')
-      + ' td.half_1st.day_'+moment(today_tonga).format('D')+'.current_day_cell'
+      'table.month_'+dayjs.utc(today_tonga).format('MMMM')
+      + ' td.half_1st.day_'+dayjs.utc(today_tonga).format('D')+'.current_day_cell'
     )))
     .then(el => {
       expect(el, 'Ensure that current date is marked correctly').to.exist;
@@ -121,7 +120,7 @@ describe('Check Time zones', function(){
       driver : driver,
     })
     .then(() => driver.findElement(By.css(
-      'table.team-view-table td.half_1st.day_'+moment(today_tonga).format('D')+'.current_day_cell'
+      'table.team-view-table td.half_1st.day_'+dayjs.utc(today_tonga).format('D')+'.current_day_cell'
     )))
     .then(el => {
       expect(el, 'Ensure that current date is marked correctly').to.exist;
@@ -130,7 +129,7 @@ describe('Check Time zones', function(){
     })
     .then(el => el.getText())
     .then(month_caption => {
-      expect(month_caption, 'Ensure month is correct').to.be.eql(moment(today_tonga).format('MMMM, YYYY'));
+      expect(month_caption, 'Ensure month is correct').to.be.eql(dayjs.utc(today_tonga).format('MMMM, YYYY'));
       done();
     })
   });
@@ -160,7 +159,7 @@ describe('Check Time zones', function(){
     .then(() => driver.findElement(By.css('tr[vpp="pending_for__'+user_email+'"] td.date_of_request')))
     .then(el => el.getText())
     .then(text => {
-      expect(text).to.be.eql(moment(today_tonga).format('YYYY-MM-DD'));
+      expect(text).to.be.eql(dayjs.utc(today_tonga).format('YYYY-MM-DD'));
       done();
     })
     .catch(done);
@@ -219,7 +218,7 @@ describe('Check Time zones', function(){
   });
 
   it("Ensure that today_usa is one day behind the today_tonga", function(done){
-    expect(moment(today_usa).format('YYYY-MM-DD')).to.be.not.eql(moment(today_tonga).format('YYYY-MM-DD'));
+    expect(dayjs.utc(today_usa).format('YYYY-MM-DD')).to.be.not.eql(dayjs.utc(today_tonga).format('YYYY-MM-DD'));
     done();
   });
 
@@ -229,8 +228,8 @@ describe('Check Time zones', function(){
       driver : driver,
     })
     .then(() => driver.findElement(By.css(
-      'table.month_'+moment(today_usa).format('MMMM')
-      + ' td.half_1st.day_'+moment(today_usa).format('D')+'.current_day_cell'
+      'table.month_'+dayjs.utc(today_usa).format('MMMM')
+      + ' td.half_1st.day_'+dayjs.utc(today_usa).format('D')+'.current_day_cell'
     )))
     .then(el => {
       expect(el, 'Ensure that current date is marked correctly').to.exist;
@@ -245,7 +244,7 @@ describe('Check Time zones', function(){
       driver : driver,
     })
     .then(() => driver.findElement(By.css(
-      'table.team-view-table td.half_1st.day_'+moment(today_usa).format('D')+'.current_day_cell'
+      'table.team-view-table td.half_1st.day_'+dayjs.utc(today_usa).format('D')+'.current_day_cell'
     )))
     .then(el => {
       expect(el, 'Ensure that current date is marked correctly').to.exist;
@@ -254,7 +253,7 @@ describe('Check Time zones', function(){
     })
     .then(el => el.getText())
     .then(month_caption => {
-      expect(month_caption, 'Ensure month is correct').to.be.eql(moment(today_usa).format('MMMM, YYYY'));
+      expect(month_caption, 'Ensure month is correct').to.be.eql(dayjs.utc(today_usa).format('MMMM, YYYY'));
       done();
     })
   });
@@ -284,7 +283,7 @@ describe('Check Time zones', function(){
     .then(() => driver.findElement(By.css('tr[vpp="pending_for__'+user_email+'"] td.date_of_request')))
     .then(el => el.getText())
     .then(text => {
-      expect(text).to.be.eql(moment(today_usa).format('YYYY-MM-DD'));
+      expect(text).to.be.eql(dayjs.utc(today_usa).format('YYYY-MM-DD'));
       done();
     })
     .catch(done);

@@ -3,7 +3,7 @@
 const childProcess = require('child_process');
 const fs = require('fs');
 const path = require('path');
-const moment = require('moment-timezone');
+const dayjs = require('../../../lib/util/date');
 const By = require('selenium-webdriver').By;
 const Key = require('selenium-webdriver').Key;
 const until = require('selenium-webdriver').until;
@@ -299,8 +299,8 @@ describe('Team View sticky header', function() {
     });
     await secondEmployee.update({DepartmentId: secondDepartment.id});
     const leaveType = await models.LeaveType.findOne({where: {companyId: admin.companyId}});
-    const leaveDate = moment.utc().startOf('month').add(7, 'days');
-    while (leaveDate.isoWeekday() > 5) { leaveDate.add(1, 'day'); }
+    let leaveDate = dayjs.utc().startOf('month').add(7, 'days');
+    while (leaveDate.isoWeekday() > 5) { leaveDate = leaveDate.add(1, 'day'); }
     await models.Leave.create({
       userId: firstEmployee.id,
       approverId: admin.id,

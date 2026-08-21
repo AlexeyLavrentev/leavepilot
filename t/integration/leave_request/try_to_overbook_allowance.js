@@ -6,7 +6,6 @@ var config           = require('../../lib/config'),
     By               = require('selenium-webdriver').By,
     expect           = require('chai').expect,
     _                = require('underscore'),
-    Promise          = require("bluebird"),
     until            = require('selenium-webdriver').until,
     login_user_func        = require('../../lib/login_with_user'),
     register_new_user_func = require('../../lib/register_new_user'),
@@ -17,7 +16,6 @@ var config           = require('../../lib/config'),
     check_booking_func     = require('../../lib/check_booking_on_calendar'),
     add_new_user_func      = require('../../lib/add_new_user');
 
-
 /*
  *  Scenario to go in this test:
  *    - Create new company with admin user
@@ -27,7 +25,6 @@ var config           = require('../../lib/config'),
  *    - Make sure that system complains about lack of allowance
  *
  * */
-
 
 describe('Try to book more holidays then in allowance', function(){
 

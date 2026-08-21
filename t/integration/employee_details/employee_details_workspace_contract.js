@@ -32,7 +32,7 @@ var until = webdriver.until;
 var Key = webdriver.Key;
 var config = require('../../lib/config');
 var models = require('../../../lib/model/db');
-var moment = require('moment');
+var dayjs = require('../../../lib/util/date');
 var register_new_user_func = require('../../lib/register_new_user');
 var add_new_user_func = require('../../lib/add_new_user');
 var open_page_func = require('../../lib/open_page');
@@ -235,7 +235,7 @@ describe('Employee details workspace interaction, geometry & visual matrix (Stag
       await employee.reload();
       // An approved leave so the calendar + absences history render non-vacuously.
       var leaveType = await models.LeaveType.findOne({ where: { companyId: admin.companyId } });
-      var start = moment.utc().add(40, 'days').startOf('day');
+      var start = dayjs.utc().add(40, 'days').startOf('day');
       await models.Leave.create({
         userId: employee.id,
         approverId: admin.id,

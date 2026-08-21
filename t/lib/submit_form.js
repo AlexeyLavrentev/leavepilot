@@ -4,9 +4,7 @@ var webdriver  = require('selenium-webdriver'),
 By             = require('selenium-webdriver').By,
 Key            = require('selenium-webdriver').Key,
   expect         = require('chai').expect,
-  _              = require('underscore'),
-  Promise        = require("bluebird");
-
+  _              = require('underscore');
 var DEFAULT_WAIT_TIMEOUT = 10000;
 
 /*
@@ -86,7 +84,7 @@ function poll_until(what, condition, timeout) {
           throw error;
         }
 
-        return Promise.delay(50).then(attempt);
+        return new Promise(function(r){setTimeout(r,50)}).then(attempt);
       });
   }
 
@@ -405,12 +403,11 @@ function submit_form_func(args) {
       // CSS selecetor for form submition button
       submit_button_selector = args.submit_button_selector ||'button[type="submit"]';
 
-
     return Promise.resolve()
       .then(function(){
-        return Promise.each(form_params, function(test_case){
-          return fill_form_field(driver, test_case);
-        });
+        return form_params.reduce(function(p, test_case){
+          return p.then(function(){ return fill_form_field(driver, test_case); });
+        }, Promise.resolve());
       })
       .then(function(){
         if (confirm_dialog) {
@@ -477,6 +474,5 @@ function submit_form_func(args) {
         };
       });
 }
-
 
 module.exports = submit_form_func;

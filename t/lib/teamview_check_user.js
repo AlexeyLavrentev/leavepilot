@@ -9,14 +9,13 @@
 
 'use strict';
 
+const { promisify } = require('util');
 var
   By             = require('selenium-webdriver').By,
   expect         = require('chai').expect,
   open_page_func = require('./open_page'),
-  config         = require('./config'),
-  bluebird        = require("bluebird");
-
-module.exports = bluebird.promisify( function(args, callback){
+  config         = require('./config');
+module.exports = promisify( function(args, callback){
 
   var
     result_callback = callback,
@@ -54,7 +53,7 @@ module.exports = bluebird.promisify( function(args, callback){
       })
       .then(function(opposite){
         expect(opposite.length, 'opposite name type must not be present').to.be.equal(0);
-        return bluebird.resolve(data);
+        return Promise.resolve(data);
       });
   })
 

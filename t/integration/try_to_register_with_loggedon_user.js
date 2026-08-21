@@ -5,7 +5,6 @@
 var config           = require('../lib/config'),
     application_host = config.get_application_host(),
     expect           = require('chai').expect,
-    Promise          = require("bluebird"),
     register_new_user_func = require('../lib/register_new_user'),
     open_page_func         = require('../lib/open_page');
 
