@@ -5,8 +5,9 @@ const
   By                     = require('selenium-webdriver').By,
   expect                 = require('chai').expect,
   _                      = require('underscore'),
-  fs                     = Promise.promisifyAll(require('fs')),
-  csv                    = Promise.promisifyAll(require('csv')),
+  fs                     = require('fs').promises,
+  csv                    = require('csv'),
+  { promisify }          = require('util'),
   register_new_user_func = require('../lib/register_new_user'),
   login_user_func        = require('../lib/login_with_user'),
   logout_user_func       = require('../lib/logout_user'),
@@ -80,7 +81,7 @@ describe('Bulk import of users', function(){
     Promise.resolve()
       .then(() => fs.unlinkAsync(test_users_filename))
       .catch(err => Promise.resolve())
-      .then(() => csv.stringifyAsync( csv_data ))
+      .then(() => promisify(csv.stringify)( csv_data ))
       .then(data => fs.writeFileAsync(test_users_filename, data))
       .then(() => done());
   });
