@@ -84,8 +84,9 @@ describe('Try to access admin pages with non-admin user', function(){
       'settings/departments/'
     ];
 
-    return Promise.each(admin_pages, function(path){
-      return driver.get(application_host + path)
+    return admin_pages.reduce(function(p, path){
+      return p.then(function() {
+        return driver.get(application_host + path)
         .then(function(){
           return driver.wait(until.elementLocated(By.css('body')), 1000);
         })
@@ -99,7 +100,7 @@ describe('Try to access admin pages with non-admin user', function(){
             expect(url).to.be.equal(application_host + 'calendar/');
            }
         });
-    })
+    }), Promise.resolve())
   };
 
   it("Register new admin user", function(done){
