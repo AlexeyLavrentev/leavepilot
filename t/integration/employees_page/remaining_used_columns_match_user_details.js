@@ -41,7 +41,7 @@ describe('Leave request cancelation', function(){
     return driver.wait(function(){
       return driver.findElements(By.css('div.alert'))
         .then(function(els){
-          return Promise.map(els, function(el){ return el.getText(); });
+          return Promise.all(els.map(function(el){ return el.getText(); }));
         })
         .then(function(texts){
           return texts.some(function(text){ return pattern.test(text); });

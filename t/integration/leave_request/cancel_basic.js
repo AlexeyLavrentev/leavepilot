@@ -260,9 +260,10 @@ describe('Leave request cancelation', function(){
     driver
       .findElements( By.css('tr.vpp-email-audit-entry-header a.collapsed') )
       .then(function(elements){
-        return Promise.map(
-          [elements[0], elements[1]],
-          function(el){ return el.getText() }
+        return Promise.all(
+          [elements[0], elements[1]].map(
+            function(el){ return el.getText() }
+          )
         );
       })
       .then(function(subjects){

@@ -885,7 +885,7 @@ describe('Populate company wide schedule before using user specific one', functi
   });
 
   it('Ensure team view shows user A has Mon, Tue, Wed as working days', function(done){
-    Promise.map([5,6,7], function(day_number){
+    Promise.all([5,6,7].map(function(day_number){
       return driver
         .findElement(By.css('table.team-view-table tr[data-vpp-user-list-row="'+user_id_A+'"] td.day_'+day_number))
         .then(function(el){ return el.getAttribute('class'); })
@@ -893,13 +893,13 @@ describe('Populate company wide schedule before using user specific one', functi
           expect(css).to.not.match(/\bweekend_cell\b/);
           return Promise.resolve(1);
         })
-    })
+    }))
     .then(function(){ done() })
     .catch(done);
   });
 
   it('Ensure team view shows user A has Thu, Fri, Sat, Sun as non-working days', function(done){
-    Promise.map([8,9,10,11], function(day_number){
+    Promise.all([8,9,10,11].map(function(day_number){
       return driver
         .findElement(By.css('table.team-view-table tr[data-vpp-user-list-row="'+user_id_A+'"] td.day_'+day_number))
         .then(function(el){ return el.getAttribute('class'); })
@@ -907,13 +907,13 @@ describe('Populate company wide schedule before using user specific one', functi
           expect(css).to.match(/\bweekend_cell\b/);
           return Promise.resolve(1);
         })
-    })
+    }))
     .then(function(){ done() })
     .catch(done);
   });
 
   it('Ensure team view shows user B has Mon, Tue, Wed, Thu as working days', function(done){
-    Promise.map([5,6,7,8], function(day_number){
+    Promise.all([5,6,7,8].map(function(day_number){
       return driver
         .findElement(By.css('table.team-view-table tr[data-vpp-user-list-row="'+user_id_B+'"] td.day_'+day_number))
         .then(function(el){ return el.getAttribute('class'); })
@@ -921,13 +921,13 @@ describe('Populate company wide schedule before using user specific one', functi
           expect(css).to.not.match(/\bweekend_cell\b/);
           return Promise.resolve(1);
         })
-    })
+    }))
     .then(function(){ done() })
     .catch(done);
   });
 
   it('Ensure team view shows user B has Fri, Sat, Sun as non-working days', function(done){
-    Promise.map([9,10,11], function(day_number){
+    Promise.all([9,10,11].map(function(day_number){
       return driver
         .findElement(By.css('table.team-view-table tr[data-vpp-user-list-row="'+user_id_B+'"] td.day_'+day_number))
         .then(function(el){ return el.getAttribute('class'); })
@@ -935,7 +935,7 @@ describe('Populate company wide schedule before using user specific one', functi
           expect(css).to.match(/\bweekend_cell\b/);
           return Promise.resolve(1);
         })
-    })
+    }))
     .then(function(){ done() })
     .catch(done);
   });
