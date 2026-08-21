@@ -79,10 +79,10 @@ describe('Bulk import of users', function(){
     sample_email = csv_data[1][0];
 
     Promise.resolve()
-      .then(() => fs.unlinkAsync(test_users_filename))
+      .then(() => fs.unlink(test_users_filename))
       .catch(err => Promise.resolve())
       .then(() => promisify(csv.stringify)( csv_data ))
-      .then(data => fs.writeFileAsync(test_users_filename, data))
+      .then(data => fs.writeFile(test_users_filename, data))
       .then(() => done());
   });
 
@@ -162,7 +162,7 @@ describe('Bulk import of users', function(){
   after(function(done){
     Promise.resolve()
       .then(() => driver.quit())
-      .then(() => fs.unlinkAsync(test_users_filename))
+      .then(() => fs.unlink(test_users_filename))
       .catch(err => Promise.resolve())
       .then(() => done());
   });

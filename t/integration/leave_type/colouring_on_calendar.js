@@ -324,8 +324,7 @@ describe('Coloring of half days', function(){
   });
 
   it("Ensure that all absences are approved", function(done){
-    Bluebird
-      .each([1, 2, 3, 4, 5], approve_next_pending_request)
+    [1, 2, 3, 4, 5].reduce((p, n) => p.then(() => approve_next_pending_request(n)), Promise.resolve())
       .then(() => done())
       .catch(done);
   });
@@ -552,12 +551,11 @@ describe('Coloring of half days', function(){
     })
     .then(() => driver.findElement(By.css(`tr[data-vpp-user-list-row="${user_id}"]`)))
 
-    .then(tr => Bluebird.join(
+    .then(tr => Promise.all([
       tr.findElement(By.css('[data-vpp-deducted-days="1"]')),
       tr.findElement(By.css(`[data-vpp-leave-type-id="${leave_type_holiday_id}"]`)),
       tr.findElement(By.css(`[data-vpp-leave-type-id="${leave_type_sick_id}"]`)),
-      (allowance_el, holiday_el, sick_el) => Bluebird.map([ allowance_el, holiday_el, sick_el ], el => el.getText())
-    ))
+    ]).then(([allowance_el, holiday_el, sick_el]) => Promise.all([ allowance_el, holiday_el, sick_el ].map(el => el.getText()))))
     .then(stat => {
       expect(stat, 'Ensure that report shows correct deducted days')
         .to.be.deep.equal(['2','2','2']);
