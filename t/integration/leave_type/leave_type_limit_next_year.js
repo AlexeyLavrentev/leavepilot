@@ -7,6 +7,7 @@ const
   Promise          = require("bluebird"),
   moment           = require('moment'),
   until            = require('selenium-webdriver').until,
+  Key              = require('selenium-webdriver').Key,
   login_user_func        = require('../../lib/login_with_user'),
   register_new_user_func = require('../../lib/register_new_user'),
   logout_user_func       = require('../../lib/logout_user'),
@@ -40,6 +41,35 @@ describe('Leave type limits for next year: ' + next_year, function(){
   this.timeout( config.get_execution_timeout() );
 
   let admin_user_email, non_admin_user_email, driver;
+
+  // Stabilize modal: wait for it to close before opening again.
+  // Same pattern as ovelapping_bookings_halfs.js.
+  function wait_modal_closed(drv, timeout) {
+    return drv.wait(function(){
+      return drv.findElements(By.css('#book_leave_modal'))
+        .then(function(els){
+          if (!els.length) return true;
+          return els[0].isDisplayed().then(function(v){ return !v; });
+        });
+    }, timeout);
+  }
+
+  function open_book_leave_modal(drv) {
+    return wait_modal_closed(drv, 4000)
+      .catch(function(){
+        return drv.actions().sendKeys(Key.ESCAPE).perform()
+          .then(function(){ return wait_modal_closed(drv, 4000); });
+      })
+      .then(function(){
+        return drv.findElement(By.css('#book_time_off_btn'));
+      })
+      .then(function(el){ return el.click(); })
+      .then(function(){
+        return drv.wait(until.elementIsVisible(
+          drv.findElement(By.css('#book_leave_modal'))
+        ), 1500);
+      });
+  }
 
   it('Create new company', function(done){
     register_new_user_func({application_host})
@@ -107,8 +137,7 @@ describe('Leave type limits for next year: ' + next_year, function(){
 
   it("Add a request that fits under the limit", function(done){
     driver
-      .findElement(By.css('#book_time_off_btn'))
-      .then(function(el){ return el.click() })
+      .then(function(){ return open_book_leave_modal(driver); })
       .then(function(){
 
         submit_form_func({
@@ -208,8 +237,7 @@ describe('Leave type limits for next year: ' + next_year, function(){
 
   it("And try to request one more day of the type already 100% taken", function(done){
     driver
-      .findElement(By.css('#book_time_off_btn'))
-      .then(function(el){ return el.click() })
+      .then(function(){ return open_book_leave_modal(driver); })
       .then(function(){
 
         submit_form_func({
