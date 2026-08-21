@@ -100,7 +100,8 @@ describe('Try to access admin pages with non-admin user', function(){
             expect(url).to.be.equal(application_host + 'calendar/');
            }
         });
-    }), Promise.resolve())
+    });
+    }, Promise.resolve())
   };
 
   it("Register new admin user", function(done){

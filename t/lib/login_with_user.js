@@ -53,6 +53,7 @@ function login_with_user_func(args) {
               });
           });
       });
+    }, Promise.resolve())
     })
     .then(function() {
       return driver.findElement(By.css('#local_login_form #submit_login'));
