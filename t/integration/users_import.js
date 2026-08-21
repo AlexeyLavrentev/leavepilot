@@ -102,7 +102,8 @@ describe('Bulk import of users', function(){
       }],
       message : regex,
     })
-    .then(() => done());
+    .then(() => done())
+    .catch(done);
   });
 
   it('Ensure that imported users are in the system', function(done){

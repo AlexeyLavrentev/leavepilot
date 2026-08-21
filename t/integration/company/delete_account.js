@@ -53,6 +53,7 @@ describe("Remove company account", function(){
   it("Ensure user starts at the very beginning of current year", done =>{
     userStartsAtTheBeginingOfYear({driver, email:emailCompanyA, year: 2018})
       .then(() => done())
+      .catch(done);
   });
 
   it("Book a leave by user from company A", done => {
@@ -75,7 +76,8 @@ describe("Remove company account", function(){
         }],
         message : /New leave request was added/,
       }))
-      .then(() => done());
+      .then(() => done())
+      .catch(done);
   });
 
   it("Close down current session", done =>{
@@ -98,6 +100,7 @@ describe("Remove company account", function(){
     userStartsAtTheBeginingOfYear({driver, email:emailCompanyB, year: 2018})
       .then(() => open_page_func({ url:application_host,driver}))
       .then(() => done())
+      .catch(done);
   });
 
   it("Book a leave by user from company B", done => {

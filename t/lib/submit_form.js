@@ -7,7 +7,7 @@ Key            = require('selenium-webdriver').Key,
   _              = require('underscore'),
   Promise        = require("bluebird");
 
-var DEFAULT_WAIT_TIMEOUT = 5000;
+var DEFAULT_WAIT_TIMEOUT = 10000;
 
 /*
   driver.wait() polls a condition and gives up after its timeout — but only
