@@ -299,8 +299,8 @@ describe('Team View sticky header', function() {
     });
     await secondEmployee.update({DepartmentId: secondDepartment.id});
     const leaveType = await models.LeaveType.findOne({where: {companyId: admin.companyId}});
-    const leaveDate = dayjs.utc().startOf('month').add(7, 'days');
-    while (leaveDate.isoWeekday() > 5) { leaveDate.add(1, 'day'); }
+    let leaveDate = dayjs.utc().startOf('month').add(7, 'days');
+    while (leaveDate.isoWeekday() > 5) { leaveDate = leaveDate.add(1, 'day'); }
     await models.Leave.create({
       userId: firstEmployee.id,
       approverId: admin.id,

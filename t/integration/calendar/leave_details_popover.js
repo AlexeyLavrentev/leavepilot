@@ -39,9 +39,9 @@ describe('Interactive leave details popover — all first-party surfaces', funct
   });
 
   function nextFriday() {
-    const date = dayjs.utc().tz('Europe/London').add(10, 'days').startOf('day');
+    let date = dayjs.utc().tz('Europe/London').add(10, 'days').startOf('day');
     while (date.isoWeekday() !== 5) {
-      date.add(1, 'day');
+      date = date.add(1, 'day');
     }
     return date;
   }

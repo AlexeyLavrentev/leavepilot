@@ -175,7 +175,7 @@ describe('Email Audit interaction and visual contract (Stage 8N)', function () {
     await driver.findElement(By.css('#book_time_off_btn')).click();
     await driver.sleep(700);
     var date = dayjs.utc().add(21, 'days');
-    while (date.isoWeekday() > 5) date.add(1, 'day');
+    while (date.isoWeekday() > 5) date = date.add(1, 'day');
     await submitForm({
       driver: driver,
       form_params: [
