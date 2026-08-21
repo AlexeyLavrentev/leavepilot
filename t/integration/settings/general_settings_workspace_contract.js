@@ -321,15 +321,23 @@ describe('General Settings interaction, geometry and visual matrix (Stage 8F)', 
       '#leave_type_edit_form [data-tom-color-picker="1"] .dropdown-toggle'
     ));
     await picker.click();
-    await driver.wait(until.elementIsVisible(
-      driver.findElement(By.css('#leave_type_edit_form .color-picker-menu'))
-    ), 1500);
+    await driver.wait(function(){
+      return driver.findElements(By.css('#leave_type_edit_form .color-picker-menu'))
+        .then(function(els){
+          if (!els.length) return false;
+          return els[0].isDisplayed();
+        });
+    }, 1500);
     await driver.actions().sendKeys(Key.ESCAPE).perform();
 
     await driver.findElement(By.css('#add_new_leave_type_btn')).click();
-    await driver.wait(until.elementIsVisible(
-      driver.findElement(By.css('#add_new_leave_type_modal'))
-    ), 1500);
+    await driver.wait(function(){
+      return driver.findElements(By.css('#add_new_leave_type_modal'))
+        .then(function(els){
+          if (!els.length) return false;
+          return els[0].isDisplayed();
+        });
+    }, 1500);
     await driver.findElement(By.css(
       '#add_new_leave_type_modal .modal-footer [data-dismiss="modal"]'
     )).click();
@@ -348,9 +356,13 @@ describe('General Settings interaction, geometry and visual matrix (Stage 8F)', 
       dangerTrigger
     );
     await dangerTrigger.click();
-    await driver.wait(until.elementIsVisible(
-      driver.findElement(By.css('#remove_company_modal'))
-    ), 1500);
+    await driver.wait(function(){
+      return driver.findElements(By.css('#remove_company_modal'))
+        .then(function(els){
+          if (!els.length) return false;
+          return els[0].isDisplayed();
+        });
+    }, 1500);
     await driver.findElement(By.css(
       '#remove_company_modal .modal-footer [data-dismiss="modal"]'
     )).click();

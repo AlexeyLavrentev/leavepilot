@@ -64,9 +64,13 @@ describe('Leave type limits for next year: ' + next_year, function(){
       })
       .then(function(el){ return el.click(); })
       .then(function(){
-        return drv.wait(until.elementIsVisible(
-          drv.findElement(By.css('#book_leave_modal'))
-        ), 1500);
+        return drv.wait(function(){
+          return drv.findElements(By.css('#book_leave_modal'))
+            .then(function(els){
+              if (!els.length) return false;
+              return els[0].isDisplayed();
+            });
+        }, 1500);
       });
   }
 
