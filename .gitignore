@@ -16,6 +16,8 @@ license_private.pem
 # Agent/tooling scratch — must not be committed
 .supergoal/
 AGENTS.md
+# Internal planning docs (project roadmap, phase plans) — disk-only, never public
+.planning/
 
 # Local dev/test artifacts — must not be committed
 *.sqlite3
