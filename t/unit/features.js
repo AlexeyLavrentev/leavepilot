@@ -157,7 +157,7 @@ describe('Feature licensing', function() {
   });
 
   it('keeps RSA signed TIMEOFF_LICENSE payloads enabled in production-like environments', function() {
-    const keyPair = crypto.generateKeyPairSync('rsa', {modulusLength: 2048});
+    const keyPair = crypto.generateKeyPairSync('rsa', {modulusLength: 3072});
     const privateKey = keyPair.privateKey.export({type: 'pkcs1', format: 'pem'});
     const publicKey = keyPair.publicKey.export({type: 'pkcs1', format: 'pem'});
     const payload = {
@@ -185,7 +185,7 @@ describe('Feature licensing', function() {
   });
 
   it('rejects RSA signed TIMEOFF_LICENSE payloads without a public key', function() {
-    const keyPair = crypto.generateKeyPairSync('rsa', {modulusLength: 2048});
+    const keyPair = crypto.generateKeyPairSync('rsa', {modulusLength: 3072});
     const privateKey = keyPair.privateKey.export({type: 'pkcs1', format: 'pem'});
     const payload = {
       customer: 'Example Ltd',
@@ -419,7 +419,7 @@ describe('Feature licensing', function() {
   });
 
   it('rejects RSA TIMEOFF_LICENSE payloads with mismatched signatures', function() {
-    const keyPair = crypto.generateKeyPairSync('rsa', {modulusLength: 2048});
+    const keyPair = crypto.generateKeyPairSync('rsa', {modulusLength: 3072});
     const privateKey = keyPair.privateKey.export({type: 'pkcs1', format: 'pem'});
     const publicKey = keyPair.publicKey.export({type: 'pkcs1', format: 'pem'});
     const signedPayload = {
@@ -493,7 +493,7 @@ describe('Feature licensing', function() {
   });
 
   it('accepts a valid RSA license for commercial mode', function() {
-    const keyPair = crypto.generateKeyPairSync('rsa', {modulusLength: 2048});
+    const keyPair = crypto.generateKeyPairSync('rsa', {modulusLength: 3072});
     const privateKey = keyPair.privateKey.export({type: 'pkcs1', format: 'pem'});
     const publicKey = keyPair.publicKey.export({type: 'pkcs1', format: 'pem'});
     const payload = {
@@ -558,7 +558,7 @@ describe('Feature licensing', function() {
 
   describe('License schema v2 and grace period', function() {
     function rsaEnvFor(payload) {
-      const keyPair = crypto.generateKeyPairSync('rsa', {modulusLength: 2048});
+      const keyPair = crypto.generateKeyPairSync('rsa', {modulusLength: 3072});
       const privateKey = keyPair.privateKey.export({type: 'pkcs1', format: 'pem'});
       const publicKey = keyPair.publicKey.export({type: 'pkcs1', format: 'pem'});
 
@@ -701,8 +701,8 @@ describe('Feature licensing', function() {
     });
 
     it('selects the public key from the key ring by keyId', function() {
-      const oldPair = crypto.generateKeyPairSync('rsa', {modulusLength: 2048});
-      const newPair = crypto.generateKeyPairSync('rsa', {modulusLength: 2048});
+      const oldPair = crypto.generateKeyPairSync('rsa', {modulusLength: 3072});
+      const newPair = crypto.generateKeyPairSync('rsa', {modulusLength: 3072});
       const payload = {
         schemaVersion: 2,
         licenseId: 'lic-ring',
@@ -829,7 +829,7 @@ describe('Feature licensing', function() {
 
   describe('hardware binding (machineFingerprint)', function() {
     it('accepts license without machineFingerprint (backward compatible)', function() {
-      const keyPair = crypto.generateKeyPairSync('rsa', {modulusLength: 2048});
+      const keyPair = crypto.generateKeyPairSync('rsa', {modulusLength: 3072});
       const privateKey = keyPair.privateKey.export({type: 'pkcs1', format: 'pem'});
       const publicKey = keyPair.publicKey.export({type: 'pkcs1', format: 'pem'});
       const payload = {
@@ -854,7 +854,7 @@ describe('Feature licensing', function() {
     });
 
     it('rejects license with invalid machineFingerprint format', function() {
-      const keyPair = crypto.generateKeyPairSync('rsa', {modulusLength: 2048});
+      const keyPair = crypto.generateKeyPairSync('rsa', {modulusLength: 3072});
       const privateKey = keyPair.privateKey.export({type: 'pkcs1', format: 'pem'});
       const publicKey = keyPair.publicKey.export({type: 'pkcs1', format: 'pem'});
       const payload = {
@@ -880,7 +880,7 @@ describe('Feature licensing', function() {
     });
 
     it('includes machineFingerprint in license status', function() {
-      const keyPair = crypto.generateKeyPairSync('rsa', {modulusLength: 2048});
+      const keyPair = crypto.generateKeyPairSync('rsa', {modulusLength: 3072});
       const privateKey = keyPair.privateKey.export({type: 'pkcs1', format: 'pem'});
       const publicKey = keyPair.publicKey.export({type: 'pkcs1', format: 'pem'});
       const fingerprint = 'a'.repeat(64);

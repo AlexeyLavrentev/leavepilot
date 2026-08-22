@@ -35,7 +35,7 @@ describe('License CLI', function() {
   let publicKey;
 
   before(function() {
-    const keyPair = crypto.generateKeyPairSync('rsa', { modulusLength: 2048 });
+    const keyPair = crypto.generateKeyPairSync('rsa', { modulusLength: 3072 });
     privateKey = keyPair.privateKey.export({ type: 'pkcs1', format: 'pem' });
     publicKey = keyPair.publicKey.export({ type: 'pkcs1', format: 'pem' });
   });
