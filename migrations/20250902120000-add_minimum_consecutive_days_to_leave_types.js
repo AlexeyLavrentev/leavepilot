@@ -1,13 +1,13 @@
 'use strict';
 
-var models = require('../lib/model/db');
+const models = require('../lib/model/db');
 
 module.exports = {
-  up: function (queryInterface, Sequelize) {
+  up: function (queryInterface, _Sequelize) {
 
     return queryInterface.describeTable('LeaveTypes').then(function(attributes){
 
-      if (attributes.hasOwnProperty('minimum_consecutive_days')) {
+      if (Object.prototype.hasOwnProperty.call(attributes, 'minimum_consecutive_days')) {
         return 1;
       }
 
@@ -20,7 +20,7 @@ module.exports = {
 
   },
 
-  down: function (queryInterface, Sequelize) {
+  down: function (queryInterface, _Sequelize) {
     return queryInterface.removeColumn('LeaveTypes', 'minimum_consecutive_days');
   }
 };

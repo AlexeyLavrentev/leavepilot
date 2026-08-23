@@ -1,5 +1,7 @@
 'use strict';
 
+const log = require('../lib/middleware/request_logger');
+
 /*
  * Demo data seeder: creates a demo company with departments, employees and
  * a realistic mix of approved/pending leaves, so a pilot installation shows
@@ -16,21 +18,21 @@
  *   --country   ISO country code (default: RU)
  */
 
-var argv = require('minimist')(process.argv.slice(2));
-var crypto = require('crypto');
-var dayjs = require('../lib/util/date');
+const argv = require('minimist')(process.argv.slice(2));
+const crypto = require('crypto');
+const dayjs = require('../lib/util/date');
 
-var models = require('../lib/model/db');
+const models = require('../lib/model/db');
 
-var adminEmail = String(argv.email || 'demo-admin@example.local').trim().toLowerCase();
-var companyName = String(argv.company || 'Демо компания').trim();
-var countryCode = String(argv.country || 'RU').trim().toUpperCase();
-var password = argv.password ? String(argv.password) : crypto.randomBytes(9).toString('base64url');
-var generatedPassword = !argv.password;
+const adminEmail = String(argv.email || 'demo-admin@example.local').trim().toLowerCase();
+const companyName = String(argv.company || 'Демо компания').trim();
+const countryCode = String(argv.country || 'RU').trim().toUpperCase();
+const password = argv.password ? String(argv.password) : crypto.randomBytes(9).toString('base64url');
+const generatedPassword = !argv.password;
 
-var DEPARTMENTS = ['ИТ', 'Бухгалтерия', 'Маркетинг'];
+const DEPARTMENTS = ['ИТ', 'Бухгалтерия', 'Маркетинг'];
 
-var EMPLOYEES = [
+const EMPLOYEES = [
   {name: 'Иван', lastname: 'Петров'},
   {name: 'Мария', lastname: 'Смирнова'},
   {name: 'Алексей', lastname: 'Козлов'},
@@ -46,20 +48,20 @@ var EMPLOYEES = [
 ];
 
 function transliterate(value) {
-  var map = {
+  const map = {
     а:'a',б:'b',в:'v',г:'g',д:'d',е:'e',ж:'zh',з:'z',и:'i',й:'y',к:'k',л:'l',
     м:'m',н:'n',о:'o',п:'p',р:'r',с:'s',т:'t',у:'u',ф:'f',х:'h',ц:'ts',ч:'ch',
     ш:'sh',щ:'sch',ъ:'',ы:'y',ь:'',э:'e',ю:'yu',я:'ya',ё:'e',
   };
   return value.toLowerCase().split('').map(function(char) {
-    return map.hasOwnProperty(char) ? map[char] : char;
+    return Object.prototype.hasOwnProperty.call(map, char) ? map[char] : char;
   }).join('');
 }
 
 async function seed() {
   await models.connect();
 
-  var existing = await models.User.find_by_email(adminEmail);
+  const existing = await models.User.find_by_email(adminEmail);
   if (existing) {
     throw new Error(
       'Demo admin ' + adminEmail + ' already exists. '
@@ -67,7 +69,7 @@ async function seed() {
     );
   }
 
-  var admin = await models.User.register_new_admin_user({
+  const admin = await models.User.register_new_admin_user({
     email        : adminEmail,
     password     : password,
     name         : 'Демо',
@@ -77,15 +79,15 @@ async function seed() {
     activated    : true,
   });
 
-  var company = await models.Company.findOne({where: {id: admin.companyId}});
-  var leaveTypes = await models.LeaveType.findAll({where: {companyId: company.id}});
-  var mainLeaveType = leaveTypes[0];
-  var altLeaveType = leaveTypes[1] || leaveTypes[0];
+  const company = await models.Company.findOne({where: {id: admin.companyId}});
+  const leaveTypes = await models.LeaveType.findAll({where: {companyId: company.id}});
+  const mainLeaveType = leaveTypes[0];
+  const altLeaveType = leaveTypes[1] || leaveTypes[0];
 
-  var firstDepartment = await models.Department.findOne({where: {companyId: company.id}});
-  var departments = [firstDepartment];
+  const firstDepartment = await models.Department.findOne({where: {companyId: company.id}});
+  const departments = [firstDepartment];
 
-  for (var i = 0; i < DEPARTMENTS.length; i++) {
+  for (let i = 0; i < DEPARTMENTS.length; i++) {
     departments.push(await models.Department.create({
       name      : DEPARTMENTS[i],
       companyId : company.id,
@@ -94,13 +96,13 @@ async function seed() {
     }));
   }
 
-  var emailDomain = adminEmail.split('@')[1];
-  var users = [];
+  const emailDomain = adminEmail.split('@')[1];
+  const users = [];
 
-  for (var j = 0; j < EMPLOYEES.length; j++) {
-    var person = EMPLOYEES[j];
-    var department = departments[j % departments.length];
-    var user = await models.User.create({
+  for (let j = 0; j < EMPLOYEES.length; j++) {
+    const person = EMPLOYEES[j];
+    const department = departments[j % departments.length];
+    const user = await models.User.create({
       name         : person.name,
       lastname     : person.lastname,
       email        : transliterate(person.name) + '.' + transliterate(person.lastname) + '@' + emailDomain,
@@ -113,12 +115,12 @@ async function seed() {
     users.push(user);
   }
 
-  var today = dayjs.utc().startOf('day');
-  var leavesCreated = 0;
+  const today = dayjs.utc().startOf('day');
+  let leavesCreated = 0;
 
   async function createLeave(user, startOffsetDays, lengthDays, status, leaveType) {
-    var start = today.clone().add(startOffsetDays, 'days');
-    var end = start.clone().add(lengthDays - 1, 'days');
+    const start = today.clone().add(startOffsetDays, 'days');
+    const end = start.clone().add(lengthDays - 1, 'days');
 
     await models.Leave.create({
       userId         : user.id,
@@ -133,8 +135,8 @@ async function seed() {
     leavesCreated += 1;
   }
 
-  for (var k = 0; k < users.length; k++) {
-    var employee = users[k];
+  for (let k = 0; k < users.length; k++) {
+    const employee = users[k];
 
     // Everyone took a leave earlier this year
     await createLeave(employee, -60 + k * 3, 7, models.Leave.status_approved(), mainLeaveType);
@@ -166,22 +168,21 @@ async function seed() {
 
 seed()
   .then(function(summary) {
-    console.log('');
-    console.log('Demo data created.');
-    console.log('  Company    : ' + summary.company);
-    console.log('  Departments: ' + summary.departments);
-    console.log('  Employees  : ' + summary.users + ' (+1 admin)');
-    console.log('  Leaves     : ' + summary.leaves);
-    console.log('');
-    console.log('Sign in at /login/ as ' + summary.admin);
+    log.info('demo_data_created', {
+      company: summary.company,
+      departments: summary.departments,
+      employees: summary.users,
+      leaves: summary.leaves,
+    });
+    log.info('demo_signin', { url: '/login/', email: summary.admin });
     if (generatedPassword) {
-      console.log('Password (shown once): ' + password);
+      log.info('demo_password', { password });
     }
-    console.log('All demo employees share the same password.');
+    log.info('demo_password_shared');
     return models.sequelize.close();
   })
   .catch(function(error) {
-    console.error('Failed to seed demo data: ' + (error && error.stack || error));
+    log.error('seed_demo_failed', { error: error && error.stack || String(error) });
     return models.sequelize.close()
       .catch(function() {})
       .then(function() {

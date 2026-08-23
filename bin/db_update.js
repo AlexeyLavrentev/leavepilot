@@ -1,15 +1,15 @@
 'use strict';
 
-var path = require('path');
-var db = require('../lib/model/db');
-var edition = require('../lib/edition');
-var migrator = require('../lib/model/migrator');
-var ssoSecretBackfill = require('../lib/sso_secret_backfill');
+const path = require('path');
+const db = require('../lib/model/db');
+const edition = require('../lib/edition');
+const migrator = require('../lib/model/migrator');
+const ssoSecretBackfill = require('../lib/sso_secret_backfill');
 
 db.connect()
   .then(function() {
-    var sequelize = db.sequelize;
-    var migrationPaths = [path.join(__dirname, '..', 'migrations')]
+    const sequelize = db.sequelize;
+    const migrationPaths = [path.join(__dirname, '..', 'migrations')]
       .concat(edition.getMigrationPaths())
       .filter(function(migrationsPath, index, allPaths) {
         return allPaths.indexOf(migrationsPath) === index;
@@ -22,11 +22,13 @@ db.connect()
     })
       .then(function(result) {
         if (result.bootstrapped) {
+          // eslint-disable-next-line no-console
           console.log(
             'Fresh database: created base schema and baselined migrations:',
             result.baselined.join(', ') || 'none'
           );
         } else {
+          // eslint-disable-next-line no-console
           console.log('Applied migrations:', result.applied.join(', ') || 'none');
         }
         return ssoSecretBackfill.audit({ sequelize: sequelize });
@@ -44,15 +46,19 @@ db.connect()
       });
   })
   .catch(function(error) {
-    console.error(error && error.stack || error);
+    // eslint-disable-next-line no-console
+    console.error('Failed to run DB update:', error && error.stack || String(error));
     if (error && error.parent) {
-      console.error(error.parent && error.parent.stack || error.parent);
+      // eslint-disable-next-line no-console
+      console.error('Parent error:', error.parent && error.parent.stack || String(error.parent));
     }
     if (error && error.sql) {
-      console.error(error.sql);
+      // eslint-disable-next-line no-console
+      console.error('SQL:', error.sql);
     }
     if (error && error.parent && error.parent.sql) {
-      console.error(error.parent.sql);
+      // eslint-disable-next-line no-console
+      console.error('Parent SQL:', error.parent.sql);
     }
     process.exit(1);
   });

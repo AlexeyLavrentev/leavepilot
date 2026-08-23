@@ -1,14 +1,14 @@
 
 'use strict';
 
-var models = require('../lib/model/db');
+const models = require('../lib/model/db');
 
 module.exports = {
-  up: function (queryInterface, Sequelize) {
+  up: function (queryInterface, _Sequelize) {
 
     return queryInterface.describeTable('Companies').then(function(attributes){
 
-      if (attributes.hasOwnProperty('company_wide_message')) {
+      if (Object.prototype.hasOwnProperty.call(attributes, 'company_wide_message')) {
         return 1;
       }
 
@@ -21,7 +21,7 @@ module.exports = {
 
   },
 
-  down: function (queryInterface, Sequelize) {
+  down: function (queryInterface, _Sequelize) {
     return queryInterface.removeColumn('Companies', 'company_wide_message');
   }
 };

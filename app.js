@@ -1,25 +1,24 @@
 
-var express      = require('express');
-var compression  = require('compression');
+const express      = require('express');
+const compression  = require('compression');
 const staticAssets = require('./lib/ui/static_assets');
 const MOUNT_PREFIX = staticAssets.MOUNT_PREFIX;
-var os           = require('os');
-var path         = require('path');
-var favicon      = require('serve-favicon');
-var cookieParser = require('cookie-parser');
-var bodyParser   = require('body-parser');
-var dayjs        = require('./lib/util/date');
-var config       = require('./lib/config');
-var branding     = require('./lib/branding');
-var edition      = require('./lib/edition');
-var emailTemplatePaths = require('./lib/email_template_paths');
-var partialTemplatePaths = require('./lib/partial_template_paths');
-var features     = require('./lib/features');
+const os           = require('os');
+const path         = require('path');
+const cookieParser = require('cookie-parser');
+const bodyParser   = require('body-parser');
+const dayjs        = require('./lib/util/date');
+const config       = require('./lib/config');
+const branding     = require('./lib/branding');
+const edition      = require('./lib/edition');
+const emailTemplatePaths = require('./lib/email_template_paths');
+const partialTemplatePaths = require('./lib/partial_template_paths');
+const features     = require('./lib/features');
 const createSessionMiddleware = require('./lib/middleware/withSession');
 const i18nextMiddleware = require('i18next-http-middleware');
 const { initI18next } = require('./lib/i18n');
 
-var app = express();
+const app = express();
 
 /*
   Express advertises itself in an X-Powered-By header on every response. It
@@ -27,9 +26,9 @@ var app = express();
   else nothing, which is a poor trade for a header sent on every request.
 */
 app.disable('x-powered-by');
-var baseViewPath = path.join(__dirname, 'views');
-var baseLayoutsPath = path.join(baseViewPath, 'layouts');
-var editionContext = {
+const baseViewPath = path.join(__dirname, 'views');
+const baseLayoutsPath = path.join(baseViewPath, 'layouts');
+const editionContext = {
   app: app,
 };
 
@@ -58,7 +57,7 @@ if (typeof os.tmpDir !== 'function') {
 }
 
 // View engine setup
-var handlebars = require('express-handlebars')
+const handlebars = require('express-handlebars')
   .create({
     defaultLayout : 'main',
     extname       : '.hbs',
@@ -83,8 +82,6 @@ edition.initialize(editionContext);
 const dbModel = require('./lib/model/db');
 app.set('db_model', dbModel);
 
-// uncomment after placing your favicon in /public
-//app.use(favicon(__dirname + '/public/favicon.ico'));
 // Correlation must wrap every application response, including manifest, static,
 // 404, and error responses. Successful static assets are filtered by middleware.
 const requestIdMiddleware = require('./lib/middleware/request_id');
@@ -93,7 +90,7 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.get('/manifest.webmanifest', function(req, res) {
-  var currentBranding = branding.get();
+  const currentBranding = branding.get();
 
   res.type('application/manifest+json');
   res.send({
@@ -134,8 +131,6 @@ app.use(express.static(path.join(__dirname, 'public')));
 const i18next = initI18next();
 app.use(i18nextMiddleware.handle(i18next));
 
-
-
 // Setup authentication mechanism
 const passport = require('./lib/passport')();
 
@@ -150,12 +145,12 @@ app.use(passport.session());
 // Custom middlewares
 //
 // Make sure session and user objects are available in templates
-app.use(function(req,res,next){
+app.use(function(req, res, next) {
 
   // Get today given user's timezone
-  var today;
+  let today;
 
-  if ( req.user && req.user.company ) {
+  if (req.user && req.user.company) {
     today = req.user.company.get_today();
   } else {
     today = dayjs.utc();
@@ -182,10 +177,10 @@ app.use(function(req,res,next){
   res.locals.disable_notifications = process.env.DISABLE_NOTIFICATIONS_POLLING === 'true';
   res.locals.req = req;
   // For book leave request modal
-  res.locals.booking_start = today,
-  res.locals.booking_end = today,
+  res.locals.booking_start = today;
+  res.locals.booking_end = today;
   res.locals.keep_team_view_hidden =
-    !! (req.user && req.user.company.is_team_view_hidden && ! req.user.admin);
+    !!(req.user && req.user.company.is_team_view_hidden && !req.user.admin);
 
   next();
 });
@@ -210,9 +205,9 @@ app.get('/language/:lng', function(req, res) {
 });
 
 // Enable flash messages within session
-app.use( require('./lib/middleware/flash_messages') );
+app.use(require('./lib/middleware/flash_messages'));
 
-app.use( require('./lib/middleware/session_aware_redirect') );
+app.use(require('./lib/middleware/session_aware_redirect'));
 
 
 // CSRF and security headers for all routes
@@ -312,11 +307,11 @@ app.use(require('./lib/middleware/not_found'));
 // logger (so each error gets a requestId when available) and render an
 // appropriate response. Stack traces are never sent to clients in production.
 
-var structuredLogger = require('./lib/middleware/request_logger');
-var requestPath = require('./lib/util/request_path');
+const structuredLogger = require('./lib/middleware/request_logger');
+const requestPath = require('./lib/util/request_path');
 
 function logError(err, req) {
-  var meta = {
+  const meta = {
     error: err,
   };
 
@@ -332,7 +327,7 @@ function logError(err, req) {
 
 // development error handler — will print stacktrace
 if (app.get('env') === 'development') {
-    app.use(function(err, req, res, next) {
+    app.use(function(err, req, res, _next) {
         logError(err, req);
         res.status(err.status || 500);
         res.render('error', {
@@ -343,7 +338,7 @@ if (app.get('env') === 'development') {
 }
 
 // production error handler — no stacktraces leaked to user
-app.use(function(err, req, res, next) {
+app.use(function(err, req, res, _next) {
     logError(err, req);
     res.status(err.status || 500);
     res.render('error', {

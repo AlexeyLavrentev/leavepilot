@@ -3,7 +3,7 @@
 'use strict';
 
 const fs = require('fs');
-const path = require('path');
+const _path = require('path');
 const minimist = require('minimist');
 const { writeLicenseFile, getLicenseFilePath } = require('../lib/license_storage');
 const { generateFingerprint } = require('../lib/machine_fingerprint');

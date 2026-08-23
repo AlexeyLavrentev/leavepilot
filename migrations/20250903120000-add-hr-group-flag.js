@@ -1,12 +1,12 @@
 'use strict';
 
-var models = require('../lib/model/db');
+const models = require('../lib/model/db');
 
 module.exports = {
-  up: function (queryInterface, Sequelize) {
+  up: function (queryInterface, _Sequelize) {
     return queryInterface.describeTable('Groups')
       .then(function(attributes){
-        if (!attributes.hasOwnProperty('is_hr_group')) {
+        if (!Object.prototype.hasOwnProperty.call(attributes, 'is_hr_group')) {
           return queryInterface.addColumn(
             'Groups',
             'is_hr_group',
@@ -17,7 +17,7 @@ module.exports = {
       });
   },
 
-  down: function (queryInterface, Sequelize) {
+  down: function (queryInterface, _Sequelize) {
     return queryInterface.removeColumn('Groups', 'is_hr_group');
   }
 };

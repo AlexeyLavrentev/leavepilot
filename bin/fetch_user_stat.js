@@ -1,12 +1,14 @@
 
 'use strict';
 
-var test             = require('selenium-webdriver/testing'),
+const log = require('../lib/middleware/request_logger');
+
+const _test             = require('selenium-webdriver/testing'),
     By               = require('selenium-webdriver').By,
-    expect           = require('chai').expect,
+    _expect           = require('chai').expect,
     _                = require('underscore'),
     Promise          = Promise,
-    until            = require('selenium-webdriver').until,
+    _until            = require('selenium-webdriver').until,
     register_new_user_func = require('../t/lib/register_new_user'),
     login_user_func        = require('../t/lib/login_with_user'),
     logout_user_func       = require('../t/lib/logout_user'),
@@ -28,8 +30,8 @@ describe('Collect remaining days for employees', function(){
 
   this.timeout( config.get_execution_timeout() );
 
-  var report = {},
-    driver;
+  const report = {};
+  let driver;
 
   it("Create new company", function(done){
     register_new_user_func({
@@ -46,7 +48,7 @@ describe('Collect remaining days for employees', function(){
       application_host : application_host,
       driver           : driver,
     })
-    .then(function(){ done() });
+    .then(function(){ done(); });
   });
 
   // This is a list of accountes to iterate through
@@ -62,7 +64,7 @@ describe('Collect remaining days for employees', function(){
         user_email       : email,
         driver           : driver,
       })
-      .then(function(){ done() });
+      .then(function(){ done(); });
     });
 
     it("Open users page", function(done){
@@ -70,7 +72,7 @@ describe('Collect remaining days for employees', function(){
         url    : application_host + 'users/',
         driver : driver,
       })
-      .then(function(){ done() });
+      .then(function(){ done(); });
     });
 
     it("Fetch remaining days for each employee", function(done){
@@ -88,7 +90,7 @@ describe('Collect remaining days for employees', function(){
             .then(days => Promise.resolve( report[ user_id ] = days ));
         })))
 
-        .then(() => done())
+        .then(() => done());
     });
 
     it("Logout", function(done){
@@ -96,12 +98,12 @@ describe('Collect remaining days for employees', function(){
         application_host : application_host,
         driver           : driver,
       })
-      .then(function(){ done() });
+      .then(function(){ done(); });
     });
   });
 
   after(function(done){
-    console.dir(report);
+    log.info('user_stat_report', { report });
     driver.quit().then(function(){ done(); });
   });
 });

@@ -16,7 +16,7 @@ const AVAILABLE_FEATURES = [
   ...Object.keys(features.catalog),
   ...Object.keys(features.planPresets).reduce((acc, name) => {
     features.planPresets[name].features.forEach(f => {
-      if (acc.indexOf(f) === -1) acc.push(f);
+      if (acc.indexOf(f) === -1) { acc.push(f); }
     });
     return acc;
   }, []),
@@ -180,7 +180,9 @@ const envelope = privateKey
     };
 
 if (argv.base64) {
+  // eslint-disable-next-line no-console
   console.log(Buffer.from(JSON.stringify(envelope), 'utf8').toString('base64'));
 } else {
+  // eslint-disable-next-line no-console
   console.log(JSON.stringify(envelope, null, 2));
 }

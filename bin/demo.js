@@ -33,6 +33,8 @@
   mapping together.
 */
 
+const log = require('../lib/middleware/request_logger');
+
 const { spawn } = require('child_process');
 const http = require('http');
 
@@ -94,7 +96,7 @@ function compose(args, options) {
       // them leaves the operator with a generic step message that points at
       // the wrong cause entirely.
       if (output.trim() && (failed || (options && options.echo))) {
-        console.log(output.trim().split('\n').map(line => '    ' + line).join('\n'));
+        log.info('compose_output', { output: output.trim().split('\n').map(line => '    ' + line).join('\n') });
       }
       resolve({ code: code === null ? 1 : code, output });
     });
@@ -130,24 +132,24 @@ function waitForDemoStand() {
   const deadline = Date.now() + HTTP_TIMEOUT_MS;
   let attempt = 0;
 
-  console.log(`[3/4] Ждём, пока стенд поднимется (${DEMO_URL}/)...`);
+  log.info('waiting_for_demo_stand', { url: `${DEMO_URL}/` });
 
   return (function poll() {
     attempt += 1;
     return httpStatus(`${DEMO_URL}/`).then(status => {
       if (status === '302') {
-        console.log(`      Стенд отвечает (302 на страницу входа, попытка ${attempt}).`);
-        return Promise.resolve();
+        log.info('demo_stand_ready', { status: '302', attempt });
+        return undefined;
       }
 
       if (Date.now() >= deadline) {
-        return Promise.reject(
-          new Error(`Стенд не поднялся за ${Math.round(HTTP_TIMEOUT_MS / 1000)} с (последний ответ: ${status}).`)
+        throw new Error(
+          `Стенд не поднялся за ${Math.round(HTTP_TIMEOUT_MS / 1000)} с (последний ответ: ${status}).`
         );
       }
 
       if (attempt % 10 === 1) {
-        console.log(`      Ещё не готов (ответ: ${status}), попытка ${attempt}...`);
+        log.info('demo_stand_not_ready', { status, attempt });
       }
 
       return sleep(HTTP_POLL_INTERVAL_MS).then(poll);
@@ -156,15 +158,11 @@ function waitForDemoStand() {
 }
 
 function fail(error) {
-  console.error('');
-  console.error('Не удалось поднять демо-стенд: ' + ((error && error.message) || error));
+  log.error('demo_stand_failed', { error: (error && error.message) || String(error) });
   if (error && error.hint) {
-    console.error('');
-    console.error('Подсказка:');
-    console.error('    ' + error.hint);
+    log.error('demo_hint', { hint: error.hint });
   }
-  console.error('');
-  console.error('Сбрасываем то, что успело подняться...');
+  log.info('demo_cleanup', { msg: 'Сбрасываем то, что успело подняться...' });
   return compose(['down', '-v', '--remove-orphans'])
     .catch(() => {})
     .then(() => { process.exit(1); });
@@ -179,10 +177,7 @@ function fail(error) {
   });
 });
 
-console.log('');
-console.log('Демо-стенд LeavePilot');
-console.log('=====================');
-console.log('');
+log.info('demo_start', { title: 'Демо-стенд LeavePilot' });
 
 Promise.resolve()
 
@@ -190,7 +185,7 @@ Promise.resolve()
   // the first - seed_demo.js throws on an existing admin email, so the
   // wrapper guarantees a clean stand instead (research §8, risk 7).
   .then(() => {
-    console.log('[1/4] Сбрасываем предыдущий демо-стенд (тома удаляются)...');
+    log.info('demo_step_1', { msg: 'Сбрасываем предыдущий демо-стенд (тома удаляются)...' });
     return compose(['down', '-v', '--remove-orphans']);
   })
 
@@ -198,10 +193,10 @@ Promise.resolve()
   // (D-21), so the hint names the exact local build command.
   .then(reset => {
     if (reset.code !== 0) {
-      return Promise.reject(new Error('Не удалось сбросить предыдущий стенд (docker compose down -v).'));
+      throw new Error('Не удалось сбросить предыдущий стенд (docker compose down -v).');
     }
 
-    console.log('[2/4] Поднимаем стенд (docker-compose.demo.yml)...');
+    log.info('demo_step_2', { msg: 'Поднимаем стенд (docker-compose.demo.yml)...' });
     return compose(['up', '-d']).then(up => {
       if (up.code !== 0) {
         const error = new Error('docker compose up не удался.');
@@ -209,8 +204,9 @@ Promise.resolve()
           error.hint = 'До первой публикации образа в GHCR соберите его локально тем же тегом:\n    '
             + PRETAG_BUILD_HINT;
         }
-        return Promise.reject(error);
+        throw error;
       }
+      return undefined;
     });
   })
 
@@ -220,7 +216,7 @@ Promise.resolve()
   // Step 4: seed from the host wrapper inside the app container (D-11) with
   // the fixed demo credentials (D-12).
   .then(() => {
-    console.log('[4/4] Наполняем демо-данными («Демо компания»)...');
+    log.info('demo_step_4', { msg: 'Наполняем демо-данными («Демо компания»)...' });
     return compose([
       'exec',
       'app',
@@ -233,24 +229,19 @@ Promise.resolve()
 
   .then(seed => {
     if (seed.code !== 0) {
-      return Promise.reject(new Error('Наполнение демо-данными не удалось (bin/seed_demo.js).'));
+      throw new Error('Наполнение демо-данными не удалось (bin/seed_demo.js).');
     }
 
     // Step 5: owner-facing summary. RU plain language; identifiers and
     // commands verbatim (D-10/D-12). The teardown command is printed up
     // front - the stand is disposable by definition (T-06-07 accepted).
-    console.log('');
-    console.log('Готово! Демо-стенд поднялся на образе, который получает клиент.');
-    console.log('');
-    console.log('  Адрес:         ' + DEMO_URL);
-    console.log('  Логин:         ' + ADMIN_EMAIL);
-    console.log('  Пароль:        ' + ADMIN_PASSWORD);
-    console.log('');
-    console.log('  Войти можно сразу на главной странице. В компании «Демо компания»');
-    console.log('  уже есть отделы, сотрудники и отпуска - и одобренные, и ожидающие.');
-    console.log('');
-    console.log('  Убрать стенд:  ' + TEARDOWN_COMMAND);
-    console.log('');
+    log.info('demo_complete', {
+      url: DEMO_URL,
+      login: ADMIN_EMAIL,
+      password: ADMIN_PASSWORD,
+      teardown: TEARDOWN_COMMAND,
+    });
+    return undefined;
   })
 
   .catch(fail);

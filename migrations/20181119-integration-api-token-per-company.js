@@ -1,15 +1,15 @@
 
 'use strict';
 
-var models = require('../lib/model/db');
+const models = require('../lib/model/db');
 
 module.exports = {
-  up: (queryInterface, Sequelize) => {
+  up: (queryInterface, _Sequelize) => {
 
     return Promise.all([
     queryInterface.describeTable('Companies').then(attributes => {
 
-      if (attributes.hasOwnProperty('integration_api_token')) {
+      if (Object.prototype.hasOwnProperty.call(attributes, 'integration_api_token')) {
         return 1;
       }
 
@@ -22,7 +22,7 @@ module.exports = {
 
     queryInterface.describeTable('Companies').then(attributes => {
 
-      if (attributes.hasOwnProperty('integration_api_enabled')) {
+      if (Object.prototype.hasOwnProperty.call(attributes, 'integration_api_enabled')) {
         return 1;
       }
 
@@ -36,7 +36,7 @@ module.exports = {
 
   },
 
-  down: (queryInterface, Sequelize) => queryInterface
+  down: (queryInterface, _Sequelize) => queryInterface
     .removeColumn('Companies', 'integration_api_token')
     .then(() => queryInterface.removeColumn('Companies', 'integration_api_enabled')),
 };

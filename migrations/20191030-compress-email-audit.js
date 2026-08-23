@@ -1,6 +1,8 @@
 
 'use strict';
 
+const log = require('../lib/middleware/request_logger');
+
 const
   htmlToText = require('html-to-text'),
   models = require('../lib/model/db');
@@ -21,7 +23,7 @@ module.exports = {
         (p, rec) => p.then(() => rec.update({body : htmlToPlainText(rec.body)})),
         Promise.resolve()
       ))
-      .then(() => console.log('Done!'));
+      .then(() => log.info('Done!'));
   },
 
   // Do nothing

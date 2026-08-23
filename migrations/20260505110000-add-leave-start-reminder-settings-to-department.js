@@ -1,14 +1,14 @@
 'use strict';
 
-var models = require('../lib/model/db');
+const models = require('../lib/model/db');
 
 module.exports = {
-  up: function (queryInterface, Sequelize) {
+  up: function (queryInterface, _Sequelize) {
     return queryInterface.describeTable('Departments')
       .then(function(attributes){
-        var tasks = [];
+        const tasks = [];
 
-        if (!attributes.hasOwnProperty('notify_leave_start_reminder')) {
+        if (!Object.prototype.hasOwnProperty.call(attributes, 'notify_leave_start_reminder')) {
           tasks.push(queryInterface.addColumn(
             'Departments',
             'notify_leave_start_reminder',
@@ -16,7 +16,7 @@ module.exports = {
           ));
         }
 
-        if (!attributes.hasOwnProperty('notify_leave_start_reminder_to_employee')) {
+        if (!Object.prototype.hasOwnProperty.call(attributes, 'notify_leave_start_reminder_to_employee')) {
           tasks.push(queryInterface.addColumn(
             'Departments',
             'notify_leave_start_reminder_to_employee',
@@ -28,7 +28,7 @@ module.exports = {
       });
   },
 
-  down: function (queryInterface, Sequelize) {
+  down: function (queryInterface, _Sequelize) {
     return Promise.all([
       queryInterface.removeColumn('Departments', 'notify_leave_start_reminder_to_employee'),
       queryInterface.removeColumn('Departments', 'notify_leave_start_reminder')

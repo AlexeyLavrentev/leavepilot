@@ -4,7 +4,7 @@ module.exports = {
   up: function (queryInterface, Sequelize) {
     return queryInterface.showAllTables()
       .then(function(tables) {
-        var normalizedTables = (tables || []).map(function(table) {
+        const normalizedTables = (tables || []).map(function(table) {
           if (typeof table === 'string') {
             return table;
           }
@@ -74,7 +74,7 @@ module.exports = {
       });
   },
 
-  down: function (queryInterface, Sequelize) {
+  down: function (queryInterface, _Sequelize) {
     return queryInterface.dropTable('LeaveNotifications');
   }
 };

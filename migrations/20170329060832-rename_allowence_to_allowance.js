@@ -1,19 +1,21 @@
 'use strict';
 
-var models = require('../lib/model/db');
+const log = require('../lib/middleware/request_logger');
+
+const models = require('../lib/model/db');
 
 module.exports = {
-  up: function (queryInterface, Sequelize) {
+  up: function (queryInterface, _Sequelize) {
 
     return queryInterface.describeTable('Departments').then(function(attributes){
 
-      if (attributes.hasOwnProperty('allowance')) {
+      if (Object.prototype.hasOwnProperty.call(attributes, 'allowance')) {
         return 1;
       }
 
-      if ('sqlite' === queryInterface.sequelize.getDialect()) {
+      if (queryInterface.sequelize.getDialect() === 'sqlite') {
 
-        console.log('Going into SQLIite case');
+        log.info('Going into SQLIite case');
 
         return queryInterface
           // Create Temp Departments based on current model definitiom
@@ -49,17 +51,16 @@ module.exports = {
             return queryInterface.addIndex(models.Department.tableName, ['id']);
           });
 
-      } else {
-
-        console.log('Generic option');
-
-        return queryInterface.renameColumn('Departments', 'allowence', 'allowance')
-          .then(function(d){ console.dir(d) });
       }
+
+      log.info('Generic option');
+
+      return queryInterface.renameColumn('Departments', 'allowence', 'allowance')
+        .then(function(d){ log.info(d); });
     });
   },
 
-  down: function (queryInterface, Sequelize) {
+  down: function (queryInterface, _Sequelize) {
     return queryInterface.renameColumn('Departments', 'allowance', 'allowence');
   }
 };

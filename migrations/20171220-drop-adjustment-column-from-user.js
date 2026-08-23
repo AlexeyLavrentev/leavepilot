@@ -1,19 +1,19 @@
 
 'use strict';
 
-var models = require('../lib/model/db');
+const models = require('../lib/model/db');
 module.exports = {
-  up: function (queryInterface, Sequelize) {
+  up: function (queryInterface, _Sequelize) {
 
     return queryInterface
       .describeTable('Users')
       .then(attributes => {
 
-        if ( ! attributes.hasOwnProperty('adjustment')) {
+        if ( ! Object.prototype.hasOwnProperty.call(attributes, 'adjustment')) {
           return Promise.resolve();
         }
 
-        if ('sqlite' !== queryInterface.sequelize.getDialect()) {
+        if (queryInterface.sequelize.getDialect() !== 'sqlite') {
           // For non SQLite: it is easy
           return queryInterface.removeColumn(
             models.User.tableName,
@@ -45,7 +45,7 @@ module.exports = {
       });
   },
 
-  down: function (queryInterface, Sequelize) {
+  down: function (_queryInterface, _Sequelize) {
     // No way back!
     return Promise.resolve();
   }

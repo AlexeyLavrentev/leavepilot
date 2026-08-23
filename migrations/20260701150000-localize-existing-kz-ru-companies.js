@@ -7,15 +7,15 @@
 // переименовала отдел, тип отсутствия, праздник или сменила формат даты —
 // её данные не трогаем.
 
-var dayjs = require('../lib/util/date');
+const dayjs = require('../lib/util/date');
 
-var COUNTRIES = ['KZ', 'RU'];
+const COUNTRIES = ['KZ', 'RU'];
 
 function findCompanies(queryInterface, Sequelize) {
-  var table = queryInterface.queryGenerator.quoteTable('Companies');
-  var id = queryInterface.queryGenerator.quoteIdentifier('id');
-  var country = queryInterface.queryGenerator.quoteIdentifier('country');
-  var dateFormat = queryInterface.queryGenerator.quoteIdentifier('date_format');
+  const table = queryInterface.queryGenerator.quoteTable('Companies');
+  const id = queryInterface.queryGenerator.quoteIdentifier('id');
+  const country = queryInterface.queryGenerator.quoteIdentifier('country');
+  const dateFormat = queryInterface.queryGenerator.quoteIdentifier('date_format');
   return queryInterface.sequelize.query(
     'SELECT ' + id + ', ' + country + ', ' + dateFormat + ' FROM ' + table
       + ' WHERE ' + country + ' IN (:countries)',
@@ -27,11 +27,11 @@ function findCompanies(queryInterface, Sequelize) {
 }
 
 function findBankHolidays(queryInterface, Sequelize, companyId) {
-  var table = queryInterface.queryGenerator.quoteTable('BankHolidays');
-  var id = queryInterface.queryGenerator.quoteIdentifier('id');
-  var name = queryInterface.queryGenerator.quoteIdentifier('name');
-  var date = queryInterface.queryGenerator.quoteIdentifier('date');
-  var company = queryInterface.queryGenerator.quoteIdentifier('companyId');
+  const table = queryInterface.queryGenerator.quoteTable('BankHolidays');
+  const id = queryInterface.queryGenerator.quoteIdentifier('id');
+  const name = queryInterface.queryGenerator.quoteIdentifier('name');
+  const date = queryInterface.queryGenerator.quoteIdentifier('date');
+  const company = queryInterface.queryGenerator.quoteIdentifier('companyId');
   return queryInterface.sequelize.query(
     'SELECT ' + id + ', ' + name + ', ' + date + ', ' + company + ' FROM ' + table
       + ' WHERE ' + company + ' = :companyId',
@@ -44,7 +44,7 @@ function findBankHolidays(queryInterface, Sequelize, companyId) {
 
 // Дата -> { en: старое англ. имя, ru: новое рус. имя } для праздников 2026.
 // Используется для переименования только нетронутых записей.
-var RENAME_2026 = {
+const RENAME_2026 = {
   KZ: {
     '2026-01-01': { en: 'New Year',                        ru: 'Новый год' },
     '2026-01-02': { en: 'New Year',                        ru: 'Новый год' },
@@ -82,7 +82,7 @@ var RENAME_2026 = {
 
 // Праздники 2027 — добавляются, только если на эту дату у компании
 // ещё нет ни одного праздника (чтобы не плодить дубли).
-var ADD_2027 = {
+const ADD_2027 = {
   KZ: [
     { date: '2027-01-01', name: 'Новый год' },
     { date: '2027-01-02', name: 'Новый год' },
@@ -119,8 +119,8 @@ var ADD_2027 = {
 };
 
 // Дефолтные названия отдела и типов отсутствий (en -> ru).
-var DEPARTMENT_RENAME = { en: 'Sales', ru: 'Продажи' };
-var LEAVE_TYPE_RENAME = [
+const DEPARTMENT_RENAME = { en: 'Sales', ru: 'Продажи' };
+const LEAVE_TYPE_RENAME = [
   { en: 'Holiday',    ru: 'Отпуск' },
   { en: 'Sick Leave', ru: 'Больничный' },
 ];
@@ -134,10 +134,10 @@ module.exports = {
     return findCompanies(queryInterface, Sequelize)
       .then(function (companies) {
         return companies.reduce(function (chain, company) {
-          var cc = company.country;
+          const cc = company.country;
 
           return chain.then(function () {
-            var tasks = [];
+            const tasks = [];
 
             // 1. Формат даты — только если остался исходный дефолт.
             if (company.date_format === 'YYYY-MM-DD') {
@@ -171,15 +171,15 @@ module.exports = {
             return findBankHolidays(queryInterface, Sequelize, company.id);
           })
           .then(function (holidays) {
-            var renameMap = RENAME_2026[cc] || {};
-            var existingDates = {};
-            var renameTasks = [];
+            const renameMap = RENAME_2026[cc] || {};
+            const existingDates = {};
+            const renameTasks = [];
 
             holidays.forEach(function (bh) {
-              var key = dateKey(bh.date);
+              const key = dateKey(bh.date);
               existingDates[key] = true;
 
-              var expected = renameMap[key];
+              const expected = renameMap[key];
               if (expected && bh.name === expected.en) {
                 renameTasks.push(queryInterface.bulkUpdate(
                   'BankHolidays',
@@ -189,10 +189,10 @@ module.exports = {
               }
             });
 
-            var toAdd = (ADD_2027[cc] || [])
+            const toAdd = (ADD_2027[cc] || [])
               .filter(function (h) { return !existingDates[h.date]; })
               .map(function (h) {
-                var now = new Date();
+                const now = new Date();
                 return {
                   name: h.name,
                   date: h.date,
@@ -216,10 +216,10 @@ module.exports = {
     return findCompanies(queryInterface, Sequelize)
       .then(function (companies) {
         return companies.reduce(function (chain, company) {
-          var cc = company.country;
+          const cc = company.country;
 
           return chain.then(function () {
-            var tasks = [];
+            const tasks = [];
 
             // 1. Формат даты обратно.
             if (company.date_format === 'DD.MM.YYYY') {
@@ -252,17 +252,17 @@ module.exports = {
             return findBankHolidays(queryInterface, Sequelize, company.id);
           })
           .then(function (holidays) {
-            var renameMap = RENAME_2026[cc] || {};
-            var add2027Dates = {};
+            const renameMap = RENAME_2026[cc] || {};
+            const add2027Dates = {};
             (ADD_2027[cc] || []).forEach(function (h) { add2027Dates[h.date] = h.name; });
 
-            var tasks = [];
+            const tasks = [];
 
             holidays.forEach(function (bh) {
-              var key = dateKey(bh.date);
+              const key = dateKey(bh.date);
 
               // Переименование 2026 обратно в английский.
-              var expected = renameMap[key];
+              const expected = renameMap[key];
               if (expected && bh.name === expected.ru) {
                 tasks.push(queryInterface.bulkUpdate(
                   'BankHolidays',

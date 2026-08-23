@@ -34,7 +34,7 @@ const printUsageAndExit = () => {
 };
 
 const canonicalize = value => {
-  if (Array.isArray(value)) return value.map(canonicalize);
+  if (Array.isArray(value)) { return value.map(canonicalize); }
   if (value && typeof value === 'object') {
     return Object.keys(value).sort().reduce((acc, key) => {
       acc[key] = canonicalize(value[key]);
@@ -49,8 +49,8 @@ const canonicalJson = value => JSON.stringify(canonicalize(value));
 const sha256hex = data => crypto.createHash('sha256').update(data).digest('hex');
 
 const readLicenseInput = raw => {
-  if (!raw) return null;
-  if (fs.existsSync(raw)) return fs.readFileSync(raw, 'utf8').trim();
+  if (!raw) { return null; }
+  if (fs.existsSync(raw)) { return fs.readFileSync(raw, 'utf8').trim(); }
   return raw;
 };
 
@@ -63,7 +63,7 @@ const parseAndDecode = raw => {
 };
 
 const safePayloadView = envelope => {
-  if (!envelope || !envelope.payload) return null;
+  if (!envelope || !envelope.payload) { return null; }
   const p = envelope.payload;
   return {
     customer: p.customer || null,
@@ -95,6 +95,7 @@ const handleInspect = () => {
     process.exit(1);
   }
 
+  // eslint-disable-next-line no-console
   console.log(JSON.stringify(view, null, 2));
 };
 
@@ -132,6 +133,7 @@ const handleVerify = () => {
     }
 
     const view = safePayloadView(envelope);
+    // eslint-disable-next-line no-console
     console.log(JSON.stringify({ valid: true, reason: result.reason, ...view }, null, 2));
     return;
   }
@@ -152,6 +154,7 @@ const handleVerify = () => {
     }
 
     const view = safePayloadView(envelope);
+    // eslint-disable-next-line no-console
     console.log(JSON.stringify({ valid: true, reason: result.reason, ...view }, null, 2));
     return;
   }
@@ -167,8 +170,11 @@ const handlePlans = () => {
     return `${name.padEnd(12)} ${p.description}\n              Features: ${p.features.length ? p.features.join(', ') : '(none — community defaults)'}`;
   });
 
+  // eslint-disable-next-line no-console
   console.log('Available plan presets:\n');
+  // eslint-disable-next-line no-console
   console.log(lines.join('\n\n'));
+  // eslint-disable-next-line no-console
   console.log('\nRaw --features list always overrides plan presets.');
 };
 
@@ -182,13 +188,13 @@ const handleGenerate = () => {
   const { spawnSync } = require('child_process');
   const generateArgs = ['--customer', argv.customer];
 
-  if (argv.plan) generateArgs.push('--plan', argv.plan);
-  if (argv.features) generateArgs.push('--features', argv.features);
-  if (argv['private-key-file']) generateArgs.push('--private-key-file', argv['private-key-file']);
-  if (argv['private-key']) generateArgs.push('--private-key', argv['private-key']);
-  if (argv.secret) generateArgs.push('--secret', argv.secret);
-  if (argv.expires) generateArgs.push('--expires', argv.expires);
-  if (argv.base64) generateArgs.push('--base64');
+  if (argv.plan) { generateArgs.push('--plan', argv.plan); }
+  if (argv.features) { generateArgs.push('--features', argv.features); }
+  if (argv['private-key-file']) { generateArgs.push('--private-key-file', argv['private-key-file']); }
+  if (argv['private-key']) { generateArgs.push('--private-key', argv['private-key']); }
+  if (argv.secret) { generateArgs.push('--secret', argv.secret); }
+  if (argv.expires) { generateArgs.push('--expires', argv.expires); }
+  if (argv.base64) { generateArgs.push('--base64'); }
 
   const result = spawnSync(process.execPath, ['bin/sign_license.js', ...generateArgs], {
     encoding: 'utf8',
@@ -214,6 +220,7 @@ const handleGenerate = () => {
   }
 
   if (!argv.out) {
+    // eslint-disable-next-line no-console
     console.log(licenseOutput);
   }
 };
@@ -231,7 +238,7 @@ const appendRegistry = (licenseOutput, outFilePath) => {
         process.stderr.write('Error: registry file is not a JSON array: ' + registryPath + '\n');
         process.exit(1);
       }
-    } catch (e) {
+    } catch {
       process.stderr.write('Error: registry file is corrupt (invalid JSON): ' + registryPath + '\n');
       process.exit(1);
     }
@@ -257,7 +264,7 @@ const appendRegistry = (licenseOutput, outFilePath) => {
     licenseHash: sha256hex(licenseOutput),
   };
 
-  if (outFilePath) entry.outputFile = outFilePath;
+  if (outFilePath) { entry.outputFile = outFilePath; }
 
   registry.push(entry);
   fs.writeFileSync(registryPath, JSON.stringify(registry, null, 2) + '\n');
@@ -281,10 +288,12 @@ const handleRegistry = () => {
   }
 
   if (!Array.isArray(registry) || registry.length === 0) {
+    // eslint-disable-next-line no-console
     console.log('Registry is empty.');
     return;
   }
 
+  // eslint-disable-next-line no-console
   console.log(`Issued licenses (${registry.length}):\n`);
   registry.forEach((entry, i) => {
     const num = String(i + 1).padStart(3);
@@ -292,9 +301,16 @@ const handleRegistry = () => {
     const plan = (entry.plan || '-').padEnd(12);
     const expires = entry.expires || 'never';
     const issued = entry.issuedAt || '?';
+    // eslint-disable-next-line no-console
     console.log(`  ${num}. ${customer} plan=${plan} expires=${expires} issued=${issued}`);
-    if (entry.payloadHash) console.log(`       payload: ${entry.payloadHash.substring(0, 16)}…`);
-    if (entry.outputFile) console.log(`       file: ${entry.outputFile}`);
+    if (entry.payloadHash) {
+      // eslint-disable-next-line no-console
+      console.log(`       payload: ${entry.payloadHash.substring(0, 16)}…`);
+    }
+    if (entry.outputFile) {
+      // eslint-disable-next-line no-console
+      console.log(`       file: ${entry.outputFile}`);
+    }
   });
 };
 

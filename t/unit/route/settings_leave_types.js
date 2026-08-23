@@ -11,7 +11,7 @@ describe("Leave type settings errors", function() {
       "utf8"
     );
     expect(source).to.match(
-      /if \(error\.hasOwnProperty\('user_message'\)\) \{[\s\S]*?\} else \{[\s\S]*?leaveTypesUpdateFailed/
+      /if \(Object\.prototype\.hasOwnProperty\.call\(error, 'user_message'\)\) \{[\s\S]*?\} else \{[\s\S]*?leaveTypesUpdateFailed/
     );
   });
 

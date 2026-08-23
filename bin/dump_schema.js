@@ -30,8 +30,11 @@ function normalize(sql) {
 function dumpMysqlTable(name) {
   return db.sequelize.query('SHOW CREATE TABLE `' + name + '`').then(function (res) {
     const row = res[0][0] || {};
-    console.log('-- TABLE ' + name);
+    // eslint-disable-next-line no-console
+    console.log('-- ' + name);
+    // eslint-disable-next-line no-console
     console.log(normalize(row['Create Table'] || row['Create View']) + ';');
+    // eslint-disable-next-line no-console
     console.log('');
   });
 }
@@ -42,10 +45,13 @@ function dumpSqliteTable(name) {
       replacements: [name],
     })
     .then(function (res) {
-      console.log('-- TABLE ' + name);
+      // eslint-disable-next-line no-console
+      console.log('-- ' + name);
       (res[0] || []).forEach(function (r) {
+        // eslint-disable-next-line no-console
         console.log(normalize(r.sql) + ';');
       });
+      // eslint-disable-next-line no-console
       console.log('');
     });
 }
@@ -54,14 +60,17 @@ function dumpAppliedMigrations() {
   return db.sequelize
     .query('SELECT name FROM SequelizeMeta ORDER BY name ASC')
     .then(function (res) {
-      console.log('-- APPLIED MIGRATIONS (SequelizeMeta)');
+      // eslint-disable-next-line no-console
+      console.log('-- Applied migrations:');
       (res[0] || []).forEach(function (r) {
-        console.log('-- ' + r.name);
+        // eslint-disable-next-line no-console
+        console.log('--   ' + r.name);
       });
     })
     .catch(function () {
       // No SequelizeMeta table (e.g. nothing migrated yet) is not an error here.
-      console.log('-- APPLIED MIGRATIONS (SequelizeMeta): none');
+      // eslint-disable-next-line no-console
+      console.log('-- (no SequelizeMeta table found)');
     });
 }
 
@@ -93,6 +102,7 @@ db.connect()
     return db.sequelize.close();
   })
   .catch(function (error) {
-    console.error(error && error.stack || error);
+    // eslint-disable-next-line no-console
+    console.error('Failed to dump schema:', error && error.stack || String(error));
     process.exit(1);
   });

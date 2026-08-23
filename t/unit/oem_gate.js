@@ -63,6 +63,7 @@ const bucketWithUpsell = {
 describe('OEM gate tracer (Plan 04-01)', function() {
   const originalEnv = {};
   const FULL_CUSTOM_ENV_KEYS = [
+    'NODE_ENV',
     'LEAVEPILOT_LICENSE',
     'BRAND_NAME',
     'BRAND_SHORT_NAME',
@@ -76,6 +77,7 @@ describe('OEM gate tracer (Plan 04-01)', function() {
     FULL_CUSTOM_ENV_KEYS.forEach(function(key) {
       originalEnv[key] = process.env[key];
     });
+    process.env.NODE_ENV = 'test';
     branding.__resetOemCacheForTests();
   });
 
@@ -163,6 +165,7 @@ describe('OEM gate tracer (Plan 04-01)', function() {
 // (a throw out of branding.get() would crash the child and fail the test).
 function runBrandingOutcome(licenseValue, brandName) {
   const childEnv = Object.assign({}, process.env);
+  childEnv.NODE_ENV = 'test';
   // Force a deterministic license for this outcome. Delete BOTH the canonical
   // (LEAVEPILOT_) and eternal-alias (TIMEOFF_) names so a value inherited from
   // the parent cannot grant OEM in the "missing" case (D-15 alias shim).
@@ -196,6 +199,7 @@ function runBrandingOutcome(licenseValue, brandName) {
 // valid:true + inGrace:true) — keeping the oemActive assertion non-vacuous.
 function runLicenseStatusFor(licenseValue) {
   const childEnv = Object.assign({}, process.env);
+  childEnv.NODE_ENV = 'test';
   delete childEnv.LEAVEPILOT_LICENSE;
   delete childEnv.TIMEOFF_LICENSE;
   if (licenseValue !== null) {
@@ -376,6 +380,7 @@ describe('CR-01 atomic application: a partial brand config falls back to the who
   // the memoized entitlement cache, in a fresh child process (cache isolation).
   function runAtomicOutcome(licenseValue, envOverrides) {
     const childEnv = Object.assign({}, process.env);
+    childEnv.NODE_ENV = 'test';
     [
       'LEAVEPILOT_LICENSE', 'TIMEOFF_LICENSE',
       'BRAND_NAME', 'BRAND_SHORT_NAME',

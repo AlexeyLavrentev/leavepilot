@@ -4,8 +4,8 @@
 const models = require('../lib/model/db');
 
 module.exports = {
-  up: function (queryInterface, Sequelize) {
-    if ('sqlite' !== queryInterface.sequelize.getDialect()) {
+  up: function (queryInterface, _Sequelize) {
+    if (queryInterface.sequelize.getDialect() !== 'sqlite') {
       return Promise.resolve();
     }
 
@@ -20,7 +20,7 @@ module.exports = {
     // "NOT NULL constraint failed: Companies_backup.integration_api_token_hash".
     // When the current model no longer asks for UUID the migration stands
     // down instead of rewriting rows it cannot copy honestly.
-    var currentType = models.Company.attributes.integration_api_token.type;
+    const currentType = models.Company.attributes.integration_api_token.type;
     if (!currentType || currentType.key !== 'UUID') {
       return Promise.resolve();
     }
@@ -44,7 +44,7 @@ module.exports = {
     });
   },
 
-  down: function (queryInterface, Sequelize) {
+  down: function (_queryInterface, _Sequelize) {
     // No way back!
     return Promise.resolve();
   }
