@@ -34,6 +34,7 @@ describe('Branding', function() {
 
   beforeEach(function() {
     originalEnv = {
+      NODE_ENV : process.env.NODE_ENV,
       BRAND_NAME : process.env.BRAND_NAME,
       BRAND_SHORT_NAME : process.env.BRAND_SHORT_NAME,
       APPLICATION_DOMAIN : process.env.APPLICATION_DOMAIN,
@@ -48,6 +49,7 @@ describe('Branding', function() {
       BRAND_EMAIL_FROM : process.env.BRAND_EMAIL_FROM,
       LEAVEPILOT_LICENSE : process.env.LEAVEPILOT_LICENSE,
     };
+    process.env.NODE_ENV = 'test';
     branding.__resetOemCacheForTests();
   });
 

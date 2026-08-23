@@ -106,7 +106,7 @@ describe('A request that matched no route', function() {
 
     it('comes before the error handlers, which are for a different failure', function() {
       expect(appSource.indexOf("require('./lib/middleware/not_found')")).to.be.below(
-        appSource.indexOf('app.use(function(err, req, res, next)')
+        appSource.indexOf('app.use(function(err, req, res, _next)')
       );
     });
   });

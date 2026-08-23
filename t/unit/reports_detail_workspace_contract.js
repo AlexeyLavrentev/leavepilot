@@ -147,7 +147,7 @@ describe('Reports detail workspace contract (Stage 8I)', function () {
       expect(route).to.include("router.get('/allowancebytime/'");
       expect(route).to.include("router.get('/leaves/'");
       expect(route).to.include("req.query['as-csv']");
-      expect(route).to.include("req.query['sort_by']");
+      expect(route).to.include("req.query.sort_by");
     });
 
     it('adds the mobile sort label to all five supported locales', function () {

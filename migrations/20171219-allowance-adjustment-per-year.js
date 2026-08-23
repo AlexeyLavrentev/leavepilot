@@ -1,9 +1,9 @@
 
 'use strict';
 
-var models = require('../lib/model/db');
+const models = require('../lib/model/db');
 module.exports = {
-  up: function (queryInterface, Sequelize) {
+  up: function (queryInterface, _Sequelize) {
 
     return queryInterface
       .createTable(
@@ -13,7 +13,7 @@ module.exports = {
       .then(() => queryInterface.describeTable('Users'))
       .then(function(attributes){
 
-        if ( ! attributes.hasOwnProperty('adjustment')) {
+        if ( ! Object.prototype.hasOwnProperty.call(attributes, 'adjustment')) {
           return Promise.resolve();
         }
 
@@ -25,7 +25,7 @@ module.exports = {
         // the Linux default) where the table is `Users` - either way the
         // migration aborted mid-upgrade for any deployment that still
         // owed it. Same semantics, dialect- and case-honest names.
-        let sql = 'INSERT INTO ' + models.UserAllowanceAdjustment.tableName
+        const sql = 'INSERT INTO ' + models.UserAllowanceAdjustment.tableName
           + ' (year, adjustment, user_id, created_at) '
           + 'SELECT 2017 AS year, adjustment as adjustment, id as user_id, CURRENT_TIMESTAMP as created_at '
           + 'FROM ' + models.User.tableName;
@@ -37,7 +37,7 @@ module.exports = {
 
   },
 
-  down: function (queryInterface, Sequelize) {
+  down: function (_queryInterface, _Sequelize) {
     // No way back!
     return Promise.resolve();
   }

@@ -42,6 +42,8 @@
   is printed instead.
 */
 
+const log = require('../lib/middleware/request_logger');
+
 const { spawn } = require('child_process');
 const fs = require('fs');
 const http = require('http');
@@ -100,7 +102,7 @@ function httpStatus(url) {
 
 async function waitForStand(baseUrl, timeoutMs) {
   const deadline = Date.now() + timeoutMs;
-  let last = null;
+  let last;
 
   for (;;) {
     last = await httpStatus(`${baseUrl}/`);
@@ -130,7 +132,7 @@ async function ensureStand() {
   if (process.env.BASE_URL) {
     const baseUrl = String(process.env.BASE_URL).replace(/\/+$/, '');
 
-    console.log(`Используем уже поднятый стенд: ${baseUrl}`);
+    log.info(`Используем уже поднятый стенд: ${baseUrl}`);
     // Short budget: an already-running stand answers at once; this poll
     // only guards against a typo'd URL.
     await waitForStand(baseUrl, 30 * 1000);
@@ -138,7 +140,7 @@ async function ensureStand() {
     return baseUrl;
   }
 
-  console.log('Поднимаем демо-стенд (bin/demo.js: сброс, запуск, ожидание, демо-данные)...');
+  log.info('Поднимаем демо-стенд (bin/demo.js: сброс, запуск, ожидание, демо-данные)...');
 
   const code = await new Promise((resolve, reject) => {
     const child = spawn(process.execPath, [path.join(__dirname, 'demo.js')], {
@@ -171,7 +173,7 @@ async function ensureStand() {
 */
 async function assertViewport(page) {
   const measured = await page.evaluate(
-    () => ({ width: window.innerWidth, height: window.innerHeight })
+    () => ({ width: window.innerWidth, height: window.innerHeight }) // eslint-disable-line no-undef
   );
 
   if (measured.width !== VIEWPORT_WIDTH || measured.height !== VIEWPORT_HEIGHT) {
@@ -193,7 +195,7 @@ async function login(page, baseUrl) {
   // / to ./calendar/ for authenticated users).
   await Promise.all([
     page.waitForFunction(
-      () => window.location.pathname.indexOf('/calendar') === 0,
+      () => window.location.pathname.indexOf('/calendar') === 0, // eslint-disable-line no-undef
       { timeout: 60000 }
     ),
     page.click('#submit_login'),
@@ -209,7 +211,7 @@ async function shootPage(page, url, contentSelector, outputFile) {
   await page.goto(url, { waitUntil: 'networkidle0', timeout: 60000 });
   await page.waitForSelector(contentSelector, { timeout: 15000 });
 
-  const renderedLang = await page.evaluate(() => document.documentElement.lang);
+  const renderedLang = await page.evaluate(() => document.documentElement.lang); // eslint-disable-line no-undef
   if (renderedLang !== LANGUAGE) {
     throw new Error(
       `интерфейс отрисовался на «${renderedLang}», ожидается «${LANGUAGE}» (D-14).`
@@ -224,7 +226,7 @@ async function shootPage(page, url, contentSelector, outputFile) {
 
   const relativePath = path.relative(ROOT, outputFile);
   const kilobytes = Math.round(fs.statSync(outputFile).size / 1024);
-  console.log(`  ${relativePath} (${VIEWPORT_WIDTH}x${VIEWPORT_HEIGHT}, ${kilobytes} КБ)`);
+  log.info(`  ${relativePath} (${VIEWPORT_WIDTH}x${VIEWPORT_HEIGHT}, ${kilobytes} КБ)`);
 }
 
 (async () => {
@@ -236,7 +238,7 @@ async function shootPage(page, url, contentSelector, outputFile) {
     const baseUrl = await ensureStand();
 
     step = 'запуск браузера';
-    console.log(`Запускаем браузер (viewport ${VIEWPORT_WIDTH}x${VIEWPORT_HEIGHT})...`);
+    log.info(`Запускаем браузер (viewport ${VIEWPORT_WIDTH}x${VIEWPORT_HEIGHT})...`);
 
     const browser = await puppeteer.launch({
       headless: true,
@@ -263,11 +265,11 @@ async function shootPage(page, url, contentSelector, outputFile) {
       await assertViewport(page);
 
       step = 'вход по форме логина';
-      console.log(`Входим как демо-администратор (${ADMIN_EMAIL})...`);
+      log.info(`Входим как демо-администратор (${ADMIN_EMAIL})...`);
       await login(page, baseUrl);
 
       step = 'календарь команды';
-      console.log('Снимаем экраны:');
+      log.info('Снимаем экраны:');
       await shootPage(
         page,
         `${baseUrl}/calendar/teamview/`,
@@ -286,15 +288,15 @@ async function shootPage(page, url, contentSelector, outputFile) {
       await browser.close();
     }
 
-    console.log('');
-    console.log('Готово! Скриншоты лежат в docs/screenshots/ и уже встроены в README.');
-    console.log('');
-    console.log('  Демо-стенд оставлен запущенным: ' + baseUrl);
-    console.log('  Убрать стенд:  ' + TEARDOWN_COMMAND);
-    console.log('');
+    log.info('');
+    log.info('Готово! Скриншоты лежат в docs/screenshots/ и уже встроены в README.');
+    log.info('');
+    log.info('  Демо-стенд оставлен запущенным: ' + baseUrl);
+    log.info('  Убрать стенд:  ' + TEARDOWN_COMMAND);
+    log.info('');
   } catch (error) {
-    console.error('');
-    console.error(
+    log.error('');
+    log.error(
       'Не удалось снять скриншоты (шаг «' + step + '»): '
       + ((error && error.message) || error)
     );

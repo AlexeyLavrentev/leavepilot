@@ -1,16 +1,18 @@
 'use strict';
 
-var argv = require('minimist')(process.argv.slice(2));
+const log = require('../lib/middleware/request_logger');
 
-var models = require('../lib/model/db');
-var features = require('../lib/features');
-var edition = require('../lib/edition');
+const argv = require('minimist')(process.argv.slice(2));
 
-var date = argv.date || null;
-var companyId = argv.company_id ? Number(argv.company_id) : null;
+const models = require('../lib/model/db');
+const features = require('../lib/features');
+const edition = require('../lib/edition');
+
+const date = argv.date || null;
+const companyId = argv.company_id ? Number(argv.company_id) : null;
 
 if (!features.isEnabled('leave_start_reminders')) {
-  console.log('Leave start reminders feature disabled');
+  log.info('leave_start_reminders_disabled');
   process.exit(0);
 }
 
@@ -25,23 +27,22 @@ models.connect()
     });
   })
   .then(function(notifications) {
-    console.log('Sent leave start reminders: ' + notifications.length);
+    log.info('sent_leave_start_reminders', { count: notifications.length });
     notifications.forEach(function(notification) {
-      console.log(
-        'Leave #' + notification.leaveId
-        + ' -> user #' + notification.recipientUserId
-        + ' (' + notification.notificationType + ')'
-      );
+      log.info('leave_reminder_sent', {
+        leaveId: notification.leaveId,
+        recipientUserId: notification.recipientUserId,
+        notificationType: notification.notificationType,
+      });
     });
   })
   .then(function() {
     return models.sequelize.close();
   })
   .catch(function(error) {
-    console.error(
-      'Failed to send upcoming leave reminders: '
-      + (error && error.stack || error)
-    );
+    log.error('send_reminders_failed', {
+      error: error && error.stack || String(error),
+    });
 
     return models.sequelize.close()
       .catch(function() {})

@@ -40,7 +40,7 @@ describe('Bulk approve/reject requests', function() {
   });
 
   it('bulk handler normalises a single value into an array and keeps only numeric ids', function() {
-    expect(routeSource).to.match(/if \(!Array\.isArray\(raw_ids\)\) raw_ids = \[raw_ids\];/);
+    expect(routeSource).to.match(/if \(!Array\.isArray\(raw_ids\)\) \{raw_ids = \[raw_ids\];\}/);
     expect(routeSource).to.match(/validator\.isNumeric/);
   });
 

@@ -4,11 +4,11 @@
 const models = require('../lib/model/db');
 
 module.exports = {
-  up: (queryInterface, Sequelize) => {
+  up: (queryInterface, _Sequelize) => {
 
     return queryInterface.describeTable('Companies').then((attributes) => {
 
-      if (attributes.hasOwnProperty('carry_over')) {
+      if (Object.prototype.hasOwnProperty.call(attributes, 'carry_over')) {
         return 1;
       }
 
@@ -20,7 +20,7 @@ module.exports = {
     });
   },
 
-  down: function (queryInterface, Sequelize) {
+  down: function (queryInterface, _Sequelize) {
     return queryInterface.removeColumn('Companies', 'carry_over');
   }
 };

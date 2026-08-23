@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+/* eslint-disable no-console */
 
 'use strict';
 
@@ -326,7 +327,7 @@ function killLiveChildren() {
 
 function removeCookieJar() {
   if (cookieJarPath) {
-    try { fs.unlinkSync(cookieJarPath); } catch (absent) { /* best-effort */ }
+    try { fs.unlinkSync(cookieJarPath); } catch { /* best-effort */ }
     cookieJarPath = null;
   }
 }
@@ -607,7 +608,7 @@ function redirectPathname(redirectUrl) {
 
   try {
     return new URL(redirectUrl).pathname;
-  } catch (error) {
+  } catch {
     return redirectUrl;
   }
 }

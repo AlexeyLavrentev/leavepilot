@@ -1,15 +1,15 @@
 
 'use strict';
 
-var models = require('../lib/model/db');
+const models = require('../lib/model/db');
 
 module.exports = {
-  up: function (queryInterface, Sequelize) {
+  up: function (queryInterface, _Sequelize) {
 
     return queryInterface.describeTable('user_allowance_adjustment')
       .then(function(attributes){
 
-        if (attributes.hasOwnProperty('carried_over_allowance')) {
+        if (Object.prototype.hasOwnProperty.call(attributes, 'carried_over_allowance')) {
           return 1;
         }
 
@@ -21,7 +21,7 @@ module.exports = {
       });
   },
 
-  down: function (queryInterface, Sequelize) {
+  down: function (queryInterface, _Sequelize) {
     return queryInterface
       .removeColumn('user_allowance_adjustment', 'carried_over_allowance');
   }

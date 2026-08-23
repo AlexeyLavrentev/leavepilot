@@ -1,26 +1,28 @@
 'use strict';
 
-var fs = require('fs');
-var path = require('path');
-var mysql = require('mysql2');
-var dayjs = require('../lib/util/date');
-var sqlite3 = require('sqlite3').verbose();
+const log = require('../lib/middleware/request_logger');
 
-var sourceSqlitePath = process.argv[2];
+const fs = require('fs');
+const path = require('path');
+const mysql = require('mysql2');
+const dayjs = require('../lib/util/date');
+const sqlite3 = require('sqlite3').verbose();
+
+const sourceSqlitePath = process.argv[2];
 
 if (!sourceSqlitePath) {
-  console.error('Usage: node bin/migrate_sqlite_to_mysql.js /path/to/source.sqlite');
+  log.error('migrate_usage', { msg: 'Usage: node bin/migrate_sqlite_to_mysql.js /path/to/source.sqlite' });
   process.exit(1);
 }
 
-var resolvedSourcePath = path.resolve(sourceSqlitePath);
+const resolvedSourcePath = path.resolve(sourceSqlitePath);
 
 if (!fs.existsSync(resolvedSourcePath)) {
-  console.error('SQLite database file does not exist: ' + resolvedSourcePath);
+  log.error('sqlite_not_found', { path: resolvedSourcePath });
   process.exit(1);
 }
 
-var mysqlConfig = {
+const mysqlConfig = {
   host: process.env.DB_HOST || process.env.MYSQL_HOST || '127.0.0.1',
   port: Number(process.env.DB_PORT || 3306),
   user: process.env.DB_USER || process.env.MYSQL_USER || 'root',
@@ -32,11 +34,11 @@ var mysqlConfig = {
 };
 
 if (!mysqlConfig.database) {
-  console.error('Target MySQL database is not configured. Set DB_NAME or MYSQL_DATABASE.');
+  log.error('mysql_not_configured', { msg: 'Target MySQL database is not configured. Set DB_NAME or MYSQL_DATABASE.' });
   process.exit(1);
 }
 
-var SQLITE_TABLES_TO_SKIP = {
+const SQLITE_TABLES_TO_SKIP = {
   SequelizeMeta: true,
   sqlite_sequence: true,
   Sessions: true,
@@ -47,7 +49,8 @@ function mysqlQuery(connection, sql, params) {
   return new Promise(function(resolve, reject) {
     connection.query(sql, params || [], function(error, results) {
       if (error) {
-        return reject(error);
+        reject(error);
+        return;
       }
       resolve(results);
     });
@@ -58,7 +61,8 @@ function sqliteAll(db, sql, params) {
   return new Promise(function(resolve, reject) {
     db.all(sql, params || [], function(error, rows) {
       if (error) {
-        return reject(error);
+        reject(error);
+        return;
       }
       resolve(rows);
     });
@@ -69,7 +73,8 @@ function sqliteClose(db) {
   return new Promise(function(resolve, reject) {
     db.close(function(error) {
       if (error) {
-        return reject(error);
+        reject(error);
+        return;
       }
       resolve();
     });
@@ -81,8 +86,8 @@ function normalizeDateValue(value, mysqlColumnType) {
     return null;
   }
 
-  var normalizedType = String(mysqlColumnType || '').toLowerCase();
-  var parsed = dayjs.utc(value);
+  const normalizedType = String(mysqlColumnType || '').toLowerCase();
+  const parsed = dayjs.utc(value);
 
   if (!parsed.isValid()) {
     return value;
@@ -123,7 +128,7 @@ function escapeIdentifier(identifier) {
 }
 
 async function getSourceTables(sqliteDb) {
-  var rows = await sqliteAll(
+  const rows = await sqliteAll(
     sqliteDb,
     "SELECT name FROM sqlite_master WHERE type = 'table' ORDER BY name"
   );
@@ -138,7 +143,7 @@ async function getSourceTables(sqliteDb) {
 }
 
 async function getTargetTables(mysqlConnection) {
-  var rows = await mysqlQuery(mysqlConnection, 'SHOW TABLES');
+  const rows = await mysqlQuery(mysqlConnection, 'SHOW TABLES');
 
   return rows.map(function(row) {
     return row[Object.keys(row)[0]];
@@ -146,7 +151,7 @@ async function getTargetTables(mysqlConnection) {
 }
 
 async function getTargetColumns(mysqlConnection, tableName) {
-  var rows = await mysqlQuery(
+  const rows = await mysqlQuery(
     mysqlConnection,
     'SHOW COLUMNS FROM ' + escapeIdentifier(tableName)
   );
@@ -155,9 +160,9 @@ async function getTargetColumns(mysqlConnection, tableName) {
 }
 
 async function clearTargetTables(mysqlConnection, tableNames) {
-  for (var i = 0; i < tableNames.length; i++) {
-    var tableName = tableNames[i];
-    console.log('Clearing target table: ' + tableName);
+  for (let i = 0; i < tableNames.length; i++) {
+    const tableName = tableNames[i];
+    log.info('clearing_table', { table: tableName });
     await mysqlQuery(
       mysqlConnection,
       'DELETE FROM ' + escapeIdentifier(tableName)
@@ -166,45 +171,43 @@ async function clearTargetTables(mysqlConnection, tableNames) {
 }
 
 async function copyTable(sqliteDb, mysqlConnection, tableName) {
-  var sourceRows = await sqliteAll(
+  const sourceRows = await sqliteAll(
     sqliteDb,
     'SELECT * FROM ' + escapeIdentifier(tableName)
   );
 
   if (!sourceRows.length) {
-    console.log('Skipping empty table: ' + tableName);
+    log.info('skipping_empty_table', { table: tableName });
     return;
   }
 
-  var targetColumns = await getTargetColumns(mysqlConnection, tableName);
-  var targetColumnMap = {};
+  const targetColumns = await getTargetColumns(mysqlConnection, tableName);
+  const targetColumnMap = {};
 
   targetColumns.forEach(function(column) {
     targetColumnMap[column.Field] = column;
   });
 
-  var sourceColumns = Object.keys(sourceRows[0]).filter(function(columnName) {
+  const sourceColumns = Object.keys(sourceRows[0]).filter(function(columnName) {
     return Object.prototype.hasOwnProperty.call(targetColumnMap, columnName);
   });
 
   if (!sourceColumns.length) {
-    console.log('Skipping table without matching target columns: ' + tableName);
+    log.info('skipping_table_no_matching_columns', { table: tableName });
     return;
   }
 
-  var escapedColumns = sourceColumns.map(escapeIdentifier).join(', ');
-  var batchSize = 200;
+  const escapedColumns = sourceColumns.map(escapeIdentifier).join(', ');
+  const batchSize = 200;
 
-  console.log(
-    'Copying table ' + tableName + ': ' + sourceRows.length + ' rows'
-  );
+  log.info('copying_table', { table: tableName, rows: sourceRows.length });
 
-  for (var offset = 0; offset < sourceRows.length; offset += batchSize) {
-    var batch = sourceRows.slice(offset, offset + batchSize);
-    var placeholders = batch.map(function() {
+  for (let offset = 0; offset < sourceRows.length; offset += batchSize) {
+    const batch = sourceRows.slice(offset, offset + batchSize);
+    const placeholders = batch.map(function() {
       return '(' + sourceColumns.map(function() { return '?'; }).join(', ') + ')';
     }).join(', ');
-    var values = [];
+    const values = [];
 
     batch.forEach(function(row) {
       sourceColumns.forEach(function(columnName) {
@@ -222,15 +225,15 @@ async function copyTable(sqliteDb, mysqlConnection, tableName) {
 }
 
 async function main() {
-  var sqliteDb = new sqlite3.Database(resolvedSourcePath, sqlite3.OPEN_READONLY);
-  var mysqlConnection = mysql.createConnection(mysqlConfig);
+  const sqliteDb = new sqlite3.Database(resolvedSourcePath, sqlite3.OPEN_READONLY);
+  const mysqlConnection = mysql.createConnection(mysqlConfig);
 
   try {
     await mysqlQuery(mysqlConnection, 'SET FOREIGN_KEY_CHECKS = 0');
 
-    var sourceTables = await getSourceTables(sqliteDb);
-    var targetTables = await getTargetTables(mysqlConnection);
-    var tablesToCopy = sourceTables.filter(function(tableName) {
+    const sourceTables = await getSourceTables(sqliteDb);
+    const targetTables = await getTargetTables(mysqlConnection);
+    const tablesToCopy = sourceTables.filter(function(tableName) {
       return targetTables.indexOf(tableName) >= 0;
     });
 
@@ -238,26 +241,28 @@ async function main() {
       throw new Error('No matching application tables found between SQLite and MySQL');
     }
 
-    console.log('Source SQLite: ' + resolvedSourcePath);
-    console.log('Target MySQL database: ' + mysqlConfig.database);
-    console.log('Tables to copy: ' + tablesToCopy.join(', '));
+    log.info('migration_start', {
+      source: resolvedSourcePath,
+      database: mysqlConfig.database,
+      tables: tablesToCopy.join(', '),
+    });
 
     await clearTargetTables(mysqlConnection, tablesToCopy);
 
-    for (var i = 0; i < tablesToCopy.length; i++) {
+    for (let i = 0; i < tablesToCopy.length; i++) {
       await copyTable(sqliteDb, mysqlConnection, tablesToCopy[i]);
     }
 
     await mysqlQuery(mysqlConnection, 'SET FOREIGN_KEY_CHECKS = 1');
-    console.log('SQLite to MySQL migration finished successfully.');
+    log.info('migration_complete');
   } catch (error) {
     try {
       await mysqlQuery(mysqlConnection, 'SET FOREIGN_KEY_CHECKS = 1');
     } catch (resetError) {
-      console.error('Failed to restore FOREIGN_KEY_CHECKS:', resetError.message);
+      log.error('foreign_key_check_reset_failed', { error: resetError.message });
     }
 
-    console.error(error && error.stack || error);
+    log.error('migration_failed', { error: error && error.stack || String(error) });
     process.exitCode = 1;
   } finally {
     mysqlConnection.end();

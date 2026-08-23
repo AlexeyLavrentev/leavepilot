@@ -5,7 +5,7 @@ module.exports = {
 
     return queryInterface.describeTable('Companies').then(function(attributes){
 
-      if (attributes.hasOwnProperty('date_format')) {
+      if (Object.prototype.hasOwnProperty.call(attributes, 'date_format')) {
         return 1;
       }
 
@@ -21,7 +21,7 @@ module.exports = {
     });
   },
 
-  down: function (queryInterface, Sequelize) {
+  down: function (queryInterface, _Sequelize) {
     return queryInterface.removeColumn('Companies', 'date_format');
   }
 };

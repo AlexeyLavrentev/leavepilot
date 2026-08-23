@@ -6,6 +6,21 @@ services:
       additional_contexts:
         timeoff_premium: ${TIMEOFF_PREMIUM_MODULE_HOST_PATH:-../timeoff-premium}
     environment:
+      NODE_ENV: production
+      DB_DIALECT: ${DB_DIALECT:-mysql}
+      DB_HOST: ${DB_HOST:-db}
+      DB_PORT: ${DB_PORT:-3306}
+      DB_NAME: ${DB_NAME:-timeoff}
+      DB_USER: ${DB_USER:-timeoff}
+      DB_PASSWORD: ${DB_PASSWORD:-timeoff_password}
+      DB_LOGGING: ${DB_LOGGING:-false}
+      SESSION_SECRET: ${SESSION_SECRET:?SESSION_SECRET is required}
+      CRYPTO_SECRET: ${CRYPTO_SECRET:?CRYPTO_SECRET is required}
+      TRUST_PROXY: ${TRUST_PROXY:-1}
+      SESSION_COOKIE_SECURE: ${SESSION_COOKIE_SECURE:-false}
+      SESSION_COOKIE_SAME_SITE: ${SESSION_COOKIE_SAME_SITE:-lax}
+      SESSION_COOKIE_MAX_AGE_MS: ${SESSION_COOKIE_MAX_AGE_MS:-43200000}
+      RUN_DB_MIGRATIONS: ${RUN_DB_MIGRATIONS:-true}
       TIMEOFF_PREMIUM_MODULE: /opt/timeoff-premium
       TIMEOFF_PREMIUM_MODULE_REQUIRED: "true"
       TIMEOFF_LICENSE: ${TIMEOFF_LICENSE:?TIMEOFF_LICENSE is required}
@@ -14,7 +29,7 @@ services:
       TIMEOFF_LICENSE_REVOCATION_LIST: ${TIMEOFF_LICENSE_REVOCATION_LIST:-}
       TIMEOFF_LICENSE_REVOCATION_PUBLIC_KEY: ${TIMEOFF_LICENSE_REVOCATION_PUBLIC_KEY:-}
       TIMEOFF_LICENSE_GRACE_DAYS: ${TIMEOFF_LICENSE_GRACE_DAYS:-14}
-      # Branding - set in .env / host shell to rebrand. Empty (default) falls back to the LeavePilot defaults in lib/branding.js (D-01).
+      # Branding
       BRAND_NAME: ${BRAND_NAME:-}
       BRAND_SHORT_NAME: ${BRAND_SHORT_NAME:-}
       BRAND_LOGO_URL: ${BRAND_LOGO_URL:-}

@@ -1,14 +1,14 @@
 
 'use strict';
 
-var models = require('../lib/model/db');
+const models = require('../lib/model/db');
 
 module.exports = {
-  up: (queryInterface, Sequelize) => {
+  up: (queryInterface, _Sequelize) => {
 
     return queryInterface.describeTable('Companies').then(attributes => {
 
-      if (attributes.hasOwnProperty('is_team_view_hidden')) {
+      if (Object.prototype.hasOwnProperty.call(attributes, 'is_team_view_hidden')) {
         return 1;
       }
 
@@ -20,6 +20,6 @@ module.exports = {
     });
   },
 
-  down: (queryInterface, Sequelize) => queryInterface
+  down: (queryInterface, _Sequelize) => queryInterface
     .removeColumn('Companies', 'is_team_view_hidden'),
 };

@@ -117,7 +117,7 @@ describe('Account access continuity contract (Stage 8K)', function () {
     });
 
     it('keeps generic recovery handling and reset-token verification in the route', function () {
-      expect(loginRoute).to.include("var success_msg = req.t('login.messages.forgotPasswordSent');");
+      expect(loginRoute).to.include("const success_msg = req.t('login.messages.forgotPasswordSent');");
       expect(loginRoute).to.include('.get_user_by_reset_password_token(token)');
       expect(loginRoute).to.include("req.t('login.messages.resetLinkUnknown')");
       expect(loginRoute).to.include("req.t('login.messages.resetPasswordMismatch')");

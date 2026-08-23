@@ -3,7 +3,7 @@
   "entries": [
     {
       "file": "lib/model/db/company.js",
-      "line": 339,
+      "line": 342,
       "reason": "Seed default department name ('Продажи' for CIS countries, 'Sales' otherwise) chosen at company creation: stored as per-row data, not request-locale-rendered text — translating per request would corrupt stored rows (D-14 sanctioned shape 2)"
     },
     {

@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+/* eslint-disable no-console */
 
 'use strict';
 
@@ -137,7 +138,7 @@ const readFlakeSidecars = () => {
 
     try {
       fs.unlinkSync(sidecar.path);
-    } catch (alreadyGone) { /* cleanup is best-effort; the file is gitignored */ }
+    } catch { /* cleanup is best-effort; the file is gitignored */ }
 
     (payload.retries || []).forEach(entry => mochaRecords.push({
       contour: sidecar.contour,
@@ -275,7 +276,7 @@ const quarantinedPaths = new Set(
 );
 
 const reportQuarantine = () => {
-  if (!quarantine.length) return;
+  if (!quarantine.length) {return;}
 
   console.log(`Quarantined integration specs (${quarantine.length}), not run:`);
   quarantine.forEach(entry => {
@@ -481,14 +482,14 @@ const waitForServer = server => new Promise((resolve, reject) => {
   const onError = error => finish(error);
   const onExit = code => finish(new Error(`Test server exited before readiness with ${code}`));
   const finish = error => {
-    if (settled) return;
+    if (settled) {return;}
     settled = true;
     clearTimeout(timeout);
     server.removeListener('message', onMessage);
     server.removeListener('error', onError);
     server.removeListener('exit', onExit);
-    if (error) reject(error);
-    else resolve();
+    if (error) {reject(error);}
+    else {resolve();}
   };
 
   server.on('message', onMessage);

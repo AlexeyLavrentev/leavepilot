@@ -22,9 +22,15 @@ describe('license_storage', () => {
 
   describe('readLicenseFile', () => {
     it('returns { raw: null, source: "none" } when no file exists', () => {
+      const config = require('../../lib/config');
+      const originalPath = getLicenseFilePath();
+      config.set('license_file', path.join(tmpDir, 'nonexistent-license.json'));
+
       const result = readLicenseFile();
       expect(result.raw).to.be.null;
       expect(result.source).to.equal('none');
+
+      config.set('license_file', undefined);
     });
   });
 

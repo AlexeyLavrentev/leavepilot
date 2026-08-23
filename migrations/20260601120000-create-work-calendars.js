@@ -36,7 +36,7 @@ module.exports = {
         return queryInterface.describeTable('Departments');
       })
       .then(function(attributes) {
-        if (attributes.hasOwnProperty('WorkCalendarId')) {
+        if (Object.prototype.hasOwnProperty.call(attributes, 'WorkCalendarId')) {
           return 1;
         }
         return queryInterface.addColumn('Departments', 'WorkCalendarId', {
@@ -48,7 +48,7 @@ module.exports = {
         return queryInterface.describeTable('BankHolidays');
       })
       .then(function(attributes) {
-        if (attributes.hasOwnProperty('workCalendarId')) {
+        if (Object.prototype.hasOwnProperty.call(attributes, 'workCalendarId')) {
           return 1;
         }
         return queryInterface.addColumn('BankHolidays', 'workCalendarId', {
@@ -60,7 +60,7 @@ module.exports = {
         return queryInterface.describeTable('BankHolidays');
       })
       .then(function(attributes) {
-        if (attributes.hasOwnProperty('day_type')) {
+        if (Object.prototype.hasOwnProperty.call(attributes, 'day_type')) {
           return 1;
         }
         return queryInterface.addColumn('BankHolidays', 'day_type', {

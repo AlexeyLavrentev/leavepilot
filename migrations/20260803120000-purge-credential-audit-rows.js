@@ -1,5 +1,7 @@
 'use strict';
 
+const log = require('../lib/middleware/request_logger');
+
 const {NEVER_AUDITED_ATTRIBUTES} = require('../lib/model/audit');
 
 /*
@@ -30,7 +32,7 @@ module.exports = {
       {replacements: NEVER_AUDITED_ATTRIBUTES}
     );
 
-    console.log(`Purged credential rows from the audit trail: ${total}`);
+    log.info(`Purged credential rows from the audit trail: ${total}`);
   },
 
   down: function() {

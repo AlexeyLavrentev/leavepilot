@@ -18,26 +18,29 @@
  *   --lastname  admin last name (default: Admin)
  */
 
-var argv = require('minimist')(process.argv.slice(2));
-var crypto = require('crypto');
-var validator = require('validator');
+const log = require('../lib/middleware/request_logger');
 
-var models = require('../lib/model/db');
+const argv = require('minimist')(process.argv.slice(2));
+const crypto = require('crypto');
+const validator = require('validator');
+
+const models = require('../lib/model/db');
 
 function fail(message) {
-  console.error('Error: ' + message);
-  console.error('');
-  console.error('Usage: npm run create-admin -- --email admin@example.com --company "My Company" [--password ...] [--country RU] [--timezone Europe/Moscow] [--name Admin] [--lastname Admin]');
+  log.error('create_admin_error', { message });
+  log.error('create_admin_usage', {
+    usage: 'npm run create-admin -- --email admin@example.com --company "My Company" [--password ...] [--country RU] [--timezone Europe/Moscow] [--name Admin] [--lastname Admin]',
+  });
   process.exit(1);
 }
 
-var email = String(argv.email || '').trim().toLowerCase();
-var companyName = String(argv.company || '').trim();
-var password = argv.password ? String(argv.password) : null;
-var countryCode = String(argv.country || 'RU').trim().toUpperCase();
-var timezone = argv.timezone ? String(argv.timezone).trim() : undefined;
-var firstName = String(argv.name || 'Admin').trim();
-var lastName = String(argv.lastname || 'Admin').trim();
+const email = String(argv.email || '').trim().toLowerCase();
+const companyName = String(argv.company || '').trim();
+let password = argv.password ? String(argv.password) : null;
+const countryCode = String(argv.country || 'RU').trim().toUpperCase();
+const timezone = argv.timezone ? String(argv.timezone).trim() : undefined;
+const firstName = String(argv.name || 'Admin').trim();
+const lastName = String(argv.lastname || 'Admin').trim();
 
 if (!email || !validator.isEmail(email)) {
   fail('--email is required and must be a valid email address');
@@ -47,7 +50,7 @@ if (!companyName) {
   fail('--company is required');
 }
 
-var generatedPassword = false;
+let generatedPassword = false;
 
 if (!password) {
   // URL-safe, no ambiguous characters; 16 chars of base64url ≈ 96 bits
@@ -73,25 +76,21 @@ models.connect()
     });
   })
   .then(function(user) {
-    console.log('');
-    console.log('Administrator account created.');
-    console.log('  Company : ' + companyName);
-    console.log('  Email   : ' + user.email);
+    log.info('administrator_created', {
+      company: companyName,
+      email: user.email,
+    });
     if (generatedPassword) {
-      console.log('  Password: ' + password);
-      console.log('');
-      console.log('This generated password is shown only once. Store it securely');
-      console.log('and change it after the first login.');
+      log.info('generated_password', { password });
+      log.info('password_notice', { msg: 'This generated password is shown only once. Store it securely and change it after the first login.' });
     }
-    console.log('');
-    console.log('You can now sign in at /login/');
+    log.info('signin_url', { url: '/login/' });
     return models.sequelize.close();
   })
   .catch(function(error) {
-    console.error(
-      'Failed to create administrator: '
-      + (error && error.show_to_user ? error.message : (error && error.stack || error))
-    );
+    log.error('create_admin_failed', {
+      error: error && error.show_to_user ? error.message : (error && error.stack || String(error)),
+    });
     return models.sequelize.close()
       .catch(function() {})
       .then(function() {

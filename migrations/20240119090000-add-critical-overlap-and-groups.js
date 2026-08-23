@@ -1,12 +1,12 @@
 'use strict';
 
-var models = require('../lib/model/db');
+const models = require('../lib/model/db');
 
 module.exports = {
   up: function (queryInterface, Sequelize) {
     return queryInterface.describeTable('Departments')
       .then(function(attributes){
-        if (!attributes.hasOwnProperty('max_critical_overlap')) {
+        if (!Object.prototype.hasOwnProperty.call(attributes, 'max_critical_overlap')) {
           return queryInterface.addColumn(
             'Departments',
             'max_critical_overlap',
@@ -19,7 +19,7 @@ module.exports = {
         return queryInterface.describeTable('Users');
       })
       .then(function(attributes){
-        if (!attributes.hasOwnProperty('is_critical')) {
+        if (!Object.prototype.hasOwnProperty.call(attributes, 'is_critical')) {
           return queryInterface.addColumn(
             'Users',
             'is_critical',
@@ -92,7 +92,7 @@ module.exports = {
       });
   },
 
-  down: function (queryInterface, Sequelize) {
+  down: function (queryInterface, _Sequelize) {
     return queryInterface.removeColumn('Departments', 'max_critical_overlap')
       .then(function(){
         return queryInterface.removeColumn('Users', 'is_critical');
