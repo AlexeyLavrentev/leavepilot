@@ -53,7 +53,7 @@ describe('E2E: License Activation Integration', function() {
 
   describe('Full activation flow: sign → verify → load', function() {
     it('completes online activation simulation', function() {
-      const keyPair = crypto.generateKeyPairSync('rsa', { modulusLength: 2048 });
+      const keyPair = crypto.generateKeyPairSync('rsa', { modulusLength: 3072 });
       const privateKey = keyPair.privateKey.export({ type: 'pkcs1', format: 'pem' });
       const publicKey = keyPair.publicKey.export({ type: 'pkcs1', format: 'pem' });
       const fingerprint = generateFingerprint();
@@ -90,7 +90,7 @@ describe('E2E: License Activation Integration', function() {
     });
 
     it('rejects license with wrong machine fingerprint', function() {
-      const keyPair = crypto.generateKeyPairSync('rsa', { modulusLength: 2048 });
+      const keyPair = crypto.generateKeyPairSync('rsa', { modulusLength: 3072 });
       const privateKey = keyPair.privateKey.export({ type: 'pkcs1', format: 'pem' });
       const publicKey = keyPair.publicKey.export({ type: 'pkcs1', format: 'pem' });
 
@@ -119,7 +119,7 @@ describe('E2E: License Activation Integration', function() {
     });
 
     it('works without machine fingerprint (backward compatible)', function() {
-      const keyPair = crypto.generateKeyPairSync('rsa', { modulusLength: 2048 });
+      const keyPair = crypto.generateKeyPairSync('rsa', { modulusLength: 3072 });
       const privateKey = keyPair.privateKey.export({ type: 'pkcs1', format: 'pem' });
       const publicKey = keyPair.publicKey.export({ type: 'pkcs1', format: 'pem' });
 
@@ -168,7 +168,7 @@ describe('E2E: License Activation Integration', function() {
     });
 
     it('verifies license from offline file', function() {
-      const keyPair = crypto.generateKeyPairSync('rsa', { modulusLength: 2048 });
+      const keyPair = crypto.generateKeyPairSync('rsa', { modulusLength: 3072 });
       const privateKey = keyPair.privateKey.export({ type: 'pkcs1', format: 'pem' });
       const publicKey = keyPair.publicKey.export({ type: 'pkcs1', format: 'pem' });
       const fingerprint = generateFingerprint();
@@ -221,7 +221,7 @@ describe('E2E: License Activation Integration', function() {
 
   describe('License file storage', function() {
     it('persists license across read/write cycle', function() {
-      const keyPair = crypto.generateKeyPairSync('rsa', { modulusLength: 2048 });
+      const keyPair = crypto.generateKeyPairSync('rsa', { modulusLength: 3072 });
       const privateKey = keyPair.privateKey.export({ type: 'pkcs1', format: 'pem' });
       const publicKey = keyPair.publicKey.export({ type: 'pkcs1', format: 'pem' });
 
@@ -263,7 +263,7 @@ describe('E2E: License Activation Integration', function() {
 
   describe('Hardcoded public key', function() {
     it('rejects license signed with wrong key when no env key', function() {
-      const keyPair = crypto.generateKeyPairSync('rsa', { modulusLength: 2048 });
+      const keyPair = crypto.generateKeyPairSync('rsa', { modulusLength: 3072 });
       const privateKey = keyPair.privateKey.export({ type: 'pkcs1', format: 'pem' });
 
       const payload = {
