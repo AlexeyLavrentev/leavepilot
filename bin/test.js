@@ -513,7 +513,18 @@ const stopServer = server => new Promise(resolve => {
   }, 5000);
 });
 
-const rawArgs = process.argv.slice(2).filter(arg => arg !== '--');
+const rawArgs = process.argv.slice(2)
+  .filter(arg => arg !== '--')
+  .reduce((args, arg, index, original) => {
+    if (arg === '--grep' && original[index + 1]) {
+      args.push(`--grep=${original[index + 1]}`);
+      return args;
+    }
+    if (original[index - 1] !== '--grep') {
+      args.push(arg);
+    }
+    return args;
+  }, []);
 // Run only the browser suite: the unit tests already have their own CI job, and
 // repeating them here would double a ten-minute run for no extra signal.
 const integrationOnly = rawArgs.includes('--integration-only');

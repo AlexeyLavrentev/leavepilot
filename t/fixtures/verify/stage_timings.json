@@ -1,0 +1,159 @@
+{
+  "schemaVersion": 1,
+  "local": {
+    "lint": {
+      "command": "rtk npm run lint",
+      "capturedAt": "2026-08-28T08:56:00Z",
+      "nodeVersion": "v22.23.0",
+      "samples": [
+        {"temperature": "cold", "durationMs": 1894},
+        {"temperature": "warm", "durationMs": 1785},
+        {"temperature": "warm", "durationMs": 1707}
+      ],
+      "observedMaximumMs": 1894,
+      "margin": {"kind": "multiplier", "value": 2},
+      "deadlineMs": 3788
+    },
+    "unitCoverage": {
+      "command": "rtk npm run test:coverage",
+      "capturedAt": "2026-08-28T09:17:00Z",
+      "nodeVersion": "v22.23.0",
+      "samples": [
+        {"temperature": "cold", "durationMs": 30003},
+        {"temperature": "warm", "durationMs": 30002},
+        {"temperature": "warm", "durationMs": 30002}
+      ],
+      "observedMaximumMs": 30003,
+      "margin": {"kind": "multiplier", "value": 2},
+      "deadlineMs": 60006
+    },
+    "sqliteMigration": {
+      "command": "rtk env NODE_ENV=test DB_DIALECT=sqlite DB_STORAGE=/tmp/leavepilot-calibration.sqlite node bin/db_update.js",
+      "capturedAt": "2026-08-28T09:04:00Z",
+      "nodeVersion": "v22.23.0",
+      "samples": [
+        {"temperature": "cold", "durationMs": 515},
+        {"temperature": "warm", "durationMs": 637},
+        {"temperature": "warm", "durationMs": 343}
+      ],
+      "observedMaximumMs": 637,
+      "margin": {"kind": "multiplier", "value": 2},
+      "deadlineMs": 1274
+    },
+    "cssBuildDiff": {
+      "command": "rtk npm run build-css && rtk git diff --exit-code -- public/css/style.css",
+      "capturedAt": "2026-08-28T09:05:00Z",
+      "nodeVersion": "v22.23.0",
+      "samples": [
+        {"temperature": "cold", "durationMs": 480},
+        {"temperature": "warm", "durationMs": 447},
+        {"temperature": "warm", "durationMs": 444}
+      ],
+      "observedMaximumMs": 480,
+      "margin": {"kind": "multiplier", "value": 2},
+      "deadlineMs": 960
+    },
+    "package": {
+      "command": "rtk npm pack --dry-run --json",
+      "capturedAt": "2026-08-28T09:06:00Z",
+      "nodeVersion": "v22.23.0",
+      "samples": [
+        {"temperature": "cold", "durationMs": 522},
+        {"temperature": "warm", "durationMs": 392},
+        {"temperature": "warm", "durationMs": 380}
+      ],
+      "observedMaximumMs": 522,
+      "margin": {"kind": "multiplier", "value": 2},
+      "deadlineMs": 1044
+    }
+  },
+  "stress": {
+    "command": "rtk npx mocha t/unit/viewport_sizing.js --timeout 10000",
+    "capturedAt": "2026-08-28T09:07:00Z",
+    "nodeVersion": "v22.23.0",
+    "observations": [
+      {"iterations": 1, "durationMs": 410, "failures": 0},
+      {"iterations": 10, "durationMs": 1977, "failures": 0},
+      {"iterations": 25, "durationMs": 5078, "failures": 0}
+    ],
+    "selectionRule": "largest measured iteration count completing under 30000ms, capped at 25",
+    "iterationCount": 25
+  },
+  "external": {
+    "publicProbe": {
+      "coreCi": {
+        "workflow": "core-ci.yml",
+        "endpoint": "https://api.github.com/repos/AlexeyLavrentev/timeoff/actions/workflows/core-ci.yml/runs?branch=master&event=push&status=completed&per_page=20",
+        "result": "available",
+        "evidence": {
+          "workflow": "core-ci.yml",
+          "repository": "AlexeyLavrentev/timeoff",
+          "branch": "master",
+          "headSha": "119172bdde6d1e32575cbebc3d6df60b9e7ab488",
+          "event": "push",
+          "status": "completed",
+          "conclusion": "success",
+          "runId": 32654353748,
+          "sourceUrl": "https://github.com/AlexeyLavrentev/leavepilot/actions/runs/32654353748",
+          "capturedAt": "2026-08-28T09:09:00Z",
+          "jobs": [
+            {
+              "id": 97230691143,
+              "name": "Dialect-sensitive specs on MySQL 8.0.45",
+              "startedAt": "2026-08-23T17:17:29Z",
+              "completedAt": "2026-08-23T17:21:32Z",
+              "durationMs": 243000
+            }
+          ]
+        }
+      },
+      "coreIntegration": {
+        "workflow": "core-integration.yml",
+        "endpoint": "https://api.github.com/repos/AlexeyLavrentev/timeoff/actions/workflows/core-integration.yml/runs?branch=master&event=push&status=completed&per_page=20",
+        "result": "available",
+        "evidence": {
+          "workflow": "core-integration.yml",
+          "repository": "AlexeyLavrentev/timeoff",
+          "branch": "master",
+          "headSha": "119172bdde6d1e32575cbebc3d6df60b9e7ab488",
+          "event": "push",
+          "status": "completed",
+          "conclusion": "success",
+          "runId": 32654353801,
+          "sourceUrl": "https://github.com/AlexeyLavrentev/leavepilot/actions/runs/32654353801",
+          "capturedAt": "2026-08-28T09:09:00Z",
+          "jobs": [
+            {
+              "id": 97230691444,
+              "name": "Browser suite 1/4",
+              "startedAt": "2026-08-23T17:17:30Z",
+              "completedAt": "2026-08-23T17:22:32Z",
+              "durationMs": 302000
+            },
+            {
+              "id": 97230691420,
+              "name": "Browser suite 2/4",
+              "startedAt": "2026-08-23T17:17:29Z",
+              "completedAt": "2026-08-23T17:21:45Z",
+              "durationMs": 256000
+            },
+            {
+              "id": 97230691360,
+              "name": "Browser suite 3/4",
+              "startedAt": "2026-08-23T17:17:30Z",
+              "completedAt": "2026-08-23T17:22:06Z",
+              "durationMs": 276000
+            },
+            {
+              "id": 97230691456,
+              "name": "Browser suite 4/4",
+              "startedAt": "2026-08-23T17:17:29Z",
+              "completedAt": "2026-08-23T17:21:15Z",
+              "durationMs": 226000
+            }
+          ]
+        }
+      }
+    }
+  }
+}

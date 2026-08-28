@@ -51,7 +51,9 @@ const expectRunIdentity = (name, evidence) => {
   expect(evidence.status).to.equal('completed');
   expect(evidence.conclusion).to.equal('success');
   expect(evidence.runId).to.be.a('number').and.be.greaterThan(0);
-  expect(evidence.sourceUrl).to.match(/^https:\/\/github\.com\/AlexeyLavrentev\/timeoff\/actions\/runs\//);
+  expect(evidence.sourceUrl).to.match(
+    /^https:\/\/github\.com\/AlexeyLavrentev\/(?:timeoff|leavepilot)\/actions\/runs\//
+  );
   expectIsoDate(evidence.capturedAt);
   expect(evidence.jobs).to.be.an('array').and.not.be.empty;
   evidence.jobs.forEach(job => {
@@ -62,6 +64,18 @@ const expectRunIdentity = (name, evidence) => {
     expect(job.durationMs).to.equal(Date.parse(job.completedAt) - Date.parse(job.startedAt));
     expect(job.durationMs).to.be.greaterThan(0);
   });
+
+  const jobNames = evidence.jobs.map(job => job.name).sort();
+  if (name === 'core-ci.yml') {
+    expect(jobNames).to.deep.equal(['Dialect-sensitive specs on MySQL 8.0.45']);
+  } else {
+    expect(jobNames).to.deep.equal([
+      'Browser suite 1/4',
+      'Browser suite 2/4',
+      'Browser suite 3/4',
+      'Browser suite 4/4',
+    ]);
+  }
 };
 
 const expectPublicResult = (name, result) => {
