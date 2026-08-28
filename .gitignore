@@ -41,3 +41,6 @@ coverage/
 # Per-run audit/reproducer output belongs in CI artifacts, not source control
 /outputs/[0-9a-f]*/
 *.inspect.ndjson
+
+# Recovery CI evidence is local-only; committed proof cites immutable run metadata.
+/.artifacts/verify/recovery/

@@ -197,6 +197,24 @@ function click_element(driver, el) {
   );
 }
 
+function wait_for_submitted_document(driver, previous_document) {
+  return poll_until('submitted document to replace the current page', function(){
+    return withDeadline('checking submitted document transition', previous_document.getTagName())
+      .then(function(){
+        return false;
+      })
+      .catch(function(err){
+        if (is_stale_element_error(err)) {
+          return withDeadline('checking submitted document readiness', driver.executeScript(
+            'return document.readyState === "complete";'
+          ));
+        }
+
+        throw err;
+      });
+  }, DEFAULT_WAIT_TIMEOUT);
+}
+
 function set_element_value(driver, el, value, change_step) {
   return driver.executeScript(
     'if (arguments[2]) { arguments[0].step = "0.1"; }'
@@ -424,11 +442,17 @@ function submit_form_func(args) {
         return clear_existing_alerts(driver);
       })
       .then(function(){
-        return traced('findSubmit', submit_button_selector,
-          find_visible_element(driver, submit_button_selector));
+        return withDeadline('capturing submitted document', driver.findElement(By.css('html')));
       })
-      .then(function(el){
-        return traced('clickSubmit', submit_button_selector, click_element(driver, el));
+      .then(function(previous_document){
+        return traced('findSubmit', submit_button_selector,
+          find_visible_element(driver, submit_button_selector))
+          .then(function(el){
+            return traced('clickSubmit', submit_button_selector, click_element(driver, el));
+          })
+          .then(function(){
+            return wait_for_submitted_document(driver, previous_document);
+          });
       })
       .then(function(){
         if (!should_be_successful) {
