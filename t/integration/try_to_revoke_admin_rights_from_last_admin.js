@@ -49,7 +49,7 @@ describe('System prevent revoking admin rights from very last admin within compa
       driver           : driver,
     })
     .then(function(data){
-      secondary_user = data.new_user_email,
+      secondary_user = data.new_user_email;
       done();
     })
     .catch(done);

@@ -588,11 +588,8 @@ async function main() {
   const expectedMetaCount = index + 1;
 
   let sequelize;
-  let singletonDb = null;
-
   if (scenario.usesModelSingleton) {
-    singletonDb = require('../../lib/model/db');
-    sequelize = singletonDb.sequelize;
+    sequelize = require('../../lib/model/db').sequelize;
   } else if (dialect === 'mysql') {
     sequelize = new Sequelize(connectionOptions(process.env.DB_NAME));
   } else {

@@ -130,7 +130,7 @@ const MOBILE_GEOMETRY_SCRIPT = function () {
   // generate geometry findings: Bootstrap .sr-only (white-space:nowrap inside a
   // 1px clipped box) makes Range.getClientRects() return many line-boxes that
   // mathematically spill past the cell even though nothing is visually overflowing.
-  function isVisuallyHidden(node) {
+  function isVisuallyHidden(node, td) {
     var el = node.nodeType === 3 ? node.parentElement : node;
     while (el && el !== td) {
       if (el.classList && el.classList.contains('sr-only')) return true;
@@ -147,7 +147,7 @@ const MOBILE_GEOMETRY_SCRIPT = function () {
     var n;
     while ((n = walker.nextNode())) {
       if (!(n.nodeValue || '').trim()) continue;
-      if (isVisuallyHidden(n)) continue;
+      if (isVisuallyHidden(n, td)) continue;
       var rng = document.createRange();
       rng.selectNodeContents(n);
       var rs = rng.getClientRects();
@@ -159,7 +159,7 @@ const MOBILE_GEOMETRY_SCRIPT = function () {
     }
     var els = td.querySelectorAll('*');
     for (var j = 0; j < els.length; j++) {
-      if (isVisuallyHidden(els[j])) continue;
+      if (isVisuallyHidden(els[j], td)) continue;
       var b = els[j].getBoundingClientRect();
       if (b.width <= 0 || b.height <= 0) continue;
       out.push({ kind: 'el<' + els[j].tagName.toLowerCase() + '>', l: b.left, r: b.right, t: b.top, b: b.bottom });

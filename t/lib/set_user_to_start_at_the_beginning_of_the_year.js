@@ -8,7 +8,7 @@ const
   config           = require('./config'),
   dayjs = require('../../lib/util/date');
 
-const getUserId = ({userId,email,driver}) => (!!userId)
+const getUserId = ({userId,email,driver}) => userId
   ? Promise.resolve(userId)
   : userInfoFunc({email,driver})
     .then(({user : {id}}) => Promise.resolve(id));
@@ -34,4 +34,3 @@ module.exports = ({
     }))
     .then(() => openPageFunc({driver, url:applicationHost}))
     .then(() => Promise.resolve({driver}));
-
