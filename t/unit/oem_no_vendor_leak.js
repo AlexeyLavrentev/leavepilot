@@ -118,7 +118,9 @@ function renderHbsSurface(relativePath) {
   });
   hbs.registerHelper('brand_name', function() { return SENTINEL_BRAND_NAME; });
   hbs.registerHelper('asset', function(p) { return p; });
-  hbs.registerHelper('json', function(v) { return JSON.stringify(v == null ? '' : v); });
+  hbs.registerHelper('json', function(v) {
+    return JSON.stringify(v === null || v === undefined ? '' : v);
+  });
 
   // No-op partials: every {{> partial}} the templates reference is registered so
   // a compile never throws on a missing partial. footer.hbs gates its partial in

@@ -109,7 +109,7 @@ describe('Requests workspace contract (Stage 8D)', function () {
       expect(history).to.include('requests.scrollTable');
     });
     it('requests.hbs opts the history into the mobile-card layout via mobile_cards=1', function () {
-      expect(view).to.match(/user_requests_grouped[^\}]*mobile_cards=1/);
+      expect(view).to.match(/user_requests_grouped[^}]*mobile_cards=1/);
     });
     it('the grouped partial forwards mobile_cards to the inner user_requests partial', function () {
       // Inside {{#each grouped_leaves}} the mobile_cards param lives one level up (the partial

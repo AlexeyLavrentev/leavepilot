@@ -45,7 +45,7 @@ const SIDECAR_SUFFIX = '.sha256';
 // 64 lowercase hex characters, two spaces, the repo-relative target path.
 // The trailing \s* keeps the pattern usable on raw file content (a final
 // newline or CRLF must not fail an otherwise well-formed line).
-const SIDECAR_LINE = /^([0-9a-f]{64})  (\S.*)\s*$/;
+const SIDECAR_LINE = /^([0-9a-f]{64}) {2}(\S.*)\s*$/;
 
 function sha256Hex(buffer) {
   return crypto.createHash('sha256').update(buffer).digest('hex');

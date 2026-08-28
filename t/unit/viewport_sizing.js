@@ -198,7 +198,7 @@ describe('Sizing the viewport', function() {
       const helper = path.join(root, 'lib', 'set_viewport.js');
 
       // Assembled rather than written out, so this file does not match itself.
-      const sizesTheWindow = 'window().set' + 'Rect(';
+      const sizesTheWindow = ['window().set', 'Rect('].join('');
 
       const offenders = collect(root)
         .filter(file => file !== helper)
