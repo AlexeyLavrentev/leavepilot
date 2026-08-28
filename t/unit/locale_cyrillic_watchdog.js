@@ -146,8 +146,8 @@ function cyrillicLiteralLines(source) {
 */
 function cyrillicTemplateLines(source) {
   const stripped = source
-    .replace(/\{\!--[\s\S]*?--\}\}/g, '')
-    .replace(/\{\![\s\S]*?\}\}/g, '');
+    .replace(/\{!--[\s\S]*?--\}\}/g, '')
+    .replace(/\{![\s\S]*?\}\}/g, '');
   const hits = [];
   stripped.split('\n').forEach((line, index) => {
     if (cyrillic.test(line)) {

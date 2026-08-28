@@ -267,7 +267,7 @@ describe('Employee details workspace contract (Stage 8E)', function () {
       expect(absences).to.match(/class="[^"]*employee-absence-surface[^"]*surface/);
     });
     it('opts the absence history into the mobile-card layout (mobile_cards=1)', function () {
-      expect(absences).to.match(/user_requests_grouped[^\}]*mobile_cards=1/);
+      expect(absences).to.match(/user_requests_grouped[^}]*mobile_cards=1/);
     });
   });
 

@@ -171,7 +171,6 @@ function signalsInText(relativePath, text, startLine) {
   });
 
   if (hasSaveLoop(text)) {
-    var lines = text.split('\n');
     var findAllIndex = lines.findIndex(function(line) {
       return /\.findAll\(/.test(line);
     });
@@ -523,7 +522,7 @@ describe('D-10 data-rewriting migration manifest (companion gate)', function() {
     var fabricatedPath = 'migrations/__fabricated_data_rewrite__.js';
     var fabricatedSource = [
       'up: function(queryInterface, Sequelize) {',
-      "  return queryInterface.sequelize.query('DELETE FROM `audit` WHERE attribute = \'password\'');",
+      "  return queryInterface.sequelize.query('DELETE FROM `audit` WHERE attribute = 'password'');",
       '},',
       'down: function() {}',
     ].join('\n');
