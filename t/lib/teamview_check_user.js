@@ -25,7 +25,7 @@ module.exports = promisify( function(args, callback){
     application_host = args.application_host || config.get_application_host();
 
   if ( ! driver ) {
-    throw "'driver' was not passed into the teamview_check_user!";
+    throw new Error("'driver' was not passed into the teamview_check_user!");
   }
 
   return open_page_func({
@@ -68,4 +68,3 @@ module.exports = promisify( function(args, callback){
   });
 
 });
-

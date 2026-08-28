@@ -35,11 +35,11 @@ var user_info_func = promisify( function(args, callback){
     email           = args.email;
 
   if ( ! driver ) {
-    throw "'driver' was not passed into the user_info!";
+    throw new Error("'driver' was not passed into the user_info!");
   }
 
   if ( ! email ) {
-    throw "'email' was not passed into the user_info!";
+    throw new Error("'email' was not passed into the user_info!");
   }
 
   driver

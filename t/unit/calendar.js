@@ -71,7 +71,7 @@ describe('Check calendar month object', function(){
           object_to_test = january.as_for_template();
         expect(object_to_test.weeks[0][3].dayjs.format('YYYY-MM-DD')).to.equal('2015-01-01');
         expect(object_to_test.weeks[4][5].dayjs.format('YYYY-MM-DD')).to.equal('2015-01-31');
-        delete object_to_test['dayjs'];
+        delete object_to_test.dayjs;
         object_to_test.weeks.forEach(function(week){
           week.forEach(function(day){
             delete day.dayjs;
@@ -85,7 +85,7 @@ describe('Check calendar month object', function(){
 
         var apr = new CalendarMonth('2015-04-11', { schedule : schedule, today : dayjs.utc() });
         object_to_test = apr.as_for_template();
-        delete object_to_test['dayjs'];
+        delete object_to_test.dayjs;
         object_to_test.weeks.forEach(function(week){
           week.forEach(function(day){
             delete day.dayjs;

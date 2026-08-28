@@ -251,8 +251,8 @@ function fill_form_field(driver, test_case, attempt) {
 
   return traced('find', test_case.selector, find_visible_element(driver, test_case.selector))
     .then(function(el){
-      if ( test_case.hasOwnProperty('option_selector') ) {
-        if (test_case.hasOwnProperty('value')) {
+      if ( Object.prototype.hasOwnProperty.call(test_case, 'option_selector') ) {
+        if (Object.prototype.hasOwnProperty.call(test_case, 'value')) {
           return driver.executeScript(
             'arguments[0].value = arguments[1];'
             + 'var event = document.createEvent("HTMLEvents");'
@@ -277,7 +277,9 @@ function fill_form_field(driver, test_case, attempt) {
               value
             );
           });
-      } else if ( test_case.hasOwnProperty('tick')) {
+      }
+
+      if ( Object.prototype.hasOwnProperty.call(test_case, 'tick')) {
         return el.isSelected()
           .then(function(selected){
             if (test_case.value === 'on' && selected) {
@@ -290,16 +292,20 @@ function fill_form_field(driver, test_case, attempt) {
 
             return click_element(driver, el);
           });
-      } else if (test_case.file) {
+      }
+
+      if (test_case.file) {
         return el.sendKeys(test_case.value);
-      } else if (test_case.hasOwnProperty('dropdown_option')) {
+      }
+
+      if (Object.prototype.hasOwnProperty.call(test_case, 'dropdown_option')) {
         return click_element(driver, el)
           .then(function(){ return driver.findElement(By.css(test_case.dropdown_option)); })
           .then(function(dd){ return click_element(driver, dd); });
-      } else {
-        // Prevent the browser validations to allow backend validations to occur
-        return type_element_value(driver, el, test_case.value, test_case.change_step);
       }
+
+      // Prevent the browser validations to allow backend validations to occur
+      return type_element_value(driver, el, test_case.value, test_case.change_step);
     })
     .catch(function(err){
       if ((is_stale_element_error(err) || is_element_not_interactable_error(err)) && attempt < 2) {
@@ -350,7 +356,7 @@ function wait_for_expected_elements(driver, elements_to_check) {
     return Promise.all(_.map(elements_to_check, function(test_case){
       return withDeadline('reading ' + test_case.selector, driver.findElement(By.css(test_case.selector)))
         .then(function(el){
-          if (test_case.hasOwnProperty('tick')) {
+          if (Object.prototype.hasOwnProperty.call(test_case, 'tick')) {
             return el.isSelected().then(function(yes){
               return yes ? 'on' : 'off';
             });
