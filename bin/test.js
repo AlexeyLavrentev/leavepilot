@@ -47,12 +47,13 @@ const writeProcessReport = () => {
   fs.mkdirSync(path.dirname(processReportPath), {recursive: true});
   fs.writeFileSync(processReportPath, JSON.stringify({runId, processes: ownedProcesses}, null, 2) + '\n');
 };
-const registerOwnedProcess = (child, label) => {
+const registerOwnedProcess = (child, label, diagnostic = null) => {
   const entry = {
     label,
     pid: child.pid,
     pgid: child.pid,
     startedAt: new Date().toISOString(),
+    diagnostic,
     termination: null,
   };
   ownedProcesses.push(entry);
@@ -246,13 +247,23 @@ const runWithTimeout = (command, args, options = {}, timeoutMs = 0, timeoutMessa
     starts; killing the first of those three leaves the other two running with
     no parent. See bin/lib/spawn_group.js for what that cost.
   */
+  const diagnostic = options.diagnostic || null;
+  const spawnOptions = Object.assign({}, options);
+  delete spawnOptions.diagnostic;
   const child = spawnInGroup(command, args, Object.assign({
     stdio: 'inherit',
     env: baseTestEnv,
-  }, options));
+  }, spawnOptions));
 
   liveChildren.add(child);
-  const ownedProcess = registerOwnedProcess(child, (args[0] || '').endsWith('/mocha') ? 'mocha' : path.basename(args[0] || command));
+  const ownedProcess = registerOwnedProcess(
+    child,
+    (args[0] || '').endsWith('/mocha') ? 'mocha' : path.basename(args[0] || command),
+    diagnostic && Object.assign({}, diagnostic, {
+      deadlineMs: timeoutMs || null,
+      lastTest: 'unavailable',
+    })
+  );
 
   let timer;
   let timedOut = false;
@@ -268,8 +279,11 @@ const runWithTimeout = (command, args, options = {}, timeoutMs = 0, timeoutMessa
   if (timeoutMs > 0) {
     timer = setTimeout(() => {
       timedOut = true;
+      const details = diagnostic
+        ? ` batch=${diagnostic.file} lastTest=unavailable pid=${child.pid} pgid=${child.pid}`
+        : '';
       console.error(
-        `No exit after ${Math.round(timeoutMs / 1000)}s, killing: ${command} ${args.join(' ')}`
+        `No exit after ${Math.round(timeoutMs / 1000)}s${details}, killing: ${command} ${args.join(' ')}`
       );
       terminateGroup(child).catch(error => console.error(error && error.stack || error));
     }, timeoutMs);
@@ -287,7 +301,10 @@ const runWithTimeout = (command, args, options = {}, timeoutMs = 0, timeoutMessa
   child.on('exit', code => {
     done();
 
-    terminateGroup(child).then(() => {
+    // Mocha has already exited, so there is no graceful work left to await.
+    // Sweep any orphaned driver/browser in its recorded group immediately and
+    // write the lifecycle report before the parent can hit its own deadline.
+    terminateGroup(child, {graceMs: 0}).then(() => {
       recordTermination(ownedProcess, {outcome: timedOut ? 'timeout' : 'exit', term: true, kill: true, exitCode: code});
       if (timedOut) {
         reject(new Error(timeoutMessage || `${command} ${args.join(' ')} hung and was killed`));
@@ -451,7 +468,7 @@ const runMochaSuite = () => {
     on its own timeout, and the batch ceiling above still kills a wedged
     process. This only makes finishing mean exiting.
   */
-  const mocha = (batch, sidecarPath) => runWithTimeout(
+  const mocha = (batch, sidecarPath, index) => runWithTimeout(
     node,
     ['node_modules/mocha/bin/mocha', '--exit']
       .concat(FAIL_FAST)
@@ -464,7 +481,10 @@ const runMochaSuite = () => {
         '--reporter-option', 'fallbackSpec=' + batch.join(', '),
       ])
       .concat(batch),
-    { env: Object.assign({}, baseTestEnv, { FLAKE_ARTIFACT_PATH: sidecarPath }) },
+    {
+      env: Object.assign({}, baseTestEnv, { FLAKE_ARTIFACT_PATH: sidecarPath }),
+      diagnostic: { file: batch.join(', '), batch: index + 1, totalBatches: batches.length },
+    },
     batchTimeoutMs
   );
 
@@ -483,13 +503,13 @@ const runMochaSuite = () => {
     // fresh browser and a freshly registered company, which is the granularity
     // the flake lives at. Retried files are named at the end of the run: a
     // real regression fails twice and must not hide behind a green tick.
-    const attempt = mocha(batch, batchSidecarPath).catch(error => {
+    const attempt = mocha(batch, batchSidecarPath, index).catch(error => {
       if (configuredRetries === 0) {
         throw error;
       }
       console.error(`Integration batch ${index + 1} failed, retrying the whole batch: ${error.message}`);
       flaky.push({ contour: 'integration-batch-retry', spec: batch.join(', ') });
-      return mocha(batch, batchSidecarPath);
+      return mocha(batch, batchSidecarPath, index);
     });
 
     if (!keepGoing) {
