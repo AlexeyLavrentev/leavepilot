@@ -5,8 +5,8 @@
 
 const fs = require('fs');
 const path = require('path');
-const { spawn } = require('child_process');
-const { spawnInGroup, killGroup, terminateGroup } = require('./lib/spawn_group');
+const { execFileSync } = require('child_process');
+const { spawnInGroup, terminateGroup } = require('./lib/spawn_group');
 const skipHonesty = require('../t/lib/skip_honesty');
 
 /*
@@ -17,9 +17,9 @@ const skipHonesty = require('../t/lib/skip_honesty');
 const liveChildren = new Set();
 
 ['SIGINT', 'SIGTERM'].forEach(signal => {
-  process.on(signal, () => {
-    liveChildren.forEach(child => killGroup(child, 'SIGKILL'));
-    process.exit(signal === 'SIGINT' ? 130 : 143);
+  process.on(signal, async () => {
+    await Promise.all(Array.from(liveChildren).map(child => terminateGroup(child)));
+    process.exitCode = signal === 'SIGINT' ? 130 : 143;
   });
 });
 
@@ -62,6 +62,19 @@ const baseTestEnv = Object.assign({}, process.env, {
   NODE_ENV: 'test',
   SE_SKIP_DRIVER_IN_PATH: 'true',
 });
+
+const prepareBrowserEnvironment = () => {
+  execFileSync(node, ['bin/browser_setup.js', '--check'], {
+    cwd: process.cwd(), encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'],
+  });
+  const parsed = JSON.parse(execFileSync(node, ['bin/browser_setup.js', '--print-env'], {
+    cwd: process.cwd(), encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'],
+  }));
+  if (!parsed || typeof parsed.chromeBin !== 'string' || typeof parsed.chromedriverBin !== 'string') {
+    throw new Error('browser setup returned invalid validated paths');
+  }
+  return { CHROME_BIN: parsed.chromeBin, CHROMEDRIVER_BIN: parsed.chromedriverBin };
+};
 const serverEnv = Object.assign({}, baseTestEnv, {
   ALLOW_CREATE_NEW_ACCOUNTS: 'true',
   DISABLE_AUTH_RATE_LIMIT: 'true',
@@ -190,7 +203,7 @@ const writeFlakeReport = () => new Promise(resolve => {
   Killing it turns a silent hang into an ordinary batch failure, which the
   retry above already knows how to handle.
 */
-const runWithTimeout = (command, args, options = {}, timeoutMs = 0) => new Promise((resolve, reject) => {
+const runWithTimeout = (command, args, options = {}, timeoutMs = 0, timeoutMessage) => new Promise((resolve, reject) => {
   /*
     In its own process group, so that killing it kills what it started. A batch
     is mocha, plus the chromedriver it starts, plus the browser chromedriver
@@ -221,37 +234,30 @@ const runWithTimeout = (command, args, options = {}, timeoutMs = 0) => new Promi
       console.error(
         `No exit after ${Math.round(timeoutMs / 1000)}s, killing: ${command} ${args.join(' ')}`
       );
-      terminateGroup(child);
+      terminateGroup(child).catch(error => console.error(error && error.stack || error));
     }, timeoutMs);
     timer.unref();
   }
 
   child.on('error', error => {
     done();
-    reject(error);
+    terminateGroup(child).then(() => reject(error), reject);
   });
 
   child.on('exit', code => {
     done();
 
-    /*
-      Swept after an ordinary exit too, not only after a kill. A driver.quit()
-      that timed out leaves its chromedriver behind, mocha --exit does not wait
-      for it, and the group outlives the batch that owned it.
-    */
-    killGroup(child, 'SIGKILL');
-
-    if (timedOut) {
-      reject(new Error(`${command} ${args.join(' ')} hung and was killed`));
-      return;
-    }
-
-    if (code === 0) {
-      resolve();
-      return;
-    }
-
-    reject(new Error(`${command} ${args.join(' ')} exited with ${code}`));
+    terminateGroup(child).then(() => {
+      if (timedOut) {
+        reject(new Error(timeoutMessage || `${command} ${args.join(' ')} hung and was killed`));
+        return;
+      }
+      if (code === 0) {
+        resolve();
+        return;
+      }
+      reject(new Error(`${command} ${args.join(' ')} exited with ${code}`));
+    }, reject);
   });
 });
 
@@ -316,11 +322,17 @@ const runMochaSuite = () => {
     // the sidecar always reflects the latest attempt.
     const explicitSidecarPath = flakeSidecarPath('explicit-paths-mocha-retry');
 
-    const mochaExplicit = () => run(
+    const configuredExplicitTimeout = Number(process.env.TEST_EXPLICIT_PATH_TIMEOUT_MS);
+    const explicitTimeoutMs = Number.isInteger(configuredExplicitTimeout) && configuredExplicitTimeout > 0
+      ? configuredExplicitTimeout
+      : 5 * 60 * 1000;
+    const mochaExplicit = () => runWithTimeout(
       node,
       ['node_modules/mocha/bin/mocha', '--recursive', '--exit']
         .concat(FAIL_FAST, retryArgs, ['--reporter', FLAKE_REPORTER], roots, flags),
-      { env: Object.assign({}, baseTestEnv, { FLAKE_ARTIFACT_PATH: explicitSidecarPath }) }
+      { env: Object.assign({}, baseTestEnv, { FLAKE_ARTIFACT_PATH: explicitSidecarPath }) },
+      explicitTimeoutMs,
+      `explicit-path mocha timed out after ${explicitTimeoutMs}ms`
     );
 
     // D-04 parity: an explicit-path run gets the same one-retry-per-file
@@ -330,6 +342,9 @@ const runMochaSuite = () => {
     // named on the console and recorded in the flake report's batch layer -
     // never silent - and a list that fails twice in a row fails the runner.
     return mochaExplicit().catch(error => {
+      if (configuredRetries === 0) {
+        throw error;
+      }
       console.error(`Explicit-path run failed, retrying the whole list: ${error.message}`);
       flaky.push({ contour: 'explicit-paths-batch-retry', spec: roots.join(', ') });
       return mochaExplicit();
@@ -428,6 +443,9 @@ const runMochaSuite = () => {
     // the flake lives at. Retried files are named at the end of the run: a
     // real regression fails twice and must not hide behind a green tick.
     const attempt = mocha(batch, batchSidecarPath).catch(error => {
+      if (configuredRetries === 0) {
+        throw error;
+      }
       console.error(`Integration batch ${index + 1} failed, retrying the whole batch: ${error.message}`);
       flaky.push({ contour: 'integration-batch-retry', spec: batch.join(', ') });
       return mocha(batch, batchSidecarPath);
@@ -503,14 +521,7 @@ const stopServer = server => new Promise(resolve => {
     return;
   }
 
-  server.once('exit', () => resolve());
-  server.kill('SIGTERM');
-  setTimeout(() => {
-    if (!server.killed) {
-      server.kill('SIGKILL');
-    }
-    resolve();
-  }, 5000);
+  terminateGroup(server).then(resolve, resolve);
 });
 
 const rawArgs = process.argv.slice(2)
@@ -528,6 +539,9 @@ const rawArgs = process.argv.slice(2)
 // Run only the browser suite: the unit tests already have their own CI job, and
 // repeating them here would double a ten-minute run for no extra signal.
 const integrationOnly = rawArgs.includes('--integration-only');
+const browserTarget = integrationOnly
+  || rawArgs.includes('--browser')
+  || rawArgs.some(arg => arg.startsWith('t/integration/'));
 /*
   Split the browser suite across several runners. Every hang traced so far ends
   the same way: a poll returns in milliseconds, the next step is scheduled, and
@@ -552,11 +566,16 @@ const keepGoing = rawArgs.includes('--keep-going');
 const includeQuarantined = rawArgs.includes('--include-quarantined');
 const mochaArgs = rawArgs.filter(arg => ![
   '--integration-only',
+  '--browser',
   '--keep-going',
   '--include-quarantined',
 ].includes(arg) && !arg.startsWith('--shard='));
 
 let server;
+
+if (browserTarget) {
+  Object.assign(baseTestEnv, prepareBrowserEnvironment());
+}
 
 if (!process.env.KEEP_TEST_DB && fs.existsSync(dbStorage)) {
   fs.unlinkSync(dbStorage);
@@ -564,7 +583,7 @@ if (!process.env.KEEP_TEST_DB && fs.existsSync(dbStorage)) {
 
 run(node, ['bin/db_update.js'])
   .then(() => {
-    server = spawn(node, ['bin/wwww'], {
+    server = spawnInGroup(node, ['bin/wwww'], {
       stdio: ['inherit', 'inherit', 'inherit', 'ipc'],
       env: serverEnv,
     });

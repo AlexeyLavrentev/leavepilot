@@ -44,3 +44,5 @@ coverage/
 
 # Recovery CI evidence is local-only; committed proof cites immutable run metadata.
 /.artifacts/verify/recovery/
+/.artifacts/verify/browser/
+/.artifacts/verify/process-reports/

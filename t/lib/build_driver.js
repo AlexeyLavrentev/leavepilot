@@ -47,78 +47,20 @@ function boundQuit(quit, timeoutMs) {
 
 
 var fs = require('fs'),
-    path = require('path'),
-    os = require('os'),
     webdriver = require('selenium-webdriver'),
-    chrome = require('selenium-webdriver/chrome'),
-    puppeteer = require('puppeteer');
-
-function findCachedChromeHeadlessShell() {
-  var cacheDir = path.join(os.homedir(), '.cache', 'puppeteer', 'chrome-headless-shell');
-
-  if (!fs.existsSync(cacheDir)) {
-    return null;
-  }
-
-  var pending = [cacheDir];
-
-  while (pending.length) {
-    var current = pending.pop();
-    var stats = fs.statSync(current);
-
-    if (stats.isFile() && path.basename(current) === 'chrome-headless-shell') {
-      return current;
-    }
-
-    if (stats.isDirectory()) {
-      fs.readdirSync(current).forEach(function(child) {
-        pending.push(path.join(current, child));
-      });
-    }
-  }
-
-  return null;
-}
-
-/*
-  Where puppeteer put the browser it downloaded.
-
-  puppeteer.executablePath() used to answer this and now returns a promise, and
-  this function has to stay synchronous - fifty-odd specs build a driver from
-  it, none of them able to await. The promise did not announce itself either:
-  fs.existsSync of one returns false rather than throwing, so the branch simply
-  stopped finding anything and resolution fell through to the headless shell,
-  which is a different binary from the Chrome these specs are written against.
-
-  The path is computed instead, from the build id puppeteer pins and the cache
-  layout it uses - both of which it exposes synchronously.
-*/
-function findDownloadedChrome() {
-  try {
-    var revisions = require('puppeteer-core').PUPPETEER_REVISIONS;
-    var computeExecutablePath = require('@puppeteer/browsers').computeExecutablePath;
-
-    return computeExecutablePath({
-      browser: 'chrome',
-      buildId: revisions.chrome,
-      cacheDir: path.join(os.homedir(), '.cache', 'puppeteer'),
-    });
-  } catch (error) {
-    return null;
-  }
-}
+    chrome = require('selenium-webdriver/chrome');
 
 function resolveChromeBinary() {
-  if (process.env.CHROME_BIN) {
-    return process.env.CHROME_BIN;
-  }
+  return process.env.CHROME_BIN || null;
+}
 
-  var downloaded = findDownloadedChrome();
-  if (downloaded && fs.existsSync(downloaded)) {
-    return downloaded;
+function requiredExecutable(name) {
+  var value = process.env[name];
+  if (!value || !fs.existsSync(value) || !fs.statSync(value).isFile()) {
+    throw new Error(name + ' must be set to an executable validated by bin/browser_setup.js');
   }
-
-  return findCachedChromeHeadlessShell();
+  fs.accessSync(value, fs.constants.X_OK);
+  return value;
 }
 
 /*
@@ -179,8 +121,12 @@ function buildOptions() {
 }
 
 module.exports = function() {
+  var chromeBin = requiredExecutable('CHROME_BIN');
+  var chromedriverBin = requiredExecutable('CHROMEDRIVER_BIN');
+  var service = new chrome.ServiceBuilder(chromedriverBin);
   var driver = new webdriver.Builder()
     .forBrowser('chrome')
+    .setChromeService(service)
     .setChromeOptions(buildOptions())
     .build();
 
@@ -220,3 +166,4 @@ module.exports = function() {
 
 module.exports.boundQuit = boundQuit;
 module.exports.buildOptions = buildOptions;
+module.exports.requiredExecutable = requiredExecutable;

@@ -112,7 +112,7 @@ describe('The browser the suite drives', function() {
     it('is resolved synchronously', function() {
       const binary = chromeOptions().binary;
 
-      expect(binary === null || typeof binary === 'string').to.equal(
+      expect(binary === undefined || typeof binary === 'string').to.equal(
         true,
         'the binary arrived as a ' + (binary && binary.constructor && binary.constructor.name)
       );
@@ -124,5 +124,12 @@ describe('The browser the suite drives', function() {
 
     expect(args).to.include('--hide-scrollbars');
     expect(args.some(argument => /primaryHoverType=2/.test(argument))).to.equal(true);
+  });
+
+  it('uses the injected ChromeDriver service instead of Selenium Manager', function() {
+    const source = fs.readFileSync(require.resolve('../lib/build_driver'), 'utf8');
+
+    expect(source).to.contain('new chrome.ServiceBuilder(chromedriverBin)');
+    expect(source).to.contain('.setChromeService(service)');
   });
 });
