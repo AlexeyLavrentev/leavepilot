@@ -5,6 +5,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const os = require('os');
 const { execFileSync } = require('child_process');
 const { spawnInGroup, terminateGroup } = require('./lib/spawn_group');
 const skipHonesty = require('../t/lib/skip_honesty');
@@ -27,6 +28,40 @@ const port = process.env.PORT || '3000';
 const testHost = process.env.TEST_HOST || '127.0.0.1';
 const host = `http://${testHost}:${port}`;
 const node = process.execPath;
+const runId = `${process.pid}-${Date.now()}`;
+const defaultProcessReportPath = path.join(
+  process.cwd(), '.artifacts', 'verify', 'process-reports', `${runId}.json`
+);
+const processReportPath = process.env.TEST_PROCESS_REPORT_PATH || defaultProcessReportPath;
+const isAllowedReportPath = candidate => {
+  const resolved = path.resolve(candidate);
+  return resolved.startsWith(path.join(process.cwd(), '.artifacts') + path.sep)
+    || resolved.startsWith(path.resolve(os.tmpdir()) + path.sep);
+};
+if (!isAllowedReportPath(processReportPath)) {
+  throw new Error('TEST_PROCESS_REPORT_PATH must be below .artifacts or the system temporary directory');
+}
+const ownedProcesses = [];
+const writeProcessReport = () => {
+  fs.mkdirSync(path.dirname(processReportPath), {recursive: true});
+  fs.writeFileSync(processReportPath, JSON.stringify({runId, processes: ownedProcesses}, null, 2) + '\n');
+};
+const registerOwnedProcess = (child, label) => {
+  const entry = {
+    label,
+    pid: child.pid,
+    pgid: child.pid,
+    startedAt: new Date().toISOString(),
+    termination: null,
+  };
+  ownedProcesses.push(entry);
+  writeProcessReport();
+  return entry;
+};
+const recordTermination = (entry, outcome) => {
+  entry.termination = Object.assign({finishedAt: new Date().toISOString()}, outcome);
+  writeProcessReport();
+};
 const dbStorage = process.env.TEST_DB_STORAGE || path.join(process.cwd(), 'db.test.sqlite');
 
 /*
@@ -216,6 +251,7 @@ const runWithTimeout = (command, args, options = {}, timeoutMs = 0, timeoutMessa
   }, options));
 
   liveChildren.add(child);
+  const ownedProcess = registerOwnedProcess(child, (args[0] || '').endsWith('/mocha') ? 'mocha' : path.basename(args[0] || command));
 
   let timer;
   let timedOut = false;
@@ -241,13 +277,17 @@ const runWithTimeout = (command, args, options = {}, timeoutMs = 0, timeoutMessa
 
   child.on('error', error => {
     done();
-    terminateGroup(child).then(() => reject(error), reject);
+    terminateGroup(child).then(() => {
+      recordTermination(ownedProcess, {outcome: 'spawn-error', term: true, kill: true});
+      reject(error);
+    }, reject);
   });
 
   child.on('exit', code => {
     done();
 
     terminateGroup(child).then(() => {
+      recordTermination(ownedProcess, {outcome: timedOut ? 'timeout' : 'exit', term: true, kill: true, exitCode: code});
       if (timedOut) {
         reject(new Error(timeoutMessage || `${command} ${args.join(' ')} hung and was killed`));
         return;
@@ -521,7 +561,12 @@ const stopServer = server => new Promise(resolve => {
     return;
   }
 
-  terminateGroup(server).then(resolve, resolve);
+  terminateGroup(server).then(() => {
+    if (server._processReportEntry) {
+      recordTermination(server._processReportEntry, {outcome: 'server-stop', term: true, kill: true});
+    }
+    resolve();
+  }, resolve);
 });
 
 const rawArgs = process.argv.slice(2)
@@ -587,6 +632,7 @@ run(node, ['bin/db_update.js'])
       stdio: ['inherit', 'inherit', 'inherit', 'ipc'],
       env: serverEnv,
     });
+    server._processReportEntry = registerOwnedProcess(server, 'server');
 
     server.on('exit', code => {
       if (code !== null && code !== 0) {

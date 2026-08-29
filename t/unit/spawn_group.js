@@ -234,7 +234,7 @@ describe('Killing a test batch', function() {
     it('sweeps after every exit, not only after a kill', function() {
       const onExit = runner.slice(runner.indexOf("child.on('exit'"));
 
-      expect(onExit.slice(0, 400)).to.match(/killGroup\(child, 'SIGKILL'\)/);
+      expect(onExit.slice(0, 500)).to.match(/terminateGroup\(child\)/);
     });
 
     /*
@@ -244,7 +244,7 @@ describe('Killing a test batch', function() {
     */
     it('forwards an interrupt to the batches it has going', function() {
       expect(runner).to.match(/\['SIGINT', 'SIGTERM'\]\.forEach/);
-      expect(runner).to.match(/liveChildren\.forEach\(child => killGroup\(child, 'SIGKILL'\)\)/);
+      expect(runner).to.match(/Promise\.all\(Array\.from\(liveChildren\)\.map\(child => terminateGroup\(child\)\)\)/);
     });
   });
 });
