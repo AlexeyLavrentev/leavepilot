@@ -56,6 +56,14 @@ describe('test runner lifecycle', function() {
 
     expect(explicitBranch).to.contain('configuredRetries === 0');
   });
+
+  it('preflights browsers only for browser-driving targets', function() {
+    const source = fs.readFileSync('bin/test.js', 'utf8');
+
+    expect(source).to.contain("rawArgs.some(arg => arg.startsWith('t/integration/'))");
+    expect(source).to.contain('if (browserTarget)');
+    expect(source).to.not.contain("prepareBrowserEnvironment());\n\nif (!process.env.KEEP_TEST_DB");
+  });
 });
 
 module.exports = { verifyReport };

@@ -36,7 +36,8 @@ const processReportPath = process.env.TEST_PROCESS_REPORT_PATH || defaultProcess
 const isAllowedReportPath = candidate => {
   const resolved = path.resolve(candidate);
   return resolved.startsWith(path.join(process.cwd(), '.artifacts') + path.sep)
-    || resolved.startsWith(path.resolve(os.tmpdir()) + path.sep);
+    || resolved.startsWith(path.resolve(os.tmpdir()) + path.sep)
+    || resolved.startsWith('/tmp/');
 };
 if (!isAllowedReportPath(processReportPath)) {
   throw new Error('TEST_PROCESS_REPORT_PATH must be below .artifacts or the system temporary directory');
