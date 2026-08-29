@@ -9,6 +9,7 @@ const {
   computeExecutablePath,
   detectBrowserPlatform,
   install,
+  uninstall,
 } = require('@puppeteer/browsers');
 const { PUPPETEER_REVISIONS } = require('puppeteer-core');
 
@@ -89,6 +90,18 @@ const bootstrap = async () => {
   const platform = detectBrowserPlatform();
   if (!platform) {
     throw new Error('browser setup cannot determine this platform');
+  }
+  try {
+    return validate();
+  } catch {
+    // An interrupted official download leaves a build-shaped directory behind.
+    // Remove only this pinned pair before asking Puppeteer to verify and fetch it again.
+    await Promise.all([Browser.CHROME, Browser.CHROMEDRIVER].map(browser => uninstall({
+      browser,
+      buildId: BUILD_ID,
+      cacheDir: CACHE_ROOT,
+      platform,
+    })));
   }
   await install({ browser: Browser.CHROME, buildId: BUILD_ID, cacheDir: CACHE_ROOT, platform });
   await install({ browser: Browser.CHROMEDRIVER, buildId: BUILD_ID, cacheDir: CACHE_ROOT, platform });
