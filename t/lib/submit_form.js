@@ -215,6 +215,42 @@ function wait_for_submitted_document(driver, previous_document) {
   }, DEFAULT_WAIT_TIMEOUT);
 }
 
+function describe_modal_state(driver, selector) {
+  return withDeadline('inspecting modal ' + selector, driver.findElements(By.css(selector)))
+    .then(function(els){
+      if (!els.length) {
+        return 'absent';
+      }
+
+      return Promise.all(els.map(function(el){
+        return withDeadline('checking modal visibility ' + selector, el.isDisplayed())
+          .then(function(visible){ return visible ? 'visible' : 'not displayed'; })
+          .catch(rethrow_wedge('unreadable'));
+      })).then(function(states){
+        return states.join(', ');
+      });
+    });
+}
+
+function wait_for_modal_closed(driver, selector, timeout) {
+  timeout = timeout || DEFAULT_WAIT_TIMEOUT;
+
+  return poll_until('modal ' + selector + ' to close', function(){
+    return describe_modal_state(driver, selector)
+      .then(function(state){ return state === 'absent' || state === 'not displayed'; })
+      .catch(rethrow_wedge(false));
+  }, timeout)
+    .catch(rethrow_wedge(function(error){
+      if (!error.pollTimedOut) {
+        throw error;
+      }
+
+      return describe_modal_state(driver, selector).then(function(state){
+        throw new Error('Timed out waiting for modal ' + selector + ' to close. Current modal state: ' + state);
+      });
+    }));
+}
+
 function set_element_value(driver, el, value, change_step) {
   return driver.executeScript(
     'if (arguments[2]) { arguments[0].step = "0.1"; }'
@@ -425,7 +461,8 @@ function submit_form_func(args) {
       confirm_dialog = args.confirm_dialog || false,
 
       // CSS selecetor for form submition button
-      submit_button_selector = args.submit_button_selector ||'button[type="submit"]';
+      submit_button_selector = args.submit_button_selector ||'button[type="submit"]',
+      modal_selector = args.modal_selector;
 
     return Promise.resolve()
       .then(function(){
@@ -452,6 +489,13 @@ function submit_form_func(args) {
           })
           .then(function(){
             return wait_for_submitted_document(driver, previous_document);
+          })
+          .then(function(){
+            if (!modal_selector) {
+              return null;
+            }
+
+            return wait_for_modal_closed(driver, modal_selector);
           });
       })
       .then(function(){
@@ -506,3 +550,7 @@ function submit_form_func(args) {
 }
 
 module.exports = submit_form_func;
+module.exports._waitForModalClosed = wait_for_modal_closed;
+module.exports._shouldWaitForModal = function(args) {
+  return !!args.modal_selector;
+};

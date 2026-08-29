@@ -23,26 +23,27 @@ describe('Ensure that leaves with not full days are rendered properly', function
 
   var non_admin_user_email, new_user_email, driver;
 
-  function open_book_leave_modal(attempts_left) {
-    attempts_left = attempts_left === undefined ? 3 : attempts_left;
-
-    return driver
-      .findElement(By.css('#book_time_off_btn'))
+  function open_book_leave_modal() {
+    return submit_form_func._waitForModalClosed(driver, '#book_leave_modal')
+      .then(() => driver.findElement(By.css('#book_time_off_btn')))
       .then(el => el.click())
-      .catch(err => {
-        if (attempts_left <= 0) {
-          throw err;
-        }
-
-        return driver
-          .sleep(250)
-          .then(() => open_book_leave_modal(attempts_left - 1));
-      })
       .then(() => driver.wait(() => (
-        driver
-          .findElements(By.css('#book_leave_modal.in'))
-          .then(els => els.length > 0)
-      ), 5000));
+        driver.findElements(By.css('#book_leave_modal.in')).then(els => {
+          if (!els.length) {
+            return false;
+          }
+
+          return els[0].findElements(By.css('select[name="from_date_part"]'))
+            .then(controls => {
+              if (!controls.length) {
+                return false;
+              }
+
+              return Promise.all([controls[0].isDisplayed(), controls[0].isEnabled()])
+                .then(([visible, enabled]) => visible && enabled);
+            });
+        })
+      ), 10000));
   }
 
   it('Create new company', done => {
@@ -99,6 +100,7 @@ describe('Ensure that leaves with not full days are rendered properly', function
       // Create new leave request
       .then(() => submit_form_func({
           driver      : driver,
+          modal_selector : '#book_leave_modal',
           form_params : [{
             selector        : 'select[name="from_date_part"]',
             option_selector : 'option[value="2"]',
@@ -126,6 +128,7 @@ describe('Ensure that leaves with not full days are rendered properly', function
       // Create new leave request
       .then(() => submit_form_func({
           driver      : driver,
+          modal_selector : '#book_leave_modal',
           form_params : [{
             selector        : 'select[name="from_date_part"]',
             option_selector : 'option[value="3"]',
@@ -154,6 +157,7 @@ describe('Ensure that leaves with not full days are rendered properly', function
       // Create new leave request
       .then(() => submit_form_func({
           driver      : driver,
+          modal_selector : '#book_leave_modal',
           form_params : [{
             selector        : 'select[name="from_date_part"]',
             option_selector : 'option[value="2"]',
@@ -181,6 +185,7 @@ describe('Ensure that leaves with not full days are rendered properly', function
       // Create new leave request
       .then(() => submit_form_func({
           driver      : driver,
+          modal_selector : '#book_leave_modal',
           form_params : [{
             selector        : 'select[name="from_date_part"]',
             option_selector : 'option[value="3"]',
