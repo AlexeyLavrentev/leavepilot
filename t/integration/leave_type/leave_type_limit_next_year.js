@@ -6,7 +6,6 @@ const
   expect           = require('chai').expect,
   dayjs = require('../../../lib/util/date'),
   until            = require('selenium-webdriver').until,
-  Key              = require('selenium-webdriver').Key,
   login_user_func        = require('../../lib/login_with_user'),
   register_new_user_func = require('../../lib/register_new_user'),
   logout_user_func       = require('../../lib/logout_user'),
@@ -41,27 +40,8 @@ describe('Leave type limits for next year: ' + next_year, function(){
 
   let admin_user_email, non_admin_user_email, driver;
 
-  // Stabilize modal: wait for it to close before opening again.
-  // Same pattern as ovelapping_bookings_halfs.js.
-  function wait_modal_closed(drv, timeout) {
-    return drv.wait(function(){
-      return drv.findElements(By.css('#book_leave_modal'))
-        .then(function(els){
-          if (!els.length) return true;
-          return els[0].isDisplayed().then(function(v){ return !v; });
-        });
-    }, timeout);
-  }
-
   function open_book_leave_modal(drv) {
-    return wait_modal_closed(drv, 4000)
-      .catch(function(){
-        return drv.actions().sendKeys(Key.ESCAPE).perform()
-          .then(function(){ return wait_modal_closed(drv, 4000); });
-      })
-      .then(function(){
-        return drv.findElement(By.css('#book_time_off_btn'));
-      })
+    return drv.findElement(By.css('#book_time_off_btn'))
       .then(function(el){ return el.click(); })
       .then(function(){
         return drv.wait(function(){
@@ -72,6 +52,15 @@ describe('Leave type limits for next year: ' + next_year, function(){
             });
         }, 1500);
       });
+  }
+
+  function check_no_booking(day) {
+    return Promise.all(['half_1st', 'half_2nd'].map(function(half){
+      const selector = 'table.month_' + day.format('MMMM') + ' td.day_' + day.format('D') + '.' + half;
+      return driver.findElement(By.css(selector))
+        .then(function(el){ return el.getAttribute('class'); })
+        .then(function(css){ expect(css).not.to.match(/\bleave_cell(?:_pended)?\b/); });
+    }));
   }
 
   it('Create new company', function(done){
@@ -254,6 +243,14 @@ describe('Leave type limits for next year: ' + next_year, function(){
           }],
           message : /Failed to create a leave request/,
         })
+        .then(function(){
+          return check_booking_func({
+            driver,
+            full_days : [dayjs.utc(next_year + '-05-10')],
+            type      : 'approved',
+          });
+        })
+        .then(function(){ return check_no_booking(dayjs.utc(next_year + '-05-17')); })
         .then(function(){ done() })
         .catch(done);
       })
