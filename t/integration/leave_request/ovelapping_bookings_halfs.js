@@ -1,8 +1,7 @@
 
 'use strict';
 
-var until            = require('selenium-webdriver').until,
-    By               = require('selenium-webdriver').By,
+var By               = require('selenium-webdriver').By,
     expect           = require('chai').expect,
     _                = require('underscore'),
     dayjs = require('../../../lib/util/date'),
@@ -40,43 +39,8 @@ describe('Overlapping leaverequest (with halfs)', function(){
 
   var non_admin_user_email, new_user_email, driver;
 
-  /*
-    The book-leave modal fades out asynchronously after a failed submission
-    (Bootstrap keeps the semi-transparent shell mounted while animating), and
-    on a slow two-core CI runner the next test's click on the navbar button
-    lands under that shell — ElementClickInterceptedError, the modal-title
-    h4 receives the click. Wait for the modal to be gone before opening it
-    again, and for it to be visible after, so the timing of the fade is
-    never the thing under test. Same stabilization class as 82ad934.
-  */
-  var Key = require('selenium-webdriver').Key;
-
-  var wait_modal_closed = function(drv, timeout) {
-    // findElements (not findElement) so a page navigation in progress
-    // returns an empty array immediately instead of hanging on a
-    // findElement that nobody cancels.
-    return drv.wait(function(){
-      return drv.findElements(By.css('#book_leave_modal'))
-        .then(function(els){
-          if (!els.length) return true;
-          return els[0].isDisplayed().then(function(v){ return !v; });
-        });
-    }, timeout);
-  };
-
   var open_book_leave_modal = function(drv) {
-    // If a previous failed submission left the modal open, close it
-    // explicitly (Escape) and let the fade finish before clicking the
-    // navbar button — otherwise the click lands under the modal shell
-    // (ElementClickInterceptedError on a slow CI runner).
-    return wait_modal_closed(drv, 1200)
-      .catch(function() {
-        return drv.actions().sendKeys(Key.ESCAPE).perform()
-          .then(function(){ return wait_modal_closed(drv, 1500); });
-      })
-      .then(function() {
-        return drv.findElement(By.css('#book_time_off_btn'));
-      })
+    return drv.findElement(By.css('#book_time_off_btn'))
       .then(function(el){ return el.click(); })
       .then(function() {
         return drv.wait(function(){
@@ -87,6 +51,26 @@ describe('Overlapping leaverequest (with halfs)', function(){
             });
         }, 1500);
       });
+  };
+
+  var check_no_booking = function(day) {
+    return Promise.all(['half_1st', 'half_2nd'].map(function(half){
+      var selector = 'table.month_' + day.format('MMMM') + ' td.day_' + day.format('D') + '.' + half;
+      return driver.findElement(By.css(selector))
+        .then(function(el){ return el.getAttribute('class'); })
+        .then(function(css){ expect(css).not.to.match(/\bleave_cell(?:_pended)?\b/); });
+    }));
+  };
+
+  var check_original_booking_only = function(rejected_days) {
+    return check_booking_func({
+      driver         : driver,
+      full_days      : [dayjs.utc('2015-06-17')],
+      halfs_1st_days : [dayjs.utc('2015-06-16')],
+      type           : 'pended',
+    }).then(function(){
+      return Promise.all(rejected_days.map(check_no_booking));
+    });
   };
 
   it('Create new company', function(done){
@@ -173,6 +157,9 @@ describe('Overlapping leaverequest (with halfs)', function(){
           }],
           message : /New leave request was added/,
         })
+        .then(function(){
+          return check_original_booking_only([dayjs.utc('2015-06-15')]);
+        })
         .then(function(){ done() })
         .catch(done);
       })
@@ -208,6 +195,9 @@ describe('Overlapping leaverequest (with halfs)', function(){
           }],
           message : /Failed to create a leave request/,
         })
+        .then(function(){
+          return check_original_booking_only([dayjs.utc('2015-06-15')]);
+        })
         .then(function(){ done() })
         .catch(done);
       })
@@ -236,6 +226,12 @@ describe('Overlapping leaverequest (with halfs)', function(){
             value : '2015-06-18',
           }],
           message : /Failed to create a leave request/,
+        })
+        .then(function(){
+          return check_original_booking_only([dayjs.utc('2015-06-18')]);
+        })
+        .then(function(){
+          return check_original_booking_only([dayjs.utc('2015-06-15')]);
         })
         .then(function(){ done() })
         .catch(done);
