@@ -97,6 +97,10 @@ function buildOptions() {
     options.addArguments('--disable-gpu');
     options.addArguments('--no-sandbox');
     options.addArguments('--disable-dev-shm-usage');
+    // Chrome for Testing on macOS can block while trying to access Keychain
+    // before it opens its DevTools port. The mock backend keeps test profiles
+    // isolated and lets ChromeDriver attach deterministically.
+    options.addArguments('--use-mock-keychain');
     /*
       Linux draws a classic 15px scrollbar that eats layout width, macOS draws an
       overlay one that does not. Geometry contracts written against the latter

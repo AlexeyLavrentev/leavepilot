@@ -126,6 +126,12 @@ describe('The browser the suite drives', function() {
     expect(args.some(argument => /primaryHoverType=2/.test(argument))).to.equal(true);
   });
 
+  it('uses a mock keychain before ChromeDriver opens a headless session', function() {
+    const args = chromeOptions().args || [];
+
+    expect(args).to.include('--use-mock-keychain');
+  });
+
   it('uses the injected ChromeDriver service instead of Selenium Manager', function() {
     const source = fs.readFileSync(require.resolve('../lib/build_driver'), 'utf8');
 

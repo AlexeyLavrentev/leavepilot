@@ -11,10 +11,12 @@ const {
   install,
   uninstall,
 } = require('@puppeteer/browsers');
-const { PUPPETEER_REVISIONS } = require('puppeteer-core');
 
 const CACHE_ROOT = path.join(process.cwd(), '.artifacts', 'verify', 'browser');
-const BUILD_ID = PUPPETEER_REVISIONS.chrome;
+// Keep Chrome-for-Testing and ChromeDriver on one repository-owned build.
+// Do not derive this from Puppeteer's revision: its release cadence is separate
+// from this suite's verified browser contract.
+const BUILD_ID = '152.0.7977.64';
 
 const missingPrerequisiteMessage = () =>
   'browser setup missing; run: node bin/browser_setup.js --bootstrap';
@@ -55,6 +57,38 @@ const executablePath = browser => computeExecutablePath({
   platform: detectBrowserPlatform(),
 });
 
+const isPinnedArchiveName = name => name.startsWith(`${BUILD_ID}-`);
+
+const removePinnedArchives = browser => {
+  const browserRoot = path.join(CACHE_ROOT, browser);
+  if (!isWithinCache(CACHE_ROOT, browserRoot) || !fs.existsSync(browserRoot)) {
+    return;
+  }
+  fs.readdirSync(browserRoot, { withFileTypes: true }).forEach(entry => {
+    if (entry.isFile() && isPinnedArchiveName(entry.name)) {
+      fs.rmSync(path.join(browserRoot, entry.name));
+    }
+  });
+};
+
+const bootstrapBrowser = async ({ browser, platform }) => {
+  const options = {
+    browser,
+    buildId: BUILD_ID,
+    cacheDir: CACHE_ROOT,
+    platform,
+  };
+  try {
+    return await install(options);
+  } catch {
+    // Recover only the broken pinned artifact. A valid Chrome cache must not
+    // be discarded merely because its matching driver is absent.
+    await uninstall(options);
+    removePinnedArchives(browser);
+    return install(options);
+  }
+};
+
 const validate = () => {
   const chromeBin = executablePath(Browser.CHROME);
   const chromedriverBin = executablePath(Browser.CHROMEDRIVER);
@@ -91,20 +125,8 @@ const bootstrap = async () => {
   if (!platform) {
     throw new Error('browser setup cannot determine this platform');
   }
-  try {
-    return validate();
-  } catch {
-    // An interrupted official download leaves a build-shaped directory behind.
-    // Remove only this pinned pair before asking Puppeteer to verify and fetch it again.
-    await Promise.all([Browser.CHROME, Browser.CHROMEDRIVER].map(browser => uninstall({
-      browser,
-      buildId: BUILD_ID,
-      cacheDir: CACHE_ROOT,
-      platform,
-    })));
-  }
-  await install({ browser: Browser.CHROME, buildId: BUILD_ID, cacheDir: CACHE_ROOT, platform });
-  await install({ browser: Browser.CHROMEDRIVER, buildId: BUILD_ID, cacheDir: CACHE_ROOT, platform });
+  await bootstrapBrowser({ browser: Browser.CHROME, platform });
+  await bootstrapBrowser({ browser: Browser.CHROMEDRIVER, platform });
   return validate();
 };
 
@@ -126,8 +148,10 @@ if (require.main === module) {
 module.exports = {
   BUILD_ID,
   CACHE_ROOT,
+  bootstrapBrowser,
   haveMatchingMajorVersions,
   isWithinCache,
+  isPinnedArchiveName,
   missingPrerequisiteMessage,
   toPrintEnv,
   validate,

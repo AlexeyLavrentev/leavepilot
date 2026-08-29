@@ -101,6 +101,7 @@ module.exports = [
       'public/**',
       'coverage/**',
       '.nyc_output/**',
+      '.artifacts/**',
       'db.*.sqlite',
       'package-lock.json',
       'views/**',
