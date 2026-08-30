@@ -108,7 +108,9 @@ describe('Revoke leave request by Admin', function(){
       .then(function(){
 
         submit_form_func({
-          driver      : driver,
+          driver            : driver,
+          expect_navigation : true,
+          modal_selector    : '#book_leave_modal',
           // The order matters here as we need to populate dropdown prior date filds
           form_params : [{
             selector        : 'select[name="from_date_part"]',
