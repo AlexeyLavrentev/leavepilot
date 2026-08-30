@@ -616,6 +616,49 @@ describe('Team View sticky header', function() {
   });
 
   it('verifies mobile wheel/pointer input without CDP touch emulation', async function() {
+    const WHEEL_SETTLE_TIMEOUT_MS = 120;
+    const mobileMetrics = {
+      viewport: {width: 390, height: 844},
+      browser: {name: browserName, version: browserVersion},
+      wheelEvents: [],
+    };
+    let probeInstalled = false;
+
+    async function readMobileInputMetrics() {
+      return driver.executeScript(function() {
+        function rect(element) {
+          if (!element) { return null; }
+          const value = element.getBoundingClientRect();
+          return {
+            top: value.top,
+            right: value.right,
+            bottom: value.bottom,
+            left: value.left,
+            width: value.width,
+            height: value.height,
+          };
+        }
+        const container = document.querySelector('.team-view-table-container');
+        const overlay = document.querySelector('.team-view-sticky-header:not([hidden])');
+        const viewport = overlay && overlay.querySelector('.team-view-sticky-header-viewport');
+        const probe = window.__stage6cMobileWheelProbe;
+        return {
+          pageY: window.pageYOffset,
+          devicePixelRatio: window.devicePixelRatio,
+          container: container && {
+            index: Array.prototype.indexOf.call(document.querySelectorAll('.team-view-table-container'), container),
+            className: container.className,
+            rect: rect(container),
+            scrollLeft: container.scrollLeft,
+            scrollWidth: container.scrollWidth,
+            clientWidth: container.clientWidth,
+          },
+          overlayScrollLeft: viewport ? viewport.scrollLeft : null,
+          wheelEvents: probe ? probe.events : [],
+        };
+      });
+    }
+
     await setViewport(driver, {width: 390, height: 844});
     await openAndInflate(12);
     await applyTheme('light');
@@ -623,36 +666,85 @@ describe('Team View sticky header', function() {
       const shell = document.querySelector('.team-view-table-shell');
       window.scrollTo(0, shell.getBoundingClientRect().top + window.pageYOffset);
     });
-    const pageBefore = await driver.executeScript('return window.pageYOffset;');
-    await driver.actions().scroll(0, 0, 0, 240).perform();
-    await driver.wait(async function() { return (await activeOverlayCount()) === 1; }, 2000);
-    const pageAfter = await driver.executeScript('return window.pageYOffset;');
-    expect(pageAfter).to.be.greaterThan(pageBefore);
+    try {
+      await driver.executeScript(function() {
+        function label(element) {
+          if (!element || !element.tagName) { return String(element); }
+          return `${element.tagName.toLowerCase()}${element.id ? `#${element.id}` : ''}${element.className ? `.${String(element.className).trim().split(/\s+/).filter(Boolean).join('.')}` : ''}`;
+        }
+        const container = document.querySelector('.team-view-table-container');
+        const probe = {events: []};
+        probe.listener = function(event) {
+          probe.events.push({
+            target: label(event.target),
+            deltaX: event.deltaX,
+            deltaY: event.deltaY,
+            deltaMode: event.deltaMode,
+            insideContainer: !!(container && container.contains(event.target)),
+            path: event.composedPath().slice(0, 6).map(label),
+          });
+        };
+        window.__stage6cMobileWheelProbe = probe;
+        window.addEventListener('wheel', probe.listener, true);
+      });
+      probeInstalled = true;
 
-    const container = (await driver.findElements(By.css('.team-view-table-container')))[0];
-    await driver.actions().scroll(0, 0, 260, 0, container).perform();
-    await driver.sleep(120);
-    const value = await geometry(0);
-    expect(value.sourceScrollLeft).to.be.greaterThan(0);
-    expect(value.overlayScrollLeft).to.be.closeTo(value.sourceScrollLeft, 1);
-    expect(value.cloneNameRect.left).to.be.closeTo(value.containerRect.left, 1.5);
-    expect(value.pageOverflow).to.be.at.most(1);
+      const pageBefore = await driver.executeScript('return window.pageYOffset;');
+      mobileMetrics.pageAction = {requestedDeltaX: 0, requestedDeltaY: 240, pageBefore};
+      await driver.actions().scroll(0, 0, 0, 240).perform();
+      await driver.wait(async function() { return (await activeOverlayCount()) === 1; }, 2000);
+      const pageAfter = await driver.executeScript('return window.pageYOffset;');
+      mobileMetrics.pageAction.pageAfter = pageAfter;
+      expect(pageAfter).to.be.greaterThan(pageBefore);
 
-    await driver.executeScript(function() {
-      window.__stage6cMobileCoveredClicks = 0;
-      document.querySelector('tr:not([data-stage6c-test-clone]) .team-view-user-details-summary-trigger')
-        .addEventListener('click', function() { window.__stage6cMobileCoveredClicks += 1; });
-    });
-    const overlayHeader = await driver.findElement(By.css('.team-view-sticky-header:not([hidden]) th'));
-    await driver.actions().move({origin: overlayHeader}).click().perform();
-    expect(await driver.executeScript('return window.__stage6cMobileCoveredClicks;')).to.equal(0);
+      const container = (await driver.findElements(By.css('.team-view-table-container')))[0];
+      mobileMetrics.containerBefore = await readMobileInputMetrics();
+      mobileMetrics.tableAction = {requestedDeltaX: 260, requestedDeltaY: 0};
+      await driver.actions().scroll(0, 0, 260, 0, container).perform();
+      await driver.wait(async function() {
+        const current = await readMobileInputMetrics();
+        return current.container.scrollLeft > mobileMetrics.containerBefore.container.scrollLeft;
+      }, WHEEL_SETTLE_TIMEOUT_MS);
+      const value = await geometry(0);
+      expect(value.sourceScrollLeft).to.be.greaterThan(0);
+      expect(value.overlayScrollLeft).to.be.closeTo(value.sourceScrollLeft, 1);
+      expect(value.cloneNameRect.left).to.be.closeTo(value.containerRect.left, 1.5);
+      expect(value.pageOverflow).to.be.at.most(1);
 
-    const deducted = await driver.findElement(By.css('tr:not([data-stage6c-test-clone]) .team-view-deducted-days-trigger'));
-    await driver.executeScript(function(element) { element.scrollIntoView({block: 'center'}); }, deducted);
-    await driver.actions().move({origin: deducted}).click().perform();
-    await waitExpanded(deducted, true);
-    await deducted.sendKeys(Key.ESCAPE);
-    await waitExpanded(deducted, false);
-    process.stdout.write('\n[sticky-header] mobile verified with real Selenium wheel/pointer operations at 390x844; CDP touch emulation not used; VoiceOver manual listening not performed (UI-scripting permission unavailable)\n');
+      await driver.executeScript(function() {
+        window.__stage6cMobileCoveredClicks = 0;
+        document.querySelector('tr:not([data-stage6c-test-clone]) .team-view-user-details-summary-trigger')
+          .addEventListener('click', function() { window.__stage6cMobileCoveredClicks += 1; });
+      });
+      const overlayHeader = await driver.findElement(By.css('.team-view-sticky-header:not([hidden]) th'));
+      await driver.actions().move({origin: overlayHeader}).click().perform();
+      expect(await driver.executeScript('return window.__stage6cMobileCoveredClicks;')).to.equal(0);
+
+      const deducted = await driver.findElement(By.css('tr:not([data-stage6c-test-clone]) .team-view-deducted-days-trigger'));
+      await driver.executeScript(function(element) { element.scrollIntoView({block: 'center'}); }, deducted);
+      await driver.actions().move({origin: deducted}).click().perform();
+      await waitExpanded(deducted, true);
+      await deducted.sendKeys(Key.ESCAPE);
+      await waitExpanded(deducted, false);
+      process.stdout.write('\n[sticky-header] mobile verified with real Selenium wheel/pointer operations at 390x844; CDP touch emulation not used; VoiceOver manual listening not performed (UI-scripting permission unavailable)\n');
+    } finally {
+      try {
+        mobileMetrics.containerAfter = await readMobileInputMetrics();
+        mobileMetrics.wheelEvents = mobileMetrics.containerAfter.wheelEvents;
+      } catch (error) {
+        mobileMetrics.metricReadError = error.message;
+      }
+      if (probeInstalled) {
+        try {
+          await driver.executeScript(function() {
+            const probe = window.__stage6cMobileWheelProbe;
+            if (probe) { window.removeEventListener('wheel', probe.listener, true); }
+          });
+        } catch (error) {
+          mobileMetrics.probeCleanupError = error.message;
+        }
+      }
+      process.stdout.write(`\n[sticky-header] mobile-input-metrics ${JSON.stringify(mobileMetrics)}\n`);
+    }
   });
 });

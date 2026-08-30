@@ -13,6 +13,7 @@ describe('Team View sticky header contracts', function() {
   const javascript = read(path.join('public', 'js', 'global.js'));
   const scss = read(path.join('scss', 'main.scss'));
   const css = read(path.join('public', 'css', 'style.css'));
+  const integration = read(path.join('t', 'integration', 'team_view', 'sticky_header.js'));
 
   function controllerSource() {
     const start = javascript.indexOf('(function initTeamViewStickyHeaders(){');
@@ -133,6 +134,26 @@ describe('Team View sticky header contracts', function() {
       expect(css).to.match(/\.team-view-sticky-header\s*\{[^}]*position:\s*fixed;/s);
       expect(css).to.match(/\[data-theme=dark\][^{]*\.team-view-sticky-header[^{]*\{[^}]*background:\s*#20252a/s);
       expect(css).not.to.match(/\.team-view-sticky-header[^{]*\{[^}]*(?:transition|animation):/s);
+    });
+  });
+
+  describe('mobile native wheel diagnostic', function() {
+    it('keeps native input proof observable with a bounded completion condition', function() {
+      const start = integration.indexOf("it('verifies mobile wheel/pointer input without CDP touch emulation'");
+      expect(start, 'mobile wheel contract should exist').to.be.greaterThan(-1);
+      const source = integration.slice(start);
+      const horizontalStart = source.indexOf('driver.actions().scroll(0, 0, 260, 0, container).perform()');
+      expect(horizontalStart, 'native element-origin wheel action should exist').to.be.greaterThan(-1);
+      const horizontalSource = source.slice(horizontalStart);
+
+      expect(source).to.contain('const WHEEL_SETTLE_TIMEOUT_MS = 120;');
+      expect(source).to.contain('driver.actions().scroll(0, 0, 260, 0, container).perform()');
+      expect(source).to.contain('[sticky-header] mobile-input-metrics ');
+      expect(source).to.contain('finally');
+      expect(source).to.match(/driver\.wait\([\s\S]*container\.scrollLeft[\s\S]*WHEEL_SETTLE_TIMEOUT_MS/);
+      expect(horizontalSource).not.to.match(/driver\.sleep\(120\)/);
+      expect(horizontalSource).not.to.match(/dispatchEvent\(new WheelEvent|scrollLeft\s*=|window\.scrollTo\(/);
+      expect(horizontalSource).not.to.match(/retry|Emulation\.setTouchEmulationEnabled/i);
     });
   });
 });
