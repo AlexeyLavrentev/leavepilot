@@ -81,4 +81,21 @@ describe('browser batch diagnostic contract', function() {
     expect(reporter._redact('x'.repeat(5000))).to.have.lengthOf(2048);
   });
 
+  it('keeps Browser CI strict and uploads diagnostics on every outcome', function() {
+    const workflow = fs.readFileSync('.github/workflows/core-integration.yml', 'utf8');
+    const browserJob = workflow.slice(workflow.indexOf('jobs:\n  integration:'));
+
+    expect(browserJob).to.include("TEST_RETRIES: '0'");
+    expect(browserJob).to.include("TEST_INTEGRATION_BATCH_SIZE: '1'");
+    expect(browserJob).to.include("TEST_EXECUTION_TIMEOUT_MS: '120000'");
+    // eslint-disable-next-line no-template-curly-in-string
+    expect(browserJob).to.include('name: flake-report-shard-${{ matrix.shard }}');
+    // eslint-disable-next-line no-template-curly-in-string
+    expect(browserJob).to.include('name: browser-batch-diagnostics-shard-${{ matrix.shard }}');
+    expect(browserJob).to.include('path: .artifacts/verify/browser-batch-diagnostics/');
+    expect(browserJob).to.include('if: always()');
+    expect(browserJob).to.include('if-no-files-found: error');
+    expect(browserJob).to.not.include('continue-on-error');
+  });
+
 });

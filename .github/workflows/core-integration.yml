@@ -134,3 +134,14 @@ jobs:
           name: flake-report-shard-${{ matrix.shard }}
           path: flake-report.json
           if-no-files-found: error
+
+      - name: Upload browser batch diagnostics
+        # The runner writes one bounded/redacted JSON report per batch. Keep
+        # this independent of the job log: failures in Actions log export must
+        # not erase the only useful browser failure context.
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: browser-batch-diagnostics-shard-${{ matrix.shard }}
+          path: .artifacts/verify/browser-batch-diagnostics/
+          if-no-files-found: error
