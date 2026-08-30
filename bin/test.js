@@ -33,6 +33,10 @@ const defaultProcessReportPath = path.join(
   process.cwd(), '.artifacts', 'verify', 'process-reports', `${runId}.json`
 );
 const processReportPath = process.env.TEST_PROCESS_REPORT_PATH || defaultProcessReportPath;
+const defaultBatchDiagnosticDirectory = path.join(
+  process.cwd(), '.artifacts', 'verify', 'browser-batch-diagnostics', runId
+);
+const batchDiagnosticDirectory = process.env.TEST_BATCH_DIAGNOSTIC_DIR || defaultBatchDiagnosticDirectory;
 const isAllowedReportPath = candidate => {
   const resolved = path.resolve(candidate);
   return resolved.startsWith(path.join(process.cwd(), '.artifacts') + path.sep)
@@ -41,6 +45,9 @@ const isAllowedReportPath = candidate => {
 };
 if (!isAllowedReportPath(processReportPath)) {
   throw new Error('TEST_PROCESS_REPORT_PATH must be below .artifacts or the system temporary directory');
+}
+if (!isAllowedReportPath(batchDiagnosticDirectory)) {
+  throw new Error('TEST_BATCH_DIAGNOSTIC_DIR must be below .artifacts or the system temporary directory');
 }
 const ownedProcesses = [];
 const writeProcessReport = () => {
@@ -65,6 +72,37 @@ const recordTermination = (entry, outcome) => {
   writeProcessReport();
 };
 const dbStorage = process.env.TEST_DB_STORAGE || path.join(process.cwd(), 'db.test.sqlite');
+
+const DIAGNOSTIC_TAIL_BYTES = 4096;
+const DIAGNOSTIC_TAIL_LINES = 80;
+const MAX_BATCH_DIAGNOSTIC_BYTES = 16384;
+const redactDiagnosticText = value => String(value || '')
+  .replace(/\b(authorization|cookie|password|secret|token|api[_-]?key|key)\s*[:=]\s*(?:Bearer\s+)?[^\s,;]+/gi, '$1=[REDACTED]');
+const boundedTail = value => {
+  const lines = redactDiagnosticText(value).split(/\r?\n/).slice(-DIAGNOSTIC_TAIL_LINES);
+  return lines.join('\n').slice(-DIAGNOSTIC_TAIL_BYTES);
+};
+const readBatchSnapshot = (snapshotPath, identity) => {
+  const snapshot = JSON.parse(fs.readFileSync(snapshotPath, 'utf8'));
+  if (!snapshot || !snapshot.identity || typeof snapshot.event !== 'string'
+    || snapshot.identity.runId !== identity.runId
+    || snapshot.identity.batchId !== identity.batchId
+    || snapshot.identity.spec !== identity.spec) {
+    throw new Error('reporter snapshot identity mismatch');
+  }
+  return snapshot;
+};
+const writeBatchDiagnostic = (reportPath, payload) => {
+  const safePayload = Object.assign({}, payload, {outputTail: boundedTail(payload.outputTail)});
+  const temporary = `${reportPath}.${process.pid}.tmp`;
+  const serialized = JSON.stringify(safePayload, null, 2) + '\n';
+  if (Buffer.byteLength(serialized) > MAX_BATCH_DIAGNOSTIC_BYTES) {
+    throw new Error('batch diagnostic report exceeds size limit');
+  }
+  fs.mkdirSync(path.dirname(reportPath), {recursive: true});
+  fs.writeFileSync(temporary, serialized, {mode: 0o600});
+  fs.renameSync(temporary, reportPath);
+};
 
 /*
   TEST_DB_DIALECT selects the database contour the children run against
@@ -142,6 +180,7 @@ const serverEnv = Object.assign({}, baseTestEnv, {
 const flakeReportPath = path.join(process.cwd(), 'flake-report.json');
 
 const FLAKE_REPORTER = path.join('t', 'lib', 'flake_reporter.js');
+const BATCH_DIAGNOSTIC_REPORTER = path.join('t', 'lib', 'batch_diagnostic_reporter.js');
 
 const flaky = [];
 const flakeSidecars = [];
@@ -248,12 +287,29 @@ const runWithTimeout = (command, args, options = {}, timeoutMs = 0, timeoutMessa
     no parent. See bin/lib/spawn_group.js for what that cost.
   */
   const diagnostic = options.diagnostic || null;
+  const captureOutput = options.captureOutput === true;
   const spawnOptions = Object.assign({}, options);
   delete spawnOptions.diagnostic;
+  delete spawnOptions.captureOutput;
   const child = spawnInGroup(command, args, Object.assign({
-    stdio: 'inherit',
+    stdio: captureOutput ? ['ignore', 'pipe', 'pipe'] : 'inherit',
     env: baseTestEnv,
   }, spawnOptions));
+  let outputTail = '';
+  const forwardOutput = stream => {
+    if (!stream) {
+      return;
+    }
+    stream.on('data', chunk => {
+      const text = chunk.toString();
+      outputTail = boundedTail(outputTail + text);
+      stream === child.stdout ? process.stdout.write(text) : process.stderr.write(text);
+    });
+  };
+  if (captureOutput) {
+    forwardOutput(child.stdout);
+    forwardOutput(child.stderr);
+  }
 
   liveChildren.add(child);
   const ownedProcess = registerOwnedProcess(
@@ -294,6 +350,8 @@ const runWithTimeout = (command, args, options = {}, timeoutMs = 0, timeoutMessa
     done();
     terminateGroup(child).then(() => {
       recordTermination(ownedProcess, {outcome: 'spawn-error', term: true, kill: true});
+      error.outputTail = outputTail;
+      error.ownedProcess = ownedProcess;
       reject(error);
     }, reject);
   });
@@ -307,14 +365,22 @@ const runWithTimeout = (command, args, options = {}, timeoutMs = 0, timeoutMessa
     terminateGroup(child, {graceMs: 0}).then(() => {
       recordTermination(ownedProcess, {outcome: timedOut ? 'timeout' : 'exit', term: true, kill: true, exitCode: code});
       if (timedOut) {
-        reject(new Error(timeoutMessage || `${command} ${args.join(' ')} hung and was killed`));
+        const error = new Error(timeoutMessage || `${command} ${args.join(' ')} hung and was killed`);
+        error.timedOut = true;
+        error.outputTail = outputTail;
+        error.ownedProcess = ownedProcess;
+        reject(error);
         return;
       }
       if (code === 0) {
-        resolve();
+        resolve({exitCode: code, outputTail, ownedProcess});
         return;
       }
-      reject(new Error(`${command} ${args.join(' ')} exited with ${code}`));
+      const error = new Error(`${command} ${args.join(' ')} exited with ${code}`);
+      error.outputTail = outputTail;
+      error.ownedProcess = ownedProcess;
+      error.exitCode = code;
+      reject(error);
     }, reject);
   });
 });
@@ -468,25 +534,85 @@ const runMochaSuite = () => {
     on its own timeout, and the batch ceiling above still kills a wedged
     process. This only makes finishing mean exiting.
   */
-  const mocha = (batch, sidecarPath, index) => runWithTimeout(
-    node,
-    ['node_modules/mocha/bin/mocha', '--exit']
-      .concat(FAIL_FAST)
-      .concat(retryArgs)
-      .concat([
-        '--reporter', FLAKE_REPORTER,
-        // A2 fallback: if a mocha upgrade ever stops carrying test.file on
-        // retry/pending events, the reporter still knows which batch it
-        // rendered for.
-        '--reporter-option', 'fallbackSpec=' + batch.join(', '),
-      ])
-      .concat(batch),
-    {
-      env: Object.assign({}, baseTestEnv, { FLAKE_ARTIFACT_PATH: sidecarPath }),
-      diagnostic: { file: batch.join(', '), batch: index + 1, totalBatches: batches.length },
-    },
-    batchTimeoutMs
-  );
+  const mocha = (batch, sidecarPath, index) => {
+    const spec = batch.join('|');
+    const identity = {runId, batchId: `batch-${index + 1}`, spec};
+    const snapshotPath = path.join(batchDiagnosticDirectory, `${identity.batchId}.snapshot.json`);
+    const reportPath = path.join(batchDiagnosticDirectory, `${identity.batchId}.json`);
+    try {
+      fs.rmSync(snapshotPath, {force: true});
+      fs.mkdirSync(batchDiagnosticDirectory, {recursive: true});
+    } catch (error) {
+      return Promise.reject(new Error(`Could not prepare batch diagnostic: ${redactDiagnosticText(error.message)}`));
+    }
+
+    const finalize = (result, error) => {
+      let reporterSnapshot = null;
+      let reporterSnapshotState = 'received';
+      try {
+        reporterSnapshot = readBatchSnapshot(snapshotPath, identity);
+      } catch (snapshotError) {
+        if (error && error.timedOut) {
+          reporterSnapshotState = 'missing-on-timeout';
+        } else {
+          throw new Error(`Required batch diagnostic snapshot unavailable: ${redactDiagnosticText(snapshotError.message)}`);
+        }
+      }
+      const ownedProcess = result.ownedProcess || error && error.ownedProcess || null;
+      writeBatchDiagnostic(reportPath, {
+        version: 1,
+        identity,
+        batch: {ordinal: index + 1, total: batches.length, spec},
+        outcome: error && error.timedOut ? 'timeout' : error ? 'nonzero-exit' : 'pass',
+        exitCode: result.exitCode || error && error.exitCode || null,
+        deadlineMs: batchTimeoutMs,
+        reporterSnapshotState,
+        reporterSnapshot,
+        error: error ? redactDiagnosticText(error.message) : null,
+        outputTail: result.outputTail || error && error.outputTail || '',
+        ownedProcess: ownedProcess && {
+          pid: ownedProcess.pid,
+          pgid: ownedProcess.pgid,
+          termination: ownedProcess.termination,
+        },
+        writtenAt: new Date().toISOString(),
+      });
+    };
+
+    const attempt = runWithTimeout(
+      node,
+      ['node_modules/mocha/bin/mocha', '--exit']
+        .concat(FAIL_FAST)
+        .concat(retryArgs)
+        .concat([
+          '--reporter', BATCH_DIAGNOSTIC_REPORTER,
+          '--reporter-option', `runId=${identity.runId},batchId=${identity.batchId},spec=${identity.spec}`,
+        ])
+        .concat(batch),
+      {
+        env: Object.assign({}, baseTestEnv, {
+          FLAKE_ARTIFACT_PATH: sidecarPath,
+          TEST_BATCH_DIAGNOSTIC_PATH: snapshotPath,
+        }),
+        diagnostic: { file: batch.join(', '), batch: index + 1, totalBatches: batches.length },
+        captureOutput: true,
+      },
+      batchTimeoutMs
+    );
+
+    return attempt.then(result => {
+      finalize(result, null);
+      return result;
+    }, error => {
+      try {
+        finalize({}, error);
+      } catch (diagnosticError) {
+        console.error(`Batch diagnostic failure: ${redactDiagnosticText(diagnosticError.message)}`);
+        throw diagnosticError;
+      }
+      throw error;
+    });
+  };
 
   const runBatch = (batch, index) => {
     console.log(`Running integration batch ${index + 1}/${batches.length} (${batch.length} files)`);
