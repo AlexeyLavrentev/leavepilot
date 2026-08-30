@@ -40,17 +40,56 @@ describe('Overlapping leaverequest (with halfs)', function(){
   var non_admin_user_email, new_user_email, driver;
 
   var open_book_leave_modal = function(drv) {
-    return drv.findElement(By.css('#book_time_off_btn'))
+    return submit_form_func._waitForModalClosed(drv, '#book_leave_modal')
+      .then(function(){ return drv.findElement(By.css('#book_time_off_btn')); })
       .then(function(el){ return el.click(); })
       .then(function() {
         return drv.wait(function(){
-          return drv.findElements(By.css('#book_leave_modal'))
+          return drv.findElements(By.css('#book_leave_modal.in'))
             .then(function(els){
-              if (!els.length) return false;
-              return els[0].isDisplayed();
+              if (!els.length) {
+                return false;
+              }
+
+              return els[0].findElements(By.css('select[name="from_date_part"]'))
+                .then(function(controls){
+                  if (!controls.length) {
+                    return false;
+                  }
+
+                  return Promise.all([controls[0].isDisplayed(), controls[0].isEnabled()])
+                    .then(function(states){ return states[0] && states[1]; });
+                });
             });
         }, 1500);
       });
+  };
+
+  var close_rejected_book_leave_modal = function(drv) {
+    return drv.findElements(By.css('#book_leave_modal.in'))
+      .then(function(modals){
+        if (!modals.length) {
+          return null;
+        }
+
+        return modals[0].isDisplayed()
+          .then(function(visible){
+            if (!visible) {
+              return null;
+            }
+
+            return modals[0].findElement(By.css('[data-dismiss="modal"]'))
+              .then(function(closeControl){
+                return Promise.all([closeControl.isDisplayed(), closeControl.isEnabled()])
+                  .then(function(states){
+                    expect(states[0] && states[1], 'Expected the visible leave modal close control to be usable')
+                      .to.equal(true);
+                    return closeControl.click();
+                  });
+              });
+          });
+      })
+      .then(function(){ return submit_form_func._waitForModalClosed(drv, '#book_leave_modal'); });
   };
 
   var check_no_booking = function(day) {
@@ -193,11 +232,13 @@ describe('Overlapping leaverequest (with halfs)', function(){
             selector : 'input#to',
             value : '2015-06-16',
           }],
-          message : /Failed to create a leave request/,
+          expect_navigation : false,
+          message           : /Failed to create a leave request/,
         })
         .then(function(){
           return check_original_booking_only([dayjs.utc('2015-06-15')]);
         })
+        .then(function(){ return close_rejected_book_leave_modal(driver); })
         .then(function(){ done() })
         .catch(done);
       })
@@ -225,7 +266,8 @@ describe('Overlapping leaverequest (with halfs)', function(){
             selector : 'input#to',
             value : '2015-06-18',
           }],
-          message : /Failed to create a leave request/,
+          expect_navigation : false,
+          message           : /Failed to create a leave request/,
         })
         .then(function(){
           return check_original_booking_only([dayjs.utc('2015-06-18')]);
@@ -233,6 +275,7 @@ describe('Overlapping leaverequest (with halfs)', function(){
         .then(function(){
           return check_original_booking_only([dayjs.utc('2015-06-15')]);
         })
+        .then(function(){ return close_rejected_book_leave_modal(driver); })
         .then(function(){ done() })
         .catch(done);
       });
@@ -258,8 +301,13 @@ describe('Overlapping leaverequest (with halfs)', function(){
             selector : 'input#to',
             value : '2015-06-16',
           }],
-          message : /Failed to create a leave request/,
+          expect_navigation : false,
+          message           : /Failed to create a leave request/,
         })
+        .then(function(){
+          return check_original_booking_only([dayjs.utc('2015-06-15')]);
+        })
+        .then(function(){ return close_rejected_book_leave_modal(driver); })
         .then(function(){ done() })
         .catch(done);
       })

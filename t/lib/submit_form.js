@@ -462,7 +462,8 @@ function submit_form_func(args) {
 
       // CSS selecetor for form submition button
       submit_button_selector = args.submit_button_selector ||'button[type="submit"]',
-      modal_selector = args.modal_selector;
+      modal_selector = args.modal_selector,
+      expect_navigation = args.expect_navigation !== false;
 
     return Promise.resolve()
       .then(function(){
@@ -479,6 +480,10 @@ function submit_form_func(args) {
         return clear_existing_alerts(driver);
       })
       .then(function(){
+        if (!expect_navigation) {
+          return null;
+        }
+
         return withDeadline('capturing submitted document', driver.findElement(By.css('html')));
       })
       .then(function(previous_document){
@@ -488,6 +493,10 @@ function submit_form_func(args) {
             return traced('clickSubmit', submit_button_selector, click_element(driver, el));
           })
           .then(function(){
+            if (!expect_navigation) {
+              return null;
+            }
+
             return wait_for_submitted_document(driver, previous_document);
           })
           .then(function(){
