@@ -232,7 +232,6 @@ describe('Overlapping leaverequest (with halfs)', function(){
             selector : 'input#to',
             value : '2015-06-16',
           }],
-          expect_navigation : false,
           message           : /Failed to create a leave request/,
         })
         .then(function(){
@@ -266,7 +265,6 @@ describe('Overlapping leaverequest (with halfs)', function(){
             selector : 'input#to',
             value : '2015-06-18',
           }],
-          expect_navigation : false,
           message           : /Failed to create a leave request/,
         })
         .then(function(){
@@ -301,7 +299,6 @@ describe('Overlapping leaverequest (with halfs)', function(){
             selector : 'input#to',
             value : '2015-06-16',
           }],
-          expect_navigation : false,
           message           : /Failed to create a leave request/,
         })
         .then(function(){
