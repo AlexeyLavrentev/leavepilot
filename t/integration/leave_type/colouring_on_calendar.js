@@ -201,6 +201,8 @@ describe('Coloring of half days', function(){
           option_selector : '[data-tom="Sick Leave"]'
         }],
         message : /New leave request was added/,
+        submit_button_selector : '#book_leave_modal button[type="submit"]',
+        modal_selector : '#book_leave_modal',
       }))
       .then(() => done())
       .catch(done);
@@ -227,7 +229,8 @@ describe('Coloring of half days', function(){
           option_selector : '[data-tom="Holiday"]'
         }],
         message : /New leave request was added/,
-        submit_button_selector : '#book_leave_modal button[type="submit"]'
+        submit_button_selector : '#book_leave_modal button[type="submit"]',
+        modal_selector : '#book_leave_modal',
       }))
       .then(() => done())
       .catch(done);
@@ -254,7 +257,8 @@ describe('Coloring of half days', function(){
           option_selector : '[data-tom="Holiday"]'
         }],
         message : /New leave request was added/,
-        submit_button_selector : '#book_leave_modal button[type="submit"]'
+        submit_button_selector : '#book_leave_modal button[type="submit"]',
+        modal_selector : '#book_leave_modal',
       }))
       .then(() => done())
       .catch(done);
@@ -281,7 +285,8 @@ describe('Coloring of half days', function(){
           option_selector : '[data-tom="Sick Leave"]'
         }],
         message : /New leave request was added/,
-        submit_button_selector : '#book_leave_modal button[type="submit"]'
+        submit_button_selector : '#book_leave_modal button[type="submit"]',
+        modal_selector : '#book_leave_modal',
       }))
       .then(() => done())
       .catch(done);
@@ -308,7 +313,8 @@ describe('Coloring of half days', function(){
           option_selector : '[data-tom="Holiday"]'
         }],
         message : /New leave request was added/,
-        submit_button_selector : '#book_leave_modal button[type="submit"]'
+        submit_button_selector : '#book_leave_modal button[type="submit"]',
+        modal_selector : '#book_leave_modal',
       }))
       .then(() => done())
       .catch(done);
