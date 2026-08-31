@@ -538,6 +538,7 @@ const runMochaSuite = () => {
     const spec = batch.join('|');
     const identity = {runId, batchId: `batch-${index + 1}`, spec};
     const snapshotPath = path.join(batchDiagnosticDirectory, `${identity.batchId}.snapshot.json`);
+    const submitDiagnosticPath = path.join(batchDiagnosticDirectory, `${identity.batchId}.submit.json`);
     const reportPath = path.join(batchDiagnosticDirectory, `${identity.batchId}.json`);
     try {
       fs.rmSync(snapshotPath, {force: true});
@@ -551,6 +552,10 @@ const runMochaSuite = () => {
       let reporterSnapshotState = 'received';
       try {
         reporterSnapshot = readBatchSnapshot(snapshotPath, identity);
+        const submitDiagnostic = reporterSnapshot.submitDiagnostic || {state: 'invalid'};
+        if (submitDiagnostic.state === 'invalid' || submitDiagnostic.state === 'write-failed') {
+          throw new Error(`Required submit diagnostic unavailable: ${submitDiagnostic.state}`);
+        }
       } catch (snapshotError) {
         if (error && error.timedOut) {
           reporterSnapshotState = 'missing-on-timeout';
@@ -593,6 +598,10 @@ const runMochaSuite = () => {
         env: Object.assign({}, baseTestEnv, {
           FLAKE_ARTIFACT_PATH: sidecarPath,
           TEST_BATCH_DIAGNOSTIC_PATH: snapshotPath,
+          TEST_SUBMIT_DIAGNOSTIC_PATH: submitDiagnosticPath,
+          TEST_SUBMIT_DIAGNOSTIC_RUN_ID: identity.runId,
+          TEST_SUBMIT_DIAGNOSTIC_BATCH_ID: identity.batchId,
+          TEST_SUBMIT_DIAGNOSTIC_SPEC: identity.spec,
         }),
         diagnostic: { file: batch.join(', '), batch: index + 1, totalBatches: batches.length },
         captureOutput: true,

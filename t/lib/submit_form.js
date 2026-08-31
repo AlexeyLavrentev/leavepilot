@@ -1,11 +1,142 @@
 'use strict';
 
-var webdriver  = require('selenium-webdriver'),
+var fs         = require('fs'),
+    path       = require('path'),
+    url        = require('url'),
+    webdriver  = require('selenium-webdriver'),
 By             = require('selenium-webdriver').By,
 Key            = require('selenium-webdriver').Key,
   expect         = require('chai').expect,
   _              = require('underscore');
 var DEFAULT_WAIT_TIMEOUT = 10000;
+var MAX_SUBMIT_DIAGNOSTIC_BYTES = 4096;
+
+function submit_diagnostic_error(error) {
+  var diagnosticError = new Error('Submit diagnostic failure: ' + (error && error.message || error));
+  diagnosticError.name = 'SubmitDiagnosticError';
+  return diagnosticError;
+}
+
+function submit_diagnostic_config() {
+  var pathValue = process.env.TEST_SUBMIT_DIAGNOSTIC_PATH;
+  var identity = {
+    runId: process.env.TEST_SUBMIT_DIAGNOSTIC_RUN_ID,
+    batchId: process.env.TEST_SUBMIT_DIAGNOSTIC_BATCH_ID,
+    spec: process.env.TEST_SUBMIT_DIAGNOSTIC_SPEC,
+  };
+  if (!pathValue && !identity.runId && !identity.batchId && !identity.spec) {
+    return null;
+  }
+  if (!pathValue || !identity.runId || !identity.batchId || !identity.spec) {
+    throw submit_diagnostic_error('incomplete runner identity');
+  }
+  return {path: pathValue, identity: identity};
+}
+
+function safe_submit_url(value) {
+  var parsed = url.parse(String(value || ''));
+  if (!parsed.protocol || !parsed.host) {
+    return 'unreadable';
+  }
+  return parsed.protocol + '//' + parsed.host + (parsed.pathname || '/');
+}
+
+function safe_class_tokens(tokens) {
+  if (!Array.isArray(tokens)) {
+    return [];
+  }
+  return tokens.filter(function(token){
+    return typeof token === 'string'
+      && /^[a-zA-Z0-9_-]{1,48}$/.test(token)
+      && !/(authorization|cookie|password|secret|token|api[_-]?key|key)/i.test(token);
+  }).slice(0, 12);
+}
+
+function safe_submit_state(raw, details) {
+  raw = raw || {};
+  var modal = raw.modal || {};
+  var submit = raw.submit || {};
+  var events = raw.events || {};
+  return {
+    stage: details.stage,
+    url: safe_submit_url(raw.url),
+    timeOrigin: Number.isFinite(raw.timeOrigin) ? raw.timeOrigin : null,
+    readyState: ['loading', 'interactive', 'complete'].indexOf(raw.readyState) !== -1
+      ? raw.readyState : 'unreadable',
+    rootStatus: ['absent', 'unreadable', 'alive', 'stale', 'unobserved'].indexOf(details.rootStatus) !== -1
+      ? details.rootStatus : 'unreadable',
+    modal: {
+      presence: typeof modal.presence === 'boolean' ? modal.presence : 'unreadable',
+      visible: typeof modal.visible === 'boolean' ? modal.visible : 'unreadable',
+      classTokens: safe_class_tokens(modal.classTokens),
+    },
+    submit: {
+      presence: typeof submit.presence === 'boolean' ? submit.presence : 'unreadable',
+      disabled: typeof submit.disabled === 'boolean' ? submit.disabled : 'unreadable',
+      connected: typeof submit.connected === 'boolean' ? submit.connected : 'unreadable',
+    },
+    events: {
+      submit: Number.isSafeInteger(events.submit) && events.submit >= 0 ? events.submit : 0,
+      beforeunload: Number.isSafeInteger(events.beforeunload) && events.beforeunload >= 0 ? events.beforeunload : 0,
+    },
+  };
+}
+
+function write_submit_diagnostic(config, state) {
+  var payload = {version: 1, identity: config.identity, state: state};
+  var serialized = JSON.stringify(payload);
+  if (Buffer.byteLength(serialized) > MAX_SUBMIT_DIAGNOSTIC_BYTES) {
+    throw new Error('submit diagnostic snapshot exceeds size limit');
+  }
+  var temporary = config.path + '.' + process.pid + '.tmp';
+  fs.mkdirSync(path.dirname(config.path), {recursive: true});
+  fs.writeFileSync(temporary, serialized + '\n', {mode: 0o600});
+  fs.renameSync(temporary, config.path);
+}
+
+function capture_submit_diagnostic(driver, details) {
+  var config;
+  try {
+    config = submit_diagnostic_config();
+  } catch (error) {
+    return Promise.reject(error);
+  }
+  if (!config) {
+    return Promise.resolve(null);
+  }
+
+  return withDeadline('installing submit diagnostic observers', driver.executeScript(
+    'var state = window.__leavePilotSubmitDiagnostic || {submit: 0, beforeunload: 0};'
+    + 'if (!state.installed) {'
+    + ' window.addEventListener("submit", function(){ state.submit += 1; }, true);'
+    + ' window.addEventListener("beforeunload", function(){ state.beforeunload += 1; }, true);'
+    + ' state.installed = true;'
+    + '}'
+    + 'window.__leavePilotSubmitDiagnostic = state;'
+  )).then(function(){
+    return withDeadline('capturing submit diagnostic state', driver.executeScript(
+      'var state = window.__leavePilotSubmitDiagnostic || {submit: 0, beforeunload: 0};'
+      + 'var modal = arguments[0] ? document.querySelector(arguments[0]) : null;'
+      + 'var submit = arguments[1] ? document.querySelector(arguments[1]) : null;'
+      + 'return {'
+      + ' url: location.href, timeOrigin: performance.timeOrigin, readyState: document.readyState,'
+      + ' modal: {presence: !!modal, visible: !!(modal && (modal.offsetWidth || modal.offsetHeight || modal.getClientRects().length)), classTokens: modal ? String(modal.className || "").split(/\\s+/) : []},'
+      + ' submit: {presence: !!submit, disabled: !!(submit && submit.disabled), connected: !!(submit && submit.isConnected)},'
+      + ' events: {submit: state.submit, beforeunload: state.beforeunload}'
+      + '};',
+      details.modalSelector || null,
+      details.submitSelector || null
+    ));
+  }).then(function(raw){
+    write_submit_diagnostic(config, safe_submit_state(raw, details));
+    return null;
+  }).catch(function(error){
+    if (error && error.name === 'SubmitDiagnosticError') {
+      throw error;
+    }
+    throw submit_diagnostic_error(error);
+  });
+}
 
 /*
   driver.wait() polls a condition and gives up after its timeout — but only
@@ -229,7 +360,7 @@ function read_document_time_origin(driver, stage) {
   ));
 }
 
-function wait_for_submitted_document(driver, previous_document, timeout) {
+function wait_for_submitted_document(driver, previous_document, timeout, observe) {
   timeout = timeout || DEFAULT_WAIT_TIMEOUT;
   var last_observation = {
     root_status: 'unobserved',
@@ -257,6 +388,15 @@ function wait_for_submitted_document(driver, previous_document, timeout) {
       })
       .then(function(current_time_origin){
         last_observation.current_time_origin = current_time_origin;
+        if (observe) {
+          return Promise.resolve(observe({
+            rootStatus: last_observation.root_status,
+            stage: 'navigation-observation',
+          })).then(function(){ return current_time_origin; });
+        }
+        return current_time_origin;
+      })
+      .then(function(current_time_origin){
         var time_origin_changed = Number.isFinite(previous_document.timeOrigin)
           && Number.isFinite(current_time_origin)
           && current_time_origin !== previous_document.timeOrigin;
@@ -568,6 +708,11 @@ function submit_form_func(args) {
           : Promise.resolve(null);
 
         return before_submit.then(function(){
+          return capture_submit_diagnostic(driver, {
+            stage: 'before-click', modalSelector: modal_selector,
+            submitSelector: submit_button_selector, rootStatus: 'alive',
+          });
+        }).then(function(){
           return traced('findSubmit', submit_button_selector,
             find_visible_element(driver, submit_button_selector));
         })
@@ -575,18 +720,41 @@ function submit_form_func(args) {
             return traced('clickSubmit', submit_button_selector, click_element(driver, el));
           })
           .then(function(){
+            return capture_submit_diagnostic(driver, {
+              stage: 'after-click', modalSelector: modal_selector,
+              submitSelector: submit_button_selector, rootStatus: 'unobserved',
+            });
+          })
+          .then(function(){
             if (!expect_navigation) {
               return null;
             }
 
-            return wait_for_submitted_document(driver, previous_document);
+            return wait_for_submitted_document(driver, previous_document, null, function(observation){
+              observation.modalSelector = modal_selector;
+              observation.submitSelector = submit_button_selector;
+              return capture_submit_diagnostic(driver, observation);
+            });
           })
           .then(function(){
             if (!modal_selector) {
               return null;
             }
 
-            return wait_for_modal_closed(driver, modal_selector);
+            return wait_for_modal_closed(driver, modal_selector).then(function(){
+              return capture_submit_diagnostic(driver, {
+                stage: 'modal-observation', modalSelector: modal_selector,
+                submitSelector: submit_button_selector, rootStatus: 'unobserved',
+              });
+            });
+          })
+          .catch(function(error){
+            return capture_submit_diagnostic(driver, {
+              stage: 'helper-rejection', modalSelector: modal_selector,
+              submitSelector: submit_button_selector, rootStatus: 'unreadable',
+            }).then(function(){
+              throw error;
+            });
           });
       })
       .then(function(){
@@ -647,3 +815,5 @@ module.exports._shouldWaitForModal = function(args) {
 };
 module.exports._traceDocumentState = trace_document_state;
 module.exports._waitForSubmittedDocument = wait_for_submitted_document;
+module.exports._captureSubmitDiagnostic = capture_submit_diagnostic;
+module.exports._safeSubmitState = safe_submit_state;

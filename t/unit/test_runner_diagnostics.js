@@ -81,6 +81,25 @@ describe('browser batch diagnostic contract', function() {
     expect(reporter._redact('x'.repeat(5000))).to.have.lengthOf(2048);
   });
 
+  it('attaches only identity-matching bounded submit diagnostics', function() {
+    const submitPath = path.join(directory, 'submit.json');
+    const identity = {runId: 'run-c', batchId: 'batch-4', spec: PASSING};
+    fs.writeFileSync(submitPath, JSON.stringify({
+      version: 1,
+      identity,
+      state: {stage: 'after-click', url: 'http://127.0.0.1:3000/calendar', timeOrigin: 2},
+    }));
+
+    expect(reporter._submitDiagnostic(submitPath, identity)).to.deep.equal({
+      state: 'received',
+      snapshot: {stage: 'after-click', url: 'http://127.0.0.1:3000/calendar', timeOrigin: 2},
+    });
+    expect(reporter._submitDiagnostic(submitPath, Object.assign({}, identity, {batchId: 'other'})).state)
+      .to.equal('invalid');
+    fs.writeFileSync(submitPath, '{');
+    expect(reporter._submitDiagnostic(submitPath, identity).state).to.equal('invalid');
+  });
+
   it('keeps Browser CI strict and uploads diagnostics on every outcome', function() {
     const workflow = fs.readFileSync('.github/workflows/core-integration.yml', 'utf8');
     const browserJob = workflow.slice(workflow.indexOf('jobs:\n  integration:'));
