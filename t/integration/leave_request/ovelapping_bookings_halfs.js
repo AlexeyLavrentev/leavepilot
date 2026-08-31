@@ -331,7 +331,9 @@ describe('Overlapping leaverequest (with halfs)', function(){
               selector : 'input#to',
               value : '2015-06-16',
           }],
-          message : /New leave request was added/,
+          message           : /New leave request was added/,
+          expect_navigation : true,
+          modal_selector    : '#book_leave_modal',
         })
         .then(function(){ done() })
         .catch(done);
