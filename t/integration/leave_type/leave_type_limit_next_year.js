@@ -131,8 +131,7 @@ describe('Leave type limits for next year: ' + next_year, function(){
     driver
       .then(function(){ return open_book_leave_modal(driver); })
       .then(function(){
-
-        submit_form_func({
+        return submit_form_func({
           driver      : driver,
           form_params : [{
             selector : 'input#from',
@@ -142,18 +141,19 @@ describe('Leave type limits for next year: ' + next_year, function(){
             value : next_year + '-05-10',
           }],
           message : /New leave request was added/,
+          submit_button_selector : '#book_leave_modal button[type="submit"]',
+          modal_selector : '#book_leave_modal',
         })
         // Check that all days are marked as pended
         .then(function(){
-          check_booking_func({
+          return check_booking_func({
             driver    : driver,
             full_days : [dayjs.utc(next_year + '-05-10')],
             type      : 'pended',
-          })
-          .then(function(){ done() })
-          .catch(done);
+          });
         });
       })
+      .then(function(){ done(); })
         .catch(done);
   });
 
@@ -231,8 +231,7 @@ describe('Leave type limits for next year: ' + next_year, function(){
     driver
       .then(function(){ return open_book_leave_modal(driver); })
       .then(function(){
-
-        submit_form_func({
+        return submit_form_func({
           driver      : driver,
           form_params : [{
             selector : 'input#from',
@@ -242,6 +241,8 @@ describe('Leave type limits for next year: ' + next_year, function(){
             value : next_year + '-05-17',
           }],
           message : /Failed to create a leave request/,
+          submit_button_selector : '#book_leave_modal button[type="submit"]',
+          modal_selector : '#book_leave_modal',
         })
         .then(function(){
           return check_booking_func({
@@ -251,9 +252,8 @@ describe('Leave type limits for next year: ' + next_year, function(){
           });
         })
         .then(function(){ return check_no_booking(dayjs.utc(next_year + '-05-17')); })
-        .then(function(){ done() })
-        .catch(done);
       })
+      .then(function(){ done(); })
         .catch(done);
   });
 

@@ -52,6 +52,25 @@ function safe_class_tokens(tokens) {
   }).slice(0, 12);
 }
 
+function safe_form_action(value) {
+  var parsed = url.parse(String(value || ''));
+  var pathname = parsed.pathname;
+  if (typeof pathname !== 'string' || !/^\/[A-Za-z0-9._~!$&'()*+,;=:@/%-]{0,511}$/.test(pathname)) {
+    return 'unreadable';
+  }
+  return pathname;
+}
+
+function safe_submit_tag(value) {
+  var tag = typeof value === 'string' ? value.toLowerCase() : '';
+  return ['button', 'input'].indexOf(tag) !== -1 ? tag : 'unreadable';
+}
+
+function safe_submit_type(value) {
+  var type = typeof value === 'string' ? value.toLowerCase() : '';
+  return /^[a-z][a-z0-9_-]{0,31}$/.test(type) ? type : 'unreadable';
+}
+
 function safe_submit_state(raw, details) {
   raw = raw || {};
   var modal = raw.modal || {};
@@ -74,6 +93,10 @@ function safe_submit_state(raw, details) {
       presence: typeof submit.presence === 'boolean' ? submit.presence : 'unreadable',
       disabled: typeof submit.disabled === 'boolean' ? submit.disabled : 'unreadable',
       connected: typeof submit.connected === 'boolean' ? submit.connected : 'unreadable',
+      formAction: safe_form_action(submit.formAction),
+      inModal: typeof submit.inModal === 'boolean' ? submit.inModal : 'unreadable',
+      tag: safe_submit_tag(submit.tag),
+      type: safe_submit_type(submit.type),
     },
     events: {
       submit: Number.isSafeInteger(events.submit) && events.submit >= 0 ? events.submit : 0,
@@ -121,7 +144,11 @@ function capture_submit_diagnostic(driver, details) {
       + 'return {'
       + ' url: location.href, timeOrigin: performance.timeOrigin, readyState: document.readyState,'
       + ' modal: {presence: !!modal, visible: !!(modal && (modal.offsetWidth || modal.offsetHeight || modal.getClientRects().length)), classTokens: modal ? String(modal.className || "").split(/\\s+/) : []},'
-      + ' submit: {presence: !!submit, disabled: !!(submit && submit.disabled), connected: !!(submit && submit.isConnected)},'
+      + ' submit: {'
+      + 'presence: !!submit, disabled: !!(submit && submit.disabled), connected: !!(submit && submit.isConnected),'
+      + 'formAction: submit && submit.form ? submit.form.action : null,'
+      + 'inModal: !!(modal && submit && modal.contains(submit)), tag: submit && submit.tagName, type: submit && submit.type'
+      + '},'
       + ' events: {submit: state.submit, beforeunload: state.beforeunload}'
       + '};',
       details.modalSelector || null,

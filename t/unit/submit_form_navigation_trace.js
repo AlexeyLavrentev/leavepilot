@@ -89,7 +89,17 @@ describe('submit form navigation trace', function(){
             timeOrigin: 123,
             readyState: 'complete',
             modal: {presence: true, visible: true, classTokens: ['modal', 'token-private']},
-            submit: {presence: true, disabled: false, connected: true},
+            submit: {
+              presence: true,
+              disabled: false,
+              connected: true,
+              formAction: 'http://127.0.0.1:3000/calendar/bookleave/?token=private#secret',
+              inModal: true,
+              tag: 'BUTTON',
+              type: 'submit',
+              text: 'private form value',
+              value: 'private-fixture-token',
+            },
             events: {submit: 1, beforeunload: 0},
             text: 'private form value',
           });
@@ -109,9 +119,70 @@ describe('submit form navigation trace', function(){
         runId: 'run-1', batchId: 'batch-1', spec: 't/integration/safe.js',
       });
       expect(snapshot.state.url).to.equal('http://127.0.0.1:3000/calendar');
+      expect(snapshot.state.submit).to.deep.equal({
+        presence: true,
+        disabled: false,
+        connected: true,
+        formAction: '/calendar/bookleave/',
+        inModal: true,
+        tag: 'button',
+        type: 'submit',
+      });
       expect(snapshot.state).to.not.have.property('text');
       expect(JSON.stringify(snapshot)).to.not.contain('private');
       expect(Buffer.byteLength(JSON.stringify(snapshot))).to.be.lessThan(4097);
+    }).finally(function(){
+      fs.rmSync(directory, {recursive: true, force: true});
+      delete process.env.TEST_SUBMIT_DIAGNOSTIC_PATH;
+      delete process.env.TEST_SUBMIT_DIAGNOSTIC_RUN_ID;
+      delete process.env.TEST_SUBMIT_DIAGNOSTIC_BATCH_ID;
+      delete process.env.TEST_SUBMIT_DIAGNOSTIC_SPEC;
+    });
+  });
+
+  it('bounds malformed matched-control metadata without browser diagnostic failures', function(){
+    var directory = fs.mkdtempSync(path.join(os.tmpdir(), 'submit-diagnostic-'));
+    var snapshotPath = path.join(directory, 'submit.json');
+    process.env.TEST_SUBMIT_DIAGNOSTIC_PATH = snapshotPath;
+    process.env.TEST_SUBMIT_DIAGNOSTIC_RUN_ID = 'run-2';
+    process.env.TEST_SUBMIT_DIAGNOSTIC_BATCH_ID = 'batch-2';
+    process.env.TEST_SUBMIT_DIAGNOSTIC_SPEC = 't/integration/safe.js';
+    delete require.cache[require.resolve('../../t/lib/submit_form')];
+    submitForm = require('../../t/lib/submit_form');
+
+    var driver = {
+      executeScript: function(script){
+        if (script.indexOf('__leavePilotSubmitDiagnostic') !== -1) {
+          return Promise.resolve({
+            submit: {
+              presence: true,
+              disabled: false,
+              connected: true,
+              formAction: 'not a path',
+              inModal: 'yes',
+              tag: '<img>',
+              type: 'submit private-fixture-token',
+            },
+          });
+        }
+        return Promise.resolve(null);
+      },
+    };
+
+    return submitForm._captureSubmitDiagnostic(driver, {
+      stage: 'before-click', rootStatus: 'alive',
+    }).then(function(){
+      var snapshot = JSON.parse(fs.readFileSync(snapshotPath, 'utf8'));
+      expect(snapshot.state.submit).to.deep.equal({
+        presence: true,
+        disabled: false,
+        connected: true,
+        formAction: 'unreadable',
+        inModal: 'unreadable',
+        tag: 'unreadable',
+        type: 'unreadable',
+      });
+      expect(JSON.stringify(snapshot)).to.not.contain('private');
     }).finally(function(){
       fs.rmSync(directory, {recursive: true, force: true});
       delete process.env.TEST_SUBMIT_DIAGNOSTIC_PATH;
