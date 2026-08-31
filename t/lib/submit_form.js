@@ -136,6 +136,32 @@ function traced(step, detail, promise) {
   );
 }
 
+/*
+  This is diagnostics only. A redirect back to the same URL has no observable
+  location change, so record browser-owned document identity signals around a
+  submitted form when explicitly requested by a recovery run.
+*/
+function trace_document_state(driver, stage) {
+  if (!TRACE) { return Promise.resolve(null); }
+
+  return withDeadline('reading document state ' + stage, driver.executeScript(
+    'var entries = performance.getEntriesByType("navigation");'
+    + 'var latest = entries.length ? entries[entries.length - 1] : null;'
+    + 'return {'
+    + 'url: location.href,'
+    + 'timeOrigin: performance.timeOrigin,'
+    + 'readyState: document.readyState,'
+    + 'navigationType: latest && latest.type'
+    + '};'
+  )).then(function(state){
+    trace('document:' + stage, JSON.stringify(state));
+    return state;
+  }).catch(function(error){
+    trace('document:' + stage + ':failed', error && error.name);
+    throw error;
+  });
+}
+
 function is_stale_element_error(err) {
   return err && (
     err.name === 'StaleElementReferenceError' ||
@@ -199,12 +225,17 @@ function click_element(driver, el) {
 
 function wait_for_submitted_document(driver, previous_document) {
   return poll_until('submitted document to replace the current page', function(){
-    return withDeadline('checking submitted document transition', previous_document.getTagName())
+    return trace_document_state(driver, 'after-submit-poll')
       .then(function(){
+        return withDeadline('checking submitted document transition', previous_document.getTagName());
+      })
+      .then(function(){
+        trace('submitted-document:alive');
         return false;
       })
       .catch(function(err){
         if (is_stale_element_error(err)) {
+          trace('submitted-document:stale');
           return withDeadline('checking submitted document readiness', driver.executeScript(
             'return document.readyState === "complete";'
           ));
@@ -487,8 +518,11 @@ function submit_form_func(args) {
         return withDeadline('capturing submitted document', driver.findElement(By.css('html')));
       })
       .then(function(previous_document){
-        return traced('findSubmit', submit_button_selector,
-          find_visible_element(driver, submit_button_selector))
+        return trace_document_state(driver, 'before-submit')
+          .then(function(){
+            return traced('findSubmit', submit_button_selector,
+              find_visible_element(driver, submit_button_selector));
+          })
           .then(function(el){
             return traced('clickSubmit', submit_button_selector, click_element(driver, el));
           })
@@ -563,3 +597,4 @@ module.exports._waitForModalClosed = wait_for_modal_closed;
 module.exports._shouldWaitForModal = function(args) {
   return !!args.modal_selector;
 };
+module.exports._traceDocumentState = trace_document_state;
