@@ -162,7 +162,6 @@ describe('Overlapping bookings', function(){
             value : '2015-06-16',
           }],
           message           : /New leave request was added/,
-          expect_navigation : false,
           modal_selector    : '#book_leave_modal',
         })
         .then(function(){ done() })

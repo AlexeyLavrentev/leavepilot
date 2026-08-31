@@ -223,27 +223,66 @@ function click_element(driver, el) {
   );
 }
 
-function wait_for_submitted_document(driver, previous_document) {
+function read_document_time_origin(driver, stage) {
+  return withDeadline('reading document time origin ' + stage, driver.executeScript(
+    'return performance.timeOrigin;'
+  ));
+}
+
+function wait_for_submitted_document(driver, previous_document, timeout) {
+  timeout = timeout || DEFAULT_WAIT_TIMEOUT;
+  var last_observation = {
+    root_status: 'unobserved',
+    original_time_origin: previous_document.timeOrigin,
+    current_time_origin: 'unobserved',
+  };
+
   return poll_until('submitted document to replace the current page', function(){
-    return trace_document_state(driver, 'after-submit-poll')
+    return Promise.resolve()
       .then(function(){
-        return withDeadline('checking submitted document transition', previous_document.getTagName());
+        return withDeadline('checking submitted document transition', Promise.resolve()
+          .then(function(){ return previous_document.root.getTagName(); }));
       })
-      .then(function(){
-        trace('submitted-document:alive');
-        return false;
-      })
+      .then(function(){ return 'alive'; })
       .catch(function(err){
         if (is_stale_element_error(err)) {
-          trace('submitted-document:stale');
-          return withDeadline('checking submitted document readiness', driver.executeScript(
-            'return document.readyState === "complete";'
-          ));
+          return 'stale';
         }
 
         throw err;
+      })
+      .then(function(root_status){
+        last_observation.root_status = root_status;
+        return read_document_time_origin(driver, 'after-submit-poll');
+      })
+      .then(function(current_time_origin){
+        last_observation.current_time_origin = current_time_origin;
+        var time_origin_changed = Number.isFinite(previous_document.timeOrigin)
+          && Number.isFinite(current_time_origin)
+          && current_time_origin !== previous_document.timeOrigin;
+
+        if (last_observation.root_status !== 'stale' && !time_origin_changed) {
+          trace('submitted-document:alive');
+          return false;
+        }
+
+        trace('submitted-document:' + (last_observation.root_status === 'stale' ? 'stale' : 'time-origin-changed'));
+        return withDeadline('checking submitted document readiness', driver.executeScript(
+          'return document.readyState === "complete";'
+        ));
       });
-  }, DEFAULT_WAIT_TIMEOUT);
+  }, timeout).catch(function(err){
+    if (!err.pollTimedOut) {
+      throw err;
+    }
+
+    throw new Error(
+      'Timed out waiting for submitted document transition. '
+      + 'stale-root=' + last_observation.root_status + '; '
+      + 'time-origin original=' + last_observation.original_time_origin
+      + ' current=' + last_observation.current_time_origin
+    );
+  });
 }
 
 function describe_modal_state(driver, selector) {
@@ -515,14 +554,23 @@ function submit_form_func(args) {
           return null;
         }
 
-        return withDeadline('capturing submitted document', driver.findElement(By.css('html')));
+        return withDeadline('capturing submitted document', driver.findElement(By.css('html')))
+          .then(function(root){
+            return read_document_time_origin(driver, 'before-submit')
+              .then(function(timeOrigin){
+                return {root: root, timeOrigin: timeOrigin};
+              });
+          });
       })
       .then(function(previous_document){
-        return trace_document_state(driver, 'before-submit')
-          .then(function(){
-            return traced('findSubmit', submit_button_selector,
-              find_visible_element(driver, submit_button_selector));
-          })
+        var before_submit = expect_navigation
+          ? trace_document_state(driver, 'before-submit')
+          : Promise.resolve(null);
+
+        return before_submit.then(function(){
+          return traced('findSubmit', submit_button_selector,
+            find_visible_element(driver, submit_button_selector));
+        })
           .then(function(el){
             return traced('clickSubmit', submit_button_selector, click_element(driver, el));
           })
@@ -598,3 +646,4 @@ module.exports._shouldWaitForModal = function(args) {
   return !!args.modal_selector;
 };
 module.exports._traceDocumentState = trace_document_state;
+module.exports._waitForSubmittedDocument = wait_for_submitted_document;
