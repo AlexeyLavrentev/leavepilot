@@ -13,6 +13,8 @@ const BOOKING_CALLERS = {
   't/integration/leave_request/ovelapping_bookings.js': 2,
   't/integration/leave_request/ovelapping_bookings_halfs.js': 5,
   't/integration/leave_request/user_auto_approve.js': 1,
+  't/integration/leave_type/leave_type_auto_approve.js': 1,
+  't/integration/leave_type/remove_used_leave_type.js': 1,
 };
 
 const BOOKING_MESSAGES = /message\s*:\s*\/(?:New leave request was added|Failed to create a leave request)\//;

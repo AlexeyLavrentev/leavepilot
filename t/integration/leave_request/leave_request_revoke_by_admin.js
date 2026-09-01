@@ -186,12 +186,12 @@ describe('Revoke leave request by Admin', function(){
   it("Approve newly added leave request", function(done){
     driver
       .findElement(By.css(
-        'tr[vpp="pending_for__'+email_employee+'"] .btn-success'
+        'tr[vpp="pending_for__'+email_employee+'"]'
       ))
-      .then(function(el){ return el.click(); })
-      .then(function(){
-        // Wait until page properly is reloaded
-        return driver.wait(until.elementLocated(By.css('h1')), 1000);
+      .then(function(requestRow){
+        return requestRow.findElement(By.css('.btn-success'))
+          .then(function(el){ return el.click(); })
+          .then(function(){ return driver.wait(until.stalenessOf(requestRow), 1000); });
       })
       .then(function(){ done() })
       .catch(done);
@@ -233,10 +233,9 @@ describe('Revoke leave request by Admin', function(){
       .findElement(By.css(
         'button.revoke-btn'
       ))
-      .then(function(el){ return el.click(); })
-      .then(function(){
-        // Wait until page properly is reloaded
-        return driver.wait(until.elementLocated(By.css('h1')), 1000);
+      .then(function(revokeButton){
+        return revokeButton.click()
+          .then(function(){ return driver.wait(until.stalenessOf(revokeButton), 1000); });
       })
       .then(function(){ done() })
       .catch(done);
@@ -266,12 +265,12 @@ describe('Revoke leave request by Admin', function(){
   it("Approve revoke request", function(done){
     driver
       .findElement(By.css(
-        'tr[vpp="pending_for__'+email_employee+'"] .btn-success'
+        'tr[vpp="pending_for__'+email_employee+'"]'
       ))
-      .then(function(el){ return el.click(); })
-      .then(function(){
-        // Wait until page properly is reloaded
-        return driver.wait(until.elementLocated(By.css('h1')), 1000);
+      .then(function(requestRow){
+        return requestRow.findElement(By.css('.btn-success'))
+          .then(function(el){ return el.click(); })
+          .then(function(){ return driver.wait(until.stalenessOf(requestRow), 1000); });
       })
       .then(function(){ done() })
       .catch(done);

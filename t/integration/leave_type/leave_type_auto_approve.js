@@ -178,6 +178,8 @@ describe('Auto approval leave type', function(){
         value    : some_weekday_date,
       }],
       message : /New leave request was added/,
+      submit_button_selector : '#book_leave_modal button[type=submit]',
+      modal_selector : '#book_leave_modal',
     })
     .then(function(){ done() })
     .catch(done);
