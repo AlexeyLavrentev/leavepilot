@@ -231,7 +231,7 @@ function capture_submit_diagnostic(driver, details) {
       + 'formOwnership: !(submit && submit.form) ? "none" : (submit.form.contains(submit) ? "ancestor" : "external"),'
       + 'formValid: submit && submit.form ? submit.form.checkValidity() : null,'
       + 'invalidControl: (function(){'
-      + 'var form = submit && submit.form; var invalid = form && form.checkValidity() === false ? form.querySelector(":invalid") : null;'
+      + 'var form = submit && submit.form; var invalid = form && form.checkValidity() === false ? form.querySelector("input:invalid, select:invalid, textarea:invalid") : null;'
       + 'return invalid ? {tag: invalid.tagName, type: invalid.type, name: invalid.name} : null;'
       + '})()'
       + '},'

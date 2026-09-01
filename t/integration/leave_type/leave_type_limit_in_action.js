@@ -125,7 +125,7 @@ describe('Leave type limits in actoion', function(){
       .then(function(el){ return el.click() })
       .then(function(){
 
-        submit_form_func({
+        return submit_form_func({
           driver      : driver,
           form_params : [{
             selector : 'input#from',
@@ -136,6 +136,8 @@ describe('Leave type limits in actoion', function(){
           }],
           message : /Adding requested .* absence would exceed maximum allowed for such type by 1/,
           multi_line_message : true,
+          submit_button_selector : '#book_leave_modal button[type="submit"]',
+          modal_selector : '#book_leave_modal',
         })
         .then(function(){ done() })
         .catch(done);
@@ -149,7 +151,7 @@ describe('Leave type limits in actoion', function(){
       .then(function(el){ return el.click() })
       .then(function(){
 
-        submit_form_func({
+        return submit_form_func({
           driver      : driver,
           form_params : [{
             selector : 'input#from',
@@ -159,10 +161,12 @@ describe('Leave type limits in actoion', function(){
             value : '2015-06-17',
           }],
           message : /New leave request was added/,
+          submit_button_selector : '#book_leave_modal button[type="submit"]',
+          modal_selector : '#book_leave_modal',
         })
         // Check that all days are marked as pended
         .then(function(){
-          check_booking_func({
+          return check_booking_func({
             driver    : driver,
             full_days : [dayjs.utc('2015-06-16'),dayjs.utc('2015-06-16'),dayjs.utc('2015-06-17')],
             type      : 'pended',

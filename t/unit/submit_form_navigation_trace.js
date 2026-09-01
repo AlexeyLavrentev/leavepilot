@@ -265,6 +265,58 @@ describe('submit form navigation trace', function(){
     });
   });
 
+  it('selects a direct invalid control instead of an invalid fieldset ancestor', function(){
+    var directory = fs.mkdtempSync(path.join(os.tmpdir(), 'submit-diagnostic-'));
+    var snapshotPath = path.join(directory, 'submit.json');
+    process.env.TEST_SUBMIT_DIAGNOSTIC_PATH = snapshotPath;
+    process.env.TEST_SUBMIT_DIAGNOSTIC_RUN_ID = 'run-direct-invalid';
+    process.env.TEST_SUBMIT_DIAGNOSTIC_BATCH_ID = 'batch-direct-invalid';
+    process.env.TEST_SUBMIT_DIAGNOSTIC_SPEC = 't/integration/safe.js';
+    delete require.cache[require.resolve('../../t/lib/submit_form')];
+    submitForm = require('../../t/lib/submit_form');
+
+    var invalidCandidates = [
+      {tag: 'FIELDSET', type: undefined, name: ''},
+      {tag: 'INPUT', type: 'date', name: 'start_date'},
+      {tag: 'SELECT', type: 'select-one', name: 'leave_type'},
+    ];
+    var driver = {
+      executeScript: function(script){
+        if (script.indexOf('formOwnership') !== -1) {
+          expect(script).to.contain('form.querySelector("input:invalid, select:invalid, textarea:invalid")');
+          return Promise.resolve({
+            submit: {
+              presence: true,
+              disabled: false,
+              connected: true,
+              formPresent: true,
+              formOwnership: 'ancestor',
+              formValid: false,
+              invalidControl: invalidCandidates[1],
+            },
+          });
+        }
+        return Promise.resolve(null);
+      },
+    };
+
+    return submitForm._captureSubmitDiagnostic(driver, {
+      stage: 'before-click', rootStatus: 'alive',
+    }).then(function(){
+      var snapshot = JSON.parse(fs.readFileSync(snapshotPath, 'utf8'));
+      expect(snapshot.state.submit.invalidControl).to.deep.equal({
+        tag: 'input', type: 'date', name: 'start_date',
+      });
+      expect(JSON.stringify(snapshot)).to.not.contain('fieldset');
+    }).finally(function(){
+      fs.rmSync(directory, {recursive: true, force: true});
+      delete process.env.TEST_SUBMIT_DIAGNOSTIC_PATH;
+      delete process.env.TEST_SUBMIT_DIAGNOSTIC_RUN_ID;
+      delete process.env.TEST_SUBMIT_DIAGNOSTIC_BATCH_ID;
+      delete process.env.TEST_SUBMIT_DIAGNOSTIC_SPEC;
+    });
+  });
+
   it('preserves bounded before-click evidence across later diagnostic writes', function(){
     var directory = fs.mkdtempSync(path.join(os.tmpdir(), 'submit-diagnostic-'));
     var snapshotPath = path.join(directory, 'submit.json');
