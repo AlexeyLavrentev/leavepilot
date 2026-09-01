@@ -619,6 +619,45 @@ function type_element_value(driver, el, value, change_step) {
     });
 }
 
+function set_datepicker_value(driver, el, value) {
+  return driver.executeScript(
+    'var $ = window.jQuery;'
+    + 'if (!$ || !$.fn || typeof $.fn.datepicker !== "function") {'
+    + ' throw new Error("Datepicker field is missing its datepicker API");'
+    + '}'
+    + '$(arguments[0]).datepicker("setDate", arguments[1]);'
+    + 'return {value: arguments[0].value, valid: typeof arguments[0].checkValidity === "function" && arguments[0].checkValidity()};',
+    el,
+    value
+  ).then(function(result){
+    if (!result || result.value !== value) {
+      throw new Error('Datepicker did not retain the requested value');
+    }
+    if (result.valid !== true) {
+      throw new Error('Datepicker field is invalid after setting its value');
+    }
+  });
+}
+
+function is_booking_datepicker_field(driver, el) {
+  if (typeof el.getAttribute !== 'function') {
+    return Promise.resolve(false);
+  }
+
+  return el.getAttribute('data-provide')
+    .then(function(value){
+      if (value !== 'datepicker') {
+        return false;
+      }
+
+      return driver.executeScript(
+        'return !!arguments[0].closest("#book_leave_modal");',
+        el
+      );
+    })
+    .then(function(value){ return value === true; });
+}
+
 function fill_form_field(driver, test_case, attempt) {
   attempt = attempt || 0;
 
@@ -681,8 +720,16 @@ function fill_form_field(driver, test_case, attempt) {
           .then(function(dd){ return click_element(driver, dd); });
       }
 
-      // Prevent the browser validations to allow backend validations to occur
-      return type_element_value(driver, el, test_case.value, test_case.change_step);
+      return is_booking_datepicker_field(driver, el)
+        .then(function(isBookingDatepicker){
+          if (isBookingDatepicker) {
+            return set_datepicker_value(driver, el, test_case.value);
+          }
+
+          // Prevent the browser validations to allow backend validations to occur
+          return type_element_value(driver, el, test_case.value, test_case.change_step);
+        });
+
     })
     .catch(function(err){
       if ((is_stale_element_error(err) || is_element_not_interactable_error(err)) && attempt < 2) {
@@ -930,3 +977,4 @@ module.exports._traceDocumentState = trace_document_state;
 module.exports._waitForSubmittedDocument = wait_for_submitted_document;
 module.exports._captureSubmitDiagnostic = capture_submit_diagnostic;
 module.exports._safeSubmitState = safe_submit_state;
+module.exports._fillFormField = fill_form_field;
