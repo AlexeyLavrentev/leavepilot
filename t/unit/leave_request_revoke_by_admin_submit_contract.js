@@ -18,5 +18,6 @@ describe('admin revoke leave-request submit contract', function(){
     expect(submits).to.have.length(1);
     expect(scenarioSource[0]).to.match(/expect_navigation\s*:\s*true/);
     expect(scenarioSource[0]).to.match(/modal_selector\s*:\s*'#book_leave_modal'/);
+    expect(scenarioSource[0]).to.match(/submit_button_selector\s*:\s*'#book_leave_modal button\[type="submit"\]'/);
   });
 });

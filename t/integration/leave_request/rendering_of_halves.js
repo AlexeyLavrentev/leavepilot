@@ -101,6 +101,7 @@ describe('Ensure that leaves with not full days are rendered properly', function
       .then(() => submit_form_func({
           driver      : driver,
           modal_selector : '#book_leave_modal',
+          submit_button_selector : '#book_leave_modal button[type="submit"]',
           form_params : [{
             selector        : 'select[name="from_date_part"]',
             option_selector : 'option[value="2"]',
@@ -129,6 +130,7 @@ describe('Ensure that leaves with not full days are rendered properly', function
       .then(() => submit_form_func({
           driver      : driver,
           modal_selector : '#book_leave_modal',
+          submit_button_selector : '#book_leave_modal button[type="submit"]',
           form_params : [{
             selector        : 'select[name="from_date_part"]',
             option_selector : 'option[value="3"]',
@@ -158,6 +160,7 @@ describe('Ensure that leaves with not full days are rendered properly', function
       .then(() => submit_form_func({
           driver      : driver,
           modal_selector : '#book_leave_modal',
+          submit_button_selector : '#book_leave_modal button[type="submit"]',
           form_params : [{
             selector        : 'select[name="from_date_part"]',
             option_selector : 'option[value="2"]',
@@ -186,6 +189,7 @@ describe('Ensure that leaves with not full days are rendered properly', function
       .then(() => submit_form_func({
           driver      : driver,
           modal_selector : '#book_leave_modal',
+          submit_button_selector : '#book_leave_modal button[type="submit"]',
           form_params : [{
             selector        : 'select[name="from_date_part"]',
             option_selector : 'option[value="3"]',
