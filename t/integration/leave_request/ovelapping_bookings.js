@@ -152,7 +152,7 @@ describe('Overlapping bookings', function(){
       // Create new leave request
       .then(function(){
 
-        submit_form_func({
+        return submit_form_func({
           driver      : driver,
           form_params : [{
             selector : 'input#from',
@@ -162,6 +162,7 @@ describe('Overlapping bookings', function(){
             value : '2015-06-16',
           }],
           message           : /New leave request was added/,
+          submit_button_selector : '#book_leave_modal button[type=submit]',
           modal_selector    : '#book_leave_modal',
         })
         .then(function(){ done() })
@@ -187,7 +188,7 @@ describe('Overlapping bookings', function(){
       // Create new leave request
       .then(function(){
 
-        submit_form_func({
+        return submit_form_func({
           driver      : driver,
           form_params : [{
             selector : 'input#from',
@@ -197,6 +198,8 @@ describe('Overlapping bookings', function(){
             value : '2015-06-17',
           }],
           message : /Failed to create a leave request/,
+          submit_button_selector : '#book_leave_modal button[type=submit]',
+          modal_selector : '#book_leave_modal',
         })
         .then(function(){ done() })
         .catch(done);

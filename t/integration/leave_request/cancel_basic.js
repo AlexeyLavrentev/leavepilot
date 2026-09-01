@@ -133,6 +133,8 @@ describe('Leave request cancelation', function(){
         value    : some_weekday_date,
       }],
       message : /New leave request was added/,
+      submit_button_selector : '#book_leave_modal button[type=submit]',
+      modal_selector : '#book_leave_modal',
     })
     .then(function(){ done() })
     .catch(done);
@@ -337,6 +339,8 @@ describe('Leave request cancelation', function(){
         value    : some_weekday_date,
       }],
       message : /New leave request was added/,
+      submit_button_selector : '#book_leave_modal button[type=submit]',
+      modal_selector : '#book_leave_modal',
     })
     .then(function(){ done() })
     .catch(done);
@@ -472,6 +476,8 @@ describe('Check only requestor can see the Cancel button', function(){
         value    : some_weekday_date,
       }],
       message : /New leave request was added/,
+      submit_button_selector : '#book_leave_modal button[type=submit]',
+      modal_selector : '#book_leave_modal',
     })
     .then(function(){ done() })
     .catch(done);

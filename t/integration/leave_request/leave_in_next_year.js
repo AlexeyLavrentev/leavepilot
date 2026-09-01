@@ -73,6 +73,8 @@ describe(`Leave in the next year (${nextYear}) when no allowance in the current 
             value : `${nextYear}-01-12`,
           }],
           message : /New leave request was added/,
+          submit_button_selector : '#book_leave_modal button[type=submit]',
+          modal_selector : '#book_leave_modal',
         });
       })
       .then(() => done())

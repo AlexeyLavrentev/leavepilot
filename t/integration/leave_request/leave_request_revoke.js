@@ -181,7 +181,7 @@ describe('Revoke leave request', function(){
       })
       .then(function(){
 
-        submit_form_func({
+        return submit_form_func({
           driver      : driver,
           // The order matters here as we need to populate dropdown prior date filds
           form_params : [{
@@ -196,6 +196,8 @@ describe('Revoke leave request', function(){
             value : `${currentYear}-05-12`,
           }],
           message : /New leave request was added/,
+          submit_button_selector : '#book_leave_modal button[type=submit]',
+          modal_selector : '#book_leave_modal',
         })
         .then(function(){ done() })
         .catch(done);

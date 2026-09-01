@@ -135,6 +135,8 @@ describe('Basic leave request', function(){
           value : '2015-06-16',
       }],
       message : /New leave request was added/,
+      submit_button_selector : '#book_leave_modal button[type=submit]',
+      modal_selector : '#book_leave_modal',
     })
     .then(function(){ done() })
     .catch(done);
@@ -336,6 +338,8 @@ describe("Use problematic date with non default date format", function(){
           value : '25/08/16',
       }],
       message : /New leave request was added/,
+      submit_button_selector : '#book_leave_modal button[type=submit]',
+      modal_selector : '#book_leave_modal',
     })
     .then(function(){ done() })
     .catch(done);
@@ -384,6 +388,8 @@ describe("Book the very last day of year to be a holiday", function(){
           value : '2018-12-31',
         }],
         message : /New leave request was added/,
+        submit_button_selector : '#book_leave_modal button[type=submit]',
+        modal_selector : '#book_leave_modal',
       })
     )
     .then(() => done());

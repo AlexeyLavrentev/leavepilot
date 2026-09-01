@@ -181,7 +181,7 @@ describe('Overlapping leaverequest (with halfs)', function(){
       // Create new leave request
       .then(function(){
 
-        submit_form_func({
+        return submit_form_func({
           driver      : driver,
           form_params : [{
             selector        : 'select[name="from_date_part"]',
@@ -195,6 +195,8 @@ describe('Overlapping leaverequest (with halfs)', function(){
             value : '2015-06-17',
           }],
           message : /New leave request was added/,
+          submit_button_selector : '#book_leave_modal button[type=submit]',
+          modal_selector : '#book_leave_modal',
         })
         .then(function(){
           return check_original_booking_only([dayjs.utc('2015-06-15')]);
@@ -223,7 +225,7 @@ describe('Overlapping leaverequest (with halfs)', function(){
       // Create new leave request
       .then(function(){
 
-        submit_form_func({
+        return submit_form_func({
           driver      : driver,
           form_params : [{
             selector : 'input#from',
@@ -233,6 +235,8 @@ describe('Overlapping leaverequest (with halfs)', function(){
             value : '2015-06-16',
           }],
           message           : /Failed to create a leave request/,
+          submit_button_selector : '#book_leave_modal button[type=submit]',
+          modal_selector : '#book_leave_modal',
         })
         .then(function(){
           return check_original_booking_only([dayjs.utc('2015-06-15')]);
@@ -252,7 +256,7 @@ describe('Overlapping leaverequest (with halfs)', function(){
       // Create new leave request
       .then(function(){
 
-        submit_form_func({
+        return submit_form_func({
           driver      : driver,
           form_params : [{
             selector        : 'select[name="from_date_part"]',
@@ -266,6 +270,8 @@ describe('Overlapping leaverequest (with halfs)', function(){
             value : '2015-06-18',
           }],
           message           : /Failed to create a leave request/,
+          submit_button_selector : '#book_leave_modal button[type=submit]',
+          modal_selector : '#book_leave_modal',
         })
         .then(function(){
           return check_original_booking_only([dayjs.utc('2015-06-18')]);
@@ -286,7 +292,7 @@ describe('Overlapping leaverequest (with halfs)', function(){
       // Create new leave request
       .then(function(){
 
-        submit_form_func({
+        return submit_form_func({
           driver      : driver,
           form_params : [{
             selector        : 'select[name="to_date_part"]',
@@ -300,6 +306,8 @@ describe('Overlapping leaverequest (with halfs)', function(){
             value : '2015-06-16',
           }],
           message           : /Failed to create a leave request/,
+          submit_button_selector : '#book_leave_modal button[type=submit]',
+          modal_selector : '#book_leave_modal',
         })
         .then(function(){
           return check_original_booking_only([dayjs.utc('2015-06-15')]);
@@ -318,7 +326,7 @@ describe('Overlapping leaverequest (with halfs)', function(){
       // Create new leave request
       .then(function(){
 
-        submit_form_func({
+        return submit_form_func({
           driver      : driver,
           form_params : [{
               selector        : 'select[name="to_date_part"]',
@@ -333,6 +341,7 @@ describe('Overlapping leaverequest (with halfs)', function(){
           }],
           message           : /New leave request was added/,
           expect_navigation : true,
+          submit_button_selector : '#book_leave_modal button[type=submit]',
           modal_selector    : '#book_leave_modal',
         })
         .then(function(){ done() })
