@@ -186,14 +186,27 @@ describe('Leave type limits for next year: ' + next_year, function(){
   });
 
   it("Approve newly added leave request", function(done){
+    const pendingRequestSelector = 'tr[vpp="pending_for__'+non_admin_user_email+'"]';
+    let pendingRequestRow;
+
     driver
-      .findElement(By.css(
-        'tr[vpp="pending_for__'+non_admin_user_email+'"] .btn-success'
-      ))
-      .then(function(el){ return el.click(); })
+      .findElement(By.css(pendingRequestSelector))
+      .then(function(row){
+        pendingRequestRow = row;
+        return row.findElement(By.css('.btn-success'));
+      })
+      .then(function(button){ return button.click(); })
       .then(function(){
-        // Wait until page properly is reloaded
-        return driver.wait(until.elementLocated(By.css('h1')), 1000);
+        return driver.wait(function(){
+          return pendingRequestRow.getTagName()
+            .then(function(){
+              return driver.findElements(By.css(pendingRequestSelector));
+            })
+            .then(function(rows){ return rows.length === 0; })
+            .catch(function(error){
+              return error.name === 'StaleElementReferenceError';
+            });
+        }, 1000);
       })
       .then(function(){ done() })
       .catch(done);

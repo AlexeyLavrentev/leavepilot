@@ -44,4 +44,18 @@ describe('next-year leave-limit submit contract', function(){
     expect(block).to.contain("modal_selector : '#book_leave_modal'");
     expect(block).to.contain('return check_no_booking');
   });
+
+  it('waits for the approved pending request to leave the page before logging out', function(){
+    var block = booking_block(
+      'it("Approve newly added leave request"',
+      'it("Logout from admin account"'
+    );
+
+    expect(block).to.contain('const pendingRequestSelector');
+    expect(block).to.contain('let pendingRequestRow');
+    expect(block).to.contain('return row.findElement(By.css(\'.btn-success\'))');
+    expect(block).to.contain('return driver.findElements(By.css(pendingRequestSelector));');
+    expect(block).to.contain("error.name === 'StaleElementReferenceError'");
+    expect(block).to.contain('}, 1000);');
+  });
 });
