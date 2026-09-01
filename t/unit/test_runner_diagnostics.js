@@ -13,6 +13,30 @@ const REPORTER = path.join('t', 'lib', 'batch_diagnostic_reporter.js');
 const FAILING = path.join('t', 'fixtures', 'batch_diagnostic', 'failing_fixture.js');
 const PASSING = path.join('t', 'fixtures', 'batch_diagnostic', 'passing_fixture.js');
 
+const safeSubmitState = (overrides = {}) => Object.assign({
+  stage: 'after-click',
+  url: 'http://127.0.0.1:3000/calendar',
+  timeOrigin: 2,
+  readyState: 'complete',
+  rootStatus: 'unobserved',
+  modal: {presence: true, visible: true, classTokens: ['modal']},
+  submit: {
+    presence: true,
+    disabled: false,
+    connected: true,
+    formAction: '/calendar/bookleave/',
+    inModal: true,
+    tag: 'button',
+    type: 'submit',
+    formPresent: true,
+    formOwnership: 'ancestor',
+    formValid: true,
+    invalidControl: null,
+  },
+  events: {submit: 1, beforeunload: 0},
+  beforeClickHistory: [],
+}, overrides);
+
 const runFixture = (fixture, snapshotPath, identity) => new Promise(resolve => {
   const child = spawn(process.execPath, [
     MOCHA,
@@ -87,16 +111,35 @@ describe('browser batch diagnostic contract', function() {
     fs.writeFileSync(submitPath, JSON.stringify({
       version: 1,
       identity,
-      state: {stage: 'after-click', url: 'http://127.0.0.1:3000/calendar', timeOrigin: 2},
+      state: safeSubmitState(),
     }));
 
     expect(reporter._submitDiagnostic(submitPath, identity)).to.deep.equal({
       state: 'received',
-      snapshot: {stage: 'after-click', url: 'http://127.0.0.1:3000/calendar', timeOrigin: 2},
+      snapshot: safeSubmitState(),
     });
     expect(reporter._submitDiagnostic(submitPath, Object.assign({}, identity, {batchId: 'other'})).state)
       .to.equal('invalid');
     fs.writeFileSync(submitPath, '{');
+    expect(reporter._submitDiagnostic(submitPath, identity).state).to.equal('invalid');
+  });
+
+  it('rejects malformed or oversized pre-click diagnostic history', function() {
+    const submitPath = path.join(directory, 'submit-history.json');
+    const identity = {runId: 'run-history', batchId: 'batch-history', spec: PASSING};
+    const beforeClick = safeSubmitState({stage: 'before-click', rootStatus: 'alive'});
+    delete beforeClick.beforeClickHistory;
+    const state = safeSubmitState({beforeClickHistory: [beforeClick]});
+    fs.writeFileSync(submitPath, JSON.stringify({version: 1, identity, state}));
+
+    expect(reporter._submitDiagnostic(submitPath, identity)).to.deep.equal({
+      state: 'received', snapshot: state,
+    });
+    state.beforeClickHistory[0].submit.formValid = 'yes';
+    fs.writeFileSync(submitPath, JSON.stringify({version: 1, identity, state}));
+    expect(reporter._submitDiagnostic(submitPath, identity).state).to.equal('invalid');
+    state.beforeClickHistory = Array(5).fill({stage: 'before-click', url: 'http://127.0.0.1:3000/calendar'});
+    fs.writeFileSync(submitPath, JSON.stringify({version: 1, identity, state}));
     expect(reporter._submitDiagnostic(submitPath, identity).state).to.equal('invalid');
   });
 

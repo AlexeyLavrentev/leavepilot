@@ -10,6 +10,7 @@ Key            = require('selenium-webdriver').Key,
   _              = require('underscore');
 var DEFAULT_WAIT_TIMEOUT = 10000;
 var MAX_SUBMIT_DIAGNOSTIC_BYTES = 4096;
+var MAX_BEFORE_CLICK_HISTORY = 4;
 
 function submit_diagnostic_error(error) {
   var diagnosticError = new Error('Submit diagnostic failure: ' + (error && error.message || error));
@@ -71,6 +72,34 @@ function safe_submit_type(value) {
   return /^[a-z][a-z0-9_-]{0,31}$/.test(type) ? type : 'unreadable';
 }
 
+function safe_form_ownership(value) {
+  return ['ancestor', 'external', 'none'].indexOf(value) !== -1 ? value : 'unreadable';
+}
+
+function safe_invalid_control_tag(value) {
+  var tag = typeof value === 'string' ? value.toLowerCase() : '';
+  return ['input', 'select', 'textarea'].indexOf(tag) !== -1 ? tag : 'unreadable';
+}
+
+function safe_invalid_control_name(value) {
+  if (typeof value !== 'string' || !/^[A-Za-z][A-Za-z0-9_-]{0,47}$/.test(value)
+    || /(authorization|cookie|password|secret|token|api[_-]?key|key)/i.test(value)) {
+    return 'unreadable';
+  }
+  return value;
+}
+
+function safe_invalid_control(value) {
+  if (!value || typeof value !== 'object') {
+    return {tag: 'unreadable', type: 'unreadable', name: 'unreadable'};
+  }
+  return {
+    tag: safe_invalid_control_tag(value.tag),
+    type: safe_submit_type(value.type),
+    name: safe_invalid_control_name(value.name),
+  };
+}
+
 function safe_submit_state(raw, details) {
   raw = raw || {};
   var modal = raw.modal || {};
@@ -97,6 +126,12 @@ function safe_submit_state(raw, details) {
       inModal: typeof submit.inModal === 'boolean' ? submit.inModal : 'unreadable',
       tag: safe_submit_tag(submit.tag),
       type: safe_submit_type(submit.type),
+      formPresent: typeof submit.formPresent === 'boolean' ? submit.formPresent : 'unreadable',
+      formOwnership: safe_form_ownership(submit.formOwnership),
+      formValid: typeof submit.formValid === 'boolean' ? submit.formValid : 'unreadable',
+      invalidControl: submit.formValid === false
+        ? safe_invalid_control(submit.invalidControl)
+        : null,
     },
     events: {
       submit: Number.isSafeInteger(events.submit) && events.submit >= 0 ? events.submit : 0,
@@ -105,7 +140,51 @@ function safe_submit_state(raw, details) {
   };
 }
 
+function previous_before_click_history(config) {
+  var text;
+  try {
+    text = fs.readFileSync(config.path, 'utf8');
+  } catch (error) {
+    if (error && error.code === 'ENOENT') {
+      return [];
+    }
+    throw error;
+  }
+
+  if (Buffer.byteLength(text) > MAX_SUBMIT_DIAGNOSTIC_BYTES) {
+    throw new Error('existing submit diagnostic exceeds size limit');
+  }
+
+  var payload;
+  try {
+    payload = JSON.parse(text);
+  } catch (error) {
+    throw new Error('existing submit diagnostic is malformed');
+  }
+
+  if (!payload || payload.version !== 1 || !payload.identity || !payload.state
+    || payload.identity.runId !== config.identity.runId
+    || payload.identity.batchId !== config.identity.batchId
+    || payload.identity.spec !== config.identity.spec) {
+    throw new Error('existing submit diagnostic identity mismatch');
+  }
+
+  if (payload.state.beforeClickHistory === undefined) {
+    return [];
+  }
+  if (!Array.isArray(payload.state.beforeClickHistory)
+    || payload.state.beforeClickHistory.length > MAX_BEFORE_CLICK_HISTORY) {
+    throw new Error('existing submit diagnostic history is malformed');
+  }
+  return payload.state.beforeClickHistory;
+}
+
 function write_submit_diagnostic(config, state) {
+  var before_click_history = previous_before_click_history(config);
+  if (state.stage === 'before-click' && before_click_history.length < MAX_BEFORE_CLICK_HISTORY) {
+    before_click_history = before_click_history.concat([JSON.parse(JSON.stringify(state))]);
+  }
+  state.beforeClickHistory = before_click_history;
   var payload = {version: 1, identity: config.identity, state: state};
   var serialized = JSON.stringify(payload);
   if (Buffer.byteLength(serialized) > MAX_SUBMIT_DIAGNOSTIC_BYTES) {
@@ -148,6 +227,13 @@ function capture_submit_diagnostic(driver, details) {
       + 'presence: !!submit, disabled: !!(submit && submit.disabled), connected: !!(submit && submit.isConnected),'
       + 'formAction: submit && submit.form ? submit.form.action : null,'
       + 'inModal: !!(modal && submit && modal.contains(submit)), tag: submit && submit.tagName, type: submit && submit.type'
+      + ', formPresent: !!(submit && submit.form),'
+      + 'formOwnership: !(submit && submit.form) ? "none" : (submit.form.contains(submit) ? "ancestor" : "external"),'
+      + 'formValid: submit && submit.form ? submit.form.checkValidity() : null,'
+      + 'invalidControl: (function(){'
+      + 'var form = submit && submit.form; var invalid = form && form.checkValidity() === false ? form.querySelector(":invalid") : null;'
+      + 'return invalid ? {tag: invalid.tagName, type: invalid.type, name: invalid.name} : null;'
+      + '})()'
       + '},'
       + ' events: {submit: state.submit, beforeunload: state.beforeunload}'
       + '};',

@@ -127,6 +127,10 @@ describe('submit form navigation trace', function(){
         inModal: true,
         tag: 'button',
         type: 'submit',
+        formPresent: 'unreadable',
+        formOwnership: 'unreadable',
+        formValid: 'unreadable',
+        invalidControl: null,
       });
       expect(snapshot.state).to.not.have.property('text');
       expect(JSON.stringify(snapshot)).to.not.contain('private');
@@ -181,8 +185,123 @@ describe('submit form navigation trace', function(){
         inModal: 'unreadable',
         tag: 'unreadable',
         type: 'unreadable',
+        formPresent: 'unreadable',
+        formOwnership: 'unreadable',
+        formValid: 'unreadable',
+        invalidControl: null,
       });
       expect(JSON.stringify(snapshot)).to.not.contain('private');
+    }).finally(function(){
+      fs.rmSync(directory, {recursive: true, force: true});
+      delete process.env.TEST_SUBMIT_DIAGNOSTIC_PATH;
+      delete process.env.TEST_SUBMIT_DIAGNOSTIC_RUN_ID;
+      delete process.env.TEST_SUBMIT_DIAGNOSTIC_BATCH_ID;
+      delete process.env.TEST_SUBMIT_DIAGNOSTIC_SPEC;
+    });
+  });
+
+  it('captures only safe form validity and ownership facts before clicking', function(){
+    var directory = fs.mkdtempSync(path.join(os.tmpdir(), 'submit-diagnostic-'));
+    var snapshotPath = path.join(directory, 'submit.json');
+    process.env.TEST_SUBMIT_DIAGNOSTIC_PATH = snapshotPath;
+    process.env.TEST_SUBMIT_DIAGNOSTIC_RUN_ID = 'run-validity';
+    process.env.TEST_SUBMIT_DIAGNOSTIC_BATCH_ID = 'batch-validity';
+    process.env.TEST_SUBMIT_DIAGNOSTIC_SPEC = 't/integration/safe.js';
+    delete require.cache[require.resolve('../../t/lib/submit_form')];
+    submitForm = require('../../t/lib/submit_form');
+
+    var driver = {
+      executeScript: function(script){
+        if (script.indexOf('formOwnership') !== -1) {
+          return Promise.resolve({
+            url: 'http://127.0.0.1:3000/calendar?token=private#secret',
+            submit: {
+              presence: true,
+              disabled: false,
+              connected: true,
+              formAction: 'http://127.0.0.1:3000/calendar/bookleave/?token=private#secret',
+              inModal: true,
+              tag: 'BUTTON',
+              type: 'submit',
+              formPresent: true,
+              formOwnership: 'external',
+              formValid: false,
+              invalidControl: {tag: 'INPUT', type: 'text', name: 'password'},
+              value: 'private-fixture-value',
+            },
+          });
+        }
+        return Promise.resolve(null);
+      },
+    };
+
+    return submitForm._captureSubmitDiagnostic(driver, {
+      stage: 'before-click', rootStatus: 'alive',
+    }).then(function(){
+      var snapshot = JSON.parse(fs.readFileSync(snapshotPath, 'utf8'));
+      expect(snapshot.state.submit).to.include({
+        formPresent: true,
+        formOwnership: 'external',
+        formValid: false,
+      });
+      expect(snapshot.state.submit.invalidControl).to.deep.equal({
+        tag: 'input', type: 'text', name: 'unreadable',
+      });
+      expect(snapshot.state.beforeClickHistory).to.have.lengthOf(1);
+      expect(snapshot.state.beforeClickHistory[0]).to.include({
+        stage: 'before-click', rootStatus: 'alive',
+      });
+      expect(snapshot.state.beforeClickHistory[0].submit).to.include({
+        formPresent: true, formOwnership: 'external', formValid: false,
+      });
+      expect(JSON.stringify(snapshot)).to.not.contain('private');
+      expect(JSON.stringify(snapshot)).to.not.contain('password');
+    }).finally(function(){
+      fs.rmSync(directory, {recursive: true, force: true});
+      delete process.env.TEST_SUBMIT_DIAGNOSTIC_PATH;
+      delete process.env.TEST_SUBMIT_DIAGNOSTIC_RUN_ID;
+      delete process.env.TEST_SUBMIT_DIAGNOSTIC_BATCH_ID;
+      delete process.env.TEST_SUBMIT_DIAGNOSTIC_SPEC;
+    });
+  });
+
+  it('preserves bounded before-click evidence across later diagnostic writes', function(){
+    var directory = fs.mkdtempSync(path.join(os.tmpdir(), 'submit-diagnostic-'));
+    var snapshotPath = path.join(directory, 'submit.json');
+    process.env.TEST_SUBMIT_DIAGNOSTIC_PATH = snapshotPath;
+    process.env.TEST_SUBMIT_DIAGNOSTIC_RUN_ID = 'run-history';
+    process.env.TEST_SUBMIT_DIAGNOSTIC_BATCH_ID = 'batch-history';
+    process.env.TEST_SUBMIT_DIAGNOSTIC_SPEC = 't/integration/safe.js';
+    delete require.cache[require.resolve('../../t/lib/submit_form')];
+    submitForm = require('../../t/lib/submit_form');
+    var captures = 0;
+    var driver = {
+      executeScript: function(script){
+        if (script.indexOf('formOwnership') !== -1) {
+          captures += 1;
+          return Promise.resolve({
+            url: 'http://127.0.0.1:3000/calendar',
+            submit: {presence: captures === 1, formPresent: captures === 1, formOwnership: 'ancestor', formValid: true},
+          });
+        }
+        return Promise.resolve(null);
+      },
+    };
+
+    return submitForm._captureSubmitDiagnostic(driver, {
+      stage: 'before-click', rootStatus: 'alive',
+    }).then(function(){
+      return submitForm._captureSubmitDiagnostic(driver, {
+        stage: 'helper-rejection', rootStatus: 'unreadable',
+      });
+    }).then(function(){
+      var snapshot = JSON.parse(fs.readFileSync(snapshotPath, 'utf8'));
+      expect(snapshot.state.stage).to.equal('helper-rejection');
+      expect(snapshot.state.beforeClickHistory).to.have.lengthOf(1);
+      expect(snapshot.state.beforeClickHistory[0]).to.include({
+        stage: 'before-click', rootStatus: 'alive',
+      });
+      expect(snapshot.state.beforeClickHistory[0].submit).to.include({presence: true, formValid: true});
     }).finally(function(){
       fs.rmSync(directory, {recursive: true, force: true});
       delete process.env.TEST_SUBMIT_DIAGNOSTIC_PATH;

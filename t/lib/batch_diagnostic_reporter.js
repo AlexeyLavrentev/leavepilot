@@ -41,6 +41,72 @@ const writeSnapshot = (snapshotPath, payload) => {
   fs.renameSync(temporary, snapshotPath);
 };
 
+const safeSubmitStage = stage => [
+  'before-click', 'after-click', 'navigation-observation', 'modal-observation', 'helper-rejection',
+].includes(stage);
+
+const hasOnlyKeys = (value, keys) => value && typeof value === 'object'
+  && Object.keys(value).every(key => keys.includes(key))
+  && keys.every(key => Object.prototype.hasOwnProperty.call(value, key));
+
+const validInvalidControl = control => control && typeof control === 'object'
+  && ['input', 'select', 'textarea', 'unreadable'].includes(control.tag)
+  && (control.type === 'unreadable' || /^[a-z][a-z0-9_-]{0,31}$/.test(control.type))
+  && (control.name === 'unreadable' || (/^[A-Za-z][A-Za-z0-9_-]{0,47}$/.test(control.name)
+    && !/(authorization|cookie|password|secret|token|api[_-]?key|key)/i.test(control.name)))
+  && hasOnlyKeys(control, ['tag', 'type', 'name']);
+
+const validSubmitDiagnosticState = (state, historyEntry = false) => {
+  const expectedKeys = [
+    'stage', 'url', 'timeOrigin', 'readyState', 'rootStatus', 'modal', 'submit', 'events',
+  ].concat(historyEntry ? [] : ['beforeClickHistory']);
+  const modal = state && state.modal;
+  const submit = state && state.submit;
+  const events = state && state.events;
+  if (!hasOnlyKeys(state, expectedKeys)
+    || !safeSubmitStage(state.stage)
+    || (historyEntry && state.stage !== 'before-click')
+    || typeof state.url !== 'string' || /[?#]/.test(state.url)
+    || !(state.timeOrigin === null || Number.isFinite(state.timeOrigin))
+    || !['loading', 'interactive', 'complete', 'unreadable'].includes(state.readyState)
+    || !['absent', 'unreadable', 'alive', 'stale', 'unobserved'].includes(state.rootStatus)
+    || !hasOnlyKeys(modal, ['presence', 'visible', 'classTokens'])
+    || !(typeof modal.presence === 'boolean' || modal.presence === 'unreadable')
+    || !(typeof modal.visible === 'boolean' || modal.visible === 'unreadable')
+    || !Array.isArray(modal.classTokens) || modal.classTokens.length > 12
+    || !modal.classTokens.every(token => typeof token === 'string'
+      && /^[a-zA-Z0-9_-]{1,48}$/.test(token)
+      && !/(authorization|cookie|password|secret|token|api[_-]?key|key)/i.test(token))
+    || !hasOnlyKeys(submit, [
+      'presence', 'disabled', 'connected', 'formAction', 'inModal', 'tag', 'type', 'formPresent',
+      'formOwnership', 'formValid', 'invalidControl',
+    ])
+    || !(typeof submit.presence === 'boolean' || submit.presence === 'unreadable')
+    || !(typeof submit.disabled === 'boolean' || submit.disabled === 'unreadable')
+    || !(typeof submit.connected === 'boolean' || submit.connected === 'unreadable')
+    || !(submit.formAction === 'unreadable' || /^\/[A-Za-z0-9._~!$&'()*+,;=:@/%-]{0,511}$/.test(submit.formAction))
+    || !(typeof submit.inModal === 'boolean' || submit.inModal === 'unreadable')
+    || !['button', 'input', 'unreadable'].includes(submit.tag)
+    || !(submit.type === 'unreadable' || /^[a-z][a-z0-9_-]{0,31}$/.test(submit.type))
+    || !(typeof submit.formPresent === 'boolean' || submit.formPresent === 'unreadable')
+    || !['ancestor', 'external', 'none', 'unreadable'].includes(submit.formOwnership)
+    || !(typeof submit.formValid === 'boolean' || submit.formValid === 'unreadable')
+    || (submit.formValid !== false
+      ? submit.invalidControl !== null
+      : !validInvalidControl(submit.invalidControl))
+    || !hasOnlyKeys(events, ['submit', 'beforeunload'])
+    || !Number.isSafeInteger(events.submit) || events.submit < 0
+    || !Number.isSafeInteger(events.beforeunload) || events.beforeunload < 0) {
+    return false;
+  }
+  if (historyEntry) {
+    return true;
+  }
+  return Array.isArray(state.beforeClickHistory)
+    && state.beforeClickHistory.length <= 4
+    && state.beforeClickHistory.every(entry => validSubmitDiagnosticState(entry, true));
+};
+
 const submitDiagnostic = (snapshotPath, identity, failure) => {
   if (!snapshotPath) {
     return {state: 'absent'};
@@ -60,8 +126,7 @@ const submitDiagnostic = (snapshotPath, identity, failure) => {
       || payload.identity.runId !== identity.runId
       || payload.identity.batchId !== identity.batchId
       || payload.identity.spec !== identity.spec
-      || typeof state.stage !== 'string'
-      || typeof state.url !== 'string' || /[?#]/.test(state.url)) {
+      || !validSubmitDiagnosticState(state)) {
       throw new Error('submit diagnostic identity or schema mismatch');
     }
     return {state: 'received', snapshot: state};
@@ -131,3 +196,4 @@ module.exports = class BatchDiagnosticReporter extends FlakeReporter {
 module.exports._redact = redact;
 module.exports._writeSnapshot = writeSnapshot;
 module.exports._submitDiagnostic = submitDiagnostic;
+module.exports._validSubmitDiagnosticState = validSubmitDiagnosticState;
