@@ -114,7 +114,7 @@ describe('Try to book more holidays then in allowance', function(){
       // Create new leave request
       .then(function(){
 
-        submit_form_func({
+        return submit_form_func({
           driver      : driver,
           // The order matters here as we need to populate dropdown prior date filds
           form_params : [{
@@ -130,6 +130,8 @@ describe('Try to book more holidays then in allowance', function(){
           }],
           should_be_successful : false,
           message : /Failed to create a leave request/,
+          submit_button_selector : '#book_leave_modal button[type="submit"]',
+          modal_selector : '#book_leave_modal',
         })
         .then(function(){ done() })
         .catch(done);
