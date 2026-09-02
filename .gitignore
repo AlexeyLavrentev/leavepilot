@@ -12,6 +12,7 @@ node_modules/
 license_private.pem
 *.license.json
 *.license.txt
+/data/license.json
 
 # Agent/tooling scratch — must not be committed
 .supergoal/
@@ -43,6 +44,7 @@ coverage/
 *.inspect.ndjson
 
 # Recovery CI evidence is local-only; committed proof cites immutable run metadata.
+/.artifacts/verify/
 /.artifacts/verify/recovery/
 /.artifacts/verify/browser/
 /.artifacts/verify/process-reports/
