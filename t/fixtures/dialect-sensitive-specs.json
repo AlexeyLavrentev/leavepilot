@@ -128,6 +128,12 @@
       "module": "lib/model/calendar_month.js"
     },
     {
+      "file": "t/unit/model/company/exporter.js",
+      "category": "date-arithmetic",
+      "reason": "Builds company-scoped Leave records with date_start/date_end values and asserts the deterministic CSV export ordering and formatted round-trip through lib/model/company/exporter/index.js and lib/model/company/exporter/summary.js; MySQL must prove the same DATE/DATETIME association loading and ordering contract as SQLite.",
+      "module": "lib/model/company/exporter/index.js"
+    },
+    {
       "file": "t/unit/db_migrations_data.js",
       "category": "sql-literals",
       "reason": "Plan 05-06: spawns t/lib/db_migrations_data_case.js per data-rewriting migration; the child replays migrations 1..N-1 and executes N with raw sequelize.query('SELECT ... FROM SequelizeMeta') meta-table inspection, raw INSERT/DELETE seeding and table-rebuild SQL from the migration files themselves, on SQLite in the unit contour and on MySQL in this dialect job (per-case databases).",
