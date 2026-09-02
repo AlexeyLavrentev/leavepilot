@@ -85,6 +85,8 @@
   },
   "scripts": {
     "test": "node bin/test.js",
+    "verify": "node bin/verify.js --profile full",
+    "verify:quick": "node bin/verify.js --profile quick",
     "test:coverage": "nyc mocha --recursive t/unit --timeout 10000 --require t/lib/skip_honesty.js",
     "start": "node bin/wwww",
     "start:dev": "node --watch bin/wwww",
