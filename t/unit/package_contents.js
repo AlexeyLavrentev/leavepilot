@@ -73,8 +73,17 @@ const APPLICATION_PATHS = [
   'public/',
 ];
 
+const REQUIRED_PATHS = [
+  'app.js',
+  'package.json',
+  'public/css/style.css',
+  'NOTICE',
+  'docs/install-local-npm.md',
+];
+
 const FORBIDDEN_PREFIXES = [
   '.planning/',
+  '.artifacts/',
   't/',
   'portal/',
   'scripts/',
@@ -84,6 +93,15 @@ const FORBIDDEN_PREFIXES = [
   '.github/',
   '.zcode/',
 ];
+
+const isForbiddenPath = entry => (
+  FORBIDDEN_PREFIXES.some(prefix => entry.startsWith(prefix))
+  || entry === 'data/license.json'
+  || /^\.env(?:\.|$)/.test(entry)
+  || /(?:^|\/)[^/]+\.(?:sqlite|sqlite3|db)$/i.test(entry)
+  || /(?:^|\/)[^/]+\.(?:pem|key|p12|pfx)$/i.test(entry)
+  || /(?:^|\/)[^/]*(?:secret|credential|private)[^/]*\.(?:json|txt|ya?ml)$/i.test(entry)
+);
 
 // Every shipped bin/*.js whose relative require() cannot be satisfied from
 // inside the tarball. The set is computed, not listed: a script added later
@@ -169,15 +187,34 @@ describe('Published package contents', function() {
     });
   });
 
+  it('ships explicit runtime and operator artifacts', function() {
+    REQUIRED_PATHS.forEach(requiredPath => {
+      expect(paths, requiredPath + ' is missing from the package').to.include(requiredPath);
+    });
+  });
+
   it('leaks nothing from planning, tests, portal or CI tooling', function() {
-    const leaked = paths.filter(entry =>
-      FORBIDDEN_PREFIXES.some(prefix => entry.startsWith(prefix))
-    );
+    const leaked = paths.filter(isForbiddenPath);
 
     expect(
       leaked,
       'these paths would be published to the registry'
     ).to.deep.equal([]);
+  });
+
+  it('keeps forbidden-path policy executable when a clean checkout lacks those files', function() {
+    [
+      'data/license.json',
+      '.env.production',
+      'db.test.sqlite',
+      '.planning/STATE.md',
+      '.artifacts/verify/report.json',
+      't/fixtures/license.json',
+      'license_private.pem',
+      'config/service-secret.json',
+    ].forEach(candidate => {
+      expect(isForbiddenPath(candidate), candidate + ' must be rejected by package policy').to.equal(true);
+    });
   });
 
   it('does not ship internal design documents', function() {
