@@ -86,13 +86,17 @@ const killGroup = (child, signal) => {
 */
 const terminateGroup = (child, options = {}) => {
   const graceMs = options.graceMs === undefined ? DEFAULT_GRACE_MS : options.graceMs;
-
-  killGroup(child, 'SIGTERM');
+  const outcome = {
+    termSent: killGroup(child, 'SIGTERM'),
+    graceExited: false,
+    killSent: false,
+    finalSweepSent: false,
+  };
 
   return new Promise(resolve => {
     let settled = false;
 
-    const finish = () => {
+    const finish = reason => {
       if (settled) {
         return;
       }
@@ -100,15 +104,22 @@ const terminateGroup = (child, options = {}) => {
       settled = true;
       clearTimeout(timer);
       child.removeListener('exit', finish);
-      killGroup(child, 'SIGKILL');
-      resolve();
+      if (reason === 'exit') {
+        outcome.graceExited = true;
+        // A process-group leader can exit before a descendant that it started.
+        // Sweep once more so an ordinary exit cannot leave that descendant alive.
+        outcome.finalSweepSent = killGroup(child, 'SIGKILL');
+      } else {
+        outcome.killSent = killGroup(child, 'SIGKILL');
+      }
+      resolve(outcome);
     };
 
     // Not unref'd: it only exists between the SIGTERM and the SIGKILL, and
     // letting the process exit in that gap is letting the group survive.
-    const timer = setTimeout(finish, graceMs);
+    const timer = setTimeout(() => finish('deadline'), graceMs);
 
-    child.once('exit', finish);
+    child.once('exit', () => finish('exit'));
   });
 };
 

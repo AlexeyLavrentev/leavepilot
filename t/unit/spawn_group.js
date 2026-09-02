@@ -234,7 +234,7 @@ describe('Killing a test batch', function() {
     it('sweeps after every exit, not only after a kill', function() {
       const onExit = runner.slice(runner.indexOf("child.on('exit'"));
 
-      expect(onExit.slice(0, 500)).to.match(/terminateGroup\(child\)/);
+      expect(onExit.slice(0, 500)).to.match(/terminateGroup\(child(?:,|\))/);
     });
 
     /*
