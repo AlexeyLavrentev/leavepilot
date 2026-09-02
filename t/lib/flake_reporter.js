@@ -1,7 +1,27 @@
 'use strict';
 
 const fs = require('fs');
+const path = require('path');
 const Mocha = require('mocha');
+
+const writeAttemptEvidence = (target, value) => {
+  if (fs.existsSync(target)) {
+    throw new Error(`Attempt evidence is immutable: ${target}`);
+  }
+  fs.mkdirSync(path.dirname(target), {recursive: true});
+  const temporary = `${target}.${process.pid}.tmp`;
+  fs.writeFileSync(temporary, JSON.stringify(value, null, 2) + '\n', {mode: 0o600});
+  fs.renameSync(temporary, target);
+};
+
+const aggregateAttempts = attempts => {
+  const first = attempts && attempts[0];
+  const diagnostic = attempts && attempts[1];
+  if (!first || first.status !== 'passed') {
+    return {status: 'failed', flakeCandidate: Boolean(first && diagnostic && diagnostic.status === 'passed')};
+  }
+  return {status: 'passed', flakeCandidate: false};
+};
 
 /*
   Flake reporter (D-06): delegates every line of rendering to mocha's own
@@ -31,7 +51,7 @@ const Mocha = require('mocha');
   messages only - never process.env values - mirroring the value-suppression
   contract of t/unit/env_deprecation.js.
 */
-module.exports = class FlakeReporter extends Mocha.reporters.Spec {
+class FlakeReporter extends Mocha.reporters.Spec {
   constructor(runner, options) {
     super(runner, options);
 
@@ -74,4 +94,8 @@ module.exports = class FlakeReporter extends Mocha.reporters.Spec {
       }
     });
   }
-};
+}
+
+module.exports = FlakeReporter;
+module.exports.writeAttemptEvidence = writeAttemptEvidence;
+module.exports.aggregateAttempts = aggregateAttempts;

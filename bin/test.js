@@ -191,8 +191,8 @@ const flakeSidecarPath = contour => {
   // One sidecar per mocha process; a retried batch reuses its own path so
   // the sidecar always reflects the batch's latest attempt.
   const sidecarPath = path.join(
-    process.cwd(),
-    `flake-sidecar-${process.pid}-${flakeSidecarCounter}.json`
+    process.cwd(), '.artifacts', 'verify', 'attempts', runId,
+    `${flakeSidecarCounter}-${contour}.json`
   );
   flakeSidecars.push({ path: sidecarPath, contour });
 
@@ -217,12 +217,7 @@ const readFlakeSidecars = () => {
     try {
       payload = JSON.parse(fs.readFileSync(sidecar.path, 'utf8'));
     } catch (error) {
-      if (error.code !== 'ENOENT') {
-        // A sidecar killed with its batch (watchdog timeout) or that failed
-        // to parse contributes no records rather than failing the report.
-        console.warn(`Could not read flake sidecar ${sidecar.path}: ${error.message}`);
-      }
-      return;
+      throw new Error(`Required immutable flake sidecar unavailable (${sidecar.path}): ${error.message}`);
     }
 
     try {
@@ -244,14 +239,14 @@ const readFlakeSidecars = () => {
   return { mochaRecords, skippedSpecFiles };
 };
 
-const writeFlakeReport = () => new Promise(resolve => {
+const writeFlakeReport = async () => {
   const merged = readFlakeSidecars();
   const records = buildFlakeRecords().concat(merged.mochaRecords);
 
   try {
     fs.writeFileSync(flakeReportPath, JSON.stringify(records, null, 2) + '\n');
   } catch (error) {
-    console.warn(`Could not write flake report to ${flakeReportPath}: ${error.message}`);
+    throw new Error(`Required flake report could not be written: ${error.message}`);
   }
 
   // Skip honesty (D-21), runner carrier: the same rule the CI coverage
@@ -264,8 +259,7 @@ const writeFlakeReport = () => new Promise(resolve => {
     process.exitCode = 1;
   }
 
-  resolve();
-});
+};
 
 /*
   A wedged child is killed rather than waited on. Mocha's own per-test timeout
@@ -401,6 +395,11 @@ const collectJavaScriptFiles = directory => fs.readdirSync(directory, {withFileT
 
 const quarantine = require('../t/integration_quarantine');
 
+quarantine.validate(quarantine);
+if (process.env.TEST_CANONICAL_VERIFY === 'true' && quarantine.evaluate(quarantine).active) {
+  throw new Error('Active integration quarantine makes canonical verification red');
+}
+
 const quarantinedPaths = new Set(
   quarantine.map(entry => path.join('t', 'integration', entry.file))
 );
@@ -444,8 +443,6 @@ const runMochaSuite = () => {
 
     // One sidecar for the whole explicit run, stable across the retry below:
     // the sidecar always reflects the latest attempt.
-    const explicitSidecarPath = flakeSidecarPath('explicit-paths-mocha-retry');
-
     const configuredExplicitTimeout = Number(process.env.TEST_EXPLICIT_PATH_TIMEOUT_MS);
     const explicitTimeoutMs = Number.isInteger(configuredExplicitTimeout) && configuredExplicitTimeout > 0
       ? configuredExplicitTimeout
@@ -454,7 +451,7 @@ const runMochaSuite = () => {
       node,
       ['node_modules/mocha/bin/mocha', '--recursive', '--exit']
         .concat(FAIL_FAST, retryArgs, ['--reporter', FLAKE_REPORTER], roots, flags),
-      { env: Object.assign({}, baseTestEnv, { FLAKE_ARTIFACT_PATH: explicitSidecarPath }) },
+      { env: Object.assign({}, baseTestEnv, { FLAKE_ARTIFACT_PATH: flakeSidecarPath('explicit-paths-attempt') }) },
       explicitTimeoutMs,
       `explicit-path mocha timed out after ${explicitTimeoutMs}ms`
     );
@@ -471,7 +468,9 @@ const runMochaSuite = () => {
       }
       console.error(`Explicit-path run failed, retrying the whole list: ${error.message}`);
       flaky.push({ contour: 'explicit-paths-batch-retry', spec: roots.join(', ') });
-      return mochaExplicit();
+      return mochaExplicit().then(() => {
+        throw new Error(`Explicit-path first attempt failed; diagnostic rerun passed: ${error.message}`);
+      }, () => { throw error; });
     });
   }
 
@@ -628,8 +627,6 @@ const runMochaSuite = () => {
 
     // One sidecar per batch, stable across the retry below: the sidecar
     // always reflects the batch's latest attempt.
-    const batchSidecarPath = flakeSidecarPath('integration-mocha-retry');
-
     // Mocha's own --retries repeats a single test inside the process it is
     // already in, which does not help the failure this suite actually sees:
     // the first test of a file loses its browser and the rest of the file then
@@ -638,13 +635,15 @@ const runMochaSuite = () => {
     // fresh browser and a freshly registered company, which is the granularity
     // the flake lives at. Retried files are named at the end of the run: a
     // real regression fails twice and must not hide behind a green tick.
-    const attempt = mocha(batch, batchSidecarPath, index).catch(error => {
+    const attempt = mocha(batch, flakeSidecarPath('integration-attempt-1'), index).catch(error => {
       if (configuredRetries === 0) {
         throw error;
       }
       console.error(`Integration batch ${index + 1} failed, retrying the whole batch: ${error.message}`);
       flaky.push({ contour: 'integration-batch-retry', spec: batch.join(', ') });
-      return mocha(batch, batchSidecarPath, index);
+      return mocha(batch, flakeSidecarPath('integration-attempt-2'), index).then(() => {
+        throw new Error(`Integration batch ${index + 1} first attempt failed; diagnostic rerun passed: ${error.message}`);
+      }, () => { throw error; });
     });
 
     if (!keepGoing) {

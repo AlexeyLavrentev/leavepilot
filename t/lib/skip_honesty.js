@@ -34,6 +34,9 @@
 const MAX_ALLOWED_SKIPPED_SPECS = 4;
 
 const enforcementEnabled = () => {
+  if (process.env.TEST_CANONICAL_VERIFY === 'true') {
+    return true;
+  }
   const value = process.env.TEST_ENFORCE_SKIP_HONESTY;
   return value === 'true' || value === '1' || value === 'yes';
 };

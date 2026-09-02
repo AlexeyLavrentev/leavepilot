@@ -35,9 +35,11 @@ const atomicWrite = (file, value) => {
   fs.writeFileSync(temp, value, {mode: 0o600});
   fs.renameSync(temp, file);
 };
-const runChild = (entry, runRoot) => new Promise(resolve => {
+const runChild = (entry, runRoot, canonical) => new Promise(resolve => {
   const started = Date.now();
-  const child = spawn(entry.command, entry.args, {cwd: root, env: Object.assign({}, process.env, entry.env || {}), stdio: ['ignore', 'pipe', 'pipe']});
+  const child = spawn(entry.command, entry.args, {cwd: root, env: Object.assign({}, process.env, entry.env || {}, {
+    TEST_CANONICAL_VERIFY: canonical ? 'true' : 'false',
+  }), stdio: ['ignore', 'pipe', 'pipe']});
   let output = '';
   child.stdout.on('data', chunk => { output += chunk; process.stdout.write(chunk); });
   child.stderr.on('data', chunk => { output += chunk; process.stderr.write(chunk); });
@@ -49,7 +51,7 @@ const runChild = (entry, runRoot) => new Promise(resolve => {
   child.once('exit', code => {
     clearTimeout(timer);
     const timedOut = Date.now() - started >= entry.deadlineMs && code !== 0;
-    resolve({id: entry.id, status: code === 0 ? 'passed' : 'failed', failureClass: code === 0 ? null : timedOut ? 'timeout' : 'assertion', reason: code === 0 ? null : `exit ${code}: ${redact(output)}`, durationMs: Date.now() - started, attempts: [{number: 1, status: code === 0 ? 'passed' : 'failed', evidence: path.join(runRoot, `${entry.id}.attempt-1.json`)}]});
+    resolve({id: entry.id, status: code === 0 ? 'passed' : 'failed', failureClass: code === 0 ? null : timedOut ? 'timeout' : 'assertion', reason: code === 0 ? null : `exit ${code}: ${redact(output)}`, durationMs: Date.now() - started, attempts: [{number: 1, status: code === 0 ? 'passed' : 'failed', evidence: path.join(runRoot, `${entry.id}.attempt-1.json`), reproduction: {command: entry.command, args: entry.args, nodeVersion: process.version, dbContour: entry.env && entry.env.TEST_DB_DIALECT || 'sqlite', featureFlags: 'not-recorded'}}]});
   });
 });
 const checkPrerequisite = entry => new Promise(resolve => {
@@ -92,7 +94,7 @@ const main = async () => {
       const blocker = entry.dependencies.find(dependency => records.find(record => record.id === dependency && record.status !== 'passed'));
       if (blocker) { records.push({id, status: 'blocked', blocker, failureClass: null, reason: `Blocked by ${blocker}`, durationMs: 0, attempts: []}); continue; }
       const prerequisite = await checkPrerequisite(entry);
-      const result = prerequisite || await runChild(entry, runRoot);
+      const result = prerequisite || await runChild(entry, runRoot, selected ? selected.authoritative : true);
       if (result.attempts.length) { atomicWrite(result.attempts[0].evidence, JSON.stringify(result, null, 2) + '\n'); }
       records.push(result);
     }
