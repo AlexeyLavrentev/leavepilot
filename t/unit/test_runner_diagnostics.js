@@ -6,6 +6,7 @@ const path = require('path');
 const {spawn} = require('child_process');
 const expect = require('chai').expect;
 const reporter = require('../lib/batch_diagnostic_reporter');
+const registry = require('../../lib/verify/stages');
 
 const ROOT = path.join(__dirname, '..', '..');
 const MOCHA = path.join('node_modules', 'mocha', 'bin', 'mocha');
@@ -146,10 +147,14 @@ describe('browser batch diagnostic contract', function() {
   it('keeps Browser CI strict and uploads diagnostics on every outcome', function() {
     const workflow = fs.readFileSync('.github/workflows/core-integration.yml', 'utf8');
     const browserJob = workflow.slice(workflow.indexOf('jobs:\n  integration:'));
+    const browserStage = registry.stage('browser-1');
 
-    expect(browserJob).to.include("TEST_RETRIES: '0'");
-    expect(browserJob).to.include("TEST_INTEGRATION_BATCH_SIZE: '1'");
-    expect(browserJob).to.include("TEST_EXECUTION_TIMEOUT_MS: '120000'");
+    expect(browserStage.env).to.include({
+      TEST_RETRIES: '0',
+      TEST_INTEGRATION_BATCH_SIZE: '1',
+      TEST_EXECUTION_TIMEOUT_MS: '120000',
+    });
+    expect(browserJob).to.include('node bin/verify.js --stage browser-${{ matrix.shard }}');
     // eslint-disable-next-line no-template-curly-in-string
     expect(browserJob).to.include('name: flake-report-shard-${{ matrix.shard }}');
     // eslint-disable-next-line no-template-curly-in-string

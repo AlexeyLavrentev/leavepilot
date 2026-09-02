@@ -149,46 +149,14 @@ jobs:
           CHROMEDRIVER_SKIP_DOWNLOAD: 'true'
           PUPPETEER_SKIP_DOWNLOAD: 'true'
 
-      - name: Run contract tests
-        run: |
-          ./node_modules/.bin/mocha \
-            t/unit/diagnostics.js \
-            t/unit/edition_initialization.js \
-            t/unit/edition_premium_loader.js \
-            t/unit/edition_community.js \
-            t/unit/edition_community_boundary.js \
-            t/unit/edition_registry.js \
-            t/unit/features.js \
-            t/unit/email_template_paths.js \
-            t/unit/partial_template_paths.js \
-            t/unit/view_engine_paths.js
+      - name: Run registry-selected SQLite migration
+        run: node bin/verify.js --stage sqlite-migration
 
-      - name: Run focused Phase 0 tests (password / migrator / auth_security)
-        run: |
-          ./node_modules/.bin/mocha \
-            t/unit/auth/password.js \
-            t/unit/db_migrator.js \
-            t/unit/middleware/auth_security.js \
-            --timeout 10000
+      - name: Run registry-selected unit coverage
+        run: node bin/verify.js --stage unit-coverage
 
-      - name: Run all unit tests and enforce coverage baseline
-        run: |
-          node bin/db_update.js
-          npm run test:coverage
-        env:
-          NODE_ENV: test
-          DB_DIALECT: sqlite
-          DB_STORAGE: /tmp/unit-test.sqlite
-          # Canonical prefix: the deprecated features name this env used to
-          # carry made t/unit/env_deprecation.js red on every coverage run
-          # (D-19).
-          LEAVEPILOT_FEATURES: all
-          # D-21: test:coverage loads t/lib/skip_honesty.js via --require,
-          # which counts self-skipped spec files unconditionally. This env
-          # turns the count into a gate: more than 4 skipped spec files
-          # fails the step. A local test:coverage without the env warns
-          # only, so a driver-less laptop stays green.
-          TEST_ENFORCE_SKIP_HONESTY: 'true'
+      - name: Verify registry-selected package contents
+        run: node bin/verify.js --stage package
 
       - name: Validate community compose
         run: docker compose config --quiet
@@ -215,6 +183,14 @@ jobs:
           SESSION_SECRET: ci-session-secret
           CRYPTO_SECRET: ci-crypto-secret
           TIMEOFF_PREMIUM_MODULE_HOST_PATH: ../timeoff-premium
+
+      - name: Upload complete verification evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: verify-core-contracts
+          path: .artifacts/verify/
+          if-no-files-found: error
 
   license-contract:
     name: License contract fixtures and manifest
@@ -471,48 +447,25 @@ jobs:
           CHROMEDRIVER_SKIP_DOWNLOAD: 'true'
           PUPPETEER_SKIP_DOWNLOAD: 'true'
 
-      - name: Record browser version
-        # The manifest's run list includes browser-driving integration specs,
-        # so this job needs a browser exactly like the integration shards do.
-        run: |
-          google-chrome --version
-          echo "CHROME_BIN=$(command -v google-chrome)" >> "$GITHUB_ENV"
+      - name: Restore pinned browser test infrastructure
+        uses: actions/cache@v4
+        with:
+          path: .artifacts/verify/browser
+          key: browser-test-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('package-lock.json') }}
 
-      - name: Run dialect-sensitive specs
-        # QUAL-01 closing half: the manifest's specs run on MySQL beside the
-        # SQLite contours, not instead of them, and a failure here fails the
-        # build. The spec list is derived from the committed manifest so the
-        # job cannot drift from what t/unit/dialect_sensitive_manifest.js
-        # guards.
-        #
-        # Plan 05-06: the manifest now carries t/unit/db_migrations_data.js
-        # (sql-literals) - the data-rewriting migration replay specs with
-        # per-case MySQL databases, proven green on a local mysql:8.0.45
-        # contour before this job ever ran them. The grep below makes its
-        # presence an explicit contract: dropping it from the manifest
-        # fails this step instead of silently shrinking the job.
+      - name: Bootstrap and record pinned browser versions
         run: |
-          set -o pipefail
-          specs=$(node -e "console.log(require('./t/fixtures/dialect-sensitive-specs.json').specs.map(s => s.file).join(' '))")
-          echo "Dialect run list: ${specs}"
-          echo "${specs}" | grep -q 'db_migrations_data' || {
-            echo "ERROR: the migration replay spec t/unit/db_migrations_data.js is missing from the dialect run list"; exit 1;
-          }
-          node bin/test.js ${specs}
+          node bin/browser_setup.js --bootstrap
+          node bin/browser_setup.js --print-env
+
+      - name: Run registry-selected dialect-sensitive specs
+        run: node bin/verify.js --profile ci-mysql
         env:
-          NODE_ENV: test
-          TEST_DB_DIALECT: mysql
           DB_HOST: 127.0.0.1
           DB_PORT: '3306'
           DB_NAME: lp_test
           DB_USER: root
           DB_PASSWORD: rootpw
-          # D-04: the same retry discipline the SQLite contours have - one
-          # retry per file, recorded in the flake artifact, no second policy.
-          TEST_RETRIES: '1'
-          # D-21: this is a runner-driven contour, so skip honesty is a gate
-          # here exactly like on the integration shards.
-          TEST_ENFORCE_SKIP_HONESTY: 'true'
 
       - name: Write flake report to the job summary
         # D-06: the summary exists on every build, red included - the runner
@@ -546,6 +499,14 @@ jobs:
         with:
           name: flake-report-mysql
           path: flake-report.json
+          if-no-files-found: error
+
+      - name: Upload complete verification evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: verify-mysql-dialect
+          path: .artifacts/verify/
           if-no-files-found: error
 
       - name: Stop disposable MySQL

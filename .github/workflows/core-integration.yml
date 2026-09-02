@@ -61,45 +61,15 @@ jobs:
       - name: Verify the committed stylesheet is current
         # Several suites assert against compiled CSS. Recompiling silently would
         # hide a stale checked-in build, so compare instead of overwrite.
-        run: |
-          npm run build-css
-          if ! git diff --quiet -- public/css/style.css; then
-            echo "public/css/style.css is stale: run 'npm run build-css' and commit the result."
-            git --no-pager diff --stat -- public/css/style.css
-            exit 1
-          fi
+        run: node bin/verify.js --stage css-build-diff
 
-      - name: Run integration suite
-        run: node bin/test.js --integration-only --keep-going --shard=${{ matrix.shard }}/4
+      - name: Run registry-selected integration shard
+        # The matrix chooses only which frozen registry entry to run. Batch
+        # shape, retries, and deadlines stay in lib/verify/stages.js.
+        run: node bin/verify.js --stage browser-${{ matrix.shard }}
         env:
           NODE_ENV: test
           TEST_DB_STORAGE: /tmp/integration-test-${{ matrix.shard }}.sqlite
-          # One spec at a time. The trace measures where the runner actually
-          # spends its time: across two shards there was not a single pause
-          # over five seconds inside a wait, and every pause over five seconds
-          # sat on the boundary between specs — tearing down one browser and
-          # cold starting the next. Concurrent batches made two Chromes start
-          # at once on two cores, which stretched a boundary from seconds to
-          # 24-33s routinely and to 121s at the tail, just past the budget.
-          # Parallelism now comes from the shards, so batching inside a runner
-          # only makes the browsers fight each other.
-          TEST_INTEGRATION_BATCH_SIZE: '1'
-          # The per-spec budget is tuned for a developer machine. The leave-type
-          # limit specs drive several bookings through the browser and overran
-          # 60s on a two-core runner while passing locally, so the runner gets a
-          # larger budget rather than the specs getting weaker assertions.
-          TEST_EXECUTION_TIMEOUT_MS: '120000'
-          # First-pass evidence is a gate: a failing spec must remain red
-          # rather than being replayed into a manufactured green result.
-          TEST_RETRIES: '0'
-          # Trace form steps: a wedged submit otherwise shows up as a bare mocha
-          # timeout with no indication of which command never came back, and
-          # the hang has not reproduced outside this runner.
-          TEST_TRACE_FORMS: '1'
-          # D-21: the runner counts self-skipped spec files from the flake
-          # reporter's pending records and names them; with this env set the
-          # count is a gate (locally the same breach only warns).
-          TEST_ENFORCE_SKIP_HONESTY: 'true'
 
       - name: Write flake report to the job summary
         # D-06: the summary exists on every build, red included - the runner
@@ -144,4 +114,12 @@ jobs:
         with:
           name: browser-batch-diagnostics-shard-${{ matrix.shard }}
           path: .artifacts/verify/browser-batch-diagnostics/
+          if-no-files-found: error
+
+      - name: Upload complete verification evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: verify-browser-shard-${{ matrix.shard }}
+          path: .artifacts/verify/
           if-no-files-found: error
