@@ -194,6 +194,7 @@ const flakeSidecarPath = contour => {
     process.cwd(), '.artifacts', 'verify', 'attempts', runId,
     `${flakeSidecarCounter}-${contour}.json`
   );
+  fs.mkdirSync(path.dirname(sidecarPath), {recursive: true});
   flakeSidecars.push({ path: sidecarPath, contour });
 
   return sidecarPath;

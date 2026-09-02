@@ -115,6 +115,13 @@ describe('test runner lifecycle', function() {
     expect(explicitBranch).to.contain('configuredRetries === 0');
   });
 
+  it('creates the flake sidecar directory before starting Mocha', function() {
+    const source = fs.readFileSync('bin/test.js', 'utf8');
+    const sidecarFactory = source.slice(source.indexOf('const flakeSidecarPath'), source.indexOf('const buildFlakeRecords'));
+
+    expect(sidecarFactory).to.contain('fs.mkdirSync(path.dirname(sidecarPath), {recursive: true});');
+  });
+
   it('preflights browsers only for browser-driving targets', function() {
     const source = fs.readFileSync('bin/test.js', 'utf8');
 
