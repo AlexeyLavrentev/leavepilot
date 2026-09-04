@@ -62,7 +62,10 @@ describe('Reminder schedules UI and API', function() {
       await models.LeaveType.destroy({where: {id: {[models.Sequelize.Op.in]: [leaveType.id, otherLeaveType.id]}}});
       await models.Company.destroy({where: {id: {[models.Sequelize.Op.in]: [company.id, otherCompany.id]}}});
     }
-    await httpAgent.close();
+    // This suite shares the in-process SQLite fixture with later route suites.
+    // `close()` tears down its memoised Sequelize connection permanently;
+    // release only this suite's listener and environment overrides.
+    await httpAgent.release();
   });
 
   it('renders a functional localized settings page for admins', async function() {
