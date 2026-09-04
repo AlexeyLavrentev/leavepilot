@@ -50,8 +50,21 @@
         {"temperature": "warm", "durationMs": 444}
       ],
       "observedMaximumMs": 480,
+      "ciRuntimeFloors": [
+        {
+          "workflow": "core-integration.yml",
+          "runId": 33840151547,
+          "job": "Browser suite 2/4",
+          "sourceUrl": "https://github.com/AlexeyLavrentev/leavepilot/actions/runs/33840151547",
+          "capturedAt": "2026-09-04T05:25:15Z",
+          "runner": "ubuntu-24.04",
+          "outcome": "timeout",
+          "lowerBoundMs": 968
+        }
+      ],
+      "deadlineBasisMs": 968,
       "margin": {"kind": "multiplier", "value": 2},
-      "deadlineMs": 960
+      "deadlineMs": 1936
     },
     "package": {
       "command": "rtk npm pack --dry-run --json",

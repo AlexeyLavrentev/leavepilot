@@ -37,9 +37,27 @@ const expectLocalStage = (name, stage) => {
 
   const maximum = Math.max(...stage.samples.map(sample => sample.durationMs));
   expect(stage.observedMaximumMs).to.equal(maximum);
+  const ciRuntimeFloors = stage.ciRuntimeFloors || [];
+  ciRuntimeFloors.forEach(floor => {
+    expect(floor.workflow).to.equal('core-integration.yml');
+    expect(floor.runId).to.be.a('number').and.be.greaterThan(0);
+    expect(floor.job).to.match(/^Browser suite [1-4]\/4$/);
+    expect(floor.sourceUrl).to.match(
+      /^https:\/\/github\.com\/AlexeyLavrentev\/leavepilot\/actions\/runs\//
+    );
+    expectIsoDate(floor.capturedAt);
+    expect(floor.runner).to.equal('ubuntu-24.04');
+    expect(floor.outcome).to.equal('timeout');
+    expect(floor.lowerBoundMs).to.be.a('number').and.be.greaterThan(0);
+  });
+  const deadlineBasisMs = Math.max(
+    maximum,
+    ...ciRuntimeFloors.map(floor => floor.lowerBoundMs)
+  );
+  expect(stage.deadlineBasisMs || maximum).to.equal(deadlineBasisMs);
   expect(stage.margin).to.deep.include({kind: 'multiplier'});
   expect(stage.margin.value).to.be.a('number').and.be.greaterThan(1);
-  expect(stage.deadlineMs).to.equal(Math.ceil(maximum * stage.margin.value));
+  expect(stage.deadlineMs).to.equal(Math.ceil(deadlineBasisMs * stage.margin.value));
 };
 
 const expectRunIdentity = (name, evidence) => {
