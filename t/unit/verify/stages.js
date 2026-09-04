@@ -31,6 +31,8 @@ describe('verify stage registry', () => {
   it('uses measured local deadlines and a decisive Chrome prerequisite', () => {
     const lint = registry.stage('lint');
     expect(lint.deadlineMs).to.equal(3788);
+    const unitCoverage = registry.stage('unit-coverage');
+    expect(unitCoverage.deadlineMs).to.equal(220684);
     const cssBuildDiff = registry.stage('css-build-diff');
     expect(cssBuildDiff.deadlineMs).to.equal(1936);
     const browser = registry.stage('browser-1');

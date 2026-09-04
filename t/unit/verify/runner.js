@@ -5,6 +5,7 @@ const os = require('os');
 const path = require('path');
 const {spawnSync} = require('child_process');
 const {expect} = require('chai');
+const {GROUPS_SUPPORTED} = require('../../../bin/lib/spawn_group');
 
 const ROOT = path.join(__dirname, '..', '..', '..');
 const RUNNER = path.join(ROOT, 'bin', 'verify.js');
@@ -43,5 +44,26 @@ describe('verify runner', () => {
     expect(summary.stages.map(stage => `${stage.id}:${stage.status}`)).to.deep.equal([
       'test-fail:failed', 'test-blocked:blocked', 'test-pass:passed',
     ]);
+  });
+
+  it('marks a graceful timeout red and terminates its descendant process group', function() {
+    if (!GROUPS_SUPPORTED) {
+      return this.skip();
+    }
+
+    const result = run(['--stage', 'test-timeout-tree']);
+    const output = result.stdout + result.stderr;
+    const line = output.split('\n').find(value => value.startsWith('VERIFY_SUMMARY '));
+    const summary = JSON.parse(line.slice('VERIFY_SUMMARY '.length));
+    const pid = Number(output.match(/tree-grandchild=(\d+)/)[1]);
+
+    expect(result.status, output).to.equal(1);
+    expect(summary.stages).to.have.lengthOf(1);
+    expect(summary.stages[0]).to.include({
+      id: 'test-timeout-tree',
+      status: 'failed',
+      failureClass: 'timeout',
+    });
+    expect(() => process.kill(pid, 0)).to.throw().with.property('code', 'ESRCH');
   });
 });

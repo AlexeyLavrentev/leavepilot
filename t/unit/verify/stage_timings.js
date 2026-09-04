@@ -39,9 +39,14 @@ const expectLocalStage = (name, stage) => {
   expect(stage.observedMaximumMs).to.equal(maximum);
   const ciRuntimeFloors = stage.ciRuntimeFloors || [];
   ciRuntimeFloors.forEach(floor => {
-    expect(floor.workflow).to.equal('core-integration.yml');
+    expect(floor.workflow).to.be.oneOf(['core-ci.yml', 'core-integration.yml']);
     expect(floor.runId).to.be.a('number').and.be.greaterThan(0);
-    expect(floor.job).to.match(/^Browser suite [1-4]\/4$/);
+    expect(floor.job).to.be.a('string').and.not.equal('');
+    if (floor.workflow === 'core-integration.yml') {
+      expect(floor.job).to.match(/^Browser suite [1-4]\/4$/);
+    } else {
+      expect(floor.job).to.equal('Core contract tests');
+    }
     expect(floor.sourceUrl).to.match(
       /^https:\/\/github\.com\/AlexeyLavrentev\/leavepilot\/actions\/runs\//
     );

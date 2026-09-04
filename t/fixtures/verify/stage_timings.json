@@ -24,8 +24,21 @@
         {"temperature": "warm", "durationMs": 30002}
       ],
       "observedMaximumMs": 30003,
+      "ciRuntimeFloors": [
+        {
+          "workflow": "core-ci.yml",
+          "runId": 33841963539,
+          "job": "Core contract tests",
+          "sourceUrl": "https://github.com/AlexeyLavrentev/leavepilot/actions/runs/33841963539",
+          "capturedAt": "2026-09-04T05:54:06.776Z",
+          "runner": "ubuntu-24.04",
+          "outcome": "timeout",
+          "lowerBoundMs": 110342
+        }
+      ],
+      "deadlineBasisMs": 110342,
       "margin": {"kind": "multiplier", "value": 2},
-      "deadlineMs": 60006
+      "deadlineMs": 220684
     },
     "sqliteMigration": {
       "command": "rtk env NODE_ENV=test DB_DIALECT=sqlite DB_STORAGE=/tmp/leavepilot-calibration.sqlite node bin/db_update.js",

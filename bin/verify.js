@@ -5,6 +5,7 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const {spawn} = require('child_process');
+const {spawnInGroup, terminateGroup} = require('./lib/spawn_group');
 const registry = require('../lib/verify/stages');
 
 const root = process.cwd();
@@ -37,21 +38,29 @@ const atomicWrite = (file, value) => {
 };
 const runChild = (entry, runRoot, canonical) => new Promise(resolve => {
   const started = Date.now();
-  const child = spawn(entry.command, entry.args, {cwd: root, env: Object.assign({}, process.env, entry.env || {}, {
+  const child = spawnInGroup(entry.command, entry.args, {cwd: root, env: Object.assign({}, process.env, entry.env || {}, {
     TEST_CANONICAL_VERIFY: canonical ? 'true' : 'false',
   }), stdio: ['ignore', 'pipe', 'pipe']});
   let output = '';
+  let deadlineExceeded = false;
+  let termination = null;
   child.stdout.on('data', chunk => { output += chunk; process.stdout.write(chunk); });
   child.stderr.on('data', chunk => { output += chunk; process.stderr.write(chunk); });
-  const timer = setTimeout(() => child.kill('SIGTERM'), entry.deadlineMs);
+  const timer = setTimeout(() => {
+    deadlineExceeded = true;
+    termination = terminateGroup(child);
+  }, entry.deadlineMs);
   child.once('error', error => {
     clearTimeout(timer);
     resolve({id: entry.id, status: 'failed', failureClass: 'runner error', reason: redact(error.message), durationMs: Date.now() - started, attempts: []});
   });
-  child.once('exit', code => {
+  child.once('exit', async code => {
     clearTimeout(timer);
-    const timedOut = Date.now() - started >= entry.deadlineMs && code !== 0;
-    resolve({id: entry.id, status: code === 0 ? 'passed' : 'failed', failureClass: code === 0 ? null : timedOut ? 'timeout' : 'assertion', reason: code === 0 ? null : `exit ${code}: ${redact(output)}`, durationMs: Date.now() - started, attempts: [{number: 1, status: code === 0 ? 'passed' : 'failed', evidence: path.join(runRoot, `${entry.id}.attempt-1.json`), reproduction: {command: entry.command, args: entry.args, nodeVersion: process.version, dbContour: entry.env && entry.env.TEST_DB_DIALECT || 'sqlite', featureFlags: 'not-recorded'}}]});
+    if (termination) {
+      await termination;
+    }
+    const passed = !deadlineExceeded && code === 0;
+    resolve({id: entry.id, status: passed ? 'passed' : 'failed', failureClass: passed ? null : deadlineExceeded ? 'timeout' : 'assertion', reason: passed ? null : `exit ${code}: ${redact(output)}`, durationMs: Date.now() - started, attempts: [{number: 1, status: passed ? 'passed' : 'failed', evidence: path.join(runRoot, `${entry.id}.attempt-1.json`), reproduction: {command: entry.command, args: entry.args, nodeVersion: process.version, dbContour: entry.env && entry.env.TEST_DB_DIALECT || 'sqlite', featureFlags: 'not-recorded'}}]});
   });
 });
 const checkPrerequisite = entry => new Promise(resolve => {
