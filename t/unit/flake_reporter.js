@@ -92,12 +92,16 @@ describe('skip honesty threshold (t/lib/skip_honesty.js, D-21)', function() {
   // the enforcement gate and the process exit code both belong to whoever
   // loaded this spec, so they go back exactly as they were found.
   var ENV_KEY = 'TEST_ENFORCE_SKIP_HONESTY';
+  var CANONICAL_ENV_KEY = 'TEST_CANONICAL_VERIFY';
   var originalEnvValue;
+  var originalCanonicalEnvValue;
   var originalExitCode;
 
   beforeEach(function() {
     originalEnvValue = process.env[ENV_KEY];
+    originalCanonicalEnvValue = process.env[CANONICAL_ENV_KEY];
     delete process.env[ENV_KEY];
+    delete process.env[CANONICAL_ENV_KEY];
     originalExitCode = process.exitCode;
   });
 
@@ -106,6 +110,11 @@ describe('skip honesty threshold (t/lib/skip_honesty.js, D-21)', function() {
       delete process.env[ENV_KEY];
     } else {
       process.env[ENV_KEY] = originalEnvValue;
+    }
+    if (typeof originalCanonicalEnvValue === 'undefined') {
+      delete process.env[CANONICAL_ENV_KEY];
+    } else {
+      process.env[CANONICAL_ENV_KEY] = originalCanonicalEnvValue;
     }
     process.exitCode = originalExitCode;
   });
