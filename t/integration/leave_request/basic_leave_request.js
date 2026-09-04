@@ -7,7 +7,6 @@ const config           = require('../../lib/config'),
     expect           = require('chai').expect,
     _                = require('underscore'),
     dayjs = require('../../../lib/util/date'),
-    until            = require('selenium-webdriver').until,
     login_user_func        = require('../../lib/login_with_user'),
     register_new_user_func = require('../../lib/register_new_user'),
     logout_user_func       = require('../../lib/logout_user'),
@@ -200,7 +199,14 @@ describe('Basic leave request', function(){
     .then(function(requestRow){
       return requestRow.findElement(By.css('.btn-success'))
         .then(function(el){ return el.click(); })
-        .then(function(){ return driver.wait(until.stalenessOf(requestRow), 1000); });
+        .then(function(){
+          return driver.wait(function(){
+            return driver.findElements(By.css(
+              'tr[vpp="pending_for__'+non_admin_user_email+'"]'
+            ))
+            .then(function(rows){ return rows.length === 0; });
+          }, 1000);
+        });
     })
     .then(function(){ done() })
     .catch(done);
