@@ -51,6 +51,7 @@ describe('verify stage registry', () => {
     const mysql = workflow.slice(workflow.indexOf('  mysql-dialect:'), workflow.indexOf('  security:'));
 
     expect(workflow).to.include('contents: read');
+    expect(coreTests).to.include('node bin/verify.js --stage lint');
     expect(coreTests).to.include('node bin/verify.js --stage unit-coverage');
     expect(coreTests).to.not.include('npm run test:coverage');
     expect(mysql).to.include('node bin/verify.js --profile ci-mysql');

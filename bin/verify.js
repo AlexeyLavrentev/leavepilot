@@ -7,6 +7,7 @@ const crypto = require('crypto');
 const {spawn} = require('child_process');
 const {spawnInGroup, terminateGroup} = require('./lib/spawn_group');
 const registry = require('../lib/verify/stages');
+const {validateRunRoot} = require('../lib/verify/evidence');
 
 const root = process.cwd();
 const artifactBase = path.resolve(root, registry.artifactRoot);
@@ -29,7 +30,6 @@ const parse = argv => {
   }
   return result;
 };
-const contained = target => target === artifactBase || target.startsWith(artifactBase + path.sep);
 const atomicWrite = (file, value) => {
   const temp = `${file}.${process.pid}.${crypto.randomUUID()}.tmp`;
   fs.mkdirSync(path.dirname(file), {recursive: true});
@@ -69,26 +69,16 @@ const checkPrerequisite = entry => new Promise(resolve => {
   probe.once('error', () => resolve({id: entry.id, status: 'failed', failureClass: 'missing prerequisite', reason: `Missing prerequisite. Setup: ${entry.prerequisite.setup}`, durationMs: 0, attempts: []}));
   probe.once('exit', code => resolve(code === 0 ? null : {id: entry.id, status: 'failed', failureClass: 'missing prerequisite', reason: `Missing prerequisite. Setup: ${entry.prerequisite.setup}`, durationMs: 0, attempts: []}));
 });
-const validate = (runRoot, options) => {
-  const resolved = path.resolve(runRoot);
-  if (!contained(resolved)) { throw new Error('Run root is outside .artifacts/verify'); }
-  const summaryPath = path.join(resolved, 'summary.json');
-  const summary = JSON.parse(fs.readFileSync(summaryPath, 'utf8'));
-  if (summary.schemaVersion !== 1 || !summary.invocationId || !Array.isArray(summary.stages)) { throw new Error('Invalid run summary schema'); }
-  if (summary.aggregate !== 'passed' || summary.quarantineCount !== 0 || summary.stages.some(stage => stage.status !== 'passed')) { throw new Error('Run is not complete first-pass-green evidence'); }
-  if (options.expectedHead && summary.headSha !== options.expectedHead) { throw new Error('HEAD mismatch'); }
-  if (options.startedAfter && Date.parse(summary.startedAt) < Date.parse(options.startedAfter)) { throw new Error('Run is stale'); }
-  return summary;
-};
 const main = async () => {
   let options;
   try { options = parse(process.argv.slice(2)); } catch (error) { usage(error.message); return; }
   try {
-    if (options['validate-run-root']) { validate(options['validate-run-root'], options); console.log('Valid authoritative run evidence'); return; }
+    if (options['validate-run-root']) { validateRunRoot(options['validate-run-root'], options); console.log('Valid authoritative run evidence'); return; }
     if (options['validate-run-path-file']) {
       const pointer = path.resolve(options['validate-run-path-file']);
       const target = fs.readFileSync(pointer, 'utf8').trim();
-      validate(target, options); console.log('Valid authoritative run evidence'); return;
+      if (!path.isAbsolute(target)) { throw new Error('Run pointer must be absolute'); }
+      validateRunRoot(target, options, true); console.log('Valid authoritative run evidence'); return;
     }
     if ((options.profile && options.stage) || (!options.profile && !options.stage)) { usage('Choose exactly one profile or stage'); return; }
     const selected = options.profile ? registry.profile(options.profile) : null;

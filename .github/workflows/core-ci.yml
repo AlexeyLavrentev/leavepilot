@@ -149,6 +149,9 @@ jobs:
           CHROMEDRIVER_SKIP_DOWNLOAD: 'true'
           PUPPETEER_SKIP_DOWNLOAD: 'true'
 
+      - name: Run registry-selected lint
+        run: node bin/verify.js --stage lint
+
       - name: Run registry-selected SQLite migration
         run: node bin/verify.js --stage sqlite-migration
 
