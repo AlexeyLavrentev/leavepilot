@@ -35,7 +35,8 @@
     exit because its driver.quit() timed out.
 */
 
-const { spawn } = require('child_process');
+const { spawn, execFileSync } = require('child_process');
+const {EventEmitter} = require('events');
 
 // Windows has no process groups in this sense, and process.kill does not accept
 // a negative pid there. The runner falls back to killing the child alone, which
@@ -86,11 +87,17 @@ const killGroup = (child, signal) => {
 */
 const terminateGroup = (child, options = {}) => {
   const graceMs = options.graceMs === undefined ? DEFAULT_GRACE_MS : options.graceMs;
+  const errors = [];
+  const signal = name => {
+    try { return killGroup(child, name); }
+    catch (error) { errors.push({signal: name, code: String(error.code || 'signal-failed')}); return false; }
+  };
   const outcome = {
-    termSent: killGroup(child, 'SIGTERM'),
+    termSent: signal('SIGTERM'),
     graceExited: false,
     killSent: false,
     finalSweepSent: false,
+    errors,
   };
 
   return new Promise(resolve => {
@@ -103,14 +110,14 @@ const terminateGroup = (child, options = {}) => {
 
       settled = true;
       clearTimeout(timer);
-      child.removeListener('exit', finish);
+      child.removeListener('exit', onExit);
       if (reason === 'exit') {
         outcome.graceExited = true;
         // A process-group leader can exit before a descendant that it started.
         // Sweep once more so an ordinary exit cannot leave that descendant alive.
-        outcome.finalSweepSent = killGroup(child, 'SIGKILL');
+        outcome.finalSweepSent = signal('SIGKILL');
       } else {
-        outcome.killSent = killGroup(child, 'SIGKILL');
+        outcome.killSent = signal('SIGKILL');
       }
       resolve(outcome);
     };
@@ -119,8 +126,47 @@ const terminateGroup = (child, options = {}) => {
     // letting the process exit in that gap is letting the group survive.
     const timer = setTimeout(() => finish('deadline'), graceMs);
 
-    child.once('exit', () => finish('exit'));
+    const onExit = () => finish('exit');
+    child.once('exit', onExit);
   });
+};
+
+// The outer verifier owns runners which create additional detached groups.
+// Capture ancestry BEFORE signalling: after a leader exits, its descendants
+// are reparented and no longer discoverable through that leader. Never select
+// processes by executable name or accept arbitrary PIDs from an artifact.
+const terminateTree = async (child, options = {}) => {
+  const processes = [];
+  let snapshotError = null;
+  if (GROUPS_SUPPORTED && child && child.pid) {
+    try {
+      const rows = execFileSync('ps', ['-A', '-o', 'pid=,ppid=,pgid='], {
+        encoding: 'utf8', timeout: 1000, maxBuffer: 1024 * 1024,
+      }).trim().split('\n').map(line => {
+        const [pid, ppid, pgid] = line.trim().split(/\s+/).map(Number);
+        return {pid, ppid, pgid};
+      });
+      const children = new Map();
+      for (const row of rows) {
+        if (!children.has(row.ppid)) { children.set(row.ppid, []); }
+        children.get(row.ppid).push(row);
+      }
+      const root = rows.find(row => row.pid === child.pid);
+      if (root) { processes.push(root); }
+      for (let index = 0; index < processes.length; index += 1) {
+        processes.push(...children.get(processes[index].pid) || []);
+      }
+    } catch (error) {
+      snapshotError = String(error.code || 'process-snapshot-failed');
+    }
+  }
+  const leaders = processes.filter(row => row.pid === row.pgid && row.pid !== child.pid);
+  const owned = [child, ...leaders.map(row => Object.assign(new EventEmitter(), {pid: row.pid}))];
+  const groups = await Promise.all(owned.map(async group => ({
+    pid: group.pid,
+    ...await terminateGroup(group, options),
+  })));
+  return {processes, groups, snapshotError};
 };
 
 module.exports = {
@@ -129,4 +175,5 @@ module.exports = {
   killGroup,
   spawnInGroup,
   terminateGroup,
+  terminateTree,
 };

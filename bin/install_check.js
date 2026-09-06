@@ -311,7 +311,10 @@ function stopBackgroundSteps() {
   return running.reduce(
     (sequence, record) => sequence.then(() => {
       console.log(`[harness] stopping background step (pid ${record.child.pid})`);
-      return terminateGroup(record.child).then(() => {
+      return terminateGroup(record.child).then(outcome => {
+        if (outcome.errors.length) {
+          throw new Error(`Could not stop background process group ${record.child.pid}`);
+        }
         record.exited = 'stopped';
         liveChildren.delete(record.child);
       });

@@ -17,12 +17,11 @@ const verifyReport = (reportPath, expectedMochaAttempts) => {
     }
     try {
       process.kill(entry.pid, 0);
-      throw new Error(`owned process ${entry.pid} is still alive`);
     } catch (error) {
-      if (error.code && error.code !== 'ESRCH') {
-        throw error;
-      }
+      if (error.code !== 'ESRCH') { throw error; }
+      return;
     }
+    throw new Error(`owned process ${entry.pid} is still alive`);
   });
   if (expectedMochaAttempts !== undefined) {
     const mochaAttempts = report.processes.filter(entry => entry.label === 'mocha').length;
@@ -48,6 +47,34 @@ if (require.main === module) {
 }
 
 describe('test runner lifecycle', function() {
+  it('keeps install-check red when background cleanup reports a signal failure', async function() {
+    const source = fs.readFileSync('bin/install_check.js', 'utf8');
+    const implementation = source.slice(source.indexOf('function stopBackgroundSteps()'), source.indexOf('function killLiveChildren()'));
+    const child = {pid: 123};
+    const record = {child, exited: null};
+    const children = new Set([child]);
+    const stop = require('vm').runInNewContext(implementation + '\nstopBackgroundSteps;', {
+      backgroundSteps: [record], liveChildren: children, console: {log() {}},
+      terminateGroup: async () => ({errors: [{signal: 'SIGKILL', code: 'EPERM'}]}),
+    });
+    await require('assert').rejects(stop(), /Could not stop background process group/);
+    expect(record.exited).to.equal(null);
+    expect(children.has(child)).to.equal(true);
+  });
+
+  it('rejects a report that claims cleanup while its process is still alive', function() {
+    const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'live-process-report-'));
+    const reportPath = path.join(directory, 'report.json');
+    try {
+      fs.writeFileSync(reportPath, JSON.stringify({processes: [{
+        pid: process.pid, termination: {outcome: 'exit'},
+      }]}));
+      expect(() => verifyReport(reportPath)).to.throw('is still alive');
+    } finally {
+      fs.rmSync(directory, {recursive: true, force: true});
+    }
+  });
+
   it('records only owned process identities and termination outcomes', function() {
     const source = fs.readFileSync('bin/test.js', 'utf8');
 

@@ -78,4 +78,20 @@ describe('verify runner', () => {
     });
     expect(() => process.kill(pid, 0)).to.throw().with.property('code', 'ESRCH');
   });
+
+  it('rejects a successful leader exit that leaves a live child behind', function() {
+    if (!GROUPS_SUPPORTED) { return this.skip(); }
+    const result = run(['--stage', 'test-exit-tree']);
+    const output = result.stdout + result.stderr;
+    const pid = Number(output.match(/tree-grandchild=(\d+)/)[1]);
+    try {
+      expect(result.status, output).to.equal(1);
+      const summary = JSON.parse(output.split('\n').find(line => line.startsWith('VERIFY_SUMMARY ')).slice(15));
+      expect(summary.stages[0]).to.include({status: 'failed', failureClass: 'runner error'});
+      expect(summary.stages[0].termination.groups[0].termSent).to.equal(true);
+      expect(() => process.kill(pid, 0)).to.throw().with.property('code', 'ESRCH');
+    } finally {
+      try { process.kill(pid, 'SIGKILL'); } catch (error) { expect(error.code).to.equal('ESRCH'); }
+    }
+  });
 });

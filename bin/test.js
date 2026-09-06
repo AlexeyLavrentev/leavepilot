@@ -17,9 +17,15 @@ const redactDiagnosticText = require('../lib/verify/diagnostic_text');
   never sees the Ctrl-C that stopped the runner.
 */
 const liveChildren = new Set();
+let stoppingSignal = null;
+const assertRunning = () => {
+  if (stoppingSignal) { throw new Error(`Test runner interrupted by ${stoppingSignal}`); }
+};
 
 ['SIGINT', 'SIGTERM'].forEach(signal => {
   process.on(signal, async () => {
+    if (stoppingSignal) { return; }
+    stoppingSignal = signal;
     await Promise.all(Array.from(liveChildren).map(child => terminateGroup(child)));
     process.exitCode = signal === 'SIGINT' ? 130 : 143;
   });
@@ -273,6 +279,7 @@ const writeFlakeReport = async () => {
   retry above already knows how to handle.
 */
 const runWithTimeout = (command, args, options = {}, timeoutMs = 0, timeoutMessage) => new Promise((resolve, reject) => {
+  assertRunning();
   /*
     In its own process group, so that killing it kills what it started. A batch
     is mocha, plus the chromedriver it starts, plus the browser chromedriver
@@ -316,6 +323,7 @@ const runWithTimeout = (command, args, options = {}, timeoutMs = 0, timeoutMessa
 
   let timer;
   let timedOut = false;
+  let termination = null;
 
   const done = () => {
     liveChildren.delete(child);
@@ -334,15 +342,15 @@ const runWithTimeout = (command, args, options = {}, timeoutMs = 0, timeoutMessa
       console.error(
         `No exit after ${Math.round(timeoutMs / 1000)}s${details}, killing: ${command} ${args.join(' ')}`
       );
-      terminateGroup(child).catch(error => console.error(error && error.stack || error));
+      termination = terminateGroup(child);
     }, timeoutMs);
     timer.unref();
   }
 
   child.on('error', error => {
     done();
-    terminateGroup(child).then(() => {
-      recordTermination(ownedProcess, {outcome: 'spawn-error', term: true, kill: true});
+    terminateGroup(child).then(outcome => {
+      recordTermination(ownedProcess, {...outcome, outcome: 'spawn-error'});
       error.outputTail = outputTail;
       error.ownedProcess = ownedProcess;
       reject(error);
@@ -355,8 +363,12 @@ const runWithTimeout = (command, args, options = {}, timeoutMs = 0, timeoutMessa
     // Mocha has already exited, so there is no graceful work left to await.
     // Sweep any orphaned driver/browser in its recorded group immediately and
     // write the lifecycle report before the parent can hit its own deadline.
-    terminateGroup(child, {graceMs: 0}).then(() => {
-      recordTermination(ownedProcess, {outcome: timedOut ? 'timeout' : 'exit', term: true, kill: true, exitCode: code});
+    (termination || terminateGroup(child, {graceMs: 0})).then(outcome => {
+      recordTermination(ownedProcess, {...outcome, outcome: timedOut ? 'timeout' : 'exit', exitCode: code});
+      if (outcome.errors.length) {
+        reject(new Error(`Could not terminate owned process group ${child.pid}`));
+        return;
+      }
       if (timedOut) {
         const error = new Error(timeoutMessage || `${command} ${args.join(' ')} hung and was killed`);
         error.timedOut = true;
@@ -709,18 +721,23 @@ const waitForServer = server => new Promise((resolve, reject) => {
   server.on('exit', onExit);
 });
 
-const stopServer = server => new Promise(resolve => {
+const stopServer = server => new Promise((resolve, reject) => {
   if (!server || server.killed) {
     resolve();
     return;
   }
 
-  terminateGroup(server).then(() => {
+  terminateGroup(server).then(outcome => {
+    liveChildren.delete(server);
     if (server._processReportEntry) {
-      recordTermination(server._processReportEntry, {outcome: 'server-stop', term: true, kill: true});
+      recordTermination(server._processReportEntry, {...outcome, outcome: 'server-stop'});
+    }
+    if (outcome.errors.length) {
+      reject(new Error(`Could not terminate test server process group ${server.pid}`));
+      return;
     }
     resolve();
-  }, resolve);
+  }, reject);
 });
 
 const rawArgs = process.argv.slice(2)
@@ -782,11 +799,13 @@ if (!process.env.KEEP_TEST_DB && fs.existsSync(dbStorage)) {
 
 run(node, ['bin/db_update.js'])
   .then(() => {
+    assertRunning();
     server = spawnInGroup(node, ['bin/wwww'], {
       stdio: ['inherit', 'inherit', 'inherit', 'ipc'],
       env: serverEnv,
     });
     server._processReportEntry = registerOwnedProcess(server, 'server');
+    liveChildren.add(server);
 
     server.on('exit', code => {
       if (code !== null && code !== 0) {

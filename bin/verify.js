@@ -4,13 +4,21 @@
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
-const {spawnInGroup, terminateGroup} = require('./lib/spawn_group');
+const {spawnInGroup, terminateGroup, terminateTree} = require('./lib/spawn_group');
 const registry = require('../lib/verify/stages');
 const {validateRunRoot} = require('../lib/verify/evidence');
 const redactDiagnosticText = require('../lib/verify/diagnostic_text');
 
 const root = process.cwd();
 const artifactBase = path.resolve(root, registry.artifactRoot);
+let interruptedSignal = null;
+let stopActive = null;
+['SIGINT', 'SIGTERM'].forEach(signal => {
+  process.on(signal, () => {
+    interruptedSignal = interruptedSignal || signal;
+    if (stopActive) { stopActive(); }
+  });
+});
 const usage = message => {
   if (message) { console.error(message); }
   console.error('Usage: node bin/verify.js --profile <full|quick|ci-browser|ci-mysql> | --stage <id> [--run-path-file <path>]');
@@ -36,6 +44,12 @@ const atomicWrite = (file, value) => {
   fs.writeFileSync(temp, value, {mode: 0o600});
   fs.renameSync(temp, file);
 };
+const sweepExited = async child => {
+  const outcome = await terminateGroup(child, {graceMs: 0});
+  return outcome.termSent || outcome.errors.length
+    ? {processes: [], groups: [{pid: child.pid, ...outcome}], snapshotError: null}
+    : null;
+};
 const runChild = (entry, runRoot, canonical, deadlineAt) => new Promise(resolve => {
   const started = Date.now();
   const child = spawnInGroup(entry.command, entry.args, {cwd: root, env: Object.assign({}, process.env, entry.env || {}, {
@@ -44,23 +58,29 @@ const runChild = (entry, runRoot, canonical, deadlineAt) => new Promise(resolve 
   let output = '';
   let deadlineExceeded = false;
   let termination = null;
+  stopActive = () => {
+    if (!termination) { termination = terminateTree(child); }
+    return termination;
+  };
   child.stdout.on('data', chunk => { output += chunk; process.stdout.write(chunk); });
   child.stderr.on('data', chunk => { output += chunk; process.stderr.write(chunk); });
   const timer = setTimeout(() => {
     deadlineExceeded = true;
-    termination = terminateGroup(child);
+    stopActive();
   }, Math.max(0, deadlineAt - Date.now()));
   child.once('error', error => {
     clearTimeout(timer);
+    stopActive = null;
     resolve({id: entry.id, status: 'failed', failureClass: 'runner error', reason: redact(error.message), durationMs: Date.now() - started, attempts: []});
   });
   child.once('exit', async code => {
     clearTimeout(timer);
-    if (termination) {
-      await termination;
-    }
-    const passed = !deadlineExceeded && code === 0;
-    resolve({id: entry.id, status: passed ? 'passed' : 'failed', failureClass: passed ? null : deadlineExceeded ? 'timeout' : 'assertion', reason: passed ? null : `exit ${code}: ${redact(output)}`, durationMs: Date.now() - started, attempts: [{number: 1, status: passed ? 'passed' : 'failed', evidence: path.join(runRoot, `${entry.id}.attempt-1.json`), reproduction: {command: entry.command, args: entry.args, nodeVersion: process.version, dbContour: entry.env && entry.env.TEST_DB_DIALECT || 'sqlite', featureFlags: 'not-recorded'}}]});
+    const outcome = termination ? await termination : await sweepExited(child);
+    stopActive = null;
+    const passed = !outcome && !deadlineExceeded && !interruptedSignal && code === 0;
+    const result = {id: entry.id, status: passed ? 'passed' : 'failed', failureClass: passed ? null : interruptedSignal ? 'runner error' : deadlineExceeded ? 'timeout' : outcome ? 'runner error' : 'assertion', reason: passed ? null : `${interruptedSignal ? `Interrupted by ${interruptedSignal}; ` : ''}${outcome && !termination ? 'Surviving process group after stage exit; ' : ''}exit ${code}: ${redact(output)}`, durationMs: Date.now() - started, attempts: [{number: 1, status: passed ? 'passed' : 'failed', evidence: path.join(runRoot, `${entry.id}.attempt-1.json`), reproduction: {command: entry.command, args: entry.args, nodeVersion: process.version, dbContour: entry.env && entry.env.TEST_DB_DIALECT || 'sqlite', featureFlags: 'not-recorded'}}]};
+    if (outcome) { result.termination = outcome; }
+    resolve(result);
   });
 });
 const checkPrerequisite = (entry, deadlineAt) => new Promise(resolve => {
@@ -68,19 +88,31 @@ const checkPrerequisite = (entry, deadlineAt) => new Promise(resolve => {
   const started = Date.now();
   const probe = spawnInGroup(entry.prerequisite.command, entry.prerequisite.args, {cwd: root, stdio: 'ignore'});
   let termination;
+  stopActive = () => {
+    if (!termination) { termination = terminateTree(probe); }
+    return termination;
+  };
   const failure = (failureClass, reason) => ({id: entry.id, status: 'failed', failureClass, reason, durationMs: Date.now() - started, attempts: []});
   const timer = setTimeout(() => {
-    termination = terminateGroup(probe);
+    stopActive();
   }, Math.max(0, deadlineAt - Date.now()));
   probe.once('error', () => {
     clearTimeout(timer);
+    stopActive = null;
     resolve(failure('missing prerequisite', `Missing prerequisite. Setup: ${entry.prerequisite.setup}`));
   });
   probe.once('exit', async code => {
     clearTimeout(timer);
     if (termination) {
-      await termination;
-      resolve(failure('timeout', `Prerequisite exceeded stage deadline. Setup: ${entry.prerequisite.setup}`));
+      const outcome = await termination;
+      stopActive = null;
+      resolve({...failure(interruptedSignal ? 'runner error' : 'timeout', interruptedSignal ? `Interrupted by ${interruptedSignal}` : `Prerequisite exceeded stage deadline. Setup: ${entry.prerequisite.setup}`), termination: outcome});
+      return;
+    }
+    const outcome = await sweepExited(probe);
+    stopActive = null;
+    if (outcome) {
+      resolve({...failure('runner error', 'Surviving process group after prerequisite exit'), termination: outcome});
       return;
     }
     resolve(code === 0 ? null : failure('missing prerequisite', `Missing prerequisite. Setup: ${entry.prerequisite.setup}`));
@@ -106,6 +138,10 @@ const main = async () => {
     fs.mkdirSync(runRoot, {recursive: true, mode: 0o700});
     const records = [];
     for (const id of stageIds) {
+      if (interruptedSignal) {
+        records.push({id, status: 'blocked', failureClass: null, reason: `Interrupted by ${interruptedSignal}`, durationMs: 0, attempts: []});
+        continue;
+      }
       const entry = registry.stage(id);
       const stageStartedAt = Date.now();
       const deadlineAt = stageStartedAt + entry.deadlineMs;
@@ -121,7 +157,7 @@ const main = async () => {
     atomicWrite(path.join(runRoot, 'summary.json'), JSON.stringify(summary, null, 2) + '\n');
     if (options['run-path-file']) { atomicWrite(path.resolve(options['run-path-file']), `${runRoot}\n`); }
     console.log(`VERIFY_SUMMARY ${JSON.stringify(summary)}`);
-    if (summary.aggregate !== 'passed') { process.exitCode = 1; }
+    if (summary.aggregate !== 'passed') { process.exitCode = interruptedSignal === 'SIGINT' ? 130 : interruptedSignal ? 143 : 1; }
   } catch (error) { usage(error.message); }
 };
 main();
