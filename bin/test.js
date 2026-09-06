@@ -166,10 +166,9 @@ const serverEnv = Object.assign({}, baseTestEnv, {
     t/lib/flake_reporter.js (retry runner events) and flushed to a JSON
     sidecar whose path travels to the child as FLAKE_ARTIFACT_PATH.
 
-  The merge below folds the sidecars into the final report and cleans them
-  up. A write failure must never change the run's exit code: the report is a
-  diagnostic artifact, not a gate, so it warns and lets the run's own
-  verdict stand.
+  The merge below folds immutable sidecars into the final report. Missing
+  evidence and every first-attempt failure keep the runner red, including
+  Mocha retries that finish successfully inside one child process.
 
   Every mocha invocation this runner starts carries the flake reporter, so
   skip honesty (D-21) can count distinct skipped spec files from the same
@@ -188,8 +187,7 @@ let flakeSidecarCounter = 0;
 
 const flakeSidecarPath = contour => {
   flakeSidecarCounter += 1;
-  // One sidecar per mocha process; a retried batch reuses its own path so
-  // the sidecar always reflects the batch's latest attempt.
+  // One unique sidecar per Mocha process, retained after report aggregation.
   const sidecarPath = path.join(
     process.cwd(), '.artifacts', 'verify', 'attempts', runId,
     `${flakeSidecarCounter}-${contour}.json`
@@ -221,10 +219,6 @@ const readFlakeSidecars = () => {
       throw new Error(`Required immutable flake sidecar unavailable (${sidecar.path}): ${error.message}`);
     }
 
-    try {
-      fs.unlinkSync(sidecar.path);
-    } catch { /* cleanup is best-effort; the file is gitignored */ }
-
     (payload.retries || []).forEach(entry => mochaRecords.push({
       contour: sidecar.contour,
       layer: 'mocha',
@@ -248,6 +242,11 @@ const writeFlakeReport = async () => {
     fs.writeFileSync(flakeReportPath, JSON.stringify(records, null, 2) + '\n');
   } catch (error) {
     throw new Error(`Required flake report could not be written: ${error.message}`);
+  }
+
+  if (records.length > 0) {
+    console.error(`First-attempt failures recorded: ${records.length}; diagnostic retries cannot make this run green.`);
+    process.exitCode = 1;
   }
 
   // Skip honesty (D-21), runner carrier: the same rule the CI coverage
