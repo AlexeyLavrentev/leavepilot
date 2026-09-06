@@ -130,7 +130,7 @@
     {
       "file": "t/unit/model/company/exporter.js",
       "category": "date-arithmetic",
-      "reason": "Builds company-scoped Leave records with date_start/date_end values and asserts the deterministic CSV export ordering and formatted round-trip through lib/model/company/exporter/index.js and lib/model/company/exporter/summary.js; MySQL must prove the same DATE/DATETIME association loading and ordering contract as SQLite.",
+      "reason": "Spawns t/lib/company_exporter_case.js with the selected DB_DIALECT and an isolated temporary database; uses the real model registry and lib/model/company/exporter/index.js to persist tenant rows, hydrate associations, exclude rejected/canceled leaves, and assert exact CSV date round-trip and tenant isolation. Additional pure fixtures cover deterministic ordering and malformed associations.",
       "module": "lib/model/company/exporter/index.js"
     },
     {
