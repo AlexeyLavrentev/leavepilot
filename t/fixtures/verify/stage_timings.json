@@ -11,8 +11,21 @@
         {"temperature": "warm", "durationMs": 1707}
       ],
       "observedMaximumMs": 1894,
+      "ciRuntimeFloors": [
+        {
+          "workflow": "core-ci.yml",
+          "runId": 34012359360,
+          "job": "Core contract tests",
+          "sourceUrl": "https://github.com/AlexeyLavrentev/leavepilot/actions/runs/34012359360",
+          "capturedAt": "2026-09-06T04:46:59.792Z",
+          "runner": "ubuntu-24.04",
+          "outcome": "timeout",
+          "lowerBoundMs": 3804
+        }
+      ],
+      "deadlineBasisMs": 3804,
       "margin": {"kind": "multiplier", "value": 2},
-      "deadlineMs": 3788
+      "deadlineMs": 7608
     },
     "unitCoverage": {
       "command": "rtk npm run test:coverage",
