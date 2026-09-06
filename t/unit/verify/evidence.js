@@ -31,7 +31,7 @@ describe('verification evidence certification', () => {
     const startedAt = new Date().toISOString();
     runRoot = path.join(directory, `${Date.parse(startedAt)}-${invocationId}`);
     fs.mkdirSync(runRoot);
-    summary = {schemaVersion: 1, invocationId, startedAt, headSha: head, profile: 'full', authoritative: true, quarantineCount: 0, aggregate: 'passed', stages: registry.profile('full').stageIds.map(id => {
+    summary = {schemaVersion: 2, invocationId, startedAt, headSha: head, source: {start: {headSha: head, clean: true}, end: {headSha: head, clean: true}}, profile: 'full', authoritative: true, quarantineCount: 0, aggregate: 'passed', stages: registry.profile('full').stageIds.map(id => {
       const stage = registry.stage(id);
       return {id, status: 'passed', failureClass: null, reason: null, durationMs: 1, attempts: [{number: 1, status: 'passed', evidence: path.join(runRoot, `${id}.attempt-1.json`), reproduction: {command: stage.command, args: stage.args, nodeVersion: process.version, dbContour: 'sqlite', featureFlags: 'not-recorded'}}]};
     })};
@@ -60,6 +60,12 @@ describe('verification evidence certification', () => {
 
   for (const [name, mutate] of [
     ['empty stages', () => { summary.stages = []; }],
+    ['legacy evidence without provenance', () => { summary.schemaVersion = 1; delete summary.source; }],
+    ['dirty initial source despite authority flag', () => { summary.source.start.clean = false; }],
+    ['dirty final source despite authority flag', () => { summary.source.end.clean = false; }],
+    ['changed revision', () => { summary.source.end.headSha = '0'.repeat(40); }],
+    ['missing source snapshot', () => { delete summary.source.end; }],
+    ['unexpected source metadata', () => { summary.source.start.password = 'sentinel-secret'; }],
     ['missing browser shard', () => { summary.stages.pop(); }],
     ['duplicate stages', () => { summary.stages[8] = summary.stages[7]; }],
     ['non-authoritative quick evidence', () => { summary.authoritative = false; summary.profile = 'quick'; }],

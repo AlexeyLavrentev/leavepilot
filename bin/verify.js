@@ -4,6 +4,7 @@
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const {execFileSync} = require('child_process');
 const {spawnInGroup, terminateGroup, terminateTree} = require('./lib/spawn_group');
 const registry = require('../lib/verify/stages');
 const {validateRunRoot} = require('../lib/verify/evidence');
@@ -25,6 +26,18 @@ const usage = message => {
   process.exitCode = 2;
 };
 const redact = value => redactDiagnosticText(value).slice(-4096);
+const sourceState = () => {
+  const git = args => execFileSync('git', ['--no-optional-locks', '-c', 'core.fsmonitor=false', ...args], {
+    cwd: root, encoding: 'utf8', timeout: 5000, maxBuffer: 1024 * 1024, stdio: ['ignore', 'pipe', 'pipe'],
+  }).trim();
+  try {
+    return {headSha: git(['rev-parse', 'HEAD']), clean: git(['status', '--porcelain=v1', '--untracked-files=normal']) === ''};
+  } catch {
+    // Git diagnostics can contain local paths/configuration. Fail closed without
+    // persisting them or pretending an unknown checkout is a clean revision.
+    throw new Error('Cannot establish Git source provenance');
+  }
+};
 const parse = argv => {
   const result = {};
   for (let index = 0; index < argv.length; index += 1) {
@@ -132,6 +145,7 @@ const main = async () => {
     if ((options.profile && options.stage) || (!options.profile && !options.stage)) { usage('Choose exactly one profile or stage'); return; }
     const selected = options.profile ? registry.profile(options.profile) : null;
     const stageIds = selected ? selected.stageIds : [registry.stage(options.stage).id];
+    const sourceStart = sourceState();
     const invocationId = crypto.randomUUID();
     const startedAt = new Date().toISOString();
     const runRoot = path.join(artifactBase, `${Date.now()}-${invocationId}`);
@@ -153,10 +167,15 @@ const main = async () => {
       if (result.attempts.length) { atomicWrite(result.attempts[0].evidence, JSON.stringify(result, null, 2) + '\n'); }
       records.push(result);
     }
-    const summary = {schemaVersion: 1, invocationId, profile: selected && selected.id || null, authoritative: selected ? selected.authoritative : true, startedAt, headSha: require('child_process').execFileSync('git', ['rev-parse', 'HEAD'], {cwd: root, encoding: 'utf8'}).trim(), quarantineCount: 0, stages: records, aggregate: records.every(record => record.status === 'passed') ? 'passed' : 'failed'};
+    const sourceEnd = sourceState();
+    // These boundary checks require exclusive workspace ownership during a run;
+    // they cannot observe transient edits reverted before the final snapshot.
+    const stableSource = sourceStart.clean && sourceEnd.clean && sourceStart.headSha === sourceEnd.headSha;
+    const summary = {schemaVersion: 2, invocationId, profile: selected && selected.id || null, authoritative: (selected ? selected.authoritative : true) && stableSource, startedAt, headSha: sourceStart.headSha, source: {start: sourceStart, end: sourceEnd}, quarantineCount: 0, stages: records, aggregate: records.every(record => record.status === 'passed') ? 'passed' : 'failed'};
     atomicWrite(path.join(runRoot, 'summary.json'), JSON.stringify(summary, null, 2) + '\n');
     if (options['run-path-file']) { atomicWrite(path.resolve(options['run-path-file']), `${runRoot}\n`); }
     console.log(`VERIFY_SUMMARY ${JSON.stringify(summary)}`);
+    if (!stableSource) { process.stderr.write('Development result only: source was dirty or changed during verification; not certifiable.\n'); }
     if (summary.aggregate !== 'passed') { process.exitCode = interruptedSignal === 'SIGINT' ? 130 : interruptedSignal ? 143 : 1; }
   } catch (error) { usage(error.message); }
 };
