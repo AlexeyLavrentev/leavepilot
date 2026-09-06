@@ -9,6 +9,7 @@ const os = require('os');
 const { execFileSync } = require('child_process');
 const { spawnInGroup, terminateGroup } = require('./lib/spawn_group');
 const skipHonesty = require('../t/lib/skip_honesty');
+const redactDiagnosticText = require('../lib/verify/diagnostic_text');
 
 /*
   Every batch this runner has going, so an interrupt can take their browsers
@@ -76,8 +77,6 @@ const dbStorage = process.env.TEST_DB_STORAGE || path.join(process.cwd(), 'db.te
 const DIAGNOSTIC_TAIL_BYTES = 4096;
 const DIAGNOSTIC_TAIL_LINES = 80;
 const MAX_BATCH_DIAGNOSTIC_BYTES = 16384;
-const redactDiagnosticText = value => String(value || '')
-  .replace(/\b(authorization|cookie|password|secret|token|api[_-]?key|key)\s*[:=]\s*(?:Bearer\s+)?[^\s,;]+/gi, '$1=[REDACTED]');
 const boundedTail = value => {
   const lines = redactDiagnosticText(value).split(/\r?\n/).slice(-DIAGNOSTIC_TAIL_LINES);
   return lines.join('\n').slice(-DIAGNOSTIC_TAIL_BYTES);

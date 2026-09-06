@@ -3,6 +3,7 @@
 const fs = require('fs');
 const path = require('path');
 const Mocha = require('mocha');
+const redactDiagnosticText = require('../../lib/verify/diagnostic_text');
 
 const writeAttemptEvidence = (target, value) => {
   if (fs.existsSync(target)) {
@@ -47,9 +48,9 @@ const aggregateAttempts = attempts => {
   identity - is the documented A2 fallback if a mocha upgrade ever stops
   carrying it. Never stdout parsing.
 
-  Security note (T-05-01): records carry test titles, spec paths and error
-  messages only - never process.env values - mirroring the value-suppression
-  contract of t/unit/env_deprecation.js.
+  Security note (T-05-01): error messages and titles may themselves contain
+  credentials. Redact them before persistence; omitting process.env is not
+  sufficient. Persisted-boundary tests cover both this sidecar and snapshots.
 */
 class FlakeReporter extends Mocha.reporters.Spec {
   constructor(runner, options) {
@@ -65,16 +66,16 @@ class FlakeReporter extends Mocha.reporters.Spec {
     runner.on('retry', (test, error) => {
       retries.push({
         spec: test.file || fallbackSpec || null,
-        title: test.fullTitle(),
+        title: redactDiagnosticText(test.fullTitle()),
         attempt: test.currentRetry() + 1,
-        error: error && error.message ? String(error.message) : null,
+        error: error && error.message ? redactDiagnosticText(error.message) : null,
       });
     });
 
     runner.on('pending', test => {
       pending.push({
         spec: test.file || fallbackSpec || null,
-        title: test.fullTitle(),
+        title: redactDiagnosticText(test.fullTitle()),
       });
     });
 

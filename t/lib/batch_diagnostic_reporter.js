@@ -3,14 +3,13 @@
 const fs = require('fs');
 const path = require('path');
 const FlakeReporter = require('./flake_reporter');
+const redactDiagnosticText = require('../../lib/verify/diagnostic_text');
 
 const MAX_TEXT_BYTES = 2048;
 const MAX_SNAPSHOT_BYTES = 8192;
 const MAX_SUBMIT_DIAGNOSTIC_BYTES = 4096;
 
-const redact = value => String(value || '')
-  .replace(/\b(authorization|cookie|password|secret|token|api[_-]?key|key)\s*[:=]\s*(?:Bearer\s+)?[^\s,;]+/gi, '$1=[REDACTED]')
-  .slice(-MAX_TEXT_BYTES);
+const redact = value => redactDiagnosticText(value).slice(-MAX_TEXT_BYTES);
 
 const compactError = error => {
   if (!error) {

@@ -39,6 +39,8 @@ describe('test runner first-pass outcome', function() {
       expect(output).to.include('1 passing');
       expect(output).to.include('diagnostic retries cannot make this run green');
       const report = JSON.parse(fs.readFileSync(reportPath, 'utf8'));
+      expect(JSON.stringify(report)).not.to.include('sentinel-retry-secret');
+      expect(report[0].error).to.include('[REDACTED]');
       expect(report).to.have.lengthOf(1);
       expect(report[0]).to.include({layer: 'mocha', attempt: 1});
       const owned = fs.readdirSync(attempts).filter(name => name.startsWith(`${child.pid}-`) && !previousAttempts.has(name));
@@ -47,6 +49,7 @@ describe('test runner first-pass outcome', function() {
       expect(sidecars).to.have.lengthOf(1);
       const sidecar = JSON.parse(fs.readFileSync(path.join(attempts, owned[0], sidecars[0]), 'utf8'));
       expect(sidecar.retries).to.have.lengthOf(1);
+      expect(JSON.stringify(sidecar)).not.to.include('sentinel-retry-secret');
     } finally {
       clearTimeout(timer);
       if (child) { await terminateGroup(child, {graceMs: 0}); }

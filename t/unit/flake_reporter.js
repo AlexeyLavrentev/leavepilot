@@ -79,10 +79,12 @@ describe('flake reporter (t/lib/flake_reporter.js)', function() {
     });
   });
 
-  it('never records process.env values, only titles, paths and error text (T-05-01)', function() {
+  it('omits the sidecar environment path and redacts credentials inside retry errors (T-05-01)', function() {
     return runReporterMocha(sidecarPath).then(function() {
       var raw = fs.readFileSync(sidecarPath, 'utf8');
       expect(raw).to.not.contain(sidecarPath);
+      expect(raw).to.not.contain('sentinel-retry-secret');
+      expect(raw).to.contain('[REDACTED]');
     });
   });
 });

@@ -14,7 +14,8 @@ describe('flake reporter fixture: fail once, pass on retry', function() {
   it('fails its first attempt and passes the second', function() {
     attempts += 1;
     if (attempts < 2) {
-      throw new Error('deliberate first-attempt failure for the flake reporter fixture');
+      throw new Error('deliberate first-attempt failure for the flake reporter fixture '
+        + JSON.stringify({password: 'sentinel-retry-secret with spaces'}));
     }
   });
 });

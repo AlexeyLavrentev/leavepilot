@@ -102,6 +102,7 @@ describe('browser batch diagnostic contract', function() {
     expect(source).to.include("reporterSnapshotState = 'missing-on-timeout'");
     expect(source).to.include('DIAGNOSTIC_TAIL_BYTES = 4096');
     expect(source).to.include('captureOutput: true');
+    expect(source).to.include("require('../lib/verify/diagnostic_text')");
     expect(reporter._redact('token=private-value')).to.equal('token=[REDACTED]');
     expect(reporter._redact('x'.repeat(5000))).to.have.lengthOf(2048);
   });

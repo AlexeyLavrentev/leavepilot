@@ -7,6 +7,7 @@ const crypto = require('crypto');
 const {spawnInGroup, terminateGroup} = require('./lib/spawn_group');
 const registry = require('../lib/verify/stages');
 const {validateRunRoot} = require('../lib/verify/evidence');
+const redactDiagnosticText = require('../lib/verify/diagnostic_text');
 
 const root = process.cwd();
 const artifactBase = path.resolve(root, registry.artifactRoot);
@@ -15,7 +16,7 @@ const usage = message => {
   console.error('Usage: node bin/verify.js --profile <full|quick|ci-browser|ci-mysql> | --stage <id> [--run-path-file <path>]');
   process.exitCode = 2;
 };
-const redact = value => String(value || '').replace(/\b(token|password|secret|authorization|cookie|key)\s*[:=]\s*\S+/gi, '$1=[REDACTED]').slice(-4096);
+const redact = value => redactDiagnosticText(value).slice(-4096);
 const parse = argv => {
   const result = {};
   for (let index = 0; index < argv.length; index += 1) {
