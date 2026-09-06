@@ -71,6 +71,7 @@ describe('verification evidence certification', () => {
     ['escaping attempt path', () => { summary.stages[0].attempts[0].evidence = '/tmp/outside.json'; }],
     ['secret-bearing reproduction arguments', () => { summary.stages[0].attempts[0].reproduction.args = ['secret=sentinel-secret']; }],
     ['unexpected secret-bearing metadata', () => { summary.environment = {password: 'sentinel-secret'}; }],
+    ['wrong database contour', () => { summary.stages[0].attempts[0].reproduction.dbContour = 'mysql'; }],
   ]) {
     it(`rejects ${name}`, () => {
       mutate();
