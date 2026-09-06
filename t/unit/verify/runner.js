@@ -46,6 +46,18 @@ describe('verify runner', () => {
     ]);
   });
 
+  it('bounds the prerequisite within the stage deadline without starting the stage', () => {
+    const result = run(['--stage', 'test-prerequisite-timeout']);
+    const output = result.stdout + result.stderr;
+    const line = output.split('\n').find(value => value.startsWith('VERIFY_SUMMARY '));
+    const summary = JSON.parse(line.slice('VERIFY_SUMMARY '.length));
+    expect(result.status, output).to.equal(1);
+    expect(output).not.to.include('unexpected-stage-start');
+    expect(summary.stages[0]).to.include({status: 'failed', failureClass: 'timeout'});
+    expect(summary.stages[0].reason).to.include('Prerequisite exceeded stage deadline');
+    expect(summary.stages[0].durationMs).to.be.lessThan(8000);
+  });
+
   it('marks a graceful timeout red and terminates its descendant process group', function() {
     if (!GROUPS_SUPPORTED) {
       return this.skip();

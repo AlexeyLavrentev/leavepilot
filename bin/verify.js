@@ -4,7 +4,6 @@
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
-const {spawn} = require('child_process');
 const {spawnInGroup, terminateGroup} = require('./lib/spawn_group');
 const registry = require('../lib/verify/stages');
 const {validateRunRoot} = require('../lib/verify/evidence');
@@ -36,7 +35,7 @@ const atomicWrite = (file, value) => {
   fs.writeFileSync(temp, value, {mode: 0o600});
   fs.renameSync(temp, file);
 };
-const runChild = (entry, runRoot, canonical) => new Promise(resolve => {
+const runChild = (entry, runRoot, canonical, deadlineAt) => new Promise(resolve => {
   const started = Date.now();
   const child = spawnInGroup(entry.command, entry.args, {cwd: root, env: Object.assign({}, process.env, entry.env || {}, {
     TEST_CANONICAL_VERIFY: canonical ? 'true' : 'false',
@@ -49,7 +48,7 @@ const runChild = (entry, runRoot, canonical) => new Promise(resolve => {
   const timer = setTimeout(() => {
     deadlineExceeded = true;
     termination = terminateGroup(child);
-  }, entry.deadlineMs);
+  }, Math.max(0, deadlineAt - Date.now()));
   child.once('error', error => {
     clearTimeout(timer);
     resolve({id: entry.id, status: 'failed', failureClass: 'runner error', reason: redact(error.message), durationMs: Date.now() - started, attempts: []});
@@ -63,11 +62,28 @@ const runChild = (entry, runRoot, canonical) => new Promise(resolve => {
     resolve({id: entry.id, status: passed ? 'passed' : 'failed', failureClass: passed ? null : deadlineExceeded ? 'timeout' : 'assertion', reason: passed ? null : `exit ${code}: ${redact(output)}`, durationMs: Date.now() - started, attempts: [{number: 1, status: passed ? 'passed' : 'failed', evidence: path.join(runRoot, `${entry.id}.attempt-1.json`), reproduction: {command: entry.command, args: entry.args, nodeVersion: process.version, dbContour: entry.env && entry.env.TEST_DB_DIALECT || 'sqlite', featureFlags: 'not-recorded'}}]});
   });
 });
-const checkPrerequisite = entry => new Promise(resolve => {
+const checkPrerequisite = (entry, deadlineAt) => new Promise(resolve => {
   if (!entry.prerequisite) { resolve(null); return; }
-  const probe = spawn(entry.prerequisite.command, entry.prerequisite.args, {cwd: root, stdio: 'ignore'});
-  probe.once('error', () => resolve({id: entry.id, status: 'failed', failureClass: 'missing prerequisite', reason: `Missing prerequisite. Setup: ${entry.prerequisite.setup}`, durationMs: 0, attempts: []}));
-  probe.once('exit', code => resolve(code === 0 ? null : {id: entry.id, status: 'failed', failureClass: 'missing prerequisite', reason: `Missing prerequisite. Setup: ${entry.prerequisite.setup}`, durationMs: 0, attempts: []}));
+  const started = Date.now();
+  const probe = spawnInGroup(entry.prerequisite.command, entry.prerequisite.args, {cwd: root, stdio: 'ignore'});
+  let termination;
+  const failure = (failureClass, reason) => ({id: entry.id, status: 'failed', failureClass, reason, durationMs: Date.now() - started, attempts: []});
+  const timer = setTimeout(() => {
+    termination = terminateGroup(probe);
+  }, Math.max(0, deadlineAt - Date.now()));
+  probe.once('error', () => {
+    clearTimeout(timer);
+    resolve(failure('missing prerequisite', `Missing prerequisite. Setup: ${entry.prerequisite.setup}`));
+  });
+  probe.once('exit', async code => {
+    clearTimeout(timer);
+    if (termination) {
+      await termination;
+      resolve(failure('timeout', `Prerequisite exceeded stage deadline. Setup: ${entry.prerequisite.setup}`));
+      return;
+    }
+    resolve(code === 0 ? null : failure('missing prerequisite', `Missing prerequisite. Setup: ${entry.prerequisite.setup}`));
+  });
 });
 const main = async () => {
   let options;
@@ -90,10 +106,13 @@ const main = async () => {
     const records = [];
     for (const id of stageIds) {
       const entry = registry.stage(id);
+      const stageStartedAt = Date.now();
+      const deadlineAt = stageStartedAt + entry.deadlineMs;
       const blocker = entry.dependencies.find(dependency => records.find(record => record.id === dependency && record.status !== 'passed'));
       if (blocker) { records.push({id, status: 'blocked', blocker, failureClass: null, reason: `Blocked by ${blocker}`, durationMs: 0, attempts: []}); continue; }
-      const prerequisite = await checkPrerequisite(entry);
-      const result = prerequisite || await runChild(entry, runRoot, selected ? selected.authoritative : true);
+      const prerequisite = await checkPrerequisite(entry, deadlineAt);
+      const result = prerequisite || await runChild(entry, runRoot, selected ? selected.authoritative : true, deadlineAt);
+      result.durationMs = Date.now() - stageStartedAt;
       if (result.attempts.length) { atomicWrite(result.attempts[0].evidence, JSON.stringify(result, null, 2) + '\n'); }
       records.push(result);
     }
