@@ -282,7 +282,14 @@ function runShellBackground(commandText, env) {
 
   child.on('exit', code => {
     record.exited = code === null ? 'signal' : code;
-    liveChildren.delete(child);
+    // A leader can exit while its descendants still own the group. Share the
+    // sweep with stopBackgroundSteps so neither exit nor shutdown drops them.
+    record.termination = record.termination || terminateGroup(child, {graceMs: 0});
+    record.termination.then(outcome => {
+      if (!outcome.errors.length) {
+        liveChildren.delete(child);
+      }
+    });
   });
 
   return Promise.resolve();
@@ -299,19 +306,12 @@ function runShellBackground(commandText, env) {
   that ignores polite signals.
 */
 function stopBackgroundSteps() {
-  const running = backgroundSteps.filter(record => record.exited === null);
-
-  if (!running.length) {
-    if (backgroundSteps.length) {
-      console.log('[harness] background steps: already exited, nothing to stop');
-    }
-    return Promise.resolve();
-  }
-
-  return running.reduce(
+  return backgroundSteps.reduce(
     (sequence, record) => sequence.then(() => {
       console.log(`[harness] stopping background step (pid ${record.child.pid})`);
-      return terminateGroup(record.child).then(outcome => {
+      record.termination = record.termination || terminateGroup(record.child,
+        record.exited === null ? {} : {graceMs: 0});
+      return record.termination.then(outcome => {
         if (outcome.errors.length) {
           throw new Error(`Could not stop background process group ${record.child.pid}`);
         }
