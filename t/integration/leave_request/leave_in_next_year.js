@@ -51,6 +51,7 @@ describe(`Leave in the next year (${nextYear}) when no allowance in the current 
       overwriteDate:dayjs.utc(`${nextYear-1}-12-20`),
     })
     .then(() => done())
+    .catch(done);
   });
 
   it("Submit leave request for of one week in next year", done => {
@@ -81,8 +82,8 @@ describe(`Leave in the next year (${nextYear}) when no allowance in the current 
       .catch(done);
   });
 
-  after(done => {
-    driver.quit().then(() => done());
+  after(async () => {
+    if (driver) { await driver.quit(); }
   });
 
 });

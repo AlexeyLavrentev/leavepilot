@@ -281,8 +281,8 @@ describe('Basic leave request', function(){
       .catch(done);
   });
 
-  after(function(done){
-    driver.quit().then(function(){ done(); });
+  after(async function(){
+    if (driver) { await driver.quit(); }
   });
 
 });
@@ -308,6 +308,7 @@ describe("Use problematic date with non default date format", function(){
   it("Ensure user starts at the very beginning of current year", done =>{
     userStartsAtTheBeginingOfYear({driver, email, year:2016})
       .then(() => done())
+      .catch(done);
   });
 
   it("Open calendar page", function(done){
@@ -316,6 +317,7 @@ describe("Use problematic date with non default date format", function(){
       driver : driver,
     })
     .then(function(){ done(); })
+    .catch(done);
   });
 
   it("Open Book new leave pop up", function(done){
@@ -351,8 +353,8 @@ describe("Use problematic date with non default date format", function(){
     .catch(done);
   });
 
-  after(function(done){
-    driver.quit().then(function(){ done(); });
+  after(async function(){
+    if (driver) { await driver.quit(); }
   });
 
 });
@@ -377,6 +379,7 @@ describe("Book the very last day of year to be a holiday", function(){
   it("Ensure user starts at the very beginning of current year", done =>{
     userStartsAtTheBeginingOfYear({driver, email, year: 2018})
       .then(() => done())
+      .catch(done);
   });
 
   it("Place new holiday to be the very last day of the year", function(done){
@@ -398,7 +401,8 @@ describe("Book the very last day of year to be a holiday", function(){
         modal_selector : '#book_leave_modal',
       })
     )
-    .then(() => done());
+    .then(() => done())
+    .catch(done);
   });
 
   it("Open calendar page and ensure that the very last day of the year is marked as pending", function(done){
@@ -413,11 +417,12 @@ describe("Book the very last day of year to be a holiday", function(){
       type           : 'pended',
     }))
 
-    .then(() => done());
+    .then(() => done())
+    .catch(done);
   });
 
-  after(function(done){
-    driver.quit().then(function(){ done(); });
+  after(async function(){
+    if (driver) { await driver.quit(); }
   });
 
 });

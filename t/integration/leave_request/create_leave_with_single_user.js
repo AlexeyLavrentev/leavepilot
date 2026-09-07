@@ -46,6 +46,7 @@ describe('Leave request with single user', function(){
   it("Ensure user starts at the very beginning of current year", done =>{
     userStartsAtTheBeginingOfYear({driver, email: new_user_email, year:2015})
       .then(() => done())
+      .catch(done);
   });
 
   it("Open calendar page", function(done){
@@ -105,7 +106,7 @@ describe('Leave request with single user', function(){
     .catch(done);
   });
 
-  after(function(done){
-    driver.quit().then(function(){ done(); });
+  after(async function(){
+    if (driver) { await driver.quit(); }
   });
 });

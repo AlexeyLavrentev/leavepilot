@@ -144,7 +144,7 @@ describe('Try to book more holidays then in allowance', function(){
       .findElements( By.css('div.alert') )
       .then(function(els){
 
-        Promise.all(
+        return Promise.all(
           _.map(els, function(el){ return el.getText(); })
         )
         .then(function(texts){
@@ -153,13 +153,13 @@ describe('Try to book more holidays then in allowance', function(){
           ).to.be.equal(true);
 
           done();
-        })
-        .catch(done);
-      });
+        });
+      })
+      .catch(done);
   });
 
-  after(function(done){
-    driver.quit().then(function(){ done(); });
+  after(async function(){
+    if (driver) { await driver.quit(); }
   });
 
 });
