@@ -89,8 +89,8 @@ class FlakeReporter extends Mocha.reporters.Spec {
       try {
         fs.writeFileSync(sidecarPath, JSON.stringify({ retries, pending }, null, 2) + '\n');
       } catch (error) {
-        // The sidecar is diagnostic: a failed write must not take the run
-        // down with it. The runner reads a missing sidecar as "no records".
+        // The owning runner rejects missing/malformed required sidecars.
+        // Keep this error visible without disrupting Mocha's end listeners.
         console.error(`flake reporter: could not write ${sidecarPath}: ${error.message}`);
       }
     });

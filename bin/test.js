@@ -88,7 +88,8 @@ const boundedTail = value => {
 };
 const readBatchSnapshot = (snapshotPath, identity) => {
   const snapshot = JSON.parse(fs.readFileSync(snapshotPath, 'utf8'));
-  if (!snapshot || !snapshot.identity || typeof snapshot.event !== 'string'
+  if (!snapshot || snapshot.version !== 1 || !snapshot.identity
+    || !['test-start', 'test-pass', 'test-fail', 'end'].includes(snapshot.event)
     || snapshot.identity.runId !== identity.runId
     || snapshot.identity.batchId !== identity.batchId
     || snapshot.identity.spec !== identity.spec) {
@@ -222,7 +223,17 @@ const readFlakeSidecars = () => {
       throw new Error(`Required immutable flake sidecar unavailable (${sidecar.path}): ${error.message}`);
     }
 
-    (payload.retries || []).forEach(entry => mochaRecords.push({
+    const validIdentity = entry => entry && typeof entry.spec === 'string' && entry.spec.length > 0
+      && typeof entry.title === 'string';
+    if (!payload || !Array.isArray(payload.retries) || !Array.isArray(payload.pending)
+      || !payload.pending.every(validIdentity)
+      || !payload.retries.every(entry => validIdentity(entry)
+        && Number.isSafeInteger(entry.attempt) && entry.attempt > 0
+        && (entry.error === null || typeof entry.error === 'string'))) {
+      throw new Error(`Required immutable flake sidecar invalid (${sidecar.path})`);
+    }
+
+    payload.retries.forEach(entry => mochaRecords.push({
       contour: sidecar.contour,
       layer: 'mocha',
       spec: entry.spec,
@@ -231,7 +242,7 @@ const readFlakeSidecars = () => {
       error: entry.error,
     }));
 
-    (payload.pending || []).forEach(entry => skippedSpecFiles.push(entry.spec));
+    payload.pending.forEach(entry => skippedSpecFiles.push(entry.spec));
   });
 
   return { mochaRecords, skippedSpecFiles };
@@ -542,9 +553,10 @@ const runMochaSuite = () => {
     on its own timeout, and the batch ceiling above still kills a wedged
     process. This only makes finishing mean exiting.
   */
-  const mocha = (batch, sidecarPath, index) => {
+  const mocha = (batch, sidecarPath, index, attemptNumber) => {
     const spec = batch.join('|');
-    const identity = {runId, batchId: `batch-${index + 1}`, spec};
+    // Diagnostic retries must not overwrite the first failure's evidence.
+    const identity = {runId, batchId: `batch-${index + 1}-attempt-${attemptNumber}`, spec};
     const snapshotPath = path.join(batchDiagnosticDirectory, `${identity.batchId}.snapshot.json`);
     const submitDiagnosticPath = path.join(batchDiagnosticDirectory, `${identity.batchId}.submit.json`);
     const reportPath = path.join(batchDiagnosticDirectory, `${identity.batchId}.json`);
@@ -560,6 +572,9 @@ const runMochaSuite = () => {
       let reporterSnapshotState = 'received';
       try {
         reporterSnapshot = readBatchSnapshot(snapshotPath, identity);
+        if (!error && reporterSnapshot.event !== 'end') {
+          throw new Error('reporter did not confirm batch completion');
+        }
         const submitDiagnostic = reporterSnapshot.submitDiagnostic || {state: 'invalid'};
         if (submitDiagnostic.state === 'invalid' || submitDiagnostic.state === 'write-failed') {
           throw new Error(`Required submit diagnostic unavailable: ${submitDiagnostic.state}`);
@@ -577,7 +592,7 @@ const runMochaSuite = () => {
         identity,
         batch: {ordinal: index + 1, total: batches.length, spec},
         outcome: error && error.timedOut ? 'timeout' : error ? 'nonzero-exit' : 'pass',
-        exitCode: result.exitCode || error && error.exitCode || null,
+        exitCode: result.exitCode ?? error?.exitCode ?? null,
         deadlineMs: batchTimeoutMs,
         reporterSnapshotState,
         reporterSnapshot,
@@ -634,8 +649,7 @@ const runMochaSuite = () => {
   const runBatch = (batch, index) => {
     console.log(`Running integration batch ${index + 1}/${batches.length} (${batch.length} files)`);
 
-    // One sidecar per batch, stable across the retry below: the sidecar
-    // always reflects the batch's latest attempt.
+    // Each attempt retains its own sidecar, snapshot and final diagnostic.
     // Mocha's own --retries repeats a single test inside the process it is
     // already in, which does not help the failure this suite actually sees:
     // the first test of a file loses its browser and the rest of the file then
@@ -644,13 +658,13 @@ const runMochaSuite = () => {
     // fresh browser and a freshly registered company, which is the granularity
     // the flake lives at. Retried files are named at the end of the run: a
     // real regression fails twice and must not hide behind a green tick.
-    const attempt = mocha(batch, flakeSidecarPath('integration-attempt-1'), index).catch(error => {
+    const attempt = mocha(batch, flakeSidecarPath('integration-attempt-1'), index, 1).catch(error => {
       if (configuredRetries === 0) {
         throw error;
       }
       console.error(`Integration batch ${index + 1} failed, retrying the whole batch: ${error.message}`);
       flaky.push({ contour: 'integration-batch-retry', spec: batch.join(', ') });
-      return mocha(batch, flakeSidecarPath('integration-attempt-2'), index).then(() => {
+      return mocha(batch, flakeSidecarPath('integration-attempt-2'), index, 2).then(() => {
         throw new Error(`Integration batch ${index + 1} first attempt failed; diagnostic rerun passed: ${error.message}`);
       }, () => { throw error; });
     });
