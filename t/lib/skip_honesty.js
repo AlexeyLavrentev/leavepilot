@@ -80,14 +80,17 @@ const reportSkipHonesty = skippedFiles => {
 };
 
 /*
-  Counting side, loaded via --require into a mocha process. afterEach sees
-  every settled test - including pending ones (verified against mocha 11:
-  a test that calls this.skip(), inside the test or a beforeEach, still runs
-  the afterEach hook with this.currentTest.pending set and .file carried).
+  Counting side, loaded via --require into a mocha process. Static/suite-level
+  skips do not run afterEach; collect their executed pending state at the end.
+  Keep afterEach for retry clones which are not stored in the suite's test tree.
 */
 const skippedByHooks = new Set();
 
 exports.mochaHooks = {
+  beforeAll() {
+    skippedByHooks.clear();
+  },
+
   afterEach() {
     const test = this.currentTest;
     if (test && test.pending && test.file) {
@@ -96,6 +99,13 @@ exports.mochaHooks = {
   },
 
   afterAll() {
+    this.test.parent.eachTest(test => {
+      // isPending() also matches declarations excluded by --grep. Only the
+      // runner-assigned state proves this test was selected and skipped.
+      if (test.state === 'pending' && test.file) {
+        skippedByHooks.add(test.file);
+      }
+    });
     const evaluation = reportSkipHonesty(Array.from(skippedByHooks));
 
     if (!evaluation.enforce) {
