@@ -6,7 +6,6 @@
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
-const { execFileSync } = require('child_process');
 const { spawnInGroup, terminateGroup } = require('./lib/spawn_group');
 const skipHonesty = require('../t/lib/skip_honesty');
 const redactDiagnosticText = require('../lib/verify/diagnostic_text');
@@ -143,13 +142,12 @@ const baseTestEnv = Object.assign({}, process.env, {
   SE_SKIP_DRIVER_IN_PATH: 'true',
 });
 
-const prepareBrowserEnvironment = () => {
-  execFileSync(node, ['bin/browser_setup.js', '--check'], {
-    cwd: process.cwd(), encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'],
-  });
-  const parsed = JSON.parse(execFileSync(node, ['bin/browser_setup.js', '--print-env'], {
-    cwd: process.cwd(), encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'],
-  }));
+const prepareBrowserEnvironment = async () => {
+  // --print-env already validates both binaries. Use the same owned, bounded
+  // runner as tests so cancellation remains responsive during prerequisite work.
+  const result = await runWithTimeout(node, ['bin/browser_setup.js', '--print-env'],
+    {captureOutput: true}, 30000, 'browser setup timed out; run: node bin/browser_setup.js --bootstrap');
+  const parsed = JSON.parse(result.outputTail);
   if (!parsed || typeof parsed.chromeBin !== 'string' || typeof parsed.chromedriverBin !== 'string') {
     throw new Error('browser setup returned invalid validated paths');
   }
@@ -789,15 +787,16 @@ const mochaArgs = rawArgs.filter(arg => ![
 
 let server;
 
-if (browserTarget) {
-  Object.assign(baseTestEnv, prepareBrowserEnvironment());
-}
-
-if (!process.env.KEEP_TEST_DB && fs.existsSync(dbStorage)) {
-  fs.unlinkSync(dbStorage);
-}
-
-run(node, ['bin/db_update.js'])
+Promise.resolve().then(async () => {
+  if (browserTarget) {
+    Object.assign(baseTestEnv, await prepareBrowserEnvironment());
+  }
+  assertRunning();
+  if (!process.env.KEEP_TEST_DB && fs.existsSync(dbStorage)) {
+    fs.unlinkSync(dbStorage);
+  }
+  return run(node, ['bin/db_update.js']);
+})
   .then(() => {
     assertRunning();
     server = spawnInGroup(node, ['bin/wwww'], {
@@ -825,5 +824,5 @@ run(node, ['bin/db_update.js'])
     .then(() => writeFlakeReport())
     .then(() => {
       console.error(error && error.stack || error);
-      process.exit(1);
+      process.exit(stoppingSignal === 'SIGINT' ? 130 : stoppingSignal ? 143 : 1);
     }));

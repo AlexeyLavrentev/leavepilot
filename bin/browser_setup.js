@@ -3,7 +3,7 @@
 
 const fs = require('fs');
 const path = require('path');
-const { spawnSync } = require('child_process');
+const {spawnInGroup, terminateGroup, terminateTree, DEFAULT_GRACE_MS} = require('./lib/spawn_group');
 const {
   Browser,
   computeExecutablePath,
@@ -17,6 +17,11 @@ const CACHE_ROOT = path.join(process.cwd(), '.artifacts', 'verify', 'browser');
 // Do not derive this from Puppeteer's revision: its release cadence is separate
 // from this suite's verified browser contract.
 const BUILD_ID = '152.0.7977.64';
+// Version queries normally finish in milliseconds. Reuse the existing process
+// grace budget as their ceiling; unlike installation, they do not need network.
+const VERSION_PROBE_TIMEOUT_MS = DEFAULT_GRACE_MS;
+const activeProbes = new Set();
+let interruptedSignal = null;
 
 const missingPrerequisiteMessage = () =>
   'browser setup missing; run: node bin/browser_setup.js --bootstrap';
@@ -38,17 +43,48 @@ const haveMatchingMajorVersions = (chromeVersion, chromedriverVersion) => {
   return chromeMajor !== null && chromeMajor === driverMajor;
 };
 
-const readVersion = executable => {
-  const result = spawnSync(executable, ['--version'], { encoding: 'utf8' });
-  if (result.status !== 0) {
-    throw new Error(`${missingPrerequisiteMessage()} (could not read ${path.basename(executable)} version)`);
-  }
-  const version = (result.stdout || result.stderr || '').match(/(\d+\.\d+(?:\.\d+){1,2})/);
-  if (!version) {
-    throw new Error(`${missingPrerequisiteMessage()} (could not parse ${path.basename(executable)} version)`);
-  }
-  return version[1];
-};
+const readVersion = executable => new Promise((resolve, reject) => {
+  if (interruptedSignal) { reject(new Error(`browser setup interrupted by ${interruptedSignal}`)); return; }
+  const child = spawnInGroup(executable, ['--version'], {stdio: ['ignore', 'pipe', 'pipe']});
+  let output = '';
+  let failure = null;
+  let termination = null;
+  const cancel = reason => {
+    failure = failure || reason;
+    // A read-only version probe has no state to flush. Immediate escalation
+    // finishes before its owning runner's normal shutdown grace expires.
+    termination = termination || terminateTree(child, {graceMs: 0});
+  };
+  const timer = setTimeout(() => cancel('version probe timed out'), VERSION_PROBE_TIMEOUT_MS);
+  activeProbes.add(cancel);
+  const finish = () => { clearTimeout(timer); activeProbes.delete(cancel); };
+  const error = reason => new Error(`${missingPrerequisiteMessage()} (${path.basename(executable)}: ${reason})`);
+  const collectOutput = chunk => {
+    if (failure) { return; }
+    if (Buffer.byteLength(output) + chunk.length > 4096) { cancel('version output exceeded limit'); return; }
+    output += chunk;
+  };
+  child.stdout.on('data', collectOutput);
+  child.stderr.on('data', collectOutput);
+  child.once('error', () => { finish(); reject(error('could not start version probe')); });
+  child.once('exit', async code => {
+    clearTimeout(timer);
+    try {
+      if (termination) {
+        const outcome = await termination;
+        if (outcome.snapshotError) { failure += `; process ancestry unavailable: ${outcome.snapshotError}`; }
+        if (outcome.groups.some(group => group.errors.length)) { failure += '; process group cleanup reported signal errors'; }
+      } else {
+        const outcome = await terminateGroup(child, {graceMs: 0});
+        if (outcome.termSent || outcome.errors.length) { failure = 'version probe left a surviving process group'; }
+      }
+      const version = output.match(/(\d+\.\d+(?:\.\d+){1,2})/);
+      if (failure || code !== 0 || !version) { reject(error(failure || 'could not read version')); }
+      else { resolve(version[1]); }
+    } catch { reject(error('could not clean up version probe')); }
+    finally { finish(); }
+  });
+});
 
 const executablePath = browser => computeExecutablePath({
   browser,
@@ -89,7 +125,7 @@ const bootstrapBrowser = async ({ browser, platform }) => {
   }
 };
 
-const validate = () => {
+const validate = async () => {
   const chromeBin = executablePath(Browser.CHROME);
   const chromedriverBin = executablePath(Browser.CHROMEDRIVER);
 
@@ -104,8 +140,8 @@ const validate = () => {
     }
   });
 
-  const chromeVersion = readVersion(chromeBin);
-  const chromedriverVersion = readVersion(chromedriverBin);
+  const chromeVersion = await readVersion(chromeBin);
+  const chromedriverVersion = await readVersion(chromedriverBin);
   if (!haveMatchingMajorVersions(chromeVersion, chromedriverVersion)) {
     throw new Error(`${missingPrerequisiteMessage()} (Chrome and ChromeDriver major versions differ)`);
   }
@@ -131,6 +167,14 @@ const bootstrap = async () => {
 };
 
 if (require.main === module) {
+  ['SIGINT', 'SIGTERM'].forEach(signal => process.on(signal, () => {
+    interruptedSignal = interruptedSignal || signal;
+    // Outside version probing (for example while downloading), preserve the
+    // CLI's former immediate signal exit instead of keeping installation alive.
+    if (activeProbes.size === 0) { process.exit(interruptedSignal === 'SIGINT' ? 130 : 143); }
+    for (const cancel of activeProbes) { cancel(`interrupted by ${signal}`); }
+    process.exitCode = interruptedSignal === 'SIGINT' ? 130 : 143;
+  }));
   const command = process.argv[2] || '--check';
   const operation = command === '--bootstrap' ? bootstrap() : Promise.resolve().then(validate);
   operation.then(result => {
@@ -141,7 +185,7 @@ if (require.main === module) {
     }
   }).catch(error => {
     process.stderr.write(`${error.message}\n`);
-    process.exitCode = 1;
+    process.exitCode = interruptedSignal === 'SIGINT' ? 130 : interruptedSignal ? 143 : 1;
   });
 }
 
