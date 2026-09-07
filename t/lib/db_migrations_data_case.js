@@ -517,8 +517,7 @@ async function syncBaselineCarriesNoMetaRows() {
   let negStorage;
 
   if (dialect === 'mysql') {
-    // The case connection can create the sibling database the negative
-    // control runs on; the parent drops it afterwards with the case db.
+    // The parent exclusively creates and cleans both case databases.
     negStorage = null;
   } else {
     negStorage = path.join(storageDir, caseSlugBase + '_neg.sqlite');
@@ -529,9 +528,6 @@ async function syncBaselineCarriesNoMetaRows() {
 
   try {
     if (dialect === 'mysql') {
-      const maintenance = new Sequelize(connectionOptions(process.env.DB_NAME));
-      await maintenance.query('CREATE DATABASE IF NOT EXISTS `' + negDbName + '`');
-      await maintenance.close();
       negSequelize = new Sequelize(connectionOptions(negDbName));
     } else {
       negSequelize = new Sequelize(connectionOptions(negStorage));
@@ -560,11 +556,6 @@ async function syncBaselineCarriesNoMetaRows() {
     if (negSequelize) {
       await negSequelize.close();
     }
-    if (dialect === 'mysql') {
-      const maintenance = new Sequelize(connectionOptions(process.env.DB_NAME));
-      await maintenance.query('DROP DATABASE IF EXISTS `' + negDbName + '`');
-      await maintenance.close();
-    }
   }
 }
 
@@ -573,6 +564,14 @@ async function syncBaselineCarriesNoMetaRows() {
 // ---------------------------------------------------------------------------
 
 async function main() {
+  // Refuse an accidental standalone invocation against an operator database.
+  if (dialect === 'mysql') {
+    assert.match(process.env.DB_NAME || '', /^lp_migr_[a-f0-9]{32}$/);
+    assert.strictEqual(negDbName, process.env.DB_NAME + '_neg');
+  } else {
+    assert.match(caseSlugBase || '', /^[a-zA-Z0-9_]+$/);
+    assert.strictEqual(process.env.DB_STORAGE, path.join(storageDir, caseSlugBase + '.sqlite'));
+  }
   const migrationFile = process.argv[2];
   const entry = MANIFEST.migrations.find(function(e) {
     return path.basename(e.migration) === migrationFile;

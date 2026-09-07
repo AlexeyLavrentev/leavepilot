@@ -21,7 +21,7 @@
 
     - builds the minimal original-shape base (the pre-migration-1 sync
       stand-in) on a fresh per-case schema - a sqlite temp file, or a
-      per-case MySQL database whose name is derived from the migration;
+      per-case MySQL database with an exclusive random name;
     - replays migrations 1..N-1 through lib/model/migrator.js exports
       (createUmzug over the real history directory; umzug's native { to }
       bound on the migrator-built instance, whose adapter/storage are the
@@ -44,6 +44,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const { spawn } = require('child_process');
+const {randomUUID} = require('crypto');
 
 const manifest = require('../fixtures/data-rewriting-migrations.json');
 const Sequelize = require('sequelize');
@@ -62,8 +63,8 @@ function slugFor(migrationFile) {
     .slice(-40);
 }
 
-function mysqlDatabaseName(slug) {
-  return 'lp_migr_' + slug.toLowerCase();
+function mysqlDatabaseName() {
+  return 'lp_migr_' + randomUUID().replace(/-/g, '');
 }
 
 function runCaseChild(migrationFile, env) {
@@ -121,12 +122,15 @@ function lastJsonLine(stdout) {
 manifest.migrations.forEach(function(entry) {
   const migrationFile = path.basename(entry.migration);
   const slug = slugFor(migrationFile);
+  const caseDatabase = mysqlDatabaseName();
+  const negativeDatabase = caseDatabase + '_neg';
 
   describe('data-rewriting replay: ' + migrationFile, function() {
     this.timeout(180000);
 
     let storageDir;
     let maintenance;
+    const ownedDatabases = [];
 
     before(function() {
       if (dialect === 'mysql') {
@@ -148,9 +152,14 @@ manifest.migrations.forEach(function(entry) {
 
     after(async function() {
       if (maintenance) {
-        await maintenance.query('DROP DATABASE IF EXISTS `' + mysqlDatabaseName(slug) + '`');
-        await maintenance.query('DROP DATABASE IF EXISTS `' + mysqlDatabaseName(slug) + '_neg`');
-        await maintenance.close();
+        let cleanupError;
+        for (const database of ownedDatabases) {
+          try { await maintenance.query('DROP DATABASE IF EXISTS `' + database + '`'); }
+          catch (error) { cleanupError = cleanupError || error; }
+        }
+        try { await maintenance.close(); }
+        catch (error) { cleanupError = cleanupError || error; }
+        if (cleanupError) { throw cleanupError; }
       } else if (storageDir) {
         fs.rmSync(storageDir, { recursive: true, force: true });
       }
@@ -163,12 +172,17 @@ manifest.migrations.forEach(function(entry) {
         DB_DIALECT: dialect,
         CASE_SLUG: slug,
         CASE_STORAGE_DIR: storageDir || '',
-        CASE_NEG_DB: mysqlDatabaseName(slug) + '_neg',
+        CASE_NEG_DB: negativeDatabase,
       });
 
       if (dialect === 'mysql') {
-        env.DB_NAME = mysqlDatabaseName(slug);
-        await maintenance.query('CREATE DATABASE IF NOT EXISTS `' + env.DB_NAME + '`');
+        env.DB_NAME = caseDatabase;
+        // An existing database is never ours. Claim ownership only after a
+        // plain CREATE succeeds, and keep both databases under this parent.
+        for (const database of [caseDatabase, negativeDatabase]) {
+          await maintenance.query('CREATE DATABASE `' + database + '`');
+          ownedDatabases.push(database);
+        }
       } else {
         env.DB_STORAGE = path.join(storageDir, slug + '.sqlite');
       }
