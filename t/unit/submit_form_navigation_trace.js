@@ -71,6 +71,61 @@ describe('submit form navigation trace', function(){
     });
   });
 
+  it('never traces typed field values', async function(){
+    var secret = 'synthetic-unlabelled-credential';
+    var field = {
+      isDisplayed: function(){ return Promise.resolve(true); },
+      getAttribute: function(){ return Promise.resolve(null); },
+      clear: function(){ return Promise.resolve(); },
+      sendKeys: function(){ return Promise.resolve(); },
+    };
+    await submitForm._fillFormField({findElements: function(){ return Promise.resolve([field]); }}, {
+      selector: '#password', value: secret,
+    });
+    expect(lines.join('')).not.to.contain(secret);
+    expect(lines.join('')).to.contain('sendKeys');
+  });
+
+  it('strips credentials, queries and fragments from traced document URLs', async function(){
+    await submitForm._traceDocumentState({executeScript: function(){
+      return Promise.resolve({url: 'http://synthetic-user:synthetic-password@localhost/calendar?token=synthetic-query#synthetic-fragment', timeOrigin: 123, readyState: 'complete', navigationType: 'navigate'});
+    }}, 'before-submit');
+    expect(lines.join('')).not.to.contain('synthetic-');
+    expect(lines.join('')).to.contain('http://localhost/calendar');
+    expect(lines.join('')).to.contain('"timeOrigin":123');
+  });
+
+  it('preserves the submit error when rejection diagnostics also fail', async function(){
+    var directory = fs.mkdtempSync(path.join(os.tmpdir(), 'submit-primary-error-'));
+    var names = ['TEST_SUBMIT_DIAGNOSTIC_PATH', 'TEST_SUBMIT_DIAGNOSTIC_RUN_ID', 'TEST_SUBMIT_DIAGNOSTIC_BATCH_ID', 'TEST_SUBMIT_DIAGNOSTIC_SPEC'];
+    var previous = names.map(function(name){ return process.env[name]; });
+    [path.join(directory, 'submit.json'), 'primary-run', 'primary-batch', 'synthetic.js'].forEach(function(value, index){ process.env[names[index]] = value; });
+    var original = new Error('synthetic click failure');
+    var diagnostic = new Error('synthetic diagnostic failure');
+    var clicked = false;
+    var driver = {
+      findElements: function(){ return Promise.resolve([{isDisplayed: function(){ return Promise.resolve(true); }}]); },
+      executeScript: function(script){
+        if (script.indexOf('arguments[0].click()') !== -1) { clicked = true; return Promise.reject(original); }
+        if (clicked) { return Promise.reject(diagnostic); }
+        return Promise.resolve(null);
+      },
+    };
+    try {
+      await require('assert').rejects(submitForm({driver: driver, expect_navigation: false}), function(error){
+        expect(error).to.equal(original);
+        expect(error.submitDiagnosticError.message).to.contain('synthetic diagnostic failure');
+        return true;
+      });
+    } finally {
+      names.forEach(function(name, index){
+        if (previous[index] === undefined) { delete process.env[name]; }
+        else { process.env[name] = previous[index]; }
+      });
+      fs.rmSync(directory, {recursive: true, force: true});
+    }
+  });
+
   it('writes a bounded redacted submit snapshot only with runner identity', function(){
     var directory = fs.mkdtempSync(path.join(os.tmpdir(), 'submit-diagnostic-'));
     var snapshotPath = path.join(directory, 'submit.json');

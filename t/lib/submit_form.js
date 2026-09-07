@@ -398,7 +398,7 @@ function trace_document_state(driver, stage) {
     + 'navigationType: latest && latest.type'
     + '};'
   )).then(function(state){
-    trace('document:' + stage, JSON.stringify(state));
+    trace('document:' + stage, JSON.stringify(Object.assign({}, state, {url: safe_submit_url(state && state.url)})));
     return state;
   }).catch(function(error){
     trace('document:' + stage + ':failed', error && error.name);
@@ -425,13 +425,11 @@ function find_visible_element(driver, selector) {
               return foundIndex;
             }
 
-            return el.isDisplayed()
+            return withDeadline('checking visibility ' + selector, el.isDisplayed())
               .then(function(visible){
                 return visible ? els.indexOf(el) : -1;
               })
-              .catch(function(){
-                return -1;
-              });
+              .catch(rethrow_wedge(-1));
           });
         });
 
@@ -461,10 +459,10 @@ function is_element_not_interactable_error(err) {
 }
 
 function click_element(driver, el) {
-  return driver.executeScript(
+  return withDeadline('clicking form control', driver.executeScript(
     'arguments[0].scrollIntoView({block: "center", inline: "nearest"}); arguments[0].click();',
     el
-  );
+  ));
 }
 
 function read_document_time_origin(driver, stage) {
@@ -575,7 +573,7 @@ function wait_for_modal_closed(driver, selector, timeout) {
 }
 
 function set_element_value(driver, el, value, change_step) {
-  return driver.executeScript(
+  return withDeadline('setting field value', driver.executeScript(
     'if (arguments[2]) { arguments[0].step = "0.1"; }'
     + 'arguments[0].focus();'
     + 'arguments[0].value = "";'
@@ -591,7 +589,7 @@ function set_element_value(driver, el, value, change_step) {
     el,
     value,
     !!change_step
-  );
+  ));
 }
 
 function type_element_value(driver, el, value, change_step) {
@@ -603,24 +601,24 @@ function type_element_value(driver, el, value, change_step) {
 
   if (change_step) {
     flow = flow.then(function(){
-      return driver.executeScript("return arguments[0].step = '0.1'", el);
+      return withDeadline('setting numeric field step', driver.executeScript("return arguments[0].step = '0.1'", el));
     });
   }
 
   return flow
     .then(function(){
-      return traced('clear', String(value), el.clear());
+      return traced('clear', undefined, withDeadline('clearing field', el.clear()));
     })
     .then(function(){
-      return traced('sendKeys', String(value), el.sendKeys(value));
+      return traced('sendKeys', undefined, withDeadline('typing field', el.sendKeys(value)));
     })
     .then(function(){
-      return traced('tab', String(value), el.sendKeys(Key.TAB));
+      return traced('tab', undefined, withDeadline('leaving field', el.sendKeys(Key.TAB)));
     });
 }
 
 function set_datepicker_value(driver, el, value) {
-  return driver.executeScript(
+  return withDeadline('setting datepicker value', driver.executeScript(
     'var $ = window.jQuery;'
     + 'if (!$ || !$.fn || typeof $.fn.datepicker !== "function") {'
     + ' throw new Error("Datepicker field is missing its datepicker API");'
@@ -629,7 +627,7 @@ function set_datepicker_value(driver, el, value) {
     + 'return {value: arguments[0].value, valid: typeof arguments[0].checkValidity === "function" && arguments[0].checkValidity()};',
     el,
     value
-  ).then(function(result){
+  )).then(function(result){
     if (!result || result.value !== value) {
       throw new Error('Datepicker did not retain the requested value');
     }
@@ -644,16 +642,16 @@ function is_booking_datepicker_field(driver, el) {
     return Promise.resolve(false);
   }
 
-  return el.getAttribute('data-provide')
+  return withDeadline('reading datepicker field type', el.getAttribute('data-provide'))
     .then(function(value){
       if (value !== 'datepicker') {
         return false;
       }
 
-      return driver.executeScript(
+      return withDeadline('checking datepicker scope', driver.executeScript(
         'return !!arguments[0].closest("#book_leave_modal");',
         el
-      );
+      ));
     })
     .then(function(value){ return value === true; });
 }
@@ -669,34 +667,34 @@ function fill_form_field(driver, test_case, attempt) {
     .then(function(el){
       if ( Object.prototype.hasOwnProperty.call(test_case, 'option_selector') ) {
         if (Object.prototype.hasOwnProperty.call(test_case, 'value')) {
-          return driver.executeScript(
+          return withDeadline('selecting field option', driver.executeScript(
             'arguments[0].value = arguments[1];'
             + 'var event = document.createEvent("HTMLEvents");'
             + 'event.initEvent("change", true, false);'
             + 'arguments[0].dispatchEvent(event);',
             el,
             test_case.value
-          );
+          ));
         }
 
-        return el.findElement(By.css( test_case.option_selector ))
+        return withDeadline('locating field option', el.findElement(By.css( test_case.option_selector )))
           .then(function(optionEl){
-            return optionEl.getAttribute('value');
+            return withDeadline('reading field option', optionEl.getAttribute('value'));
           })
           .then(function(value){
-            return driver.executeScript(
+            return withDeadline('selecting field option', driver.executeScript(
               'arguments[0].value = arguments[1];'
               + 'var event = document.createEvent("HTMLEvents");'
               + 'event.initEvent("change", true, false);'
               + 'arguments[0].dispatchEvent(event);',
               el,
               value
-            );
+            ));
           });
       }
 
       if ( Object.prototype.hasOwnProperty.call(test_case, 'tick')) {
-        return el.isSelected()
+        return withDeadline('reading checkbox selection', el.isSelected())
           .then(function(selected){
             if (test_case.value === 'on' && selected) {
               return null;
@@ -711,12 +709,12 @@ function fill_form_field(driver, test_case, attempt) {
       }
 
       if (test_case.file) {
-        return el.sendKeys(test_case.value);
+        return withDeadline('setting file input', el.sendKeys(test_case.value));
       }
 
       if (Object.prototype.hasOwnProperty.call(test_case, 'dropdown_option')) {
         return click_element(driver, el)
-          .then(function(){ return driver.findElement(By.css(test_case.dropdown_option)); })
+          .then(function(){ return withDeadline('locating dropdown option', driver.findElement(By.css(test_case.dropdown_option))); })
           .then(function(dd){ return click_element(driver, dd); });
       }
 
@@ -781,12 +779,12 @@ function wait_for_expected_elements(driver, elements_to_check) {
       return withDeadline('reading ' + test_case.selector, driver.findElement(By.css(test_case.selector)))
         .then(function(el){
           if (Object.prototype.hasOwnProperty.call(test_case, 'tick')) {
-            return el.isSelected().then(function(yes){
+            return withDeadline('checking submitted selection', el.isSelected()).then(function(yes){
               return yes ? 'on' : 'off';
             });
           }
 
-          return el.getAttribute('value');
+          return withDeadline('checking submitted value', el.getAttribute('value'));
         })
         .then(function(value){
           return value === test_case.value;
@@ -800,12 +798,12 @@ function wait_for_expected_elements(driver, elements_to_check) {
 }
 
 function clear_existing_alerts(driver) {
-  return driver.executeScript(
+  return withDeadline('clearing existing alerts', driver.executeScript(
     'var alerts = document.querySelectorAll("div.alert");'
     + 'Array.prototype.forEach.call(alerts, function(alert) {'
     + '  alert.parentNode.removeChild(alert);'
     + '});'
-  );
+  ));
 }
 
 function submit_form_func(args) {
@@ -843,7 +841,7 @@ function submit_form_func(args) {
       })
       .then(function(){
         if (confirm_dialog) {
-          return driver.executeScript('window.confirm = function(msg) { return true; }');
+          return withDeadline('configuring confirmation dialog', driver.executeScript('window.confirm = function(msg) { return true; }'));
         }
       })
       .then(function(){
@@ -912,6 +910,8 @@ function submit_form_func(args) {
             return capture_submit_diagnostic(driver, {
               stage: 'helper-rejection', modalSelector: modal_selector,
               submitSelector: submit_button_selector, rootStatus: 'unreadable',
+            }).catch(function(diagnosticError){
+              error.submitDiagnosticError = diagnosticError;
             }).then(function(){
               throw error;
             });
