@@ -65,6 +65,6 @@ module.exports = promisify( function(args, callback){
         driver : data.driver,
       }
     );
-  });
+  }).catch(result_callback);
 
 });

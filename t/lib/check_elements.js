@@ -11,11 +11,11 @@ var check_elements_func = promisify( function(args, callback){
       result_callback   = callback,
       elements_to_check = args.elements_to_check || [];
 
-    Promise.all([
+    Promise.all(
         _.map(
             elements_to_check,
             function( test_case ){
-                driver
+                return driver
                 .findElement(By.css( test_case.selector ))
                 .then(function(el){
                     if (Object.prototype.hasOwnProperty.call(test_case, 'tick')) {
@@ -29,7 +29,7 @@ var check_elements_func = promisify( function(args, callback){
                     expect(text).to.be.equal( test_case.value );
                 });
             })
-    ])
+    )
 
     .then(function(){
 
@@ -40,7 +40,7 @@ var check_elements_func = promisify( function(args, callback){
                 driver : driver,
             }
         );
-    });
+    }).catch(result_callback);
 });
 
 module.exports = function(args){
