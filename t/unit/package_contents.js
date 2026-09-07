@@ -229,9 +229,13 @@ describe('Published package contents', function() {
   // shipping the script itself only advertises a broken entry
   // (bin/demo.js drives docker-compose.demo.yml; bin/screenshots.js drives
   // bin/demo.js; bin/install_check.js drives the repo's own docs and
-  // fixtures). Same class as the already-excluded bin/test.js.
-  it('does not ship the repo-only demo/screenshots/install-check bin scripts', function() {
-    ['bin/demo.js', 'bin/screenshots.js', 'bin/install_check.js'].forEach(script => {
+  // fixtures). Verification also needs t/fixtures and Sass sources; browser
+  // setup needs the development-only @puppeteer/browsers dependency.
+  it('does not ship repo-only bin scripts', function() {
+    [
+      'bin/demo.js', 'bin/screenshots.js', 'bin/install_check.js',
+      'bin/verify.js', 'bin/verify_css.js', 'bin/browser_setup.js',
+    ].forEach(script => {
       expect(
         paths,
         script + ' must stay out of the tarball: its target files (compose file, docs, fixtures) are not shipped, so the packaged script would only crash'
