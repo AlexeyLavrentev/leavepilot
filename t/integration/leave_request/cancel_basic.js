@@ -168,6 +168,7 @@ describe('Leave request cancelation', function(){
         expect( elements.length ).to.be.eq(1);
         done();
       })
+      .catch(done);
   });
 
   it('Ensure that new request is in Pending status', function(done){
@@ -247,6 +248,7 @@ describe('Leave request cancelation', function(){
         expect( elements.length ).to.be.eq(0);
         done();
       })
+      .catch(done);
   });
 
   it("Open email audit page", function( done ){
@@ -273,6 +275,7 @@ describe('Leave request cancelation', function(){
         expect(subjects).to.contain('Cancel leave request');
         done();
       })
+      .catch(done);
   });
 
   it('Open user B absences section', function(done){
@@ -296,6 +299,7 @@ describe('Leave request cancelation', function(){
         expect( allowances[0] ).to.be.eq( allowances[1] );
         done();
       })
+      .catch(done);
   });
 
   it("Logout from user A (admin)", function(done){
@@ -368,8 +372,8 @@ describe('Leave request cancelation', function(){
       .catch(done);
   });
 
-  after(function(done){
-    driver.quit().then(function(){ done(); });
+  after(async function(){
+    if (driver) { await driver.quit(); }
   });
 });
 
@@ -544,8 +548,8 @@ describe('Check only requestor can see the Cancel button', function(){
       .catch(done);
   });
 
-  after(function(done){
-    driver.quit().then(function(){ done(); });
+  after(async function(){
+    if (driver) { await driver.quit(); }
   });
 
 });

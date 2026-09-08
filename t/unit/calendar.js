@@ -127,3 +127,39 @@ describe('Check calendar month object', function(){
     });
 
 });
+
+describe('Full-year calendar month selection', function(){
+  for (const timezone of ['UTC', 'Asia/Yekaterinburg', 'America/Los_Angeles']) {
+    it('selects January through December of the requested year in ' + timezone, function(){
+      const result = require('node:child_process').spawnSync(process.execPath, ['-e', `
+        const assert = require('node:assert/strict');
+        const dayjs = require('./lib/util/date');
+        const user = {};
+        require('./lib/model/mixin/user/absence_aware').call(user, {});
+        for (const yearNumber of [2018, 2024, 2026]) {
+          const year = dayjs.utc(yearNumber + '-12-31T12:34:56Z');
+          const original = year.toISOString();
+          const months = user._get_calendar_months_to_show({year, show_full_year: true});
+          assert.deepEqual(months.map(month => month.format('YYYY-MM-DD')),
+            Array.from({length: 12}, (_, i) => yearNumber + '-' + String(i + 1).padStart(2, '0') + '-01'));
+          assert.ok(months.every(month => month.isUTC() && month.hour() === 0));
+          assert.equal(year.toISOString(), original);
+        }
+      `], {encoding: 'utf8', timeout: 5000, killSignal: 'SIGKILL', env: {...process.env, TZ: timezone}});
+      expect(result.error).to.equal(undefined);
+      expect(result.status, result.stderr).to.equal(0);
+    });
+  }
+
+  it('preserves the rolling four-month view across New Year', function(){
+    const today = dayjs.utc('2026-11-20');
+    const user = {company: {get_today: () => today.clone()}};
+    const months = model.User.prototype._get_calendar_months_to_show.call(user, {
+      year: dayjs.utc('2018-01-01'), show_full_year: false,
+    });
+    expect(months.map(month => month.format('YYYY-MM-DD'))).to.deep.equal([
+      '2026-11-01', '2026-12-01', '2027-01-01', '2027-02-01',
+    ]);
+    expect(today.format('YYYY-MM-DD')).to.equal('2026-11-20');
+  });
+});

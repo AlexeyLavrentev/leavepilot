@@ -276,7 +276,19 @@ describe('Revoke leave request by Admin', function(){
       .catch(done);
   });
 
-  after(function(done){
-    driver.quit().then(function(){ done(); });
+  it('Employee calendar no longer contains the revoked leave', async function(){
+    await logout_user_func({application_host, driver});
+    await login_user_func({application_host, driver, user_email: email_employee});
+    await open_page_func({driver, url: application_host + 'calendar/?show_full_year=1'});
+    await check_booking_func({
+      driver,
+      full_days: [dayjs.utc(`${currentYear}-05-12`)],
+      halfs_1st_days: [dayjs.utc(`${currentYear}-05-11`)],
+      type: 'absent',
+    });
+  });
+
+  after(async function(){
+    if (driver) { await driver.quit(); }
   });
 });
