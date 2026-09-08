@@ -75,7 +75,8 @@ describe('Ensure that leaves with not full days are rendered properly', function
       application_host : application_host,
       driver           : driver,
     })
-    .then(() => done());
+    .then(() => done())
+    .catch(done);
   });
 
   it("Login as non-admin user", done => {
@@ -84,7 +85,8 @@ describe('Ensure that leaves with not full days are rendered properly', function
       user_email       : non_admin_user_email,
       driver           : driver,
     })
-    .then(() => done());
+    .then(() => done())
+    .catch(done);
   });
 
   it("Open calendar page", done =>{
@@ -92,7 +94,8 @@ describe('Ensure that leaves with not full days are rendered properly', function
       url    : application_host + 'calendar/?show_full_year=1&year=2015',
       driver : driver,
     })
-    .then(() => done());
+    .then(() => done())
+    .catch(done);
   });
 
   it("Request new partial leave: morning to afternoon", done => {
@@ -220,7 +223,8 @@ describe('Ensure that leaves with not full days are rendered properly', function
       url    : application_host + 'requests/',
       driver : driver,
     })
-    .then(() => done());
+    .then(() => done())
+    .catch(done);
   });
 
   it("Ensure that both new leave requests are listed and both are marked as partial", done => {
@@ -270,7 +274,8 @@ describe('Ensure that leaves with not full days are rendered properly', function
       application_host : application_host,
       driver           : driver,
     })
-    .then(() => done());
+    .then(() => done())
+    .catch(done);
   });
 
   it("Login as admin user", done => {
@@ -279,7 +284,8 @@ describe('Ensure that leaves with not full days are rendered properly', function
       user_email       : new_user_email,
       driver           : driver,
     })
-    .then(() => done());
+    .then(() => done())
+    .catch(done);
   });
 
   it("Go to my requests page", done => {
@@ -287,7 +293,8 @@ describe('Ensure that leaves with not full days are rendered properly', function
       url    : application_host + 'requests/',
       driver : driver,
     })
-    .then(() => done());
+    .then(() => done())
+    .catch(done);
   });
 
   it("Ensure that both new leave requests are listed for approval and both are marked as partial", done => {
@@ -310,8 +317,8 @@ describe('Ensure that leaves with not full days are rendered properly', function
       .catch(done);
   });
 
-  after(done => {
-    driver.quit().then(() => done());
+  after(async () => {
+    if (driver) { await driver.quit(); }
   });
 
 });

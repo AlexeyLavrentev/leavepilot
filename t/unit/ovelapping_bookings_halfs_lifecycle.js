@@ -35,4 +35,14 @@ describe('overlapping half-day booking lifecycle contract', function(){
       expect(block).not.to.match(/close_rejected_book_leave_modal/);
     });
   });
+
+  it('also verifies that the unbooked afternoon stays free after each rejected overlap', function(){
+    const start = scenario.indexOf('var check_original_booking_only');
+    expect(start).to.be.greaterThan(-1);
+    const block = scenario.slice(start, scenario.indexOf("  it('Create new company'", start));
+    expect(block).to.contain("type           : 'pended'");
+    expect(block).to.match(/return check_booking_func\(\{[\s\S]*full_days: rejected_days/);
+    expect(block).to.contain("halfs_2nd_days: [dayjs.utc('2015-06-16')]");
+    expect(block).to.contain("type: 'absent'");
+  });
 });

@@ -207,8 +207,21 @@ describe('Overlapping bookings', function(){
         .catch(done);
   });
 
-  after(function(done){
-    driver.quit().then(function(){ done(); });
+  it('Rejected overlap leaves only the original booking on the calendar', async function(){
+    await check_booking_func({
+      driver,
+      full_days: [dayjs.utc('2015-06-15'), dayjs.utc('2015-06-16')],
+      type: 'pended',
+    });
+    await check_booking_func({
+      driver,
+      full_days: [dayjs.utc('2015-06-17')],
+      type: 'absent',
+    });
+  });
+
+  after(async function(){
+    if (driver) { await driver.quit(); }
   });
 
 });

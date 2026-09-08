@@ -92,15 +92,6 @@ describe('Overlapping leaverequest (with halfs)', function(){
       .then(function(){ return submit_form_func._waitForModalClosed(drv, '#book_leave_modal'); });
   };
 
-  var check_no_booking = function(day) {
-    return Promise.all(['half_1st', 'half_2nd'].map(function(half){
-      var selector = 'table.month_' + day.format('MMMM') + ' td.day_' + day.format('D') + '.' + half;
-      return driver.findElement(By.css(selector))
-        .then(function(el){ return el.getAttribute('class'); })
-        .then(function(css){ expect(css).not.to.match(/\bleave_cell(?:_pended)?\b/); });
-    }));
-  };
-
   var check_original_booking_only = function(rejected_days) {
     return check_booking_func({
       driver         : driver,
@@ -108,7 +99,12 @@ describe('Overlapping leaverequest (with halfs)', function(){
       halfs_1st_days : [dayjs.utc('2015-06-16')],
       type           : 'pended',
     }).then(function(){
-      return Promise.all(rejected_days.map(check_no_booking));
+      return check_booking_func({
+        driver,
+        full_days: rejected_days,
+        halfs_2nd_days: [dayjs.utc('2015-06-16')],
+        type: 'absent',
+      });
     });
   };
 
@@ -282,7 +278,8 @@ describe('Overlapping leaverequest (with halfs)', function(){
         .then(function(){ return close_rejected_book_leave_modal(driver); })
         .then(function(){ done() })
         .catch(done);
-      });
+      })
+      .catch(done);
   });
 
   it("Try to create new leave request that colides with existing by halfs", function(done){
@@ -360,8 +357,8 @@ describe('Overlapping leaverequest (with halfs)', function(){
     .catch(done);
   });
 
-  after(function(done){
-    driver.quit().then(function(){ done(); });
+  after(async function(){
+    if (driver) { await driver.quit(); }
   });
 
 });

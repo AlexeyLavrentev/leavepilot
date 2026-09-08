@@ -22,8 +22,10 @@ async function inspect(filename, missingDriver) {
         return {get_application_host: () => 'http://example.test/', get_execution_timeout: () => 1000};
       }
       if (name.startsWith('../../lib/')) {
-        return () => failing ? Promise.reject(failure)
+        const helper = () => failing ? Promise.reject(failure)
           : Promise.resolve({driver, email: 'synthetic@example.test', new_user_email: 'employee@example.test'});
+        helper._waitForModalClosed = helper;
+        return helper;
       }
       return localRequire(name);
     },
@@ -66,7 +68,8 @@ async function inspect(filename, missingDriver) {
 describe('leave creation scenario error ownership', function() {
   this.timeout(10000);
   for (const name of ['basic_leave_request', 'create_leave_with_single_user', 'leave_in_next_year', 'try_to_overbook_allowance',
-    'cancel_basic', 'leave_request_revoke', 'leave_request_revoke_by_admin']) {
+    'cancel_basic', 'leave_request_revoke', 'leave_request_revoke_by_admin',
+    'ovelapping_bookings', 'ovelapping_bookings_halfs', 'rendering_of_halves']) {
     for (const missingDriver of [false, true]) {
       it(`${name}: ${missingDriver ? 'cleanup before browser acquisition' : 'every step and teardown forwards the original failure once'}`, function() {
         const filename = require('node:path').resolve('t/integration/leave_request', name + '.js');

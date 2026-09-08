@@ -24,4 +24,15 @@ describe('overlapping booking successful submit contract', function(){
     expect(successfulRequest).not.to.match(/expect_navigation\s*:\s*false/);
     expect(successfulRequest).not.to.match(/expect_navigation\s*:\s*true/);
   });
+
+  it('checks the original days and absence of the rejected extension after rejection', function(){
+    const start = scenario.indexOf("it('Rejected overlap leaves only the original booking on the calendar'");
+    expect(start).to.be.greaterThan(scenario.indexOf('it("Try to request overlapping leave request"'));
+    const block = scenario.slice(start, scenario.indexOf('  after(', start));
+    expect(block.match(/await check_booking_func\(/g)).to.have.length(2);
+    expect(block).to.contain("full_days: [dayjs.utc('2015-06-15'), dayjs.utc('2015-06-16')]");
+    expect(block).to.contain("type: 'pended'");
+    expect(block).to.contain("full_days: [dayjs.utc('2015-06-17')]");
+    expect(block).to.contain("type: 'absent'");
+  });
 });
