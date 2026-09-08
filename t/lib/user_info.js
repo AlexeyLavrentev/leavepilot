@@ -1,65 +1,26 @@
+'use strict';
 
-/*
+module.exports = async function({driver, email}) {
+  if (!driver) { throw new Error("'driver' was not passed into the user_info!"); }
+  if (!email) { throw new Error("'email' was not passed into the user_info!"); }
 
-*/
-
-const { promisify } = require('util');
-
-'use strict';// Function that is executed on the client,
-// it relies on presence of jQuery and window.VPP_email
-var func_to_inject = function() {
-  var callback = arguments[arguments.length - 1];
-
-  $.ajax({
-    url: '/users/search/',
-    type: 'post',
-    data: {
-      email : window.VPP_email,
-    },
-    headers: {
-      Accept : "application/json",
-    },
-    dataType: 'json',
-    success: function (data) {
-      callback(data);
-    }
-  });
-};
-
-
-var user_info_func = promisify( function(args, callback){
-
-  var
-    result_callback = callback,
-    driver          = args.driver,
-    email           = args.email;
-
-  if ( ! driver ) {
-    throw new Error("'driver' was not passed into the user_info!");
-  }
-
-  if ( ! email ) {
-    throw new Error("'email' was not passed into the user_info!");
-  }
-
-  driver
-    .executeScript('window.VPP_email = "'+email+'";')
-    .then(function(){
-      return driver.executeAsyncScript(func_to_inject);
-    })
-    .then(function(users){
-      var user = users.length > 0 ? users[0] : {};
-      result_callback(null, {
-        driver : driver,
-        user   : user,
-      });
-    })
-    .catch(function(err){
-      result_callback(err);
+  // WebDriver serializes arguments as data; never interpolate email into source.
+  const result = await driver.executeAsyncScript(function(email) {
+    const callback = arguments[arguments.length - 1];
+    $.ajax({
+      url: '/users/search/',
+      type: 'post',
+      data: {email},
+      headers: {Accept: 'application/json'},
+      dataType: 'json',
+      success: function(users) { callback({users}); },
+      error: function(xhr) { callback({error: true, status: xhr.status}); },
     });
+  }, email);
 
-});
-
-module.exports = function(args){
-  return user_info_func(args);
+  if (result && result.error) {
+    throw new Error('User search failed (HTTP ' + result.status + ')');
+  }
+  if (!result || !Array.isArray(result.users)) { throw new Error('Invalid user search response'); }
+  return {driver, user: result.users[0] || {}};
 };

@@ -15,13 +15,19 @@ async function inspect(filename, missingDriver) {
   const failure = new Error('synthetic browser/helper failure');
   const unhandled = [];
   process.on('unhandledRejection', error => unhandled.push(error.message));
-  const driver = new Proxy({}, {get: () => () => Promise.reject(failure)});
+  const driver = new Proxy({}, {get: (_target, property) => {
+    if (property === 'actions') {
+      const actions = {sendKeys: () => actions, perform: () => Promise.reject(new Error('secondary action failure'))};
+      return () => actions;
+    }
+    return () => Promise.reject(failure);
+  }});
   vm.runInNewContext(fs.readFileSync(filename, 'utf8'), {
     require: name => {
-      if (name === '../../lib/config') {
+      if (name === '../../lib/config' || name === '../lib/config') {
         return {get_application_host: () => 'http://example.test/', get_execution_timeout: () => 1000};
       }
-      if (name.startsWith('../../lib/')) {
+      if (name.startsWith('../../lib/') || name.startsWith('../lib/')) {
         const helper = () => failing ? Promise.reject(failure)
           : Promise.resolve({driver, email: 'synthetic@example.test', new_user_email: 'employee@example.test'});
         helper._waitForModalClosed = helper;
@@ -70,7 +76,8 @@ describe('leave creation scenario error ownership', function() {
   for (const name of ['basic_leave_request', 'create_leave_with_single_user', 'leave_in_next_year', 'try_to_overbook_allowance',
     'cancel_basic', 'leave_request_revoke', 'leave_request_revoke_by_admin',
     'ovelapping_bookings', 'ovelapping_bookings_halfs', 'rendering_of_halves', 'user_auto_approve',
-    '../leave_type/leave_type_auto_approve', '../leave_type/leave_type_limit_in_action', '../leave_type/leave_type_limit_next_year']) {
+    '../leave_type/leave_type_auto_approve', '../leave_type/leave_type_limit_in_action', '../leave_type/leave_type_limit_next_year',
+    '../leave_type/colouring_on_calendar', '../leave_type/remove_used_leave_type', '../try_to_revoke_admin_rights_from_last_admin']) {
     for (const missingDriver of [false, true]) {
       it(`${name}: ${missingDriver ? 'cleanup before browser acquisition' : 'every step and teardown forwards the original failure once'}`, function() {
         const filename = require('node:path').resolve('t/integration/leave_request', name + '.js');

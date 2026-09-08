@@ -49,6 +49,7 @@ describe('Try to remove used leave type', function(){
   it("Ensure user starts at the very beginning of current year", done =>{
     userStartsAtTheBeginingOfYear({driver, email, year:2015})
       .then(() => done())
+      .catch(done);
   });
 
   it("Open page with leave types", function(done){
@@ -176,8 +177,20 @@ describe('Try to remove used leave type', function(){
     .catch(done);
   });
 
-  after(function(done){
-    driver.quit().then(function(){ done(); });
+  it('Keeps the used type and its pending leave after rejected removal', async function(){
+    await open_page_func({driver, url: application_host + 'settings/general/'});
+    await check_elements_func({driver, elements_to_check: [{
+      selector: leave_type_edit_form_id + ' input[data-tom-leave-type-order="name_0"]',
+      value: 'AAAAA',
+    }]});
+    await open_page_func({driver, url: application_host + 'calendar/?show_full_year=1&year=2015'});
+    await check_booking_func({driver, type: 'pended',
+      full_days: [dayjs.utc('2015-06-16')], halfs_1st_days: [dayjs.utc('2015-06-15')],
+    });
+  });
+
+  after(async function(){
+    if (driver) { await driver.quit(); }
   });
 
 });

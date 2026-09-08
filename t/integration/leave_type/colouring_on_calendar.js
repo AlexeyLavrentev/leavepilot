@@ -87,7 +87,8 @@ describe('Coloring of half days', function(){
     // Wait for any modal left open by a previous test to close.
     // If it does not close on its own, dismiss it with Escape.
     return wait_modal_closed(driver, 2000)
-      .catch(function(){
+      .catch(function(error){
+        if (error.name !== 'TimeoutError') { throw error; }
         return driver.actions()
           .sendKeys(require('selenium-webdriver').Key.ESCAPE).perform()
           .then(function(){ return wait_modal_closed(driver, 2000); });
@@ -352,7 +353,7 @@ describe('Coloring of half days', function(){
     .then(() => driver.findElement(By.css('table.month_February td.calendar_cell.day_1.half_2nd')))
     .then(el => el.getAttribute('class'))
     .then(cls => {
-      expect(cls).to.match(/leave_type_color_3/);
+      expect(cls).to.match(/\bleave_type_color_3\b/);
       return Promise.resolve();
     })
 
@@ -360,14 +361,14 @@ describe('Coloring of half days', function(){
     .then(() => driver.findElement(By.css('table.month_February td.calendar_cell.day_2.half_1st')))
     .then(el => el.getAttribute('class'))
     .then(cls => {
-      expect(cls).to.match(/leave_type_color_3/);
+      expect(cls).to.match(/\bleave_type_color_3\b/);
       return Promise.resolve();
     })
 
     .then(() => driver.findElement(By.css('table.month_February td.calendar_cell.day_2.half_2nd')))
     .then(el => el.getAttribute('class'))
     .then(cls => {
-      expect(cls).to.match(/leave_type_color_1/);
+      expect(cls).to.match(/\bleave_type_color_1\b/);
       return Promise.resolve();
     })
 
@@ -375,7 +376,7 @@ describe('Coloring of half days', function(){
     .then(() => driver.findElement(By.css('table.month_February td.calendar_cell.day_8.half_1st')))
     .then(el => el.getAttribute('class'))
     .then(cls => {
-      expect(cls).to.match(/leave_type_color_1/);
+      expect(cls).to.match(/\bleave_type_color_1\b/);
       return Promise.resolve();
     })
 
@@ -397,7 +398,7 @@ describe('Coloring of half days', function(){
     .then(() => driver.findElement(By.css('table.month_February td.calendar_cell.day_13.half_2nd')))
     .then(el => el.getAttribute('class'))
     .then(cls => {
-      expect(cls).to.match(/leave_type_color_3/);
+      expect(cls).to.match(/\bleave_type_color_3\b/);
       return Promise.resolve();
     })
 
@@ -405,14 +406,14 @@ describe('Coloring of half days', function(){
     .then(() => driver.findElement(By.css('table.month_February td.calendar_cell.day_14.half_1st')))
     .then(el => el.getAttribute('class'))
     .then(cls => {
-      expect(cls).to.match(/leave_type_color_3/);
+      expect(cls).to.match(/\bleave_type_color_3\b/);
       return Promise.resolve();
     })
 
     .then(() => driver.findElement(By.css('table.month_February td.calendar_cell.day_14.half_2nd')))
     .then(el => el.getAttribute('class'))
     .then(cls => {
-      expect(cls).to.match(/leave_type_color_1/);
+      expect(cls).to.match(/\bleave_type_color_1\b/);
       return Promise.resolve();
     })
 
@@ -420,7 +421,7 @@ describe('Coloring of half days', function(){
     .then(() => driver.findElement(By.css('table.month_February td.calendar_cell.day_15.half_1st')))
     .then(el => el.getAttribute('class'))
     .then(cls => {
-      expect(cls).to.match(/leave_type_color_1/);
+      expect(cls).to.match(/\bleave_type_color_1\b/);
       return Promise.resolve();
     })
 
@@ -452,7 +453,7 @@ describe('Coloring of half days', function(){
     .then(() => driver.findElement(By.css('table.team-view-table tr[data-vpp-user-list-row="'+user_id+'"] td.calendar_cell.day_1.half_2nd')))
     .then(el => el.getAttribute('class'))
     .then(cls => {
-      expect(cls).to.match(/leave_type_color_3/);
+      expect(cls).to.match(/\bleave_type_color_3\b/);
       return Promise.resolve();
     })
 
@@ -460,14 +461,14 @@ describe('Coloring of half days', function(){
     .then(() => driver.findElement(By.css('table.team-view-table tr[data-vpp-user-list-row="'+user_id+'"] td.calendar_cell.day_2.half_1st')))
     .then(el => el.getAttribute('class'))
     .then(cls => {
-      expect(cls).to.match(/leave_type_color_3/);
+      expect(cls).to.match(/\bleave_type_color_3\b/);
       return Promise.resolve();
     })
 
     .then(() => driver.findElement(By.css('table.team-view-table tr[data-vpp-user-list-row="'+user_id+'"] td.calendar_cell.day_2.half_2nd')))
     .then(el => el.getAttribute('class'))
     .then(cls => {
-      expect(cls).to.match(/leave_type_color_1/);
+      expect(cls).to.match(/\bleave_type_color_1\b/);
       return Promise.resolve();
     })
 
@@ -475,7 +476,7 @@ describe('Coloring of half days', function(){
     .then(() => driver.findElement(By.css('table.team-view-table tr[data-vpp-user-list-row="'+user_id+'"] td.calendar_cell.day_8.half_1st')))
     .then(el => el.getAttribute('class'))
     .then(cls => {
-      expect(cls).to.match(/leave_type_color_1/);
+      expect(cls).to.match(/\bleave_type_color_1\b/);
       return Promise.resolve();
     })
 
@@ -497,7 +498,7 @@ describe('Coloring of half days', function(){
     .then(() => driver.findElement(By.css('table.team-view-table tr[data-vpp-user-list-row="'+user_id+'"] td.calendar_cell.day_13.half_2nd')))
     .then(el => el.getAttribute('class'))
     .then(cls => {
-      expect(cls).to.match(/leave_type_color_3/);
+      expect(cls).to.match(/\bleave_type_color_3\b/);
       return Promise.resolve();
     })
 
@@ -505,14 +506,14 @@ describe('Coloring of half days', function(){
     .then(() => driver.findElement(By.css('table.team-view-table tr[data-vpp-user-list-row="'+user_id+'"] td.calendar_cell.day_14.half_1st')))
     .then(el => el.getAttribute('class'))
     .then(cls => {
-      expect(cls).to.match(/leave_type_color_3/);
+      expect(cls).to.match(/\bleave_type_color_3\b/);
       return Promise.resolve();
     })
 
     .then(() => driver.findElement(By.css('table.team-view-table tr[data-vpp-user-list-row="'+user_id+'"] td.calendar_cell.day_14.half_2nd')))
     .then(el => el.getAttribute('class'))
     .then(cls => {
-      expect(cls).to.match(/leave_type_color_1/);
+      expect(cls).to.match(/\bleave_type_color_1\b/);
       return Promise.resolve();
     })
 
@@ -520,7 +521,7 @@ describe('Coloring of half days', function(){
     .then(() => driver.findElement(By.css('table.team-view-table tr[data-vpp-user-list-row="'+user_id+'"] td.calendar_cell.day_15.half_1st')))
     .then(el => el.getAttribute('class'))
     .then(cls => {
-      expect(cls).to.match(/leave_type_color_1/);
+      expect(cls).to.match(/\bleave_type_color_1\b/);
       return Promise.resolve();
     })
 
@@ -571,8 +572,8 @@ describe('Coloring of half days', function(){
 
   });
 
-  after(function(done){
-    driver.quit().then(() => done() );
+  after(async function(){
+    if (driver) { await driver.quit(); }
   });
 
 });

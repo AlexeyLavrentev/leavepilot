@@ -31,6 +31,14 @@ describe('System prevent revoking admin rights from very last admin within compa
 
   var email_admin, secondary_user, driver;
 
+  async function checkPersistedAdminFlag(email, value) {
+    const {user} = await user_info_func({driver, email});
+    await open_page_func({driver, url: application_host + 'users/edit/' + user.id + '/'});
+    await check_elements_func({driver, elements_to_check: [{
+      selector: 'input[name="admin"]', tick: true, value,
+    }]});
+  }
+
   it('Create new company', function(done){
     register_new_user_func({
       application_host : application_host,
@@ -96,6 +104,10 @@ describe('System prevent revoking admin rights from very last admin within compa
     })
     .then(function(){ done() })
     .catch(done);
+  });
+
+  it('Keeps the last administrator after the rejected change', async function(){
+    await checkPersistedAdminFlag(email_admin, 'on');
   });
 
   it('Open detail page for second employee', function(done){
@@ -169,7 +181,12 @@ describe('System prevent revoking admin rights from very last admin within compa
     .catch(done);
   });
 
-  after(function(done){
-    driver.quit().then(function(){ done(); });
+  it('Persists the permitted revocation and retains the original administrator', async function(){
+    await checkPersistedAdminFlag(secondary_user, 'off');
+    await checkPersistedAdminFlag(email_admin, 'on');
+  });
+
+  after(async function(){
+    if (driver) { await driver.quit(); }
   });
 });
