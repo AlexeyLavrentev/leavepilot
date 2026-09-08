@@ -104,7 +104,8 @@ describe('Auto approval leave type', function(){
       url    : application_host + 'settings/general/',
       driver,
     })
-    .then(() => done());
+    .then(() => done())
+    .catch(done);
   });
 
   it("Add auto approve leave type", function(done){
@@ -243,6 +244,7 @@ describe('Auto approval leave type', function(){
         expect( elements.length ).to.be.eq(0);
         done();
       })
+      .catch(done);
   });
 
   it("Open email audit page", function( done ){
@@ -269,6 +271,7 @@ describe('Auto approval leave type', function(){
         expect(subjects).to.contain('New leave was added');
         done();
       })
+      .catch(done);
   });
 
   it("Logout from admin user", function(done){
@@ -375,6 +378,7 @@ describe('Auto approval leave type', function(){
         expect( elements.length ).to.be.eq(0);
         done();
       })
+      .catch(done);
   });
 
   it("Open email audit page", function( done ){
@@ -401,10 +405,11 @@ describe('Auto approval leave type', function(){
         expect(subjects).to.contain('Leave was revoked');
         done();
       })
+      .catch(done);
   });
 
-  after(function(done){
-    driver.quit().then(function(){ done(); });
+  after(async function(){
+    if (driver) { await driver.quit(); }
   });
 
 });

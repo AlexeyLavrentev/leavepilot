@@ -18,6 +18,9 @@ const
   application_host       = config.get_application_host();
 
 const next_year = dayjs.utc().add(1, 'y').format('YYYY');
+// Keep both bookings on Mondays after the default early-May bank holiday.
+const first_leave_day = dayjs.utc(next_year + '-05-14').day(1);
+const second_leave_day = first_leave_day.add(7, 'days');
 
 /*
  *  Scenario to go in this test:
@@ -54,15 +57,6 @@ describe('Leave type limits for next year: ' + next_year, function(){
       });
   }
 
-  function check_no_booking(day) {
-    return Promise.all(['half_1st', 'half_2nd'].map(function(half){
-      const selector = 'table.month_' + day.format('MMMM') + ' td.day_' + day.format('D') + '.' + half;
-      return driver.findElement(By.css(selector))
-        .then(function(el){ return el.getAttribute('class'); })
-        .then(function(css){ expect(css).not.to.match(/\bleave_cell(?:_pended)?\b/); });
-    }));
-  }
-
   it('Create new company', function(done){
     register_new_user_func({application_host})
     .then(data =>{
@@ -77,7 +71,8 @@ describe('Leave type limits for next year: ' + next_year, function(){
       url    : application_host + 'settings/general/',
       driver,
     })
-    .then(() => done());
+    .then(() => done())
+    .catch(done);
   });
 
   it("Check that it is possible to update Limits", function(done){
@@ -91,7 +86,8 @@ describe('Leave type limits for next year: ' + next_year, function(){
       should_be_successful : true,
       message : /Changes to leave types were saved/,
     })
-    .then(() => done());
+    .then(() => done())
+    .catch(done);
   });
 
   it("Create new non-admin user", function(done){
@@ -105,7 +101,8 @@ describe('Leave type limits for next year: ' + next_year, function(){
 
   it("Logout from admin account", function(done){
     logout_user_func({application_host, driver})
-    .then(() => done());
+    .then(() => done())
+    .catch(done);
   });
 
   it("Login as non-admin user", function(done){
@@ -135,10 +132,10 @@ describe('Leave type limits for next year: ' + next_year, function(){
           driver      : driver,
           form_params : [{
             selector : 'input#from',
-            value : next_year + '-05-10',
+            value : first_leave_day.format('YYYY-MM-DD'),
           },{
             selector : 'input#to',
-            value : next_year + '-05-10',
+            value : first_leave_day.format('YYYY-MM-DD'),
           }],
           message : /New leave request was added/,
           submit_button_selector : '#book_leave_modal button[type="submit"]',
@@ -148,7 +145,7 @@ describe('Leave type limits for next year: ' + next_year, function(){
         .then(function(){
           return check_booking_func({
             driver    : driver,
-            full_days : [dayjs.utc(next_year + '-05-10')],
+            full_days : [first_leave_day],
             type      : 'pended',
           });
         });
@@ -248,10 +245,10 @@ describe('Leave type limits for next year: ' + next_year, function(){
           driver      : driver,
           form_params : [{
             selector : 'input#from',
-            value : next_year + '-05-17',
+            value : second_leave_day.format('YYYY-MM-DD'),
           },{
             selector : 'input#to',
-            value : next_year + '-05-17',
+            value : second_leave_day.format('YYYY-MM-DD'),
           }],
           message : /Failed to create a leave request/,
           submit_button_selector : '#book_leave_modal button[type="submit"]',
@@ -260,18 +257,20 @@ describe('Leave type limits for next year: ' + next_year, function(){
         .then(function(){
           return check_booking_func({
             driver,
-            full_days : [dayjs.utc(next_year + '-05-10')],
+            full_days : [first_leave_day],
             type      : 'approved',
           });
         })
-        .then(function(){ return check_no_booking(dayjs.utc(next_year + '-05-17')); })
+        .then(function(){
+          return check_booking_func({driver, full_days: [second_leave_day], type: 'absent'});
+        });
       })
       .then(function(){ done(); })
         .catch(done);
   });
 
-  after(function(done){
-    driver.quit().then(function(){ done(); });
+  after(async function(){
+    if (driver) { await driver.quit(); }
   });
 
 });

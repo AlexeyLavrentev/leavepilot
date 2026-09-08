@@ -27,16 +27,22 @@ describe('leave type limit in action submit contract', function(){
     ));
     expectModalSubmitContract(section(
       'it("Add a request that fits under the limit"',
-      'after(function(done)'
+      'after(async function('
     ));
   });
 
   it('returns the accepted booking calendar assertion before completion', function(){
     var accepted = section(
       'it("Add a request that fits under the limit"',
-      'after(function(done)'
+      'after(async function('
     );
 
-    expect(accepted).to.match(/\.then\(function\(\)\{\s*return check_booking_func\(\{[\s\S]*?full_days\s*:\s*\[dayjs\.utc\('2015-06-16'\),dayjs\.utc\('2015-06-16'\),dayjs\.utc\('2015-06-17'\)\][\s\S]*?type\s*:\s*'pended'[\s\S]*?\}\)[\s\S]*?\.then\(function\(\)\{ done\(\);? \}\)\s*\.catch\(done\);/);
+    expect(accepted).to.match(/\.then\(function\(\)\{\s*return check_booking_func\(\{[\s\S]*?full_days\s*:\s*\[dayjs\.utc\('2015-06-15'\),dayjs\.utc\('2015-06-16'\),dayjs\.utc\('2015-06-17'\)\][\s\S]*?type\s*:\s*'pended'[\s\S]*?\}\)[\s\S]*?\.then\(function\(\)\{ done\(\);? \}\)\s*\.catch\(done\);/);
+  });
+
+  it('awaits absence of all four rejected days before the next booking', function(){
+    const rejected = section('it("Try to request new leave that exceed the limit"',
+      'it("Add a request that fits under the limit"');
+    expect(rejected).to.match(/return check_booking_func\(\{[\s\S]*?full_days\s*:\s*\[15, 16, 17, 18\][\s\S]*?type\s*:\s*'absent'/);
   });
 });

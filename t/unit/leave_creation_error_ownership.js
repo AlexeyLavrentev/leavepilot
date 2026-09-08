@@ -69,7 +69,8 @@ describe('leave creation scenario error ownership', function() {
   this.timeout(10000);
   for (const name of ['basic_leave_request', 'create_leave_with_single_user', 'leave_in_next_year', 'try_to_overbook_allowance',
     'cancel_basic', 'leave_request_revoke', 'leave_request_revoke_by_admin',
-    'ovelapping_bookings', 'ovelapping_bookings_halfs', 'rendering_of_halves']) {
+    'ovelapping_bookings', 'ovelapping_bookings_halfs', 'rendering_of_halves', 'user_auto_approve',
+    '../leave_type/leave_type_auto_approve', '../leave_type/leave_type_limit_in_action', '../leave_type/leave_type_limit_next_year']) {
     for (const missingDriver of [false, true]) {
       it(`${name}: ${missingDriver ? 'cleanup before browser acquisition' : 'every step and teardown forwards the original failure once'}`, function() {
         const filename = require('node:path').resolve('t/integration/leave_request', name + '.js');

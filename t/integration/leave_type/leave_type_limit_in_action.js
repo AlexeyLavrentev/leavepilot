@@ -139,6 +139,13 @@ describe('Leave type limits in actoion', function(){
           submit_button_selector : '#book_leave_modal button[type="submit"]',
           modal_selector : '#book_leave_modal',
         })
+        .then(function(){
+          return check_booking_func({
+            driver,
+            full_days : [15, 16, 17, 18].map(day => dayjs.utc('2015-06-' + day)),
+            type : 'absent',
+          });
+        })
         .then(function(){ done() })
         .catch(done);
       })
@@ -168,7 +175,7 @@ describe('Leave type limits in actoion', function(){
         .then(function(){
           return check_booking_func({
             driver    : driver,
-            full_days : [dayjs.utc('2015-06-16'),dayjs.utc('2015-06-16'),dayjs.utc('2015-06-17')],
+            full_days : [dayjs.utc('2015-06-15'),dayjs.utc('2015-06-16'),dayjs.utc('2015-06-17')],
             type      : 'pended',
           })
           .then(function(){ done() })
@@ -178,8 +185,8 @@ describe('Leave type limits in actoion', function(){
         .catch(done);
   });
 
-  after(function(done){
-    driver.quit().then(function(){ done(); });
+  after(async function(){
+    if (driver) { await driver.quit(); }
   });
 
 });
