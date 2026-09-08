@@ -63,45 +63,64 @@ const parentScript = traps => `
   setInterval(() => {}, 1000000);
 `;
 
+const ownedBatches = new Set();
+
 const startWithGrandchild = (spawner, traps = false) => new Promise((resolve, reject) => {
   const child = spawner(node, ['-e', parentScript(traps)], {
+    // Even the plain child.kill() demonstration needs an owned group so a
+    // failed PID handshake cannot leave an undiscoverable grandchild behind.
+    detached: GROUPS_SUPPORTED,
     stdio: ['ignore', 'pipe', 'ignore'],
   });
+  ownedBatches.add(child);
 
   let buffered = '';
+  let settled = false;
+  const finish = (error, grandchild) => {
+    if (settled) { return; }
+    settled = true;
+    clearTimeout(timer);
+    if (error) { reject(error); } else { resolve({child, grandchild}); }
+  };
 
-  const timer = setTimeout(() => reject(new Error('no grandchild pid was reported')), 10000);
+  const timer = setTimeout(() => finish(new Error('no grandchild pid was reported')), 10000);
 
   child.stdout.on('data', chunk => {
+    if (settled) { return; }
     buffered += chunk.toString();
 
     if (buffered.includes('\n')) {
-      clearTimeout(timer);
-      resolve({child, grandchild: Number(buffered.trim())});
+      const grandchild = Number(buffered.split('\n')[0].trim());
+      if (!Number.isSafeInteger(grandchild) || grandchild <= 0) {
+        finish(new Error('invalid grandchild pid'));
+      } else {
+        finish(null, grandchild);
+      }
     }
   });
 
-  child.on('error', reject);
+  child.once('error', error => finish(error));
+  child.once('exit', () => finish(new Error('parent exited before reporting grandchild pid')));
 });
 
 describe('Killing a test batch', function() {
 
   this.timeout(30000);
 
-  const strays = [];
-
-  after(function() {
+  afterEach(async function() {
     // Nothing this file starts is allowed to outlive it, least of all a file
     // about processes outliving things.
-    strays.forEach(pid => {
+    const errors = [];
+    for (const child of ownedBatches) {
       try {
-        process.kill(pid, 'SIGKILL');
-      } catch (error) {
-        if (error.code !== 'ESRCH') {
-          throw error;
-        }
-      }
-    });
+        killGroup(child, 'SIGKILL');
+      } catch (error) { errors.push(error); }
+    }
+    const gone = await waitFor(() => [...ownedBatches].every(child => !child.pid || !isAlive(-child.pid)), 5000);
+    if (!gone) { errors.push(new Error('test fixture process group survived cleanup')); }
+    ownedBatches.clear();
+    if (errors.length === 1) { throw errors[0]; }
+    if (errors.length > 1) { throw new AggregateError(errors, 'Process fixture cleanup failed'); }
   });
 
   /*
@@ -117,7 +136,6 @@ describe('Killing a test batch', function() {
 
     const {child, grandchild} = await startWithGrandchild(spawn);
 
-    strays.push(grandchild);
     child.kill('SIGKILL');
 
     await waitFor(() => !isAlive(child.pid), 5000);
@@ -135,8 +153,6 @@ describe('Killing a test batch', function() {
     }
 
     const {child, grandchild} = await startWithGrandchild(spawnInGroup);
-
-    strays.push(grandchild);
 
     await terminateGroup(child, {graceMs: 1000});
 
@@ -157,8 +173,6 @@ describe('Killing a test batch', function() {
     }
 
     const {child, grandchild} = await startWithGrandchild(spawnInGroup, true);
-
-    strays.push(grandchild);
 
     const startedAt = Date.now();
 
@@ -183,7 +197,6 @@ describe('Killing a test batch', function() {
     // returns 0, and its browser is still there.
     const {child, grandchild} = await startWithGrandchild(spawnInGroup);
 
-    strays.push(grandchild);
     child.kill('SIGKILL');
     await waitFor(() => !isAlive(child.pid), 5000);
 

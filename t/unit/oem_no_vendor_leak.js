@@ -62,7 +62,9 @@ const brandLiteral = /LeavePilot|Leave\s+Pilot|TimeOff|timeoff\.management/i;
 // it before the vendor-ABSENT assertion keeps the guard from false-positiving on
 // the explicitly out-of-scope namespace. The mask is NARROW (one identifier), so
 // it cannot hide a real brand-text leak.
-const maskJsNamespace = html => String(html).replace(/timeoff-config/g, 'ns-config');
+const maskJsNamespace = html => String(html).replace(
+  /(<script\b[^>]*\s)id=(["'])timeoff-config\2/g, '$1id=$2ns-config$2'
+);
 
 const SENTINEL_BRAND_NAME = 'Sentinel OEM';
 
@@ -249,19 +251,24 @@ describe('OEM leak surfaces: no vendor name under a custom brand', function() {
         process.env[key] = savedEnv[key];
       }
     });
-    branding.__resetOemCacheForTests();
-
+    const cleanups = [() => branding.__resetOemCacheForTests()];
     if (models && employee) {
-      await models.UserFeed.destroy({where: {userId: employee.id}});
-      await models.User.destroy({where: {id: employee.id}});
+      cleanups.push(() => models.UserFeed.destroy({where: {userId: employee.id}}));
+      cleanups.push(() => models.User.destroy({where: {id: employee.id}}));
     }
     if (models && department) {
-      await models.Department.destroy({where: {id: department.id}});
+      cleanups.push(() => models.Department.destroy({where: {id: department.id}}));
     }
     if (models && company) {
-      await models.Company.destroy({where: {id: company.id}});
+      cleanups.push(() => models.Company.destroy({where: {id: company.id}}));
     }
-    await httpAgent.release();
+    cleanups.push(() => httpAgent.release());
+    const errors = [];
+    for (const cleanup of cleanups) {
+      try { await cleanup(); } catch (error) { errors.push(error); }
+    }
+    if (errors.length === 1) { throw errors[0]; }
+    if (errors.length > 1) { throw new AggregateError(errors, 'OEM fixture cleanup failed'); }
   });
 
   // (1) SURFACES-EXIST — the watchdog cannot pass on a deleted/empty manifest
@@ -337,6 +344,13 @@ describe('OEM leak surfaces: no vendor name under a custom brand', function() {
   // IS caught (locales_no_brand_literal.js L109-113 shape, extended with the
   // domain). If a future edit narrows the regex, one of these flips to false.
   describe('positive teeth (the regex is non-vacuous)', function() {
+    it('exempts only the configuration script ID, not rendered text or other attributes', function() {
+      expect(brandLiteral.test(maskJsNamespace('<script id="timeoff-config"></script>'))).to.equal(false);
+      for (const output of ['<p>timeoff-config</p>', '<p title="timeoff-config">ok</p>', '<p data-id="timeoff-config">ok</p>']) {
+        expect(brandLiteral.test(maskJsNamespace(output)), output).to.equal(true);
+      }
+    });
+
     manifest.scanStrings.forEach(function(s) {
       it('catches the vendor string "' + s + '"', function() {
         expect(brandLiteral.test(s), 'brandLiteral must catch "' + s + '"').to.equal(true);

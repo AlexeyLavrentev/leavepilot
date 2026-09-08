@@ -25,6 +25,7 @@
 
 const path = require('path');
 const fs = require('fs');
+const os = require('os');
 const assert = require('assert');
 const webdriver = require('selenium-webdriver');
 const By = webdriver.By;
@@ -38,13 +39,7 @@ const add_new_user_func = require('../../lib/add_new_user');
 const open_page_func = require('../../lib/open_page');
 const sizeViewport = require('../../lib/set_viewport');
 
-const SCREEN_DIR = '/tmp/screens';
-
-function ensureScreenDir() {
-  if (!fs.existsSync(SCREEN_DIR)) {
-    fs.mkdirSync(SCREEN_DIR, { recursive: true });
-  }
-}
+let screenDirectory;
 
 async function setViewport(driver, w, h) {
   await sizeViewport(driver, { width: w, height: h });
@@ -52,9 +47,8 @@ async function setViewport(driver, w, h) {
 }
 
 async function capture(driver, name) {
-  ensureScreenDir();
   const image = await driver.takeScreenshot();
-  const file = path.join(SCREEN_DIR, name + '.png');
+  const file = path.join(screenDirectory, name + '.png');
   fs.writeFileSync(file, image, 'base64');
   assert(fs.statSync(file).size > 0, 'screenshot must be non-empty: ' + file);
   return file;
@@ -290,8 +284,13 @@ describe('Requests workspace interaction, geometry & visual matrix (Stage 8D)', 
   var leaveType;
   var leaveStart;
 
-  before(function (done) {
-    register_new_user_func({ application_host: application_host }).then(async function (data) {
+  before(function () {
+    const artifactRoot = process.env.TEST_BATCH_DIAGNOSTIC_PATH
+      ? path.dirname(process.env.TEST_BATCH_DIAGNOSTIC_PATH) : os.tmpdir();
+    fs.mkdirSync(artifactRoot, {recursive: true});
+    screenDirectory = fs.mkdtempSync(path.join(artifactRoot, 'requests-visual-'));
+    process.stdout.write('\n[requests-workspace] screenshots: ' + screenDirectory + '\n');
+    return register_new_user_func({ application_host: application_host }).then(async function (data) {
       driver = data.driver;
       await add_new_user_func({
         application_host: application_host,
@@ -340,12 +339,11 @@ describe('Requests workspace interaction, geometry & visual matrix (Stage 8D)', 
         date_start: leaveStart.clone().add(70, 'days').format('YYYY-MM-DD'),
         date_end: leaveStart.clone().add(71, 'days').format('YYYY-MM-DD')
       });
-      done();
-    }, done);
+    });
   });
 
-  after(function () {
-    return driver.quit();
+  after(async function () {
+    if (driver) { await driver.quit(); }
   });
 
   it('renders the scoped two-area workspace', async function () {

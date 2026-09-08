@@ -1,7 +1,7 @@
 'use strict';
 
-const childProcess = require('child_process');
 const fs = require('fs');
+const os = require('os');
 const path = require('path');
 const dayjs = require('../../../lib/util/date');
 const By = require('selenium-webdriver').By;
@@ -20,23 +20,13 @@ describe('Team View sticky header', function() {
   this.timeout(config.get_execution_timeout() * 3);
 
   const applicationHost = config.get_application_host();
-  const artifactDirectory = '/tmp/timeoff-stage6c-sticky-header/visual-matrix';
+  let artifactDirectory;
   const firstEmployeeEmail = `sticky-first-${Date.now()}@test.com`;
   const secondEmployeeEmail = `sticky-second-${Date.now()}@test.com`;
   let driver;
-  let browserProcessCountBefore;
   let browserName;
   let browserVersion;
   let visualManifest = [];
-
-  function browserProcessCount() {
-    const result = childProcess.spawnSync('pgrep', [
-      '-f',
-      'chrome-headless-shell|chromedriver',
-    ], {encoding: 'utf8'});
-    if (result.status !== 0 || !(result.stdout || '').trim()) { return 0; }
-    return result.stdout.trim().split(/\s+/).length;
-  }
 
   async function applyTheme(theme) {
     await driver.executeScript(function(value) {
@@ -283,8 +273,10 @@ describe('Team View sticky header', function() {
   }
 
   before(async function() {
-    fs.mkdirSync(artifactDirectory, {recursive: true});
-    browserProcessCountBefore = browserProcessCount();
+    const artifactRoot = process.env.TEST_BATCH_DIAGNOSTIC_PATH
+      ? path.dirname(process.env.TEST_BATCH_DIAGNOSTIC_PATH) : os.tmpdir();
+    fs.mkdirSync(artifactRoot, {recursive: true});
+    artifactDirectory = fs.mkdtempSync(path.join(artifactRoot, 'sticky-header-visual-'));
     const registration = await registerNewUser({application_host: applicationHost});
     driver = registration.driver;
     await addNewUser({driver, application_host: applicationHost, email: firstEmployeeEmail});
@@ -325,11 +317,8 @@ describe('Team View sticky header', function() {
       await driver.quit();
       driver = null;
     }
-    await new Promise(function(resolve) { setTimeout(resolve, 250); });
-    const browserProcessCountAfter = browserProcessCount();
-    expect(browserProcessCountAfter, 'suite must not leak Chrome/ChromeDriver processes')
-      .to.be.at.most(browserProcessCountBefore);
-    process.stdout.write(`\n[sticky-header] WebDriver closed; browser processes ${browserProcessCountBefore} -> ${browserProcessCountAfter}\n`);
+    // The runner verifies its owned process tree. A machine-wide Chrome count
+    // can both hide our leaks and blame browsers belonging to another task.
   });
 
   it('reports the real browser, desktop viewport, and two real department tables', async function() {

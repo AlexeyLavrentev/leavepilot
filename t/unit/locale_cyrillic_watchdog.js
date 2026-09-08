@@ -121,6 +121,7 @@ function cyrillicLiteralLines(source) {
 
     // state === 'string'
     if (c === '\\') {
+      if (next === '\n') { line += 1; }
       i += 2;
       continue;
     }
@@ -146,8 +147,8 @@ function cyrillicLiteralLines(source) {
 */
 function cyrillicTemplateLines(source) {
   const stripped = source
-    .replace(/\{!--[\s\S]*?--\}\}/g, '')
-    .replace(/\{![\s\S]*?\}\}/g, '');
+    .replace(/\{\{!--[\s\S]*?--\}\}/g, comment => comment.replace(/[^\n]/g, ' '))
+    .replace(/\{\{![\s\S]*?\}\}/g, comment => comment.replace(/[^\n]/g, ' '));
   const hits = [];
   stripped.split('\n').forEach((line, index) => {
     if (cyrillic.test(line)) {
@@ -296,6 +297,12 @@ describe('QUAL-05 invariant: no Cyrillic string literals outside the reasoned al
       'a Cyrillic literal on a line that also carries a Russian comment must be flagged').to.deep.equal([1]);
     expect(cyrillicLiteralLines('var a = \'ok\';\nvar b = "тест";'),
       'the hit must be attributed to the literal\'s own line').to.deep.equal([2]);
+  });
+
+  it('keeps source line numbers across escaped newlines and template comments', function() {
+    expect(cyrillicLiteralLines("const a = 'ok\\\nтест';")).to.deep.equal([2]);
+    expect(cyrillicTemplateLines('{{!-- ignored\ncomment --}}\n<p>тест</p>')).to.deep.equal([3]);
+    expect(cyrillicTemplateLines('{{! ignored\ncomment }}\n<p>тест</p>')).to.deep.equal([3]);
   });
 
   // (4) negative teeth: the detector does NOT flag a synthetic Russian

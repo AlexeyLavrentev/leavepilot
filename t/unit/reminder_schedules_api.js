@@ -54,18 +54,25 @@ describe('Reminder schedules UI and API', function() {
   });
 
   after(async function() {
+    const cleanups = [];
     if (models) {
-      await models.ReminderSchedule.destroy({where: {company_id: company.id}});
-      await models.Leave.destroy({where: {id: leave.id}});
-      await models.User.destroy({where: {id: {[models.Sequelize.Op.in]: [admin.id, regular.id]}}});
-      await models.Department.destroy({where: {id: department.id}});
-      await models.LeaveType.destroy({where: {id: {[models.Sequelize.Op.in]: [leaveType.id, otherLeaveType.id]}}});
-      await models.Company.destroy({where: {id: {[models.Sequelize.Op.in]: [company.id, otherCompany.id]}}});
+      if (company) { cleanups.push(() => models.ReminderSchedule.destroy({where: {company_id: company.id}})); }
+      for (const [model, record] of [[models.Leave, leave], [models.User, admin], [models.User, regular],
+        [models.Department, department], [models.LeaveType, leaveType], [models.LeaveType, otherLeaveType],
+        [models.Company, company], [models.Company, otherCompany]]) {
+        if (record) { cleanups.push(() => model.destroy({where: {id: record.id}})); }
+      }
     }
     // This suite shares the in-process SQLite fixture with later route suites.
     // `close()` tears down its memoised Sequelize connection permanently;
     // release only this suite's listener and environment overrides.
-    await httpAgent.release();
+    cleanups.push(() => httpAgent.release());
+    const errors = [];
+    for (const cleanup of cleanups) {
+      try { await cleanup(); } catch (error) { errors.push(error); }
+    }
+    if (errors.length === 1) { throw errors[0]; }
+    if (errors.length > 1) { throw new AggregateError(errors, 'Reminder fixture cleanup failed'); }
   });
 
   it('renders a functional localized settings page for admins', async function() {
