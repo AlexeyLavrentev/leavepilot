@@ -2,13 +2,21 @@
 
 const { expect } = require('chai');
 const requestContext = require('../../lib/middleware/request_context');
-const originalLogLevel = process.env.LOG_LEVEL;
 
 const loadLogger = () => {
-  process.env.LOG_LEVEL = 'debug';
   const modulePath = require.resolve('../../lib/logger');
-  delete require.cache[modulePath];
-  return require('../../lib/logger');
+  const originalModule = require.cache[modulePath];
+  const originalLogLevel = process.env.LOG_LEVEL;
+  try {
+    process.env.LOG_LEVEL = 'debug';
+    delete require.cache[modulePath];
+    return require('../../lib/logger');
+  } finally {
+    if (originalModule) {require.cache[modulePath] = originalModule;}
+    else {delete require.cache[modulePath];}
+    if (originalLogLevel === undefined) {delete process.env.LOG_LEVEL;}
+    else {process.env.LOG_LEVEL = originalLogLevel;}
+  }
 };
 
 const captureConsole = callback => {
@@ -35,12 +43,20 @@ const captureConsole = callback => {
 };
 
 describe('public logger', () => {
-  after(() => {
-    if (originalLogLevel === undefined) {
-      delete process.env.LOG_LEVEL;
-    } else {
-      process.env.LOG_LEVEL = originalLogLevel;
-    }
+  it('does not replace the cached logger used by other suites', () => {
+    const sharedLogger = require('../../lib/logger');
+    loadLogger();
+    expect(require('../../lib/logger')).to.equal(sharedLogger);
+  });
+
+  it('redacts credential-bearing Error text before public console output', () => {
+    const logger = loadLogger();
+    const calls = captureConsole(() => {
+      logger.error('db_failed', {error: new Error('connect password=logger-text-sentinel')});
+    });
+    expect(calls).to.have.lengthOf(1);
+    expect(calls[0].line).not.to.contain('logger-text-sentinel');
+    expect(JSON.parse(calls[0].line).error.message).to.equal('connect password=[REDACTED]');
   });
 
   it('keeps level, stream, request correlation, and protected JSON fields', async () => {

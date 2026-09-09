@@ -78,6 +78,7 @@ const REQUIRED_PATHS = [
   'package.json',
   'public/css/style.css',
   'NOTICE',
+  'lib/util/diagnostic_text.js',
   'docs/install-local-npm.md',
 ];
 

@@ -147,4 +147,98 @@ describe('Structured logger (request_logger)', function() {
       }
     });
   });
+
+  describe('untrusted output boundary', function() {
+    it('redacts credentials in errors, free text, event and request correlation', function() {
+      const marker = 'structured-output-sentinel';
+      const parsed = JSON.parse(logger._format('error', `failure password=${marker}`, {
+        requestId: `token=${marker}`,
+        api_key: marker,
+        error: new Error(`connect mysql://user:${marker}@db.example/test`),
+        details: [`Authorization: Bearer ${marker}\ncontinued`, {note: `api_key=${marker}`}],
+      }));
+      expect(JSON.stringify(parsed)).not.to.contain(marker);
+      expect(parsed.msg).to.equal('failure password=[REDACTED]');
+      expect(parsed.error.message).to.equal('connect [REDACTED]');
+      expect(parsed.details[1].note).to.equal('api_key=[REDACTED]');
+    });
+
+    it('bounds long text and total JSON bytes including escaped control characters', function() {
+      const meta = Object.fromEntries(Array.from({length: 100}, (_, i) => [`field${i}`, '\u0000'.repeat(100000)]));
+      const line = logger._format('info', 'bounded_event', meta);
+      expect(Buffer.byteLength(line)).to.be.at.most(65536);
+      const parsed = JSON.parse(line);
+      expect(parsed.event).to.equal('bounded_event');
+      expect(parsed.field0.length).to.be.at.most(2060);
+      expect(line).to.include('[Truncated]');
+    });
+
+    it('bounds recursion without a stack overflow and marks omitted content', function() {
+      let nested = {value: 'leaf'};
+      for (let i = 0; i < 5000; i++) {nested = {nested};}
+      let line;
+      expect(() => {line = logger._format('info', 'deep', {nested});}).not.to.throw();
+      expect(Buffer.byteLength(line)).to.be.at.most(65536);
+      expect(line).to.include('[Truncated]');
+    });
+
+    it('does not inspect array entries past the collection limit', function() {
+      const items = Array(10000).fill('safe');
+      Object.defineProperty(items, 100, {get() {throw new Error('must not inspect');}});
+      const parsed = JSON.parse(logger._format('info', 'wide', {items}));
+      expect(parsed.items.length).to.be.at.most(33);
+      expect(parsed.items.at(-1)).to.equal('[Truncated]');
+    });
+
+    it('bounds object traversal and does not execute JSON serialization hooks', function() {
+      const details = Object.fromEntries(Array.from({length: 100}, (_, i) => [`key${i}`, i]));
+      Object.defineProperty(details, 'late', {enumerable: true, get() {throw new Error('must not inspect');}});
+      const hook = JSON.parse('{"__proto__":{"polluted":true},"ok":"safe"}');
+      hook.toJSON = () => {throw new Error('must not execute');};
+      const parsed = JSON.parse(logger._format('info', 'objects', {details, hook}));
+      expect(Object.keys(parsed.details).length).to.be.at.most(33);
+      expect(parsed.hook.ok).to.equal('safe');
+      expect({}.polluted).to.equal(undefined);
+    });
+
+    it('keeps ignored reserved getters and oversized field names out of traversal', function() {
+      const meta = {ok: 'safe', get event() {throw new Error('ignored reserved field');}};
+      Object.defineProperty(meta, 'x'.repeat(10000), {
+        enumerable: true, get() {throw new Error('oversized key');},
+      });
+      const parsed = JSON.parse(logger._format('info', 'owned_event', meta));
+      expect(parsed.event).to.equal('owned_event');
+      expect(parsed.ok).to.equal('safe');
+      expect(parsed['[Truncated]']).to.equal(true);
+    });
+
+    it('bounds aggregate node traversal across many small nested fields', function() {
+      let reads = 0;
+      const metadata = Array.from({length: 32}, () => Array.from({length: 32}, () => ({
+        get value() {reads++; return 1;},
+      })));
+      const line = logger._format('info', 'many_nodes', {metadata});
+      expect(reads).to.be.at.most(256);
+      expect(line).to.include('[Truncated]');
+      expect(Buffer.byteLength(line)).to.be.at.most(65536);
+    });
+
+    it('does not leak a thrown getter error through its fallback record', function() {
+      const originalWrite = process.stderr.write;
+      const originalLevel = logger._getLevel();
+      const lines = [];
+      try {
+        logger._setLevel(10);
+        process.stderr.write = line => {lines.push(line); return true;};
+        const meta = {get details() {throw new Error('password=fallback-sentinel');}};
+        logger.error('bad_metadata', meta);
+      } finally {
+        process.stderr.write = originalWrite;
+        logger._setLevel(originalLevel);
+      }
+      expect(lines).to.have.lengthOf(1);
+      expect(lines[0]).not.to.contain('fallback-sentinel');
+      expect(JSON.parse(lines[0]).event).to.equal('log_serialization_failed');
+    });
+  });
 });
