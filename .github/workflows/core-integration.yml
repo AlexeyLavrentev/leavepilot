@@ -121,5 +121,8 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: verify-browser-shard-${{ matrix.shard }}
-          path: .artifacts/verify/
+          # Keep all diagnostics; exclude only the browser installation cache.
+          path: |
+            .artifacts/verify/
+            !.artifacts/verify/browser/**
           if-no-files-found: error

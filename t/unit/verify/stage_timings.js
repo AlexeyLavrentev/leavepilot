@@ -2,7 +2,9 @@
 
 const fs = require('fs');
 const path = require('path');
+const {spawnSync} = require('child_process');
 const {expect} = require('chai');
+const {validatePublicResult, validateCiCalibration} = require('../../../lib/verify/ci_calibration');
 
 const FIXTURE_PATH = path.join(
   __dirname,
@@ -65,65 +67,8 @@ const expectLocalStage = (name, stage) => {
   expect(stage.deadlineMs).to.equal(Math.ceil(deadlineBasisMs * stage.margin.value));
 };
 
-const expectRunIdentity = (name, evidence) => {
-  expect(evidence.workflow).to.equal(name);
-  expect(evidence.repository).to.equal('AlexeyLavrentev/timeoff');
-  expect(evidence.branch).to.be.a('string').and.not.equal('');
-  expect(evidence.headSha).to.match(/^[0-9a-f]{40}$/);
-  expect(evidence.event).to.equal('push');
-  expect(evidence.status).to.equal('completed');
-  expect(evidence.conclusion).to.equal('success');
-  expect(evidence.runId).to.be.a('number').and.be.greaterThan(0);
-  expect(evidence.sourceUrl).to.match(
-    /^https:\/\/github\.com\/AlexeyLavrentev\/(?:timeoff|leavepilot)\/actions\/runs\//
-  );
-  expectIsoDate(evidence.capturedAt);
-  expect(evidence.jobs).to.be.an('array').and.not.be.empty;
-  evidence.jobs.forEach(job => {
-    expect(job.id).to.be.a('number').and.be.greaterThan(0);
-    expect(job.name).to.be.a('string').and.not.equal('');
-    expectIsoDate(job.startedAt);
-    expectIsoDate(job.completedAt);
-    expect(job.durationMs).to.equal(Date.parse(job.completedAt) - Date.parse(job.startedAt));
-    expect(job.durationMs).to.be.greaterThan(0);
-  });
-
-  const jobNames = evidence.jobs.map(job => job.name).sort();
-  if (name === 'core-ci.yml') {
-    expect(jobNames).to.deep.equal(['Dialect-sensitive specs on MySQL 8.0.45']);
-  } else {
-    expect(jobNames).to.deep.equal([
-      'Browser suite 1/4',
-      'Browser suite 2/4',
-      'Browser suite 3/4',
-      'Browser suite 4/4',
-    ]);
-  }
-};
-
 const expectPublicResult = (name, result) => {
-  expect(result.workflow).to.equal(name);
-  expect(result.endpoint).to.match(/^https:\/\/api\.github\.com\/repos\/AlexeyLavrentev\/timeoff\/actions\/workflows\//);
-
-  if (result.result === 'available') {
-    expectRunIdentity(name, result.evidence);
-    return;
-  }
-
-  expect(result.result).to.equal('missing_prerequisite');
-  expect(result.failureClass).to.be.oneOf([
-    'dns',
-    'http',
-    'parse',
-    'empty_run',
-    'ambiguous_run',
-    'missing_job',
-  ]);
-  expect(result.reason).to.be.a('string').and.not.equal('');
-  expect(result.fallbackCommand).to.equal(
-    'rtk gh auth login -h github.com -p https -s repo,workflow'
-  );
-  expect(result).not.to.have.any.keys('durationMs', 'deadlineMs', 'samples');
+  validatePublicResult(name, result, readFixture().external.selection);
 };
 
 describe('stage timing evidence', function() {
@@ -167,12 +112,50 @@ describe('stage timing evidence', function() {
   });
 
   describe('public Actions probe', function() {
-    it('stores deterministic evidence or a typed authenticated fallback', function() {
+    for (const [name, mutate] of [
+      ['unrelated branch', value => { value.evidence.branch = 'other'; }],
+      ['unrelated SHA', value => { value.evidence.headSha = '0'.repeat(40); }],
+      ['different run URL', value => { value.evidence.sourceUrl = value.evidence.sourceUrl.replace(/\d+$/, '1'); }],
+      ['different endpoint workflow', value => { value.endpoint = value.endpoint.replace('core-ci.yml', 'core-integration.yml'); }],
+      ['different query branch', value => { value.endpoint = value.endpoint.replace('branch=master', 'branch=other'); }],
+      ['coherent but unselected run', value => { value.evidence.runId = 1; value.evidence.sourceUrl = value.evidence.sourceUrl.replace(/\d+$/, '1'); }],
+    ]) {
+      it(`rejects ${name}`, function() {
+        const result = readFixture().external.publicProbe.coreCi;
+        mutate(result);
+        expect(() => expectPublicResult('core-ci.yml', result)).to.throw();
+      });
+    }
+
+    it('rejects duplicate job identities across browser shards', function() {
+      const result = readFixture().external.publicProbe.coreIntegration;
+      result.evidence.jobs[1].id = result.evidence.jobs[0].id;
+      expect(() => expectPublicResult('core-integration.yml', result)).to.throw();
+    });
+
+    it('stores complete evidence bound to the historical selection', function() {
       const publicProbe = readFixture().external.publicProbe;
 
       expectPublicResult('core-ci.yml', publicProbe.coreCi);
       expectPublicResult('core-integration.yml', publicProbe.coreIntegration);
     });
+
+    for (const [name, mutate] of [
+      ['missing contour', value => { delete value.publicProbe.coreCi; }],
+      ['ambiguous selection', value => { value.selection.runIds.coreCi = [1, 2]; }],
+      ['missing prerequisite', value => { value.publicProbe.coreCi.result = 'missing_prerequisite'; }],
+      ['failed run', value => { value.publicProbe.coreCi.evidence.conclusion = 'failure'; }],
+      ['missing browser shard', value => { value.publicProbe.coreIntegration.evidence.jobs.pop(); }],
+      ['duplicate job name', value => { value.publicProbe.coreIntegration.evidence.jobs[1].name = 'Browser suite 1/4'; }],
+      ['job reused across workflows', value => { value.publicProbe.coreIntegration.evidence.jobs[0].id = value.publicProbe.coreCi.evidence.jobs[0].id; }],
+      ['job completed after capture', value => { value.publicProbe.coreCi.evidence.capturedAt = '2026-01-01T00:00:00Z'; }],
+    ]) {
+      it(`rejects complete calibration with ${name}`, function() {
+        const external = readFixture().external;
+        mutate(external);
+        expect(() => validateCiCalibration(external)).to.throw();
+      });
+    }
 
     it('does not commit credentials, environment values, or raw logs', function() {
       const serialized = fs.readFileSync(FIXTURE_PATH, 'utf8');
@@ -183,6 +166,17 @@ describe('stage timing evidence', function() {
   });
 
   describe('complete CI calibration evidence', function() {
+    it('enforces the same identity boundary when loading the actual stage registry', function() {
+      const result = spawnSync(process.execPath, ['-e', `
+        const fixture = require('./t/fixtures/verify/stage_timings.json');
+        fixture.external.publicProbe.coreCi.evidence.branch = 'unrelated';
+        require('./lib/verify/stages');
+      `], {cwd: path.join(__dirname, '../../..'), encoding: 'utf8', timeout: 5000});
+      expect(result.error).to.equal(undefined);
+      expect(result.status).to.equal(1);
+      expect(result.stderr).to.include('Inconsistent CI calibration identity');
+    });
+
     it('rejects any remaining missing external contour', function() {
       const publicProbe = readFixture().external.publicProbe;
 

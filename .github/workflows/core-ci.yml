@@ -192,7 +192,10 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: verify-core-contracts
-          path: .artifacts/verify/
+          # Chrome installation files are cached separately, not run evidence.
+          path: |
+            .artifacts/verify/
+            !.artifacts/verify/browser/**
           if-no-files-found: error
 
   license-contract:
@@ -509,7 +512,10 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: verify-mysql-dialect
-          path: .artifacts/verify/
+          # Keep all diagnostics; exclude only the browser installation cache.
+          path: |
+            .artifacts/verify/
+            !.artifacts/verify/browser/**
           if-no-files-found: error
 
       - name: Stop disposable MySQL

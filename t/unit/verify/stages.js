@@ -57,7 +57,9 @@ describe('verify stage registry', () => {
     expect(mysql).to.include('node bin/verify.js --profile ci-mysql');
     expect(mysql).to.not.include('node bin/test.js ${specs}');
     expect(mysql).to.include('mysql:8.0.45');
-    expect(workflow).to.match(/if: always\(\)[\s\S]{0,300}path: \.artifacts\/verify\/[\s\S]{0,100}if-no-files-found: error/);
+    for (const job of [coreTests, mysql]) {
+      expect(job).to.match(/if: always\(\)[\s\S]{0,400}path: \|\n +\.artifacts\/verify\/\n +!\.artifacts\/verify\/browser\/\*\*\n +if-no-files-found: error/);
+    }
   });
 
   it('keeps browser shards registry-selected and uploads every run root', () => {
@@ -68,7 +70,7 @@ describe('verify stage registry', () => {
     // eslint-disable-next-line no-template-curly-in-string
     expect(workflow).to.include('node bin/verify.js --stage browser-${{ matrix.shard }}');
     expect(workflow).to.not.include('node bin/test.js --integration-only');
-    expect(workflow).to.match(/if: always\(\)[\s\S]{0,300}path: \.artifacts\/verify\/[\s\S]{0,100}if-no-files-found: error/);
+    expect(workflow).to.match(/if: always\(\)[\s\S]{0,400}path: \|\n +\.artifacts\/verify\/\n +!\.artifacts\/verify\/browser\/\*\*\n +if-no-files-found: error/);
     expect(workflow).to.not.include('continue-on-error');
   });
 });

@@ -119,6 +119,16 @@
     "iterationCount": 25
   },
   "external": {
+    "selection": {
+      "repository": "AlexeyLavrentev/timeoff",
+      "branch": "master",
+      "headSha": "119172bdde6d1e32575cbebc3d6df60b9e7ab488",
+      "event": "push",
+      "runIds": {
+        "coreCi": 32654353748,
+        "coreIntegration": 32654353801
+      }
+    },
     "publicProbe": {
       "coreCi": {
         "workflow": "core-ci.yml",
