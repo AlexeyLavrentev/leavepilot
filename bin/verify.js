@@ -9,6 +9,7 @@ const {spawnInGroup, terminateGroup, terminateTree} = require('./lib/spawn_group
 const registry = require('../lib/verify/stages');
 const {validateRunRoot} = require('../lib/verify/evidence');
 const redactDiagnosticText = require('../lib/verify/diagnostic_text');
+const createChildOutput = require('../lib/verify/child_output');
 
 const root = process.cwd();
 const artifactBase = path.resolve(root, registry.artifactRoot);
@@ -68,30 +69,43 @@ const runChild = (entry, runRoot, canonical, deadlineAt) => new Promise(resolve 
   const child = spawnInGroup(entry.command, entry.args, {cwd: root, env: Object.assign({}, process.env, entry.env || {}, {
     TEST_CANONICAL_VERIFY: canonical ? 'true' : 'false',
   }), stdio: ['ignore', 'pipe', 'pipe']});
-  let output = '';
+  const output = createChildOutput({
+    stdout: text => process.stdout.write(text),
+    stderr: text => process.stderr.write(text),
+  });
+  const closed = new Promise(resolveClosed => child.once('close', resolveClosed));
   let deadlineExceeded = false;
   let termination = null;
   stopActive = () => {
     if (!termination) { termination = terminateTree(child); }
     return termination;
   };
-  child.stdout.on('data', chunk => { output += chunk; process.stdout.write(chunk); });
-  child.stderr.on('data', chunk => { output += chunk; process.stderr.write(chunk); });
+  child.stdout.on('data', chunk => output.write('stdout', chunk));
+  child.stderr.on('data', chunk => output.write('stderr', chunk));
   const timer = setTimeout(() => {
     deadlineExceeded = true;
     stopActive();
+    // An escaped descendant holding a pipe cannot extend the stage deadline.
+    child.stdout.destroy();
+    child.stderr.destroy();
   }, Math.max(0, deadlineAt - Date.now()));
   child.once('error', error => {
     clearTimeout(timer);
     stopActive = null;
+    output.end();
     resolve({id: entry.id, status: 'failed', failureClass: 'runner error', reason: redact(error.message), durationMs: Date.now() - started, attempts: []});
   });
   child.once('exit', async code => {
+    let outcome = termination ? await termination : await sweepExited(child);
+    // exit can precede the final pipe data. Sweep first (descendants may own
+    // pipes), then wait for EOF under the same stage deadline before recording.
+    await closed;
+    if (termination) {outcome = await termination;}
     clearTimeout(timer);
-    const outcome = termination ? await termination : await sweepExited(child);
+    output.end();
     stopActive = null;
     const passed = !outcome && !deadlineExceeded && !interruptedSignal && code === 0;
-    const result = {id: entry.id, status: passed ? 'passed' : 'failed', failureClass: passed ? null : interruptedSignal ? 'runner error' : deadlineExceeded ? 'timeout' : outcome ? 'runner error' : 'assertion', reason: passed ? null : `${interruptedSignal ? `Interrupted by ${interruptedSignal}; ` : ''}${outcome && !termination ? 'Surviving process group after stage exit; ' : ''}exit ${code}: ${redact(output)}`, durationMs: Date.now() - started, attempts: [{number: 1, status: passed ? 'passed' : 'failed', evidence: path.join(runRoot, `${entry.id}.attempt-1.json`), reproduction: {command: entry.command, args: entry.args, nodeVersion: process.version, dbContour: entry.env && entry.env.TEST_DB_DIALECT || 'sqlite', featureFlags: 'not-recorded'}}]};
+    const result = {id: entry.id, status: passed ? 'passed' : 'failed', failureClass: passed ? null : interruptedSignal ? 'runner error' : deadlineExceeded ? 'timeout' : outcome ? 'runner error' : 'assertion', reason: passed ? null : `${interruptedSignal ? `Interrupted by ${interruptedSignal}; ` : ''}${outcome && !termination ? 'Surviving process group after stage exit; ' : ''}exit ${code}: ${redact(output.tail())}`, durationMs: Date.now() - started, attempts: [{number: 1, status: passed ? 'passed' : 'failed', evidence: path.join(runRoot, `${entry.id}.attempt-1.json`), reproduction: {command: entry.command, args: entry.args, nodeVersion: process.version, dbContour: entry.env && entry.env.TEST_DB_DIALECT || 'sqlite', featureFlags: 'not-recorded'}}]};
     if (outcome) { result.termination = outcome; }
     resolve(result);
   });

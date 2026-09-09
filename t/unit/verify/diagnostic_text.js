@@ -44,6 +44,7 @@ describe('persisted diagnostic secret safety', function() {
       encoding: 'utf8', timeout: 8000,
     });
     expect(result.status).to.equal(1);
+    expect(result.stdout + result.stderr).not.to.include('sentinel-json-secret');
     const line = result.stdout.split('\n').find(value => value.startsWith('VERIFY_SUMMARY '));
     const summary = JSON.parse(line.slice('VERIFY_SUMMARY '.length));
     const attemptPath = summary.stages[0].attempts[0].evidence;
@@ -53,6 +54,40 @@ describe('persisted diagnostic secret safety', function() {
       expect(contents).to.include('[REDACTED]');
       expect(contents).to.include('deliberate failure');
     }
+  });
+
+  for (const stream of ['stdout', 'stderr']) {
+    it(`redacts split and multiline credentials from actual child ${stream}`, function() {
+      const result = spawnSync(process.execPath, ['bin/verify.js', '--stage', 'test-stream-output'], {
+        encoding: 'utf8', timeout: 8000,
+        env: {...process.env, VERIFY_OUTPUT_STREAM: stream},
+      });
+      expect(result.status).to.equal(1);
+      expect(result[stream]).to.include('safe child context');
+      expect(result.stdout + result.stderr).not.to.include('stream-output-sentinel');
+      expect(result.stdout + result.stderr).not.to.include('unlabelled-continuation');
+      const line = result.stdout.split('\n').find(value => value.startsWith('VERIFY_SUMMARY '));
+      const summary = JSON.parse(line.slice(15));
+      expect(summary.aggregate).to.equal('failed');
+      expect(summary.stages[0].attempts).to.have.lengthOf(1);
+      const record = fs.readFileSync(summary.stages[0].attempts[0].evidence, 'utf8');
+      expect(record).not.to.include('stream-output-sentinel');
+      expect(record).to.include('[REDACTED]');
+    });
+  }
+
+  it('bounds real child output and retains its final EOF diagnostic in failed evidence', function() {
+    const result = spawnSync(process.execPath, ['bin/verify.js', '--stage', 'test-stream-output'], {
+      encoding: 'utf8', timeout: 8000,
+      env: {...process.env, VERIFY_OUTPUT_CASE: 'flood'},
+    });
+    expect(result.status).to.equal(1);
+    expect(Buffer.byteLength(result.stdout + result.stderr)).to.be.lessThan(150000);
+    expect(result.stdout).to.include('[Output truncated: console limit]');
+    const line = result.stdout.split('\n').find(value => value.startsWith('VERIFY_SUMMARY '));
+    const summary = JSON.parse(line.slice(15));
+    expect(summary.stages[0].reason).to.include('final unterminated diagnostic');
+    expect(summary.stages[0]).to.include({status: 'failed', failureClass: 'assertion'});
   });
 
   it('removes credentials from real retry sidecars and batch failure snapshots', function() {
