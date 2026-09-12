@@ -155,7 +155,8 @@ var register_new_user_func = promisify( function(args, callback){
       });
     })
     .catch(function(error){
-      if (!args.driver && !args._retried_after_session_crash && !failing_error_message && is_transient_session_error(error)) {
+      // Canonical/stress runs forbid retries at every layer, not only Mocha.
+      if (Number(process.env.TEST_RETRIES) !== 0 && !args.driver && !args._retried_after_session_crash && !failing_error_message && is_transient_session_error(error)) {
         return driver.quit()
           .catch(function(){ return Promise.resolve(); })
           .then(function(){
@@ -173,6 +174,11 @@ var register_new_user_func = promisify( function(args, callback){
           });
       }
 
+      if (!args.driver) {
+        return driver.quit()
+          .catch(function(){ return Promise.resolve(); })
+          .then(function(){ callback(error); });
+      }
       callback(error);
     });
 

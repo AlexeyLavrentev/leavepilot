@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "capturedAt": "2026-09-10T15:37:11.594Z",
+  "command": "node scripts/measure_approval_stress.js",
+  "evidence": ".artifacts/verify/approval-stress-Q8RnMP/measurement.json",
+  "headSha": "dc8aa57b94b4b2827608ca563f49983da70c4da7",
+  "trackedDiffSha": "9918e0241ab2a1a01a2f747bfb6af89d9cd3c7ba6371d671b62063642e3873d4",
+  "sourceClean": false,
+  "measuredFiles": {
+    "scripts/measure_approval_stress.js": "7f9e32d3cea89e25b44730ea7d351c5e563ef4a300492638c7592a18b4c5c8b9",
+    "t/integration/leave_request/basic_leave_request.js": "024406d27e9b57f33db30b966169b4e8944e3c17650e70b978ff861dace096b9",
+    "t/lib/approval_stress_reporter.js": "e99d94663e39655d34cb5efa215f5daa2e3fe236065f2d9cb5f1ff18b6c0d480",
+    "t/lib/register_new_user.js": "a70d053428362e716bb412bf4e550393a307dccc08f5ba6ba981fcf58007e261"
+  },
+  "reproduction": {
+    "nodeVersion": "v22.23.0",
+    "platform": "darwin",
+    "architecture": "arm64",
+    "timezone": "Asia/Yekaterinburg",
+    "browserVersion": "152.0.7977.64",
+    "driverVersion": "152.0.7977.64",
+    "headless": true,
+    "viewport": {"width": 1024, "height": 768},
+    "dbContour": "sqlite",
+    "featureFlags": "all",
+    "retries": 0,
+    "shard": null,
+    "order": "declaration",
+    "seed": "not randomized; fixture dates 2015-06-15/16; generated account names use wall-clock milliseconds"
+  },
+  "calibrationMs": [7502, 6013, 6106],
+  "selectionRule": "min(25, floor(30000 / max(three independent CLI durations)))",
+  "budgetMs": 30000,
+  "iterationCount": 3,
+  "stressMs": [5982, 6099, 6150],
+  "stressDurationMs": 18231,
+  "checksPerRun": 22,
+  "allRunsFirstAttempt": true,
+  "allRunsApprovedStateVerified": true,
+  "allRunsOwnedProcessesStopped": true,
+  "authority": "local targeted measurement, not final clean-SHA or CI certification"
+}
