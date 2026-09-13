@@ -73,6 +73,22 @@ const expectPublicResult = (name, result) => {
 
 describe('stage timing evidence', function() {
   describe('local calibration', function() {
+    it('includes fresh Linux SQLite databases and unchanged migration replays', function() {
+      const stage = readFixture().local.sqliteMigration;
+      expect(stage.platform).to.equal('linux');
+      expect(stage.arch).to.equal('arm64');
+      expect(stage.image).to.match(/^sha256:[a-f0-9]{64}$/);
+      expect(stage.lockSha256).to.match(/^[a-f0-9]{64}$/);
+      for (const sample of stage.samples) {
+        expect(sample.freshDatabase).to.equal(true);
+        expect(sample.replayUnchanged).to.equal(true);
+        expect(sample.replayDurationMs).to.be.greaterThan(0);
+        expect(sample.migrationCount).to.be.greaterThan(0);
+      }
+      expect(require('../../../lib/verify/stages').stage('sqlite-migration').deadlineMs)
+        .to.equal(stage.deadlineMs);
+    });
+
     it('records repeated clean measurements and explicit deadlines', function() {
       const fixture = readFixture();
       const requiredStages = [

@@ -54,17 +54,37 @@
       "deadlineMs": 220684
     },
     "sqliteMigration": {
-      "command": "rtk env NODE_ENV=test DB_DIALECT=sqlite DB_STORAGE=/tmp/leavepilot-calibration.sqlite node bin/db_update.js",
-      "capturedAt": "2026-08-28T09:04:00Z",
-      "nodeVersion": "v22.23.0",
+      "command": "rtk env NODE_ENV=test DB_DIALECT=sqlite DB_STORAGE=<fresh-storage> node bin/db_update.js",
+      "capturedAt": "2026-09-13T17:25:39.460Z",
+      "nodeVersion": "v22.23.1",
+      "platform": "linux",
+      "arch": "arm64",
+      "storage": "docker writable layer, three independent fresh databases",
+      "image": "sha256:5fdda4399ac9acb8ac56486beffef54221ad041ec66f80092246bc8a627077c1",
+      "lockSha256": "d189fca57f37374ca37596f8d3f8318edb03decd63054c1ee31251c340b83270",
       "samples": [
-        {"temperature": "cold", "durationMs": 515},
-        {"temperature": "warm", "durationMs": 637},
-        {"temperature": "warm", "durationMs": 343}
+        {"temperature": "cold", "durationMs": 1054, "freshDatabase": true, "replayDurationMs": 554, "replayUnchanged": true, "migrationCount": 35},
+        {"temperature": "warm", "durationMs": 794, "freshDatabase": true, "replayDurationMs": 551, "replayUnchanged": true, "migrationCount": 35},
+        {"temperature": "warm", "durationMs": 760, "freshDatabase": true, "replayDurationMs": 557, "replayUnchanged": true, "migrationCount": 35}
       ],
-      "observedMaximumMs": 637,
+      "observedMaximumMs": 1054,
+      "ciRuntimeFloors": [
+        {
+          "workflow": "core-ci.yml",
+          "runId": 34744558334,
+          "job": "Core contract tests",
+          "sourceUrl": "https://github.com/AlexeyLavrentev/leavepilot/actions/runs/34744558334",
+          "capturedAt": "2026-09-13T07:10:36.751Z",
+          "runner": "ubuntu-24.04",
+          "headSha": "b96f664134e616c0071c51963f8db88620175778",
+          "outcome": "timeout",
+          "lowerBoundMs": 1274,
+          "recordedDurationIncludingCleanupMs": 1444
+        }
+      ],
+      "deadlineBasisMs": 1274,
       "margin": {"kind": "multiplier", "value": 2},
-      "deadlineMs": 1274
+      "deadlineMs": 2548
     },
     "cssBuildDiff": {
       "command": "rtk npm run build-css && rtk git diff --exit-code -- public/css/style.css",
