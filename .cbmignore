@@ -1,0 +1,23 @@
+# Agent snapshots and generated evidence are not application source.
+.mimosa/
+.gsd/
+.codebase-memory/
+.artifacts/
+.planning/
+.supergoal/
+.zcode/
+outputs/
+coverage/
+.nyc_output/
+
+# These names are ordinary CBM built-in skips, but contain maintained source here.
+!bin/
+!scripts/
+!migrations/
+!public/
+!deploy/
+!docs/
+!locales/
+!t/integration/
+!t/e2e/
+!t/fixtures/
