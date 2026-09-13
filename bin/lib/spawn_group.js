@@ -100,6 +100,12 @@ const terminateGroup = (child, options = {}) => {
     errors,
   };
 
+  // ESRCH means the entire group is gone, not merely its leader. There is
+  // nothing to wait for or escalate; permission errors still take the full path.
+  if (!outcome.termSent && errors.length === 0) {
+    return Promise.resolve(outcome);
+  }
+
   return new Promise(resolve => {
     let settled = false;
 
@@ -110,12 +116,15 @@ const terminateGroup = (child, options = {}) => {
 
       settled = true;
       clearTimeout(timer);
+      clearInterval(pollTimer);
       child.removeListener('exit', onExit);
       if (reason === 'exit') {
         outcome.graceExited = true;
         // A process-group leader can exit before a descendant that it started.
         // Sweep once more so an ordinary exit cannot leave that descendant alive.
         outcome.finalSweepSent = signal('SIGKILL');
+      } else if (reason === 'gone') {
+        outcome.graceExited = true;
       } else {
         outcome.killSent = signal('SIGKILL');
       }
@@ -125,6 +134,14 @@ const terminateGroup = (child, options = {}) => {
     // Not unref'd: it only exists between the SIGTERM and the SIGKILL, and
     // letting the process exit in that gap is letting the group survive.
     const timer = setTimeout(() => finish('deadline'), graceMs);
+    // Nested group handles carry only a PID, so they never emit child 'exit'.
+    // Observe the whole group: a departed leader alone is not a clean shutdown.
+    const pollTimer = GROUPS_SUPPORTED ? setInterval(() => {
+      try { process.kill(-child.pid, 0); }
+      catch (error) {
+        if (error.code === 'ESRCH') { finish('gone'); }
+      }
+    }, 50) : null;
 
     const onExit = () => finish('exit');
     child.once('exit', onExit);
