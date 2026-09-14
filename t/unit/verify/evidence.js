@@ -7,6 +7,7 @@ const {spawnSync, execFileSync} = require('child_process');
 const {expect} = require('chai');
 const registry = require('../../../lib/verify/stages');
 const {LIMITS} = require('../../../lib/verify/artifact_bundle');
+const {png} = require('../../fixtures/verify/png');
 
 const root = path.resolve(__dirname, '../../..');
 const head = execFileSync('git', ['rev-parse', 'HEAD'], {cwd: root, encoding: 'utf8'}).trim();
@@ -208,6 +209,19 @@ describe('verification evidence certification', () => {
     const {bundle} = ciBundle();
     const result = validate(['--validate-run-root', bundle, '--expected-head', head]);
     expect(result.status, result.stderr).to.equal(0);
+  });
+
+  it('validates complete CI evidence including unreferenced PNG diagnostics', () => {
+    const {bundle} = ciBundle();
+    const diagnostics = path.join(bundle, '123', 'browser-batch-diagnostics-shard-2');
+    fs.mkdirSync(diagnostics);
+    fs.writeFileSync(path.join(diagnostics, 'screenshot.png'), png());
+    const result = validate(['--validate-run-root', bundle, '--expected-head', head]);
+    expect(result.status, result.stderr).to.equal(0);
+    fs.appendFileSync(path.join(diagnostics, 'screenshot.png'), 'password=sentinel-security-audit');
+    const rejected = validate(['--validate-run-root', bundle, '--expected-head', head]);
+    expect(rejected.status).to.equal(2);
+    expect(rejected.stderr).not.to.include('sentinel-security-audit');
   });
 
   for (const [name, alter] of [
