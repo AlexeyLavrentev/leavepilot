@@ -45,6 +45,13 @@ describe('verify stage registry', () => {
     expect(registry.artifactRoot).to.equal(path.join('.artifacts', 'verify'));
   });
 
+  it('derives browser and MySQL deadlines from actual measured stage durations', () => {
+    for (const shard of [1, 2, 3, 4]) {
+      expect(registry.stage(`browser-${shard}`).deadlineMs).to.equal(631588);
+    }
+    expect(registry.stage('mysql-dialect').deadlineMs).to.equal(282776);
+  });
+
   it('keeps Core CI registry-selected, read-only, and evidence-complete', () => {
     const workflow = readWorkflow('core-ci.yml');
     const coreTests = workflow.slice(workflow.indexOf('  test:'), workflow.indexOf('  license-contract:'));
