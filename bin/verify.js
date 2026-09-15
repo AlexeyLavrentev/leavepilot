@@ -10,6 +10,8 @@ const registry = require('../lib/verify/stages');
 const {validateRunRoot} = require('../lib/verify/evidence');
 const redactDiagnosticText = require('../lib/verify/diagnostic_text');
 const createChildOutput = require('../lib/verify/child_output');
+const {readDiagnostics} = require('../lib/verify/stage_diagnostic');
+const {createReproduction, validReproduction} = require('../lib/verify/reproduction');
 
 const root = process.cwd();
 const artifactBase = path.resolve(root, registry.artifactRoot);
@@ -66,8 +68,12 @@ const sweepExited = async child => {
 };
 const runChild = (entry, runRoot, canonical, deadlineAt) => new Promise(resolve => {
   const started = Date.now();
+  const diagnosticPrefix = path.join(runRoot, entry.id);
+  const diagnosticIdentity = `${path.basename(runRoot)}/${entry.id}`;
   const child = spawnInGroup(entry.command, entry.args, {cwd: root, env: Object.assign({}, process.env, entry.env || {}, {
     TEST_CANONICAL_VERIFY: canonical ? 'true' : 'false',
+    TEST_VERIFY_DIAGNOSTIC_PREFIX: diagnosticPrefix,
+    TEST_VERIFY_DIAGNOSTIC_ID: diagnosticIdentity,
   }), stdio: ['ignore', 'pipe', 'pipe']});
   const output = createChildOutput({
     stdout: text => process.stdout.write(text),
@@ -104,8 +110,10 @@ const runChild = (entry, runRoot, canonical, deadlineAt) => new Promise(resolve 
     clearTimeout(timer);
     output.end();
     stopActive = null;
-    const passed = !outcome && !deadlineExceeded && !interruptedSignal && code === 0;
-    const result = {id: entry.id, status: passed ? 'passed' : 'failed', failureClass: passed ? null : interruptedSignal ? 'runner error' : deadlineExceeded ? 'timeout' : outcome ? 'runner error' : 'assertion', reason: passed ? null : `${interruptedSignal ? `Interrupted by ${interruptedSignal}; ` : ''}${outcome && !termination ? 'Surviving process group after stage exit; ' : ''}exit ${code}: ${redact(output.tail())}`, durationMs: Date.now() - started, attempts: [{number: 1, status: passed ? 'passed' : 'failed', evidence: path.join(runRoot, `${entry.id}.attempt-1.json`), reproduction: {command: entry.command, args: entry.args, nodeVersion: process.version, dbContour: entry.env && entry.env.TEST_DB_DIALECT || 'sqlite', featureFlags: 'not-recorded'}}]};
+    const reproduction = createReproduction(entry, process.env, readDiagnostics(diagnosticPrefix, diagnosticIdentity));
+    const diagnosticValid = validReproduction(reproduction, entry, diagnosticIdentity);
+    const passed = !outcome && !deadlineExceeded && !interruptedSignal && code === 0 && diagnosticValid;
+    const result = {id: entry.id, status: passed ? 'passed' : 'failed', failureClass: passed ? null : interruptedSignal ? 'runner error' : deadlineExceeded ? 'timeout' : outcome || (code === 0 && !diagnosticValid) ? 'runner error' : 'assertion', reason: passed ? null : `${interruptedSignal ? `Interrupted by ${interruptedSignal}; ` : ''}${outcome && !termination ? 'Surviving process group after stage exit; ' : ''}${code === 0 && !diagnosticValid ? 'Missing or invalid stage completion diagnostics; ' : ''}exit ${code}: ${redact(output.tail())}`, durationMs: Date.now() - started, attempts: [{number: 1, status: passed ? 'passed' : 'failed', evidence: path.join(runRoot, `${entry.id}.attempt-1.json`), reproduction}]};
     if (outcome) { result.termination = outcome; }
     resolve(result);
   });
@@ -185,7 +193,7 @@ const main = async () => {
     // These boundary checks require exclusive workspace ownership during a run;
     // they cannot observe transient edits reverted before the final snapshot.
     const stableSource = sourceStart.clean && sourceEnd.clean && sourceStart.headSha === sourceEnd.headSha;
-    const summary = {schemaVersion: 2, invocationId, profile: selected && selected.id || null, authoritative: (selected ? selected.authoritative : true) && stableSource, startedAt, headSha: sourceStart.headSha, source: {start: sourceStart, end: sourceEnd}, quarantineCount: 0, stages: records, aggregate: records.every(record => record.status === 'passed') ? 'passed' : 'failed'};
+    const summary = {schemaVersion: 3, invocationId, profile: selected && selected.id || null, authoritative: (selected ? selected.authoritative : true) && stableSource, startedAt, headSha: sourceStart.headSha, source: {start: sourceStart, end: sourceEnd}, quarantineCount: 0, stages: records, aggregate: records.every(record => record.status === 'passed') ? 'passed' : 'failed'};
     atomicWrite(path.join(runRoot, 'summary.json'), JSON.stringify(summary, null, 2) + '\n');
     if (options['run-path-file']) { atomicWrite(path.resolve(options['run-path-file']), `${runRoot}\n`); }
     console.log(`VERIFY_SUMMARY ${JSON.stringify(summary)}`);

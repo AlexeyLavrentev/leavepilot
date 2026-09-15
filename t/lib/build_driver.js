@@ -49,6 +49,7 @@ function boundQuit(quit, timeoutMs) {
 var fs = require('fs'),
     webdriver = require('selenium-webdriver'),
     chrome = require('selenium-webdriver/chrome');
+var stageDiagnostic = require('../../lib/verify/stage_diagnostic');
 
 function resolveChromeBinary() {
   return process.env.CHROME_BIN || null;
@@ -125,6 +126,7 @@ function buildOptions() {
 }
 
 module.exports = function() {
+  stageDiagnostic.recordCapabilities(null);
   var chromeBin = requiredExecutable('CHROME_BIN');
   var chromedriverBin = requiredExecutable('CHROMEDRIVER_BIN');
   var service = new chrome.ServiceBuilder(chromedriverBin);
@@ -133,6 +135,9 @@ module.exports = function() {
     .setChromeService(service)
     .setChromeOptions(buildOptions())
     .build();
+  driver.getCapabilities().then(stageDiagnostic.recordCapabilities, function() {
+    stageDiagnostic.recordCapabilities(null);
+  });
 
   /*
     ChromeDriver defaults to a five-minute page-load timeout, which is longer

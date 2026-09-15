@@ -8,6 +8,8 @@ const {expect} = require('chai');
 const registry = require('../../../lib/verify/stages');
 const {LIMITS} = require('../../../lib/verify/artifact_bundle');
 const {png} = require('../../fixtures/verify/png');
+const {createReproduction, expectsTests} = require('../../../lib/verify/reproduction');
+const {featureFlags} = require('../../../lib/verify/stage_diagnostic');
 
 const root = path.resolve(__dirname, '../../..');
 const head = execFileSync('git', ['rev-parse', 'HEAD'], {cwd: root, encoding: 'utf8'}).trim();
@@ -49,6 +51,49 @@ describe('verification evidence certification', () => {
     const result = certify();
     expect(result.status, result.stderr).to.equal(0);
   });
+
+  function upgradeEvidence() {
+    summary.schemaVersion = 3;
+    for (const stage of summary.stages) {
+      const entry = registry.stage(stage.id);
+      const diagnostics = {latest: {state: 'unavailable'}, firstFailure: {state: 'unavailable'}};
+      const env = {...entry.env, ...(entry.args[0] === 'bin/test.js' ? {LEAVEPILOT_FEATURES: 'all'} : {})};
+      if (expectsTests(entry)) {
+        diagnostics.latest = {state: 'received', snapshot: {
+          version: 1, identity: `${path.basename(runRoot)}/${stage.id}`, event: 'end',
+          currentTest: null, lastCompletedTest: {title: 'passed fixture', spec: 't/unit/fixture.js'}, failure: null,
+          runtime: {nodeVersion: process.version, browserVersion: null, driverVersion: null, dbContour: 'sqlite', featureFlags: featureFlags(env)},
+        }};
+        fs.writeFileSync(path.join(runRoot, `${stage.id}.latest.json`), JSON.stringify(diagnostics.latest.snapshot));
+      }
+      stage.attempts[0].reproduction = createReproduction(entry, {}, diagnostics);
+      fs.writeFileSync(stage.attempts[0].evidence, JSON.stringify(stage));
+    }
+    writeSummary();
+  }
+
+  it('accepts schema-3 evidence bound to its original stage sidecars', () => {
+    upgradeEvidence();
+    const result = certify();
+    expect(result.status, result.stderr).to.equal(0);
+  });
+
+  for (const [name, mutate] of [
+    ['missing sidecar', () => fs.unlinkSync(path.join(runRoot, 'unit-coverage.latest.json'))],
+    ['schema downgrade', () => { summary.schemaVersion = 2; }],
+    ['wrong replay command', () => { summary.stages[0].attempts[0].reproduction.replay.args = ['bin/verify.js', '--stage', 'package']; }],
+    ['unrecorded flags', () => { summary.stages[0].attempts[0].reproduction.featureFlags = 'not-recorded'; }],
+    ['unknown metadata', () => { summary.stages[0].attempts[0].reproduction.extra = true; }],
+    ['wrong shard', () => { summary.stages[0].attempts[0].reproduction.shard = '4/4'; }],
+    ['invented seed', () => { summary.stages[0].attempts[0].reproduction.seed = 42; }],
+  ]) {
+    it(`rejects schema-3 ${name}`, () => {
+      upgradeEvidence(); mutate();
+      summary.stages.forEach(stage => fs.writeFileSync(stage.attempts[0].evidence, JSON.stringify(stage)));
+      writeSummary();
+      expect(certify().status).to.equal(2);
+    });
+  }
 
   for (const [name, add] of [
     ['unreferenced credential-bearing log', dir => fs.writeFileSync(path.join(dir, 'browser.log'), 'authorization: Bearer sentinel-security-audit\n')],

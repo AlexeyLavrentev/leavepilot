@@ -4,6 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const FlakeReporter = require('./flake_reporter');
 const redactDiagnosticText = require('../../lib/verify/diagnostic_text');
+const {createWriter} = require('../../lib/verify/stage_diagnostic');
 
 const MAX_TEXT_BYTES = 2048;
 const MAX_SNAPSHOT_BYTES = 8192;
@@ -140,6 +141,7 @@ const submitDiagnostic = (snapshotPath, identity, failure) => {
 module.exports = class BatchDiagnosticReporter extends FlakeReporter {
   constructor(runner, options) {
     super(runner, options);
+    const writeStage = createWriter();
 
     const reporterOption = options && options.reporterOption || {};
     const snapshotPath = process.env.TEST_BATCH_DIAGNOSTIC_PATH;
@@ -154,6 +156,7 @@ module.exports = class BatchDiagnosticReporter extends FlakeReporter {
     let failure = null;
 
     const snapshot = event => {
+      writeStage({event, currentTest, lastCompletedTest, failure});
       if (!snapshotPath) {
         return;
       }
@@ -187,6 +190,15 @@ module.exports = class BatchDiagnosticReporter extends FlakeReporter {
       currentTest = {title: redact(test.fullTitle()), spec: relativeSpec(test.file) || identity.spec};
       failure = compactError(error);
       snapshot('test-fail');
+    });
+    runner.on('retry', (test, error) => {
+      writeStage({event: 'test-retry', currentTest: {title: redact(test.fullTitle()), spec: relativeSpec(test.file)}, lastCompletedTest, failure: compactError(error)});
+    });
+    runner.on('hook', hook => {
+      writeStage({event: 'hook-start', currentTest: {title: redact(hook.fullTitle()), spec: relativeSpec(hook.file)}, lastCompletedTest, failure});
+    });
+    runner.on('hook end', () => {
+      writeStage({event: 'hook-end', currentTest, lastCompletedTest, failure});
     });
     runner.once('end', () => snapshot('end'));
   }

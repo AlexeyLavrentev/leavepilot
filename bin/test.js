@@ -182,7 +182,7 @@ const serverEnv = Object.assign({}, baseTestEnv, {
 */
 const flakeReportPath = path.join(process.cwd(), 'flake-report.json');
 
-const FLAKE_REPORTER = path.join('t', 'lib', 'flake_reporter.js');
+const FLAKE_REPORTER = path.join('t', 'lib', 'batch_diagnostic_reporter.js');
 const BATCH_DIAGNOSTIC_REPORTER = path.join('t', 'lib', 'batch_diagnostic_reporter.js');
 
 const flaky = [];
