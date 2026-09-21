@@ -66,11 +66,12 @@ const sweepExited = async child => {
     ? {processes: [], groups: [{pid: child.pid, ...outcome}], snapshotError: null}
     : null;
 };
-const runChild = (entry, runRoot, canonical, deadlineAt) => new Promise(resolve => {
+const runChild = (entry, runRoot, canonical, deadlineAt, prerequisite = false) => new Promise(resolve => {
   const started = Date.now();
+  const execution = prerequisite ? entry.prerequisite : entry;
   const diagnosticPrefix = path.join(runRoot, entry.id);
   const diagnosticIdentity = `${path.basename(runRoot)}/${entry.id}`;
-  const child = spawnInGroup(entry.command, entry.args, {cwd: root, env: Object.assign({}, process.env, entry.env || {}, {
+  const child = spawnInGroup(execution.command, execution.args, {cwd: root, env: Object.assign({}, process.env, prerequisite ? {} : entry.env || {}, {
     TEST_CANONICAL_VERIFY: canonical ? 'true' : 'false',
     TEST_VERIFY_DIAGNOSTIC_PREFIX: diagnosticPrefix,
     TEST_VERIFY_DIAGNOSTIC_ID: diagnosticIdentity,
@@ -79,6 +80,22 @@ const runChild = (entry, runRoot, canonical, deadlineAt) => new Promise(resolve 
     stdout: text => process.stdout.write(text),
     stderr: text => process.stderr.write(text),
   });
+  const record = (passed, failureClass, reason, reproduction, outcome) => {
+    const result = {id: entry.id, status: passed ? 'passed' : 'failed', failureClass, reason,
+      durationMs: Date.now() - started,
+      attempts: [{number: 1, status: passed ? 'passed' : 'failed',
+        evidence: path.join(runRoot, `${entry.id}.attempt-1.json`), reproduction}],
+    };
+    if (!passed) {
+      // This is an invocation attempt, not a claim that a test ran. Keep the
+      // failed prerequisite/spawn distinct from the intended stage replay.
+      result.execution = {phase: prerequisite ? 'prerequisite' : 'stage', command: execution.command,
+        args: execution.args, started: Boolean(child.pid)};
+    }
+    if (outcome) { result.termination = outcome; }
+    return result;
+  };
+  const reproduction = () => createReproduction(entry, process.env, readDiagnostics(diagnosticPrefix, diagnosticIdentity));
   const closed = new Promise(resolveClosed => child.once('close', resolveClosed));
   let deadlineExceeded = false;
   let termination = null;
@@ -99,7 +116,8 @@ const runChild = (entry, runRoot, canonical, deadlineAt) => new Promise(resolve 
     clearTimeout(timer);
     stopActive = null;
     output.end();
-    resolve({id: entry.id, status: 'failed', failureClass: 'runner error', reason: redact(error.message), durationMs: Date.now() - started, attempts: []});
+    resolve(record(false, prerequisite ? 'missing prerequisite' : 'runner error',
+      redact(`${prerequisite ? `Missing prerequisite. Setup: ${execution.setup}; ` : ''}${error.message}`), reproduction()));
   });
   child.once('exit', async code => {
     let outcome = termination ? await termination : await sweepExited(child);
@@ -110,49 +128,20 @@ const runChild = (entry, runRoot, canonical, deadlineAt) => new Promise(resolve 
     clearTimeout(timer);
     output.end();
     stopActive = null;
-    const reproduction = createReproduction(entry, process.env, readDiagnostics(diagnosticPrefix, diagnosticIdentity));
-    const diagnosticValid = validReproduction(reproduction, entry, diagnosticIdentity);
+    const repro = reproduction();
+    const diagnosticValid = prerequisite || validReproduction(repro, entry, diagnosticIdentity);
     const passed = !outcome && !deadlineExceeded && !interruptedSignal && code === 0 && diagnosticValid;
-    const result = {id: entry.id, status: passed ? 'passed' : 'failed', failureClass: passed ? null : interruptedSignal ? 'runner error' : deadlineExceeded ? 'timeout' : outcome || (code === 0 && !diagnosticValid) ? 'runner error' : 'assertion', reason: passed ? null : `${interruptedSignal ? `Interrupted by ${interruptedSignal}; ` : ''}${outcome && !termination ? 'Surviving process group after stage exit; ' : ''}${code === 0 && !diagnosticValid ? 'Missing or invalid stage completion diagnostics; ' : ''}exit ${code}: ${redact(output.tail())}`, durationMs: Date.now() - started, attempts: [{number: 1, status: passed ? 'passed' : 'failed', evidence: path.join(runRoot, `${entry.id}.attempt-1.json`), reproduction}]};
-    if (outcome) { result.termination = outcome; }
-    resolve(result);
+    const failureClass = passed ? null : interruptedSignal ? 'runner error' : deadlineExceeded ? 'timeout'
+      : outcome || (code === 0 && !diagnosticValid) ? 'runner error' : prerequisite ? 'missing prerequisite' : 'assertion';
+    const reason = passed ? null : `${prerequisite ? `${deadlineExceeded ? 'Prerequisite exceeded stage deadline' : 'Missing prerequisite'}. Setup: ${execution.setup}; ` : ''}${interruptedSignal ? `Interrupted by ${interruptedSignal}; ` : ''}${outcome && !termination ? 'Surviving process group after stage exit; ' : ''}${code === 0 && !diagnosticValid ? 'Missing or invalid stage completion diagnostics; ' : ''}exit ${code}: ${redact(output.tail())}`;
+    resolve(record(passed, failureClass, reason, repro, outcome));
   });
 });
-const checkPrerequisite = (entry, deadlineAt) => new Promise(resolve => {
-  if (!entry.prerequisite) { resolve(null); return; }
-  const started = Date.now();
-  const probe = spawnInGroup(entry.prerequisite.command, entry.prerequisite.args, {cwd: root, stdio: 'ignore'});
-  let termination;
-  stopActive = () => {
-    if (!termination) { termination = terminateTree(probe); }
-    return termination;
-  };
-  const failure = (failureClass, reason) => ({id: entry.id, status: 'failed', failureClass, reason, durationMs: Date.now() - started, attempts: []});
-  const timer = setTimeout(() => {
-    stopActive();
-  }, Math.max(0, deadlineAt - Date.now()));
-  probe.once('error', () => {
-    clearTimeout(timer);
-    stopActive = null;
-    resolve(failure('missing prerequisite', `Missing prerequisite. Setup: ${entry.prerequisite.setup}`));
-  });
-  probe.once('exit', async code => {
-    clearTimeout(timer);
-    if (termination) {
-      const outcome = await termination;
-      stopActive = null;
-      resolve({...failure(interruptedSignal ? 'runner error' : 'timeout', interruptedSignal ? `Interrupted by ${interruptedSignal}` : `Prerequisite exceeded stage deadline. Setup: ${entry.prerequisite.setup}`), termination: outcome});
-      return;
-    }
-    const outcome = await sweepExited(probe);
-    stopActive = null;
-    if (outcome) {
-      resolve({...failure('runner error', 'Surviving process group after prerequisite exit'), termination: outcome});
-      return;
-    }
-    resolve(code === 0 ? null : failure('missing prerequisite', `Missing prerequisite. Setup: ${entry.prerequisite.setup}`));
-  });
-});
+const checkPrerequisite = async (entry, runRoot, canonical, deadlineAt) => {
+  if (!entry.prerequisite) { return null; }
+  const result = await runChild(entry, runRoot, canonical, deadlineAt, true);
+  return result.status === 'passed' ? null : result;
+};
 const main = async () => {
   let options;
   try { options = parse(process.argv.slice(2)); } catch (error) { usage(error.message); return; }
@@ -172,6 +161,9 @@ const main = async () => {
     const startedAt = new Date().toISOString();
     const runRoot = path.join(artifactBase, `${Date.now()}-${invocationId}`);
     fs.mkdirSync(runRoot, {recursive: true, mode: 0o700});
+    // A killed invocation must not leave a pointer to a previous green run.
+    // An incomplete new directory fails certification until its summary exists.
+    if (options['run-path-file']) { atomicWrite(path.resolve(options['run-path-file']), `${runRoot}\n`); }
     const records = [];
     for (const id of stageIds) {
       if (interruptedSignal) {
@@ -183,8 +175,9 @@ const main = async () => {
       const deadlineAt = stageStartedAt + entry.deadlineMs;
       const blocker = entry.dependencies.find(dependency => records.find(record => record.id === dependency && record.status !== 'passed'));
       if (blocker) { records.push({id, status: 'blocked', blocker, failureClass: null, reason: `Blocked by ${blocker}`, durationMs: 0, attempts: []}); continue; }
-      const prerequisite = await checkPrerequisite(entry, deadlineAt);
-      const result = prerequisite || await runChild(entry, runRoot, selected ? selected.authoritative : true, deadlineAt);
+      const canonical = selected ? selected.authoritative : true;
+      const prerequisite = await checkPrerequisite(entry, runRoot, canonical, deadlineAt);
+      const result = prerequisite || await runChild(entry, runRoot, canonical, deadlineAt);
       result.durationMs = Date.now() - stageStartedAt;
       if (result.attempts.length) { atomicWrite(result.attempts[0].evidence, JSON.stringify(result, null, 2) + '\n'); }
       records.push(result);
@@ -195,7 +188,6 @@ const main = async () => {
     const stableSource = sourceStart.clean && sourceEnd.clean && sourceStart.headSha === sourceEnd.headSha;
     const summary = {schemaVersion: 3, invocationId, profile: selected && selected.id || null, authoritative: (selected ? selected.authoritative : true) && stableSource, startedAt, headSha: sourceStart.headSha, source: {start: sourceStart, end: sourceEnd}, quarantineCount: 0, stages: records, aggregate: records.every(record => record.status === 'passed') ? 'passed' : 'failed'};
     atomicWrite(path.join(runRoot, 'summary.json'), JSON.stringify(summary, null, 2) + '\n');
-    if (options['run-path-file']) { atomicWrite(path.resolve(options['run-path-file']), `${runRoot}\n`); }
     console.log(`VERIFY_SUMMARY ${JSON.stringify(summary)}`);
     if (!stableSource) { process.stderr.write('Development result only: source was dirty or changed during verification; not certifiable.\n'); }
     if (summary.aggregate !== 'passed') { process.exitCode = interruptedSignal === 'SIGINT' ? 130 : interruptedSignal ? 143 : 1; }
