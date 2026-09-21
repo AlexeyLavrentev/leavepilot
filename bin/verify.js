@@ -75,6 +75,7 @@ const runChild = (entry, runRoot, canonical, deadlineAt, prerequisite = false) =
     TEST_CANONICAL_VERIFY: canonical ? 'true' : 'false',
     TEST_VERIFY_DIAGNOSTIC_PREFIX: diagnosticPrefix,
     TEST_VERIFY_DIAGNOSTIC_ID: diagnosticIdentity,
+    TEST_VERIFY_DEADLINE_AT: String(deadlineAt),
   }), stdio: ['ignore', 'pipe', 'pipe']});
   const output = createChildOutput({
     stdout: text => process.stdout.write(text),

@@ -5,6 +5,7 @@ const path = require('path');
 const FlakeReporter = require('./flake_reporter');
 const redactDiagnosticText = require('../../lib/verify/diagnostic_text');
 const {createWriter} = require('../../lib/verify/stage_diagnostic');
+const browserCapture = require('./browser_failure_capture');
 
 const MAX_TEXT_BYTES = 2048;
 const MAX_SNAPSHOT_BYTES = 8192;
@@ -141,6 +142,12 @@ const submitDiagnostic = (snapshotPath, identity, failure) => {
 module.exports = class BatchDiagnosticReporter extends FlakeReporter {
   constructor(runner, options) {
     super(runner, options);
+    const stagePrefix = process.env.TEST_VERIFY_DIAGNOSTIC_PREFIX;
+    const stageIdentity = process.env.TEST_VERIFY_DIAGNOSTIC_ID;
+    const deadlines = [process.env.TEST_VERIFY_DEADLINE_AT, process.env.TEST_BROWSER_CAPTURE_DEADLINE_AT]
+      .map(Number).filter(value => Number.isFinite(value) && value > 0);
+    delete process.env.TEST_VERIFY_DEADLINE_AT;
+    delete process.env.TEST_BROWSER_CAPTURE_DEADLINE_AT;
     const writeStage = createWriter();
 
     const reporterOption = options && options.reporterOption || {};
@@ -154,8 +161,11 @@ module.exports = class BatchDiagnosticReporter extends FlakeReporter {
     let currentTest = null;
     let lastCompletedTest = null;
     let failure = null;
+    let lastEvent = 'test-start';
+    let capture = null;
 
     const snapshot = event => {
+      lastEvent = event;
       writeStage({event, currentTest, lastCompletedTest, failure});
       if (!snapshotPath) {
         return;
@@ -169,6 +179,7 @@ module.exports = class BatchDiagnosticReporter extends FlakeReporter {
         failure,
         submitDiagnostic: submitDiagnostic(submitDiagnosticPath, identity, failure),
         updatedAt: new Date().toISOString(),
+        browserCapture: capture ? capture.reference() : {state: 'not-requested'},
       };
       try {
         writeSnapshot(snapshotPath, payload);
@@ -177,8 +188,24 @@ module.exports = class BatchDiagnosticReporter extends FlakeReporter {
       }
     };
 
+    const capturePrefix = snapshotPath && path.resolve(snapshotPath).startsWith(path.resolve('.artifacts/verify') + path.sep)
+      ? snapshotPath : stagePrefix;
+    capture = browserCapture.configure(capturePrefix ? {
+      prefix: capturePrefix, identity: {stage: stageIdentity, runId: identity.runId, batchId: identity.batchId},
+      deadlineAt: deadlines.length ? Math.min(...deadlines) : Infinity,
+      onUpdate: () => snapshot(lastEvent),
+    } : null);
+    const flushCapture = () => capture ? capture.flush().catch(() => {
+      console.error('browser capture unavailable: artifact write failed');
+    }) : Promise.resolve();
+    if (capture) {
+      runner.suite.afterEach('bounded browser capture', flushCapture);
+      runner.suite.afterAll('bounded browser capture', flushCapture);
+    }
+
     runner.on('test', test => {
       currentTest = {title: redact(test.fullTitle()), spec: relativeSpec(test.file) || identity.spec};
+      if (capture) { capture.track(currentTest); }
       snapshot('test-start');
     });
     runner.on('pass', test => {
@@ -190,17 +217,22 @@ module.exports = class BatchDiagnosticReporter extends FlakeReporter {
       currentTest = {title: redact(test.fullTitle()), spec: relativeSpec(test.file) || identity.spec};
       failure = compactError(error);
       snapshot('test-fail');
+      if (capture) { capture.track(currentTest); capture.request('failure').catch(() => {}); }
     });
     runner.on('retry', (test, error) => {
       writeStage({event: 'test-retry', currentTest: {title: redact(test.fullTitle()), spec: relativeSpec(test.file)}, lastCompletedTest, failure: compactError(error)});
+      if (capture) { capture.request('retry').catch(() => {}); }
     });
     runner.on('hook', hook => {
+      if (capture && !hook.fullTitle().includes('bounded browser capture')) {
+        capture.track({title: redact(hook.fullTitle()), spec: relativeSpec(hook.file)});
+      }
       writeStage({event: 'hook-start', currentTest: {title: redact(hook.fullTitle()), spec: relativeSpec(hook.file)}, lastCompletedTest, failure});
     });
     runner.on('hook end', () => {
       writeStage({event: 'hook-end', currentTest, lastCompletedTest, failure});
     });
-    runner.once('end', () => snapshot('end'));
+    runner.once('end', () => { if (capture) { capture.dispose(); } snapshot('end'); });
   }
 };
 

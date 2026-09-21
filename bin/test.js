@@ -300,6 +300,11 @@ const runWithTimeout = (command, args, options = {}, timeoutMs = 0, timeoutMessa
   const spawnOptions = Object.assign({}, options);
   delete spawnOptions.diagnostic;
   delete spawnOptions.captureOutput;
+  if (timeoutMs > 0) {
+    spawnOptions.env = Object.assign({}, spawnOptions.env || baseTestEnv, {
+      TEST_BROWSER_CAPTURE_DEADLINE_AT: String(Date.now() + timeoutMs),
+    });
+  }
   const child = spawnInGroup(command, args, Object.assign({
     stdio: captureOutput ? ['ignore', 'pipe', 'pipe'] : 'inherit',
     env: baseTestEnv,

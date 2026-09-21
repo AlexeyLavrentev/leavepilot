@@ -50,6 +50,7 @@ var fs = require('fs'),
     webdriver = require('selenium-webdriver'),
     chrome = require('selenium-webdriver/chrome');
 var stageDiagnostic = require('../../lib/verify/stage_diagnostic');
+var browserCapture = require('./browser_failure_capture');
 
 function resolveChromeBinary() {
   return process.env.CHROME_BIN || null;
@@ -135,6 +136,7 @@ module.exports = function() {
     .setChromeService(service)
     .setChromeOptions(buildOptions())
     .build();
+  browserCapture.registerDriver(driver);
   driver.getCapabilities().then(stageDiagnostic.recordCapabilities, function() {
     stageDiagnostic.recordCapabilities(null);
   });
@@ -168,7 +170,10 @@ module.exports = function() {
     outlives the process is the CI runner's problem to reap, and it already
     does; a suite that cannot finish is nobody's.
   */
-  driver.quit = boundQuit(driver.quit.bind(driver), QUIT_TIMEOUT_MS);
+  var originalQuit = driver.quit.bind(driver);
+  driver.quit = boundQuit(function() {
+    return browserCapture.beforeQuit(driver).catch(function() {}).then(originalQuit);
+  }, QUIT_TIMEOUT_MS);
 
   return driver;
 };
