@@ -380,7 +380,11 @@ const runWithTimeout = (command, args, options = {}, timeoutMs = 0, timeoutMessa
     (termination || terminateGroup(child, {graceMs: 0})).then(outcome => {
       recordTermination(ownedProcess, {...outcome, outcome: timedOut ? 'timeout' : 'exit', exitCode: code});
       if (outcome.errors.length) {
-        reject(new Error(`Could not terminate owned process group ${child.pid}`));
+        const error = new Error(`Could not terminate owned process group ${child.pid}`);
+        error.exitCode = code;
+        error.outputTail = outputTail;
+        error.ownedProcess = ownedProcess;
+        reject(error);
         return;
       }
       if (timedOut) {

@@ -51,6 +51,28 @@ const spawnInGroup = (command, args, options = {}) => spawn(
   Object.assign({detached: GROUPS_SUPPORTED}, options)
 );
 
+// Darwin killpg can return EPERM when a group contains only zombies/exiting
+// processes (ps: Z or P_WEXIT/E), not just when signalling is forbidden.
+// Inspect only on that error; a live, foreign or unreadable member stays red.
+// No process names/arguments are collected and no extra signal target is used.
+const isTerminalDarwinGroup = pgid => {
+  try {
+    const uid = process.getuid();
+    const output = execFileSync('/bin/ps', ['-A', '-o', 'pgid=,uid=,stat='], {
+      encoding: 'utf8', timeout: 1000, maxBuffer: 1024 * 1024,
+    }).trim();
+    if (!output) { return false; }
+    return output.split('\n').every(line => {
+      const match = line.trim().match(/^(\d+)\s+(-?\d+)\s+(\S+)$/);
+      if (!match) { return false; }
+      if (Number(match[1]) !== pgid) { return true; }
+      const state = match[3];
+      return Number(match[2]) === uid && /^[?IRSTUZ][<NXEVLs+]*$/.test(state)
+        && (state.startsWith('Z') || state.includes('E'));
+    });
+  } catch { return false; }
+};
+
 /*
   Returns whether anything was there to signal. ESRCH means the group is already
   gone, which is the ordinary case when sweeping after a clean exit and is not
@@ -71,6 +93,10 @@ const killGroup = (child, signal) => {
     return true;
   } catch (error) {
     if (error.code === 'ESRCH') {
+      return false;
+    }
+
+    if (process.platform === 'darwin' && error.code === 'EPERM' && isTerminalDarwinGroup(child.pid)) {
       return false;
     }
 

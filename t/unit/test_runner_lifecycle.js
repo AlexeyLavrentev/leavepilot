@@ -47,6 +47,30 @@ if (require.main === module) {
 }
 
 describe('test runner lifecycle', function() {
+  it('retains exit status and owned-process evidence when cleanup fails', async function() {
+    const {EventEmitter} = require('events');
+    const child = Object.assign(new EventEmitter(), {pid: 123});
+    const source = fs.readFileSync('bin/test.js', 'utf8');
+    const implementation = source.slice(source.indexOf('const runWithTimeout ='), source.indexOf('\nconst run ='));
+    const entry = {pid: 123, pgid: 123};
+    const runner = require('vm').runInNewContext(implementation + '\nrunWithTimeout;', {
+      assertRunning() {}, spawnInGroup: () => child, baseTestEnv: {}, path,
+      liveChildren: new Set(), registerOwnedProcess: () => entry,
+      recordTermination(record, termination) { record.termination = termination; },
+      terminateGroup: async () => ({errors: [{signal: 'SIGTERM', code: 'EPERM'}]}),
+    });
+    const result = runner('node', ['fixture.js']);
+    child.emit('exit', 0);
+    await require('assert').rejects(result, error => {
+      expect(error.message).to.equal('Could not terminate owned process group 123');
+      expect(error.exitCode).to.equal(0);
+      expect(error.outputTail).to.equal('');
+      expect(error.ownedProcess).to.equal(entry);
+      expect(error.ownedProcess.termination.errors[0].code).to.equal('EPERM');
+      return true;
+    });
+  });
+
   it('keeps install-check red when background cleanup reports a signal failure', async function() {
     const source = fs.readFileSync('bin/install_check.js', 'utf8');
     const implementation = source.slice(source.indexOf('function stopBackgroundSteps()'), source.indexOf('function killLiveChildren()'));
