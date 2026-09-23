@@ -89,6 +89,19 @@ describe('stage timing evidence', function() {
         .to.equal(stage.deadlineMs);
     });
 
+    it('bounds package work from the observed CI timeout', function() {
+      const stage = readFixture().local.package;
+      const floor = stage.ciRuntimeFloors[0];
+
+      expect(floor.runId).to.equal(35814192862);
+      expect(floor.headSha).to.equal('d4a055a229f2de03c2b4db93c9084c54241b14f0');
+      expect(floor.lowerBoundMs).to.equal(1044);
+      expect(floor.recordedDurationIncludingCleanupMs).to.be.greaterThan(floor.lowerBoundMs);
+      expect(stage.deadlineBasisMs).to.equal(floor.lowerBoundMs);
+      expect(require('../../../lib/verify/stages').stage('package').deadlineMs)
+        .to.equal(stage.deadlineMs);
+    });
+
     it('records repeated clean measurements and explicit deadlines', function() {
       const fixture = readFixture();
       const requiredStages = [

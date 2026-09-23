@@ -122,8 +122,23 @@
         {"temperature": "warm", "durationMs": 380}
       ],
       "observedMaximumMs": 522,
+      "ciRuntimeFloors": [
+        {
+          "workflow": "core-ci.yml",
+          "runId": 35814192862,
+          "job": "Core contract tests",
+          "sourceUrl": "https://github.com/AlexeyLavrentev/leavepilot/actions/runs/35814192862",
+          "capturedAt": "2026-09-23T08:09:37Z",
+          "runner": "ubuntu-24.04",
+          "headSha": "d4a055a229f2de03c2b4db93c9084c54241b14f0",
+          "outcome": "timeout",
+          "lowerBoundMs": 1044,
+          "recordedDurationIncludingCleanupMs": 1066
+        }
+      ],
+      "deadlineBasisMs": 1044,
       "margin": {"kind": "multiplier", "value": 2},
-      "deadlineMs": 1044
+      "deadlineMs": 2088
     }
   },
   "stress": {
