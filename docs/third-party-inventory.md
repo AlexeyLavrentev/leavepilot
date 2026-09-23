@@ -112,7 +112,9 @@ CI run (phase 5, decision 05 D-16).
 Both banners carry the MIT attribution inside the shipped files themselves,
 satisfying the MIT notice requirement in artifacts.
 
-## 3. Vendored fonts (Font Awesome 4.4.0)
+## 3. Vendored fonts
+
+### Font Awesome 4.4.0
 
 The community distribution ships the Font Awesome 4.4.0 icon font — six font
 files in `public/fonts/` plus the MIT-licensed CSS in
@@ -153,6 +155,23 @@ redistribute the fonts unmodified, so this does not apply); the fonts
 themselves must remain under OFL if redistributed as fonts — this binds the
 font files only, not the ELv2-licensed application around them, and not any
 document created using the fonts.
+
+### Open Sans (Google Fonts v44)
+
+Added 2026-09-23: the Open Sans family previously fetched from Google Fonts is
+served locally. Ten unmodified WOFF2 subsets in `public/fonts/open-sans/` retain
+the browser endpoint's Unicode ranges and four normal-style weights (300, 400,
+600, 700). `public/css/open-sans.css` retains those face definitions with local
+URLs. The CSS is fingerprinted through the existing static asset helper.
+
+Copyright 2020 The Open Sans Project Authors. The upstream SIL Open Font License
+1.1 and attribution are included in `public/fonts/open-sans/OFL.txt`; exact
+Google Fonts source URLs, SHA-256 hashes, weights and Unicode ranges are in
+`public/fonts/open-sans/SOURCES.json`. These files accompany the fonts through
+the existing `public/` npm and Docker packaging rules. No font conversion or
+build-time/runtime external download is introduced. See the adjacent README
+for retrieval details. This addition does not regenerate the older npm SBOM
+snapshot recorded above.
 
 ## 4. Container base image
 

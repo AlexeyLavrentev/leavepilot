@@ -29,6 +29,7 @@ describe('Content-addressed static assets', function() {
         '/css/style.css',
         '/css/bootstrap.min.css',
         '/css/font-awesome.min.css',
+        '/css/open-sans.css',
         '/js/global.js',
         '/js/jquery.min.js',
         '/js/bootstrap.min.js',

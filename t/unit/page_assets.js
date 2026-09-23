@@ -145,13 +145,8 @@ describe('Page assets', function() {
     });
   });
 
-  /*
-    The Content-Security-Policy allows https://fonts.googleapis.com only, so a
-    protocol-relative link resolved to http:// on a plain-HTTP deployment - the
-    shipped compose out of the box - and the browser blocked the font on every
-    page. A premium console check found it; this keeps it from coming back.
-  */
-  describe('external font is requested over https', function() {
+  // A remote stylesheet can hold pageLoad even after the app responds 200.
+  describe('Open Sans does not depend on an external font service', function() {
 
     const layout = fs.readFileSync(
       path.join(__dirname, '..', '..', 'views', 'layouts', 'main.hbs'),
@@ -162,21 +157,35 @@ describe('Page assets', function() {
       'utf8'
     );
 
-    it('links the font with an explicit scheme', function() {
-      expect(layout).to.include('https://fonts.googleapis.com/css');
-      expect(layout).to.not.match(
-        /href="\/\/fonts\.googleapis\.com/,
-        'a protocol-relative font link is blocked by our own CSP over plain HTTP'
-      );
+    it('links a fingerprinted same-origin stylesheet', function() {
+      expect(layout).to.include("{{asset '/css/open-sans.css'}}");
+      expect(layout).to.not.match(/href=["'](?:https?:)?\/\/fonts\./);
     });
 
-    it('links only what the policy admits', function() {
-      const linked = (layout.match(/https:\/\/[a-z.]*fonts\.g[a-z]+\.com/g) || []);
-
-      expect(linked.length).to.be.above(0);
-      linked.forEach(origin => {
-        expect(policy, origin + ' is linked but not allowed by the CSP').to.include(origin);
+    it('preserves all four weights with pinned, licensed local font bytes', function() {
+      const fontRoot = path.join(__dirname, '..', '..', 'public', 'fonts', 'open-sans');
+      const css = fs.readFileSync(path.join(fontRoot, '..', '..', 'css', 'open-sans.css'), 'utf8');
+      const sources = JSON.parse(fs.readFileSync(path.join(fontRoot, 'SOURCES.json'), 'utf8'));
+      expect(sources.map(source => source.subset)).to.deep.equal([
+        'cyrillic-ext', 'cyrillic', 'greek-ext', 'greek', 'hebrew',
+        'math', 'symbols', 'vietnamese', 'latin-ext', 'latin',
+      ]);
+      expect((css.match(/@font-face/g) || []).length).to.equal(40);
+      sources.forEach(source => {
+        const bytes = fs.readFileSync(path.join(fontRoot, source.file));
+        expect(bytes.toString('ascii', 0, 4), 'WOFF2 signature').to.equal('wOF2');
+        expect(require('crypto').createHash('sha256').update(bytes).digest('hex')).to.equal(source.sha256);
+        expect(source.weights).to.deep.equal([300, 400, 600, 700]);
+        const faces = css.match(/@font-face\s*\{[^}]+\}/g)
+          .filter(face => face.includes(`url(../fonts/open-sans/${source.file})`));
+        expect(faces.length).to.equal(4);
+        expect(faces.map(face => Number(/font-weight: (\d+);/.exec(face)[1]))).to.deep.equal(source.weights);
+        faces.forEach(face => expect(face).to.include(`unicode-range: ${source.unicodeRange};`));
       });
+      expect(css).to.not.match(/https?:|@import|local\(/);
+      expect(fs.readFileSync(path.join(fontRoot, 'OFL.txt'), 'utf8')).to.include('SIL OPEN FONT LICENSE Version 1.1');
+      expect(policy).to.include("style-src 'self'");
+      expect(policy).to.include("font-src 'self'");
     });
   });
 
