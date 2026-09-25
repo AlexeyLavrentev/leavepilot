@@ -32,6 +32,7 @@ function makeRuntime(overrides = {}) {
   };
   const db = {
     connect: async () => { events.push('db.connect'); },
+    assertSchemaReady: async () => { events.push('db.schema'); },
     sequelize: {close: async () => { events.push('db.close'); }},
   };
   const app = {
@@ -49,7 +50,7 @@ function makeRuntime(overrides = {}) {
     log: () => {},
     ...overrides,
   });
-  return {runtime, events, gate, lifecycle, notify: state => notify(state), subscription: () => ({subscribed, unsubscribed})};
+  return {runtime, events, gate, lifecycle, db, notify: state => notify(state), subscription: () => ({subscribed, unsubscribed})};
 }
 
 function childRun(args, env, deadlineMs = 5000) {
@@ -80,6 +81,85 @@ function childRun(args, env, deadlineMs = 5000) {
 }
 
 if (!process.argv.includes('--runtime-child')) { describe('direct runtime startup owner', function() {
+  it('retries only allowlisted connection failures before one absolute deadline', async function() {
+    const fixture = makeRuntime({startupTimeoutMs: 180, retryDelayMs: 5});
+    let attempts = 0;
+    fixture.db.connect = async () => {
+      fixture.events.push('db.connect');
+      attempts += 1;
+      if (attempts < 3) {
+        throw Object.assign(new Error('temporary'), {parent: {code: attempts === 1 ? 'ECONNREFUSED' : 'EAI_AGAIN'}});
+      }
+    };
+    fixture.gate.release();
+    await fixture.runtime.start();
+    assert.equal(attempts, 3);
+    assert.ok(fixture.events.indexOf('db.schema') < fixture.events.indexOf('listen'));
+    await fixture.runtime.shutdown('sigterm', null, 0);
+  });
+
+  it('rejects auth, schema, config and unknown errors without retries', async function() {
+    for (const error of [
+      Object.assign(new Error('denied'), {parent: {code: 'ER_ACCESS_DENIED_ERROR'}}),
+      Object.assign(new Error('schema'), {code: 'ER_NO_SUCH_TABLE'}),
+      Object.assign(new Error('invalid config'), {code: 'ERR_INVALID_ARG_TYPE'}),
+      new Error('ECONNREFUSED in message only'),
+    ]) {
+      const fixture = makeRuntime({startupTimeoutMs: 100, retryDelayMs: 5});
+      let attempts = 0;
+      fixture.db.connect = async () => { attempts += 1; throw error; };
+      await fixture.runtime.start();
+      await fixture.runtime.whenStopped();
+      assert.equal(attempts, 1, error.message);
+      assert.equal(fixture.events.includes('listen'), false);
+      assert.equal(fixture.events.filter(event => event === 'exit:1').length, 1);
+    }
+  });
+
+  it('bounds a never-settling connection and does not listen after late success', async function() {
+    const fixture = makeRuntime({startupTimeoutMs: 35, retryDelayMs: 5});
+    let release;
+    fixture.db.connect = () => new Promise(resolve => { release = resolve; });
+    const starting = fixture.runtime.start();
+    await fixture.runtime.whenStopped();
+    release();
+    await starting;
+    assert.equal(fixture.events.includes('listen'), false);
+    assert.equal(fixture.events.filter(event => event === 'exit:1').length, 1);
+  });
+
+  it('shares the budget across SQL, schema and Store retries', async function() {
+    const fixture = makeRuntime({startupTimeoutMs: 55, retryDelayMs: 20});
+    fixture.db.connect = async () => {
+      fixture.events.push('db.connect');
+      await wait(30);
+    };
+    fixture.db.assertSchemaReady = async () => {
+      fixture.events.push('db.schema');
+      throw Object.assign(new Error('reset'), {code: 'ECONNRESET'});
+    };
+    const started = Date.now();
+    await fixture.runtime.start();
+    await fixture.runtime.whenStopped();
+    assert.ok(Date.now() - started < 130);
+    assert.equal(fixture.events.includes('listen'), false);
+    assert.equal(fixture.events.filter(event => event === 'exit:1').length, 1);
+  });
+
+  it('fails once on a listener error after readiness', async function() {
+    const fixture = makeRuntime({listen: async () => { throw Object.assign(new Error('busy'), {code: 'EADDRINUSE'}); }});
+    fixture.gate.release();
+    await fixture.runtime.start();
+    await fixture.runtime.whenStopped();
+    assert.equal(fixture.events.includes('ready'), false);
+    assert.equal(fixture.events.filter(event => event === 'exit:1').length, 1);
+  });
+
+  it('rejects invalid injected startup budgets', function() {
+    for (const startupTimeoutMs of [0, -1, Infinity, NaN, '20']) {
+      assert.throws(() => makeRuntime({startupTimeoutMs}), /startupTimeoutMs/);
+    }
+  });
   it('waits for selected Store readiness and memoizes duplicate starts', async function() {
     const {runtime, events, gate, subscription} = makeRuntime();
     const first = runtime.start();
