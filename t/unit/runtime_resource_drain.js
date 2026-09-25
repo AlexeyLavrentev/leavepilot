@@ -2,6 +2,8 @@
 
 const assert = require('node:assert/strict');
 const EventEmitter = require('node:events');
+const {spawn} = require('node:child_process');
+const path = require('node:path');
 const EditionRegistry = require('../../lib/edition/registry');
 const {startRuntime} = require('../../lib/runtime_startup');
 const {createShutdownCoordinator} = require('../../lib/runtime_shutdown');
@@ -10,6 +12,50 @@ const taskLock = require('../../lib/scheduler/task_lock');
 const reminderScheduler = require('../../lib/model/leave/reminder_scheduler');
 
 describe('Runtime resource drain', function() {
+  it('drains a real session save and active scheduler lock before SQL', async function() {
+    const child = spawn(process.execPath, [path.join(__dirname, '../fixtures/runtime/shutdown_case.js'), 'delayed-job'], {
+      cwd: path.join(__dirname, '../..'), env: {...process.env, NODE_ENV: 'test'},
+      stdio: ['ignore', 'pipe', 'pipe', 'ipc'],
+    });
+    const events = [];
+    let stderr = '';
+    child.stderr.on('data', chunk => { stderr = (stderr + chunk).slice(-2000); });
+    child.on('message', message => events.push(message));
+    const waitFor = async event => {
+      for (let i = 0; i < 150; i += 1) {
+        const found = events.find(message => message.event === event);
+        if (found) { return found; }
+        await new Promise(resolve => setTimeout(resolve, 10));
+      }
+      throw new Error(`missing ${event}: ${stderr}`);
+    };
+    const watchdog = setTimeout(() => child.kill('SIGKILL'), 1800);
+    try {
+      const {port} = await waitFor('ready');
+      await waitFor('job-pending');
+      const response = fetch(`http://127.0.0.1:${port}/write`);
+      await waitFor('save-pending');
+      child.kill('SIGTERM');
+      await waitFor('listener-closing');
+      assert.equal(events.some(item => item.event === 'store-close'), false);
+      child.send({event: 'release-save'});
+      assert.equal((await response).status, 200);
+      await waitFor('save-complete');
+      assert.equal(events.some(item => item.event === 'sql-close'), false);
+      child.send({event: 'release-job'});
+      const code = await new Promise(resolve => child.once('close', resolve));
+      assert.equal(code, 0, stderr);
+      const order = events.map(item => item.event);
+      assert.ok(order.indexOf('save-complete') < order.indexOf('store-close'), order.join(','));
+      assert.ok(order.indexOf('lock-release') < order.indexOf('sql-close'), order.join(','));
+      assert.ok(order.indexOf('store-close') < order.indexOf('sql-close'), order.join(','));
+      assert.equal(events.find(item => item.event === 'sql-close').persisted, 1);
+    } finally {
+      clearTimeout(watchdog);
+      if (child.exitCode === null && child.signalCode === null) { child.kill('SIGKILL'); }
+    }
+  });
+
   it('waits for an active Community job and its lock release without rescheduling', async function() {
     const oldFlag = process.env.LEAVE_REMINDER_SCHEDULER_ENABLED;
     const oldFeature = process.env.FEATURE_LEAVE_START_REMINDERS;
@@ -111,11 +157,12 @@ describe('Runtime resource drain', function() {
     const originalUseRedis = config.useRedis;
     let creates = 0;
     let closes = 0;
+    let destroys = 0;
     try {
       config.useRedis = true;
       redis.createClient = () => {
         creates += 1;
-        return {on() {}, connect: async () => {}, close: async () => { closes += 1; }, destroy() {}};
+        return {on() {}, connect: async () => {}, close: async () => { closes += 1; }, destroy() { destroys += 1; }};
       };
       delete require.cache[cachePath];
       const unused = require('../../lib/cache/team_view_cache');
@@ -127,6 +174,9 @@ describe('Runtime resource drain', function() {
       assert.equal(creates, 1);
       await Promise.all([used.close(), used.close()]);
       assert.equal(closes, 1);
+      used.forceClose();
+      used.forceClose();
+      assert.equal(destroys, 1);
     } finally {
       redis.createClient = originalCreate;
       config.useRedis = originalUseRedis;

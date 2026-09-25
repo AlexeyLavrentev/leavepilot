@@ -31,7 +31,7 @@ let releaseSave;
 let savePending = false;
 const originalSet = store.set.bind(store);
 store.set = (sid, data, callback) => {
-  if (mode === 'delayed-save' && !savePending) {
+  if ((mode === 'delayed-save' || mode === 'delayed-job') && !savePending) {
     savePending = true;
     send('save-pending');
     releaseSave = () => originalSet(sid, data, error => {
@@ -44,11 +44,13 @@ store.set = (sid, data, callback) => {
 };
 process.on('message', message => {
   if (message.event === 'release-save' && releaseSave) { releaseSave(); }
+  if (message.event === 'release-job' && releaseJob) { releaseJob(); }
 });
+let releaseJob;
 app.set('db_model', {
   sequelize: {
     close: async () => {
-      const persisted = mode === 'delayed-save'
+      const persisted = mode === 'delayed-save' || mode === 'delayed-job'
         ? await sequelize.models.Session.count() : undefined;
       send('sql-close', {persisted});
       if (mode === 'hung-sql') { return new Promise(() => {}); }
@@ -78,7 +80,7 @@ lifecycle.close = () => {
 startRuntime({
   loadApp: () => app,
   startupTimeoutMs: 1000,
-  shutdownTimeoutMs: mode === 'delayed-save' ? 1000 : 250,
+  shutdownTimeoutMs: mode === 'delayed-save' || mode === 'delayed-job' ? 1000 : 250,
   listen: async context => {
     server = await require('../../../lib/server_listener').listen({...context, port: 0, host: '127.0.0.1'});
     const originalCloseServer = server.close.bind(server);
@@ -88,7 +90,26 @@ startRuntime({
     };
     return server;
   },
-  startSchedulers: () => [],
+  startSchedulers: () => {
+    if (mode !== 'delayed-job') { return []; }
+    const scheduler = require('../../../lib/scheduler/leave_start_reminders');
+    const taskLock = require('../../../lib/scheduler/task_lock');
+    const reminders = require('../../../lib/model/leave/reminder_scheduler');
+    process.env.LEAVE_REMINDER_SCHEDULER_ENABLED = 'true';
+    taskLock.tryAcquireTaskLock = async () => ({acquired: true, lock: {}, lockedBy: 'fixture'});
+    taskLock.releaseTaskLock = async () => { send('lock-release'); };
+    reminders.sendLeaveStartReminders = () => new Promise(resolve => {
+      send('job-pending');
+      releaseJob = () => resolve([]);
+    });
+    const originalSetTimeout = global.setTimeout;
+    let fireJob;
+    global.setTimeout = callback => { fireJob = callback; return {unref() {}}; };
+    const handle = scheduler.startLeaveReminderScheduler({models: {}, logger: {log() {}, error() {}}});
+    global.setTimeout = originalSetTimeout;
+    setImmediate(fireJob);
+    return [{name: 'leave_start_reminders', handle}];
+  },
   sendReady: () => send('ready', {port: server.address().port}),
   exit: code => send('exit', {code}, () => process.exit(code)),
 }).start();
