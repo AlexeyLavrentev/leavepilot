@@ -63,8 +63,17 @@ async function openStore(kind) {
   if (kind === 'current') {
     middleware = createSessionMiddleware({sequelizeDb: db});
     store = capturedStore;
-    await middleware.sessionLifecycle.initialize();
-    close = () => middleware.sessionLifecycle.close();
+    for (const method of ['get', 'set', 'touch', 'destroy', 'length', 'clearExpiredSessions']) {
+      assert.equal(Object.hasOwn(store, method), false, `${method} must use the native Store method`);
+    }
+    const initialization = middleware.sessionLifecycle.initialize();
+    assert.equal(middleware.sessionLifecycle.initialize(), initialization);
+    await initialization;
+    close = async () => {
+      const closing = middleware.sessionLifecycle.close();
+      assert.equal(middleware.sessionLifecycle.close(), closing);
+      await closing;
+    };
   } else {
     store = new NativeStore({db});
     await store.sync();
@@ -260,6 +269,7 @@ async function runStoreCase() {
   let stage = 'open-current';
   const observations = {};
   const shared = sid();
+  const legacySid = sid();
   try {
     opened = await openStore('current');
     stage = 'exercise-current';
@@ -267,6 +277,14 @@ async function runStoreCase() {
     await exerciseMiddlewareFlags(opened);
     await exerciseErrors(opened);
     await call(opened.store, 'set', shared, sessionData('from-current'));
+    // The removed shim wrote JSON data and a DATE expiry in this existing table.
+    // Seed its persisted representation directly so a later native run still
+    // proves pre-removal sessions remain readable.
+    await opened.db.models.Session.create({
+      sid: legacySid,
+      data: JSON.stringify(sessionData('legacy-shim')),
+      expires: future(),
+    });
     await closeStore(opened);
     opened = null;
 
@@ -274,6 +292,7 @@ async function runStoreCase() {
     opened = await openStore('native');
     stage = 'exercise-native';
     assert.equal((await call(opened.store, 'get', shared)).value, 'from-current');
+    assert.equal((await call(opened.store, 'get', legacySid)).value, 'legacy-shim');
     observations.native = await exercise(opened.store, 'native');
     await exerciseErrors(opened);
     await call(opened.store, 'set', shared, sessionData('from-native'));
@@ -283,7 +302,9 @@ async function runStoreCase() {
     stage = 'reopen-current';
     opened = await openStore('current');
     assert.equal((await call(opened.store, 'get', shared)).value, 'from-native');
+    assert.equal((await call(opened.store, 'get', legacySid)).value, 'legacy-shim');
     await call(opened.store, 'destroy', shared);
+    await call(opened.store, 'destroy', legacySid);
     await closeStore(opened);
     opened = null;
     stage = 'http';
