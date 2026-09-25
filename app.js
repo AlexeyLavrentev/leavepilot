@@ -138,6 +138,14 @@ const sessionMiddleware = createSessionMiddleware({
   sequelizeDb: app.get('db_model').sequelize,
 });
 app.set('session_middleware', sessionMiddleware);
+// Reject session-bearing application traffic before express-session or Passport
+// can mistake an unavailable selected Store for an anonymous visitor.
+app.use(function(req, res, next) {
+  if (!sessionMiddleware.sessionLifecycle.isReady()) {
+    return res.status(503).type('text/plain').send('Service unavailable');
+  }
+  return next();
+});
 app.use(sessionMiddleware);
 app.use(passport.initialize());
 app.use(passport.session());

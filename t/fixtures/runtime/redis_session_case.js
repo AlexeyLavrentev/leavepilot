@@ -33,6 +33,7 @@ async function main() {
   const {startRuntime} = require('../../../lib/runtime_startup');
   const runtime = startRuntime({
     loadApp: () => app,
+    shutdownTimeoutMs: 1000,
     listen: options => require('../../../lib/server_listener').listen({...options, port: 0, host: '127.0.0.1'}),
     startSchedulers: () => [],
     sendReady: () => {},

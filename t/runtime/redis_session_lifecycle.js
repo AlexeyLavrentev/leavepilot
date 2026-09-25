@@ -7,7 +7,8 @@ const os = require('node:os');
 const path = require('node:path');
 const {spawnInGroup, terminateTree} = require('../../bin/lib/spawn_group');
 
-const setup = 'Start a dedicated Redis/RESP2 service, then set TEST_SESSION_HOST, TEST_SESSION_PORT and TEST_SESSION_BACKEND=redis';
+const OWNERSHIP_KEY = 'lp:phase02:session-owner';
+const setup = 'Start a dedicated Redis/RESP2 service; SET lp:phase02:session-owner to a unique token; set TEST_SESSION_HOST, TEST_SESSION_PORT, TEST_SESSION_BACKEND=redis and TEST_SESSION_OWNERSHIP_TOKEN to that token';
 const fixture = path.resolve(__dirname, '../fixtures/runtime/redis_session_case.js');
 
 function waitFor(run, event, timeoutMs = 5000) {
@@ -63,22 +64,31 @@ function startProxy(host, port) {
 }
 
 async function checkEndpoint(host, port) {
-  if (!host || !Number.isInteger(port) || port <= 0 || process.env.TEST_SESSION_BACKEND !== 'redis') {
+  const token = process.env.TEST_SESSION_OWNERSHIP_TOKEN;
+  if (!host || !Number.isInteger(port) || port <= 0 || process.env.TEST_SESSION_BACKEND !== 'redis'
+      || !token || !/^[A-Za-z0-9]{16,64}$/.test(token)) {
     throw new Error(setup);
   }
   await new Promise((resolve, reject) => {
     const socket = net.connect({host, port});
     let response = '';
-    const fail = () => { socket.destroy(); reject(new Error(setup)); };
+    let finished = false;
+    const finish = valid => {
+      if (finished) { return; }
+      finished = true;
+      socket.destroy();
+      valid ? resolve() : reject(new Error(setup));
+    };
+    const expected = `$${token.length}\r\n${token}\r\n`;
+    const command = `*2\r\n$3\r\nGET\r\n$${OWNERSHIP_KEY.length}\r\n${OWNERSHIP_KEY}\r\n`;
+    const fail = () => finish(false);
     socket.setTimeout(1000, fail);
     socket.once('error', fail);
-    socket.on('connect', () => socket.write('*1\r\n$4\r\nPING\r\n'));
+    socket.on('connect', () => socket.write(command));
     socket.on('data', chunk => {
       response += chunk.toString();
-      if (response.includes('\r\n')) {
-        socket.destroy();
-        response.startsWith('+PONG\r\n') ? resolve() : reject(new Error(setup));
-      }
+      if (response === expected) { finish(true); }
+      else if (response.length >= expected.length) { finish(false); }
     });
   });
 }
@@ -163,13 +173,53 @@ describe('real Redis session lifecycle', function() {
       assert.equal((await request(base, '/', cookie)).status, 503);
       assert.equal((await request(base, '/calendar/', cookie)).status, 503);
       proxy.setBlocked(false);
-      await waitFor(run, 'session-ready', 3000);
+      await waitUntil(() => run.events.filter(item => item.event === 'session-ready').length >= 2);
       assert.equal(run.child.exitCode, null);
       const after = await request(base, '/calendar/', cookie);
       assert.equal(after.status, 200, run.output);
       assert.equal(ready.pid, run.child.pid);
       assert.equal(selectedCookie(after) || cookie, cookie);
       assert.equal(run.events.filter(item => item.event === 'exit').length, 0);
+    } finally {
+      if (run) { await terminateTree(run.child, {graceMs: 100}); }
+      await proxy.close();
+      fs.rmSync(directory, {recursive: true, force: true});
+    }
+  });
+
+  it('recovery tracer: exits nonzero when the selected Store stays unavailable', async function() {
+    this.timeout(10000);
+    const host = process.env.TEST_SESSION_HOST;
+    const port = Number(process.env.TEST_SESSION_PORT);
+    await checkEndpoint(host, port);
+    const proxy = startProxy(host, port);
+    const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'lp-redis-deadline-'));
+    let run;
+    try {
+      const proxyPort = await proxy.listen();
+      run = launch({NODE_ENV: 'test', DB_DIALECT: 'sqlite', DB_STORAGE: path.join(directory, 'app.sqlite'),
+        DB_LOGGING: 'false', SESSION_SECRET: 'redis-lifecycle-session-secret',
+        CRYPTO_SECRET: 'redis-lifecycle-crypto-secret', SILENCE_HTTP_LOGS: 'true',
+        DISABLE_AUTH_RATE_LIMIT: 'true', DISABLE_NOTIFICATIONS_POLLING: 'true',
+        LEAVEPILOT_EDITION: 'community', TEST_SESSION_HOST: '127.0.0.1',
+        TEST_SESSION_PORT: String(proxyPort), TEST_SESSION_BACKEND: 'redis',
+        TEST_SESSION_RECOVERY_MS: '350'});
+      const ready = await waitFor(run, 'ready');
+      const base = `http://127.0.0.1:${ready.port}`;
+      assert.equal((await request(base, '/login/')).status, 200);
+      proxy.setBlocked(true);
+      await waitFor(run, 'session-unready', 2000);
+      assert.equal((await request(base, '/')).status, 503);
+      let watchdog;
+      const result = await Promise.race([
+        run.closed,
+        new Promise((_, reject) => {
+          watchdog = setTimeout(() => reject(new Error('worker did not exit')), 3000);
+        }),
+      ]).finally(() => clearTimeout(watchdog));
+      assert.equal(result.code, 1, run.output);
+      assert.equal(run.events.filter(item => item.event === 'session-failed').length, 1);
+      assert.equal(run.events.filter(item => item.event === 'exit').length, 1);
     } finally {
       if (run) { await terminateTree(run.child, {graceMs: 100}); }
       await proxy.close();
