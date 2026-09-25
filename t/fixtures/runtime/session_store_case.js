@@ -111,6 +111,33 @@ async function exerciseCloseBeforeReady() {
   }
 }
 
+async function exerciseTransientInitialize() {
+  const db = new Sequelize(database, process.env.DB_USER, process.env.DB_PASSWORD, sqlOptions);
+  const middleware = createSessionMiddleware({sequelizeDb: db});
+  const store = capturedStore;
+  const originalSync = store.sync.bind(store);
+  const states = [];
+  let calls = 0;
+  middleware.sessionLifecycle.onStateChange(event => states.push(event.state));
+  store.sync = () => {
+    calls += 1;
+    return calls === 1
+      ? Promise.reject(Object.assign(new Error('temporary'), {code: 'ECONNRESET'}))
+      : originalSync();
+  };
+  try {
+    await assert.rejects(middleware.sessionLifecycle.initialize(), {code: 'ECONNRESET'});
+    assert.equal(middleware.sessionLifecycle.isReady(), false);
+    await middleware.sessionLifecycle.initialize();
+    assert.equal(middleware.sessionLifecycle.isReady(), true);
+    assert.equal(calls, 2);
+    assert.deepEqual(states, ['ready']);
+  } finally {
+    await middleware.sessionLifecycle.close();
+    await db.close();
+  }
+}
+
 async function exercise(store, model, marker) {
   const observations = {independentWriteErrors: [], sameSidWriteErrors: []};
   const absent = sid();
@@ -346,6 +373,8 @@ async function runStoreCase() {
     opened = null;
     stage = 'http';
     const http = await httpCase();
+    stage = 'transient-initialize';
+    await exerciseTransientInitialize();
     stage = 'close-before-ready';
     await exerciseCloseBeforeReady();
     await new Promise(resolve => setTimeout(resolve, 20));

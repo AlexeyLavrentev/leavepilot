@@ -80,7 +80,7 @@ function childRun(args, env, deadlineMs = 5000) {
   });
 }
 
-if (!process.argv.includes('--runtime-child')) { describe('direct runtime startup owner', function() {
+if (!process.argv.includes('--runtime-child') && !process.argv.includes('--schema-child')) { describe('direct runtime startup owner', function() {
   it('retries only allowlisted connection failures before one absolute deadline', async function() {
     const fixture = makeRuntime({startupTimeoutMs: 180, retryDelayMs: 5});
     let attempts = 0;
@@ -96,6 +96,37 @@ if (!process.argv.includes('--runtime-child')) { describe('direct runtime startu
     assert.equal(attempts, 3);
     assert.ok(fixture.events.indexOf('db.schema') < fixture.events.indexOf('listen'));
     await fixture.runtime.shutdown('sigterm', null, 0);
+  });
+
+  it('retries a transient Store initialization without reconnecting SQL', async function() {
+    const fixture = makeRuntime({startupTimeoutMs: 180, retryDelayMs: 5});
+    let attempts = 0;
+    fixture.lifecycle.initialize = async () => {
+      attempts += 1;
+      if (attempts === 1) {
+        throw Object.assign(new Error('temporary'), {code: 'ECONNRESET'});
+      }
+    };
+    await fixture.runtime.start();
+    assert.equal(attempts, 2);
+    assert.equal(fixture.events.filter(event => event === 'db.connect').length, 1);
+    assert.equal(fixture.events.filter(event => event === 'listen').length, 1);
+    await fixture.runtime.shutdown('sigterm', null, 0);
+  });
+
+  it('cancels pending retries when shutdown starts', async function() {
+    const fixture = makeRuntime({startupTimeoutMs: 500, retryDelayMs: 200});
+    let attempts = 0;
+    fixture.db.connect = async () => {
+      attempts += 1;
+      throw Object.assign(new Error('temporary'), {code: 'ECONNREFUSED'});
+    };
+    const starting = fixture.runtime.start();
+    await wait(15);
+    await fixture.runtime.shutdown('sigterm', null, 0);
+    await starting;
+    assert.equal(attempts, 1);
+    assert.equal(fixture.events.includes('listen'), false);
   });
 
   it('rejects auth, schema, config and unknown errors without retries', async function() {
@@ -262,7 +293,59 @@ if (!process.argv.includes('--runtime-child')) { describe('direct runtime startu
       fs.rmSync(directory, {recursive: true, force: true});
     }
   });
+
+  it('refuses a missing table, column or migration without changing the schema', async function() {
+    const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'runtime-schema-'));
+    const baseline = path.join(directory, 'baseline.sqlite');
+    const env = {
+      NODE_ENV: 'development', DB_DIALECT: 'sqlite', DB_STORAGE: baseline,
+      DB_LOGGING: 'false', PORT: '0', HOST: '127.0.0.1',
+      SESSION_SECRET: 'test-only-session-secret', CRYPTO_SECRET: 'test-only-crypto-secret',
+      SILENCE_HTTP_LOGS: 'true', DISABLE_NOTIFICATIONS_POLLING: 'true',
+    };
+    try {
+      const migrated = await childRun(['bin/db_update.js'], env, 12000);
+      assert.equal(migrated.code, 0, migrated.output);
+      for (const scenario of ['missing-table', 'missing-column', 'pending-migration']) {
+        const storage = path.join(directory, scenario + '.sqlite');
+        fs.copyFileSync(baseline, storage);
+        const observed = await childRun([__filename, '--schema-child'],
+          {...env, DB_STORAGE: storage, RUNTIME_CASE: scenario}, 5000);
+        assert.equal(observed.code, 1, observed.output);
+        assert.deepEqual(observed.messages.filter(message => message.type === 'runtime-check').map(message => message.step),
+          ['stopped'], observed.output);
+        assert.match(observed.output, /SCHEMA_NOT_READY/);
+      }
+    } finally {
+      fs.rmSync(directory, {recursive: true, force: true});
+    }
+  });
 }); }
+
+if (process.argv.includes('--schema-child')) {
+  const sqlite3 = require('sqlite3');
+  const statement = process.env.RUNTIME_CASE === 'missing-table'
+    ? 'DROP TABLE "Departments"'
+    : process.env.RUNTIME_CASE === 'missing-column'
+      ? 'ALTER TABLE "Departments" DROP COLUMN "notify_leave_start_reminder_to_employee"'
+      : 'DELETE FROM "SequelizeMeta" WHERE name = (SELECT name FROM "SequelizeMeta" LIMIT 1)';
+  const connection = new sqlite3.Database(process.env.DB_STORAGE);
+  connection.exec(statement, error => {
+    connection.close(async closeError => {
+      if (error || closeError) {
+        process.stderr.write(String((error || closeError).stack));
+        process.exitCode = 1;
+        return;
+      }
+      const runtime = startRuntime({
+        sendReady: () => { process.send({type: 'runtime-check', step: 'ready'}); },
+        exit: code => { process.send({type: 'runtime-check', step: 'stopped'}); process.exitCode = code; },
+      });
+      await runtime.start();
+      await runtime.whenStopped();
+    });
+  });
+}
 
 if (process.argv.includes('--runtime-child')) {
   const runtime = startRuntime({
