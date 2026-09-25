@@ -42,7 +42,8 @@ describe('selected Redis session lifecycle', function() {
       const states = [];
       test.lifecycle.onStateChange(event => states.push(event.state));
       test.client.emit('error', Object.assign(new Error('private transport detail'), {code: 'ECONNRESET'}));
-      test.handlers.set = (_sid, _value, callback) => callback(new Error('NOPERM denied'));
+      test.handlers.set = (_sid, _value, callback) => callback(Object.assign(
+        new Error('private transport detail'), {code: 'ECONNRESET'}));
       for (let i = 0; i < 3; i++) {
         test.client.emit('ready');
         test.client.emit('error', Object.assign(new Error('private transport detail'), {code: 'ECONNRESET'}));
@@ -54,12 +55,13 @@ describe('selected Redis session lifecycle', function() {
       test.client.emit('ready');
       assert.equal(test.lifecycle.isReady(), false);
       assert.ok(test.client.destroyed);
-      assert.doesNotMatch(JSON.stringify(test.logs), /private transport detail|NOPERM denied/);
+      assert.doesNotMatch(JSON.stringify(test.logs), /private transport detail/);
     } finally { await test.lifecycle.close(); }
   });
 
   it('bounds a blackholed in-flight Store command and calls its callback once', async function() {
-    const test = fixture();
+    let failures = 0;
+    const test = fixture({onOperationFailure: () => { failures++; }});
     try {
       await test.lifecycle.initialize();
       let late;
@@ -71,6 +73,7 @@ describe('selected Redis session lifecycle', function() {
       assert.equal(test.lifecycle.isReady(), false);
       late(null, {authenticated: true});
       assert.equal(results.length, 1);
+      assert.equal(failures, 1);
     } finally { await test.lifecycle.close(); }
   });
 

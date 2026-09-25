@@ -32,6 +32,8 @@ function waitFor(run, event, timeoutMs = 5000) {
 function startProxy(host, port) {
   const sockets = new Set();
   let blocked = false;
+  let blackholed = false;
+  let denyWrites = false;
   const server = net.createServer(downstream => {
     sockets.add(downstream);
     downstream.on('close', () => sockets.delete(downstream));
@@ -41,7 +43,12 @@ function startProxy(host, port) {
     upstream.on('close', () => sockets.delete(upstream));
     downstream.on('error', () => upstream.destroy());
     upstream.on('error', () => downstream.destroy());
-    downstream.pipe(upstream).pipe(downstream);
+    downstream.on('data', chunk => {
+      if (denyWrites && /\r\n(?:SET|EXPIRE|DEL)\r\n/i.test(chunk.toString())) {
+        downstream.write('-NOPERM test proxy denies writes\r\n');
+      } else { upstream.write(chunk); }
+    });
+    upstream.on('data', chunk => { if (!blackholed) { downstream.write(chunk); } });
   });
   return {
     server,
@@ -49,6 +56,8 @@ function startProxy(host, port) {
       blocked = value;
       if (blocked) { for (const socket of sockets) { socket.destroy(); } }
     },
+    setBlackholed(value) { blackholed = value; },
+    setDenyWrites(value) { denyWrites = value; },
     async listen() {
       await new Promise((resolve, reject) => {
         server.once('error', reject);
@@ -135,7 +144,159 @@ async function waitUntil(predicate, timeoutMs = 3000) {
   throw new Error('Condition did not become true within deadline');
 }
 
+function fixtureEnv(directory, proxyPort, extra = {}) {
+  return {
+    NODE_ENV: 'test', DB_DIALECT: 'sqlite', DB_STORAGE: path.join(directory, 'app.sqlite'),
+    DB_LOGGING: 'false', SESSION_SECRET: 'redis-lifecycle-session-secret',
+    CRYPTO_SECRET: 'redis-lifecycle-crypto-secret', SILENCE_HTTP_LOGS: 'true',
+    DISABLE_AUTH_RATE_LIMIT: 'true', DISABLE_NOTIFICATIONS_POLLING: 'true',
+    LEAVEPILOT_EDITION: 'community', TEST_SESSION_HOST: '127.0.0.1',
+    TEST_SESSION_PORT: String(proxyPort), TEST_SESSION_BACKEND: 'redis', ...extra,
+  };
+}
+
+async function boundedClose(run, timeoutMs = 3000) {
+  let timer;
+  return Promise.race([
+    run.closed,
+    new Promise((_, reject) => {
+      timer = setTimeout(() => reject(new Error(`worker did not exit: ${run.output}`)), timeoutMs);
+    }),
+  ]).finally(() => clearTimeout(timer));
+}
+
 describe('real Redis session lifecycle', function() {
+  it('fails bounded startup when the selected endpoint is absent', async function() {
+    this.timeout(10000);
+    await checkEndpoint(process.env.TEST_SESSION_HOST, Number(process.env.TEST_SESSION_PORT));
+    const proxy = startProxy(process.env.TEST_SESSION_HOST, Number(process.env.TEST_SESSION_PORT));
+    const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'lp-redis-absent-'));
+    let run;
+    try {
+      const proxyPort = await proxy.listen();
+      proxy.setBlocked(true);
+      run = launch(fixtureEnv(directory, proxyPort, {TEST_SESSION_RECOVERY_MS: '250'}));
+      const result = await boundedClose(run, 3000);
+      assert.equal(result.code, 1, run.output);
+      assert.equal(run.events.filter(item => item.event === 'ready').length, 0);
+    } finally {
+      if (run) { await terminateTree(run.child, {graceMs: 100}); }
+      await proxy.close();
+      fs.rmSync(directory, {recursive: true, force: true});
+    }
+  });
+
+  it('rejects a permanent Store permission error before opening HTTP', async function() {
+    this.timeout(10000);
+    await checkEndpoint(process.env.TEST_SESSION_HOST, Number(process.env.TEST_SESSION_PORT));
+    const proxy = startProxy(process.env.TEST_SESSION_HOST, Number(process.env.TEST_SESSION_PORT));
+    const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'lp-redis-permission-'));
+    let run;
+    try {
+      const proxyPort = await proxy.listen();
+      proxy.setDenyWrites(true);
+      run = launch(fixtureEnv(directory, proxyPort, {TEST_SESSION_RECOVERY_MS: '500'}));
+      const result = await boundedClose(run, 3000);
+      assert.equal(result.code, 1, run.output);
+      assert.equal(run.events.filter(item => item.event === 'ready').length, 0);
+      assert.match(run.output, /"category":"permission"/);
+      assert.doesNotMatch(run.output, /test proxy denies writes/);
+    } finally {
+      if (run) { await terminateTree(run.child, {graceMs: 100}); }
+      await proxy.close();
+      fs.rmSync(directory, {recursive: true, force: true});
+    }
+  });
+
+  it('bounds an in-flight blackholed session read and never returns healthy content', async function() {
+    this.timeout(10000);
+    await checkEndpoint(process.env.TEST_SESSION_HOST, Number(process.env.TEST_SESSION_PORT));
+    const proxy = startProxy(process.env.TEST_SESSION_HOST, Number(process.env.TEST_SESSION_PORT));
+    const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'lp-redis-blackhole-'));
+    let run;
+    try {
+      const proxyPort = await proxy.listen();
+      run = launch(fixtureEnv(directory, proxyPort, {
+        TEST_SESSION_RECOVERY_MS: '500', TEST_SESSION_OPERATION_MS: '100',
+      }));
+      const ready = await waitFor(run, 'ready');
+      const base = `http://127.0.0.1:${ready.port}`;
+      const page = await request(base, '/login/');
+      assert.equal(page.status, 200);
+      const cookie = selectedCookie(page);
+      assert.ok(cookie);
+      proxy.setBlackholed(true);
+      await assert.rejects(request(base, '/login/', cookie), /fetch failed|aborted|terminated/i);
+      await waitFor(run, 'session-unready', 1000);
+      assert.equal((await request(base, '/')).status, 503);
+      const result = await boundedClose(run, 2500);
+      assert.equal(result.code, 1, run.output);
+    } finally {
+      if (run) { await terminateTree(run.child, {graceMs: 100}); }
+      await proxy.close();
+      fs.rmSync(directory, {recursive: true, force: true});
+    }
+  });
+
+  it('does not complete a login response when session persistence is denied', async function() {
+    this.timeout(10000);
+    await checkEndpoint(process.env.TEST_SESSION_HOST, Number(process.env.TEST_SESSION_PORT));
+    const proxy = startProxy(process.env.TEST_SESSION_HOST, Number(process.env.TEST_SESSION_PORT));
+    const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'lp-redis-save-'));
+    let run;
+    try {
+      const proxyPort = await proxy.listen();
+      run = launch(fixtureEnv(directory, proxyPort));
+      const ready = await waitFor(run, 'ready');
+      const base = `http://127.0.0.1:${ready.port}`;
+      const page = await request(base, '/login/');
+      assert.equal(page.status, 200, run.output);
+      const csrf = page.body.match(/name=["']_csrf["'][^>]*value=["']([^"']+)/i)?.[1];
+      assert.ok(csrf);
+      proxy.setDenyWrites(true);
+      await assert.rejects(request(base, '/login/', selectedCookie(page), {
+        method: 'POST', headers: {'content-type': 'application/x-www-form-urlencoded', 'x-csrf-token': csrf},
+        body: new URLSearchParams({_csrf: csrf, email: 'redis-lifecycle@example.test', password: 'test123'}),
+      }), /fetch failed|aborted|terminated/i);
+      const result = await boundedClose(run, 2500);
+      assert.equal(result.code, 1, run.output);
+      assert.doesNotMatch(run.output, /test proxy denies writes/);
+    } finally {
+      if (run) { await terminateTree(run.child, {graceMs: 100}); }
+      await proxy.close();
+      fs.rmSync(directory, {recursive: true, force: true});
+    }
+  });
+
+  it('does not resume on a reconnected read-only Store or after its deadline', async function() {
+    this.timeout(10000);
+    await checkEndpoint(process.env.TEST_SESSION_HOST, Number(process.env.TEST_SESSION_PORT));
+    const proxy = startProxy(process.env.TEST_SESSION_HOST, Number(process.env.TEST_SESSION_PORT));
+    const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'lp-redis-readonly-'));
+    let run;
+    try {
+      const proxyPort = await proxy.listen();
+      run = launch(fixtureEnv(directory, proxyPort, {TEST_SESSION_RECOVERY_MS: '500'}));
+      const ready = await waitFor(run, 'ready');
+      const base = `http://127.0.0.1:${ready.port}`;
+      proxy.setBlocked(true);
+      await waitFor(run, 'session-unready', 1000);
+      proxy.setDenyWrites(true);
+      proxy.setBlocked(false);
+      const result = await boundedClose(run, 2500);
+      assert.equal(result.code, 1, run.output);
+      assert.equal(run.events.filter(item => item.event === 'session-ready').length, 1);
+      assert.equal(run.events.filter(item => item.event === 'session-failed').length, 1);
+      proxy.setDenyWrites(false);
+      assert.equal(run.child.exitCode, 1);
+      await assert.rejects(request(base, '/'), /fetch failed/i);
+    } finally {
+      if (run) { await terminateTree(run.child, {graceMs: 100}); }
+      await proxy.close();
+      fs.rmSync(directory, {recursive: true, force: true});
+    }
+  });
+
   it('recovery tracer: retains authenticated SID through TCP loss and same-PID recovery', async function() {
     this.timeout(10000);
     const host = process.env.TEST_SESSION_HOST;
