@@ -18,6 +18,7 @@ const sqlOptions = {
 const originalFactory = require('connect-session-sequelize');
 const NativeStore = originalFactory(session.Store);
 let capturedStore;
+const callbackCounts = [];
 const dependencyPath = require.resolve('connect-session-sequelize');
 require.cache[dependencyPath].exports = Store => {
   const DependencyStore = originalFactory(Store);
@@ -40,10 +41,11 @@ const errorCode = error => String(error && (error.original && error.original.cod
 
 function call(store, method, ...args) {
   return new Promise((resolve, reject) => {
-    let count = 0;
+    const observed = {count: 0, method};
+    callbackCounts.push(observed);
     const callback = (error, result) => {
-      count += 1;
-      if (count > 1) { return reject(new Error(`${method} called back more than once`)); }
+      observed.count += 1;
+      if (observed.count > 1) { return reject(new Error(`${method} called back more than once`)); }
       setImmediate(() => error ? reject(error) : resolve(result));
     };
     try {
@@ -57,8 +59,9 @@ async function openStore(kind) {
   const db = new Sequelize(database, process.env.DB_USER, process.env.DB_PASSWORD, sqlOptions);
   let store;
   let close;
+  let middleware = null;
   if (kind === 'current') {
-    const middleware = createSessionMiddleware({sequelizeDb: db});
+    middleware = createSessionMiddleware({sequelizeDb: db});
     store = capturedStore;
     await middleware.sessionLifecycle.initialize();
     close = () => middleware.sessionLifecycle.close();
@@ -67,7 +70,7 @@ async function openStore(kind) {
     await store.sync();
     close = async () => store.stopExpiringSessions();
   }
-  return {db, store, close};
+  return {db, store, close, middleware};
 }
 
 async function closeStore(opened) {
@@ -148,6 +151,42 @@ async function exerciseErrors(opened) {
   await opened.store.sync();
 }
 
+async function exerciseMiddlewareFlags(opened) {
+  const express = require('express');
+  const app = express();
+  const originalSet = opened.store.set;
+  let sets = 0;
+  opened.store.set = function(...args) { sets += 1; return originalSet.apply(this, args); };
+  app.use(opened.middleware);
+  app.get('/noop', (_req, res) => res.send('ok'));
+  app.get('/write', (req, res) => { req.session.marker = 'written'; res.send('ok'); });
+  let server;
+  try {
+    server = await require('../../../lib/server_listener').listen({app, port: 0, host: '127.0.0.1'});
+    const base = `http://127.0.0.1:${server.address().port}`;
+    const untouched = await fetch(base + '/noop');
+    assert.equal(untouched.status, 200);
+    await untouched.text();
+    assert.equal(sessionCookie(untouched), undefined);
+    assert.equal(sets, 0);
+    const written = await fetch(base + '/write');
+    assert.equal(written.status, 200);
+    await written.text();
+    const cookie = sessionCookie(written);
+    assert.ok(cookie);
+    assert.equal(sets, 1);
+    const read = await fetch(base + '/noop', {headers: {cookie: cookie.split(';')[0]}});
+    assert.equal(read.status, 200);
+    await read.text();
+    assert.equal(sets, 1);
+    const sessionId = decodeURIComponent(cookie.split(';')[0].split('=')[1]).slice(2).split('.')[0];
+    assert.equal((await call(opened.store, 'get', sessionId)).marker, 'written');
+  } finally {
+    if (server) { await new Promise(resolve => server.close(resolve)); }
+    opened.store.set = originalSet;
+  }
+}
+
 async function httpCase() {
   const secure = process.env.TEST_COOKIE_SECURE === 'true';
   const forwarded = secure ? {'x-forwarded-proto': 'https'} : {};
@@ -191,17 +230,21 @@ async function httpCase() {
       body: new URLSearchParams({_csrf: csrf[1], email: user.email, password: 'test123'}),
     });
     assert.equal(login.status, 302);
+    await login.text();
     assert.equal(login.headers.get('location'), '/');
     cookie = sessionCookie(login);
     assert.ok(cookie && cookie.includes('connect.sid='));
     const active = await fetch(base + '/calendar/', {headers: {...forwarded, cookie: cookie.split(';')[0]}});
     assert.equal(active.status, 200);
+    await active.text();
     const sessionId = decodeURIComponent(cookie.split(';')[0].split('=')[1]).slice(2).split('.')[0];
     const logout = await fetch(base + '/logout/', {redirect: 'manual', headers: {...forwarded, cookie: cookie.split(';')[0]}});
     assert.equal(logout.status, 302);
+    await logout.text();
     assert.equal(await call(capturedStore, 'get', sessionId), null);
     const after = await fetch(base + '/calendar/', {redirect: 'manual', headers: {...forwarded, cookie: cookie.split(';')[0]}});
     assert.equal(after.status, 303);
+    await after.text();
     return {httpLoginLogout: true, cookieContract: true};
   } finally {
     if (server) { await new Promise(resolve => server.close(resolve)); }
@@ -221,6 +264,7 @@ async function runStoreCase() {
     opened = await openStore('current');
     stage = 'exercise-current';
     observations.current = await exercise(opened.store, 'current');
+    await exerciseMiddlewareFlags(opened);
     await exerciseErrors(opened);
     await call(opened.store, 'set', shared, sessionData('from-current'));
     await closeStore(opened);
@@ -244,6 +288,8 @@ async function runStoreCase() {
     opened = null;
     stage = 'http';
     const http = await httpCase();
+    await new Promise(resolve => setTimeout(resolve, 20));
+    assert.ok(callbackCounts.length > 0 && callbackCounts.every(item => item.count === 1));
     console.log(JSON.stringify({dialect, stores: ['current', 'native', 'current'],
       publicContract: true, crossRestart: true, observations, ...http}));
   } catch (error) {

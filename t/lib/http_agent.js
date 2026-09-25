@@ -61,7 +61,11 @@ function getApp() {
 
 async function ready() {
   if (!readyPromise) {
-    readyPromise = getApp().get('db_model').sequelize.sync({force: true});
+    readyPromise = (async () => {
+      const testApp = getApp();
+      await testApp.get('db_model').sequelize.sync({force: true});
+      await testApp.get('session_middleware').sessionLifecycle.initialize();
+    })();
   }
   await readyPromise;
   return getApp();
@@ -232,10 +236,13 @@ async function close() {
   await release();
   if (app) {
     const sessionMiddleware = app.get('session_middleware');
-    if (sessionMiddleware && typeof sessionMiddleware.close === 'function') {
-      sessionMiddleware.close();
+    try {
+      if (sessionMiddleware && sessionMiddleware.sessionLifecycle) {
+        await sessionMiddleware.sessionLifecycle.close();
+      }
+    } finally {
+      await app.get('db_model').sequelize.close();
     }
-    await app.get('db_model').sequelize.close();
   }
 }
 
