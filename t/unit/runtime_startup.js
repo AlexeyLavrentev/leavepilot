@@ -79,7 +79,7 @@ function childRun(args, env, deadlineMs = 5000) {
   });
 }
 
-describe('direct runtime startup owner', function() {
+if (!process.argv.includes('--runtime-child')) { describe('direct runtime startup owner', function() {
   it('waits for selected Store readiness and memoizes duplicate starts', async function() {
     const {runtime, events, gate, subscription} = makeRuntime();
     const first = runtime.start();
@@ -108,6 +108,30 @@ describe('direct runtime startup owner', function() {
     assert.deepEqual(subscription(), {subscribed: 1, unsubscribed: 1});
   });
 
+  it('bounds a stalled selected Store and never accepts its late completion', async function() {
+    const {runtime, events, gate} = makeRuntime({startupTimeoutMs: 30});
+    const starting = runtime.start();
+    await wait(60);
+    await runtime.whenStopped();
+    gate.release();
+    await starting;
+    assert.equal(events.includes('listen'), false);
+    assert.equal(events.includes('ready'), false);
+    assert.equal(events.filter(event => event === 'exit:1').length, 1);
+  });
+
+  it('lets failed initialization own one terminal result', async function() {
+    const fixture = makeRuntime();
+    fixture.lifecycle.initialize = async () => { throw new Error('store-init-failed'); };
+    await fixture.runtime.start();
+    await fixture.runtime.whenStopped();
+    assert.equal(fixture.events.includes('listen'), false);
+    assert.equal(fixture.events.includes('ready'), false);
+    assert.equal(fixture.events.filter(event => event === 'db.close').length, 1);
+    assert.equal(fixture.events.filter(event => event === 'exit:1').length, 1);
+    assert.deepEqual(fixture.subscription(), {subscribed: 1, unsubscribed: 1});
+  });
+
   it('routes a post-ready Store failure through one nonzero terminal close', async function() {
     const {runtime, events, gate, notify, subscription} = makeRuntime();
     gate.release();
@@ -118,6 +142,19 @@ describe('direct runtime startup owner', function() {
     notify({state: 'ready'});
     assert.deepEqual(events.slice(-4), ['listener.close', 'store.close', 'db.close', 'exit:1']);
     assert.deepEqual(subscription(), {subscribed: 1, unsubscribed: 1});
+    assert.equal(events.filter(event => event === 'ready').length, 1);
+  });
+
+  it('keeps the first fatal outcome when a signal and queued state callback follow', async function() {
+    const {runtime, events, gate, notify} = makeRuntime();
+    gate.release();
+    await runtime.start();
+    notify({state: 'failed', error: new Error('store unavailable')});
+    await runtime.shutdown('sigterm', null, 0);
+    await runtime.whenStopped();
+    notify({state: 'ready'});
+    assert.equal(events.filter(event => event === 'exit:1').length, 1);
+    assert.equal(events.filter(event => event === 'exit:0').length, 0);
     assert.equal(events.filter(event => event === 'ready').length, 1);
   });
 
@@ -137,11 +174,15 @@ describe('direct runtime startup owner', function() {
       assert.equal(observed.code, 0, observed.output);
       assert.deepEqual(observed.messages.filter(message => message.type === 'runtime-check').map(message => message.step),
         ['ready', 'session', 'stopped']);
+      const failed = await childRun([__filename, '--runtime-child'], {...env, RUNTIME_CASE: 'store-failure'}, 12000);
+      assert.equal(failed.code, 1, failed.output);
+      assert.deepEqual(failed.messages.filter(message => message.type === 'runtime-check').map(message => message.step),
+        ['ready', 'session', 'stopped']);
     } finally {
       fs.rmSync(directory, {recursive: true, force: true});
     }
   });
-});
+}); }
 
 if (process.argv.includes('--runtime-child')) {
   const runtime = startRuntime({
@@ -158,7 +199,14 @@ if (process.argv.includes('--runtime-child')) {
     const second = await fetch(base + '/login/', {headers: {cookie: cookie.split(';')[0]}});
     assert.equal(second.status, 200);
     process.send({type: 'runtime-check', step: 'session'});
-    await runtime.shutdown('sigterm', null, 0);
+    if (process.env.RUNTIME_CASE === 'store-failure') {
+      const lifecycle = require('../../app').get('session_middleware').sessionLifecycle;
+      lifecycle.reportFailure(new Error('injected-store-failure'));
+      lifecycle.reportFailure(new Error('duplicate-store-failure'));
+      await runtime.whenStopped();
+    } else {
+      await runtime.shutdown('sigterm', null, 0);
+    }
   }).catch(error => {
     process.stderr.write(String(error.stack || error));
     process.exitCode = 1;
