@@ -5,7 +5,9 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const net = require('node:net');
+const EventEmitter = require('node:events');
 const {spawnInGroup, terminateGroup} = require('../../bin/lib/spawn_group');
+const {startCluster} = require('../../lib/runtime_cluster');
 
 const root = path.join(__dirname, '../..');
 const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
@@ -61,13 +63,21 @@ describe('cluster tracer, primary ownership and signal forwarding', function() {
         assert.equal(parent.result, undefined, parent.output);
         workerPids = parent.messages.filter(message => message.type === 'cluster-ready').map(message => message.pid);
         assert.equal(new Set(workerPids).size, 2);
-        const served = new Set();
+        const base = `http://127.0.0.1:${port}/login/`;
+        const first = await fetch(base, {headers: {connection: 'close'}});
+        assert.equal(first.status, 200);
+        const cookie = (first.headers.getSetCookie().find(value => value.startsWith('connect.sid=')) || '').split(';')[0];
+        assert.match(cookie, /connect\.sid=/);
+        const firstToken = (await first.text()).match(/name="_csrf" value="([a-f0-9]+)"/);
+        assert.ok(firstToken);
+        const served = new Set([Number(first.headers.get('x-test-worker-pid'))]);
         for (let i = 0; i < 30 && served.size < 2; i += 1) {
-          const response = await fetch(`http://127.0.0.1:${port}/login/`, {headers: {connection: 'close'}});
+          const response = await fetch(base, {headers: {connection: 'close', cookie}});
           assert.equal(response.status, 200);
-          assert.match(response.headers.get('set-cookie') || '', /connect\.sid=/);
           served.add(Number(response.headers.get('x-test-worker-pid')));
-          await response.arrayBuffer();
+          const token = (await response.text()).match(/name="_csrf" value="([a-f0-9]+)"/);
+          assert.ok(token);
+          assert.equal(token[1], firstToken[1], 'SQL session did not survive worker handoff');
         }
         assert.deepEqual([...served].sort(), [...workerPids].sort());
         parent.child.kill(signal);
@@ -82,5 +92,24 @@ describe('cluster tracer, primary ownership and signal forwarding', function() {
       for (const pid of workerPids) { if (alive(pid)) { process.kill(pid, 'SIGKILL'); } }
       fs.rmSync(directory, {recursive: true, force: true});
     }
+  });
+
+  it('bounds an overdue owned worker and reports forced cleanup nonzero', async function() {
+    const cluster = new EventEmitter();
+    const owner = new EventEmitter();
+    const signals = [];
+    const worker = {id: 1, process: {kill: signal => {
+      signals.push(signal);
+      if (signal === 'SIGKILL') { setImmediate(() => cluster.emit('exit', worker, null, 'SIGKILL')); }
+    }}};
+    cluster.fork = () => worker;
+    let code;
+    startCluster({cluster, process: owner, workerCount: 1, shutdownMs: 20, forceReserveMs: 30,
+      exit: value => { code = value; }, log: {warn: () => {}, error: () => {}}});
+    owner.emit('SIGTERM');
+    assert.equal(signals[0], 'SIGTERM');
+    assert.equal(await until(() => code !== undefined, 200), true);
+    assert.deepEqual(signals, ['SIGTERM', 'SIGKILL']);
+    assert.equal(code, 1);
   });
 });
