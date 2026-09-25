@@ -2,6 +2,7 @@
 
 const assert = require('node:assert/strict');
 const {spawn, execFileSync} = require('node:child_process');
+const {once} = require('node:events');
 const path = require('node:path');
 const {spawnInGroup, terminateTree} = require('../../bin/lib/spawn_group');
 const runtimeShutdown = require('../../lib/runtime_shutdown');
@@ -61,7 +62,11 @@ function runChild(mode) {
       return {events, output, ...closed};
     } finally { clearTimeout(watchdog); }
   };
-  return {child, events, waitFor, finish, cleanup: () => closed ? Promise.resolve() : terminateTree(child, {graceMs: 100})};
+  return {
+    child, events, waitFor, finish,
+    cleanup: () => closed && liveMembers(child.pid).length === 0
+      ? Promise.resolve() : terminateTree(child, {graceMs: 100}),
+  };
 }
 
 describe('Runtime shutdown coordinator', function() {
@@ -78,6 +83,36 @@ describe('Runtime shutdown coordinator', function() {
     assert.equal(shutdown('sigterm', null, 0), first);
     await first;
     assert.deepEqual(closes, ['http', 'store', 'sql']);
+    assert.deepEqual(exits, [1]);
+  });
+
+  it('promotes a signal shutdown when a fatal error arrives during drain', async function() {
+    const exits = [];
+    let release;
+    const shutdown = runtimeShutdown.createShutdownCoordinator({
+      server: {close: callback => { release = callback; }},
+      exit: code => exits.push(code), timeoutMs: 100,
+    });
+    const stopping = shutdown('sigterm', null, 0);
+    shutdown('uncaught_exception', new Error('fatal'), 1);
+    release();
+    await stopping;
+    assert.deepEqual(exits, [1]);
+  });
+
+  it('ignores a listener callback that arrives after its deadline', async function() {
+    const exits = [];
+    let completeClose;
+    const shutdown = runtimeShutdown.createShutdownCoordinator({
+      server: {
+        close: callback => { completeClose = callback; },
+        closeAllConnections: () => {},
+      },
+      exit: code => exits.push(code), timeoutMs: 40,
+    });
+    await shutdown('sigterm', null, 0);
+    completeClose();
+    await Promise.resolve();
     assert.deepEqual(exits, [1]);
   });
 
@@ -123,12 +158,15 @@ describe('Runtime shutdown coordinator', function() {
         await run.waitFor('listener-closing');
         assert.equal(run.events.some(event => event.event === 'store-close'), false);
         run.child.send({event: 'release-save'});
-        assert.equal((await response).status, 200);
+        const saved = await response;
+        assert.equal(saved.status, 200);
+        assert.equal(await saved.text(), 'saved');
         const result = await run.finish();
-        assert.equal(result.code, 0, result.output);
+        assert.equal(result.code, 0, `${result.events.map(event => event.event).join(',')}: ${result.output}`);
         const order = result.events.map(event => event.event);
         assert.ok(order.indexOf('save-complete') < order.indexOf('store-close'), order.join(','));
         assert.ok(order.indexOf('store-close') < order.indexOf('sql-close'), order.join(','));
+        assert.equal(result.events.find(event => event.event === 'sql-close').persisted, 1);
         assert.equal(order.filter(event => event === 'exit').length, 1);
       } finally { await run.cleanup(); }
     });
@@ -163,7 +201,11 @@ describe('Runtime shutdown coordinator', function() {
       assert.doesNotThrow(() => process.kill(sentinel.pid, 0));
     } finally {
       await run.cleanup();
-      sentinel.kill('SIGKILL');
+      if (sentinel.exitCode === null && sentinel.signalCode === null) {
+        const sentinelClosed = once(sentinel, 'close');
+        sentinel.kill('SIGKILL');
+        await sentinelClosed;
+      }
     }
   });
 });

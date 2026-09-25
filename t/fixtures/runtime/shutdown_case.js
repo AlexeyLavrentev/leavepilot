@@ -47,8 +47,10 @@ process.on('message', message => {
 });
 app.set('db_model', {
   sequelize: {
-    close: () => {
-      send('sql-close');
+    close: async () => {
+      const persisted = mode === 'delayed-save'
+        ? await sequelize.models.Session.count() : undefined;
+      send('sql-close', {persisted});
       if (mode === 'hung-sql') { return new Promise(() => {}); }
       return sequelize.close();
     },
@@ -76,7 +78,7 @@ lifecycle.close = () => {
 startRuntime({
   loadApp: () => app,
   startupTimeoutMs: 1000,
-  shutdownTimeoutMs: 250,
+  shutdownTimeoutMs: mode === 'delayed-save' ? 1000 : 250,
   listen: async context => {
     server = await require('../../../lib/server_listener').listen({...context, port: 0, host: '127.0.0.1'});
     const originalCloseServer = server.close.bind(server);
