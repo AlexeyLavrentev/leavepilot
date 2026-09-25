@@ -49,12 +49,17 @@ describe("Test runner logging", function() {
       path.join(__dirname, "../../bin/wwww"),
       "utf8"
     );
+    const runtimeStartup = fs.readFileSync(
+      path.join(__dirname, "../../lib/runtime_startup.js"),
+      "utf8"
+    );
 
     expect(testRunner).to.contain("'ipc'");
     expect(testRunner).to.contain("server.on('message'");
     expect(testRunner).to.contain("test-server-ready");
     expect(testRunner).not.to.contain('http.get');
-    expect(serverEntrypoint).to.contain('process.send');
-    expect(serverEntrypoint).to.contain("test-server-ready");
+    expect(serverEntrypoint).to.contain("require('../lib/runtime_startup').startRuntime().start()");
+    expect(runtimeStartup).to.contain('process.send');
+    expect(runtimeStartup).to.contain("test-server-ready");
   });
 });
