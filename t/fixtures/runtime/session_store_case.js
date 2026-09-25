@@ -63,6 +63,7 @@ async function openStore(kind) {
   if (kind === 'current') {
     middleware = createSessionMiddleware({sequelizeDb: db});
     store = capturedStore;
+    assert.equal(Object.hasOwn(db, 'import'), false, 'factory must not add a Sequelize import shim');
     for (const method of ['get', 'set', 'touch', 'destroy', 'length', 'clearExpiredSessions']) {
       assert.equal(Object.hasOwn(store, method), false, `${method} must use the native Store method`);
     }
@@ -88,7 +89,29 @@ async function closeStore(opened) {
   await opened.db.close();
 }
 
-async function exercise(store, marker) {
+async function exerciseCloseBeforeReady() {
+  const db = new Sequelize(database, process.env.DB_USER, process.env.DB_PASSWORD, sqlOptions);
+  const middleware = createSessionMiddleware({sequelizeDb: db});
+  const states = [];
+  middleware.sessionLifecycle.onStateChange(event => states.push(event.state));
+  let releaseSync;
+  capturedStore.sync = () => new Promise(resolve => { releaseSync = resolve; });
+  try {
+    const initializing = middleware.sessionLifecycle.initialize();
+    await Promise.resolve();
+    assert.equal(typeof releaseSync, 'function');
+    await middleware.sessionLifecycle.close();
+    releaseSync();
+    await initializing;
+    assert.equal(middleware.sessionLifecycle.isReady(), false);
+    assert.deepEqual(states, []);
+  } finally {
+    await middleware.sessionLifecycle.close();
+    await db.close();
+  }
+}
+
+async function exercise(store, model, marker) {
   const observations = {independentWriteErrors: [], sameSidWriteErrors: []};
   const absent = sid();
   assert.equal(await call(store, 'get', absent), null);
@@ -100,8 +123,12 @@ async function exercise(store, marker) {
   assert.equal((await call(store, 'get', key)).value, marker + '-first');
   await call(store, 'set', key, sessionData(marker + '-last'));
   assert.equal((await call(store, 'get', key)).value, marker + '-last');
-  await call(store, 'touch', key, sessionData('ignored-touch-value'));
+  const touchedExpiry = new Date(Date.now() + 2 * 60 * 60 * 1000);
+  await call(store, 'touch', key, {cookie: {expires: touchedExpiry}, value: 'ignored-touch-value'});
   assert.equal((await call(store, 'get', key)).value, marker + '-last');
+  const touchedRecord = await model.findByPk(key);
+  assert.equal(JSON.parse(touchedRecord.data).value, marker + '-last');
+  assert.ok(Math.abs(new Date(touchedRecord.expires).getTime() - touchedExpiry.getTime()) < 2000);
 
   const expired = sid();
   await call(store, 'set', expired, {cookie: {expires: new Date(Date.now() - 1000)}, value: 'expired'});
@@ -116,6 +143,9 @@ async function exercise(store, marker) {
   ]);
   observations.independentWriteErrors = independentWrites.filter(result => result.status === 'rejected')
     .map(result => errorCode(result.reason));
+  if (dialect === 'sqlite') {
+    assert.ok(observations.independentWriteErrors.every(code => code === 'SQLITE_BUSY'));
+  }
   // Both writes have settled before recovery or connection close.
   if (independentWrites[0].status === 'rejected') { await call(store, 'set', first, sessionData('independent-1')); }
   if (independentWrites[1].status === 'rejected') { await call(store, 'set', second, sessionData('independent-2')); }
@@ -273,7 +303,7 @@ async function runStoreCase() {
   try {
     opened = await openStore('current');
     stage = 'exercise-current';
-    observations.current = await exercise(opened.store, 'current');
+    observations.current = await exercise(opened.store, opened.db.models.Session, 'current');
     await exerciseMiddlewareFlags(opened);
     await exerciseErrors(opened);
     await call(opened.store, 'set', shared, sessionData('from-current'));
@@ -293,9 +323,16 @@ async function runStoreCase() {
     stage = 'exercise-native';
     assert.equal((await call(opened.store, 'get', shared)).value, 'from-current');
     assert.equal((await call(opened.store, 'get', legacySid)).value, 'legacy-shim');
-    observations.native = await exercise(opened.store, 'native');
+    observations.native = await exercise(opened.store, opened.db.models.Session, 'native');
     await exerciseErrors(opened);
     await call(opened.store, 'set', shared, sessionData('from-native'));
+    // exerciseErrors drops the table; restore the archived row for the
+    // subsequent application-Store read across this restart.
+    await opened.db.models.Session.create({
+      sid: legacySid,
+      data: JSON.stringify(sessionData('legacy-shim')),
+      expires: future(),
+    });
     await closeStore(opened);
     opened = null;
 
@@ -309,6 +346,8 @@ async function runStoreCase() {
     opened = null;
     stage = 'http';
     const http = await httpCase();
+    stage = 'close-before-ready';
+    await exerciseCloseBeforeReady();
     await new Promise(resolve => setTimeout(resolve, 20));
     assert.ok(callbackCounts.length > 0 && callbackCounts.every(item => item.count === 1));
     console.log(JSON.stringify({dialect, stores: ['current', 'native', 'current'],

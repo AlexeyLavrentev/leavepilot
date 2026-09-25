@@ -8,6 +8,12 @@
   ],
   "specs": [
     {
+      "file": "t/unit/middleware/session_store_contract.js",
+      "category": "date-arithmetic",
+      "reason": "Exercises lib/middleware/withSession.js with persisted session expiry/date storage, callback errors and legacy JSON data across SQLite and MySQL 8; the DATE round-trip and concurrent write outcomes depend on the dialect.",
+      "module": "lib/middleware/withSession.js"
+    },
+    {
       "file": "t/unit/leave_overlap_validation.js",
       "category": "date-arithmetic",
       "reason": "Header documents the SQL predicate 'date_start BETWEEN from_date AND to_date + 1' and drives validate_overlapping (lib/model/mixin/user/absence_aware.js), whose Op.lte/Op.gte overlap window is built from dayjs.utc(...).endOf('day').format('YYYY-MM-DD HH:mm') bounds compared against date_start/date_end DATE columns that Sequelize maps to DATETIME.",
