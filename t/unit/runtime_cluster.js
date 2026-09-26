@@ -113,3 +113,52 @@ describe('cluster tracer, primary ownership and signal forwarding', function() {
     assert.equal(code, 1);
   });
 });
+
+describe('cluster replacement policy', function() {
+  function supervisor({failForks = 0, workerCount = 1} = {}) {
+    const cluster = new EventEmitter();
+    const owner = new EventEmitter();
+    const timers = [];
+    const workers = [];
+    const exits = [];
+    let nextId = 0;
+    let forkCount = 0;
+    cluster.fork = () => {
+      forkCount += 1;
+      if (forkCount <= failForks) { throw Object.assign(new Error('fork failed'), {code: 'EAGAIN'}); }
+      const worker = {id: ++nextId, process: {kill: signal => {
+        worker.signals.push(signal);
+        cluster.emit('exit', worker, null, signal);
+      }}, signals: []};
+      workers.push(worker);
+      return worker;
+    };
+    const schedule = (callback, delay) => {
+      const timer = {callback, delay, canceled: false};
+      timers.push(timer);
+      return timer;
+    };
+    startCluster({cluster, process: owner, workerCount, delays: [250, 500, 1000],
+      setTimeout: schedule, clearTimeout: timer => { if (timer) { timer.canceled = true; } },
+      exit: code => exits.push(code), log: {warn: () => {}, error: () => {}}});
+    return {cluster, owner, timers, workers, exits,
+      get forkCount() { return forkCount; },
+      fireNext() {
+        const timer = timers.find(candidate => !candidate.canceled && !candidate.fired);
+        assert.ok(timer, 'expected a pending timer');
+        timer.fired = true;
+        timer.callback();
+        return timer.delay;
+      },
+    };
+  }
+
+  it('counts fork failures within the same three-replacement budget', function() {
+    const run = supervisor({failForks: 4});
+    assert.equal(run.forkCount, 1);
+    assert.deepEqual([run.fireNext(), run.fireNext(), run.fireNext()], [250, 500, 1000]);
+    assert.equal(run.forkCount, 4);
+    assert.deepEqual(run.exits, [1]);
+    assert.equal(run.timers.filter(timer => !timer.canceled && !timer.fired).length, 0);
+  });
+});
