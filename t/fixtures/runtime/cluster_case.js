@@ -18,6 +18,12 @@ if (cluster.isPrimary) {
       process.send({type: 'cluster-ready', pid: worker.process.pid, workerId: worker.id});
     }
   });
+  process.on('message', message => {
+    if (message && message.type === 'kill-worker') {
+      const worker = cluster.workers[message.workerId];
+      if (worker) { worker.process.kill('SIGKILL'); }
+    }
+  });
 } else {
   const http = require('node:http');
   const originalEmit = http.Server.prototype.emit;

@@ -80,6 +80,26 @@ describe('cluster tracer, primary ownership and signal forwarding', function() {
           assert.equal(token[1], firstToken[1], 'SQL session did not survive worker handoff');
         }
         assert.deepEqual([...served].sort(), [...workerPids].sort());
+        if (signal === 'SIGTERM') {
+          const lost = parent.messages.find(message => message.type === 'cluster-ready');
+          parent.child.send({type: 'kill-worker', workerId: lost.workerId});
+          assert.equal(await until(() => parent.messages.filter(message => message.type === 'cluster-ready').length === 3 || parent.result, 8000), true, parent.output);
+          assert.equal(parent.result, undefined, parent.output);
+          const replacement = parent.messages.filter(message => message.type === 'cluster-ready')[2];
+          assert.notEqual(replacement.pid, lost.pid);
+          workerPids.push(replacement.pid);
+          assert.equal(await until(() => !alive(lost.pid), 1000), true, parent.output);
+          let replacementServed = false;
+          for (let i = 0; i < 30 && !replacementServed; i += 1) {
+            const response = await fetch(base, {headers: {connection: 'close', cookie}});
+            assert.equal(response.status, 200);
+            replacementServed = Number(response.headers.get('x-test-worker-pid')) === replacement.pid;
+            const token = (await response.text()).match(/name="_csrf" value="([a-f0-9]+)"/);
+            assert.ok(token);
+            assert.equal(token[1], firstToken[1], 'SQL session did not survive replacement');
+          }
+          assert.equal(replacementServed, true, 'replacement did not serve traffic');
+        }
         parent.child.kill(signal);
         assert.equal(await until(() => parent.result, 12000), true, parent.output);
         assert.equal(parent.result.code, 0, parent.output);
