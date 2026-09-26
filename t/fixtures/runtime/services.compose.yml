@@ -1,0 +1,49 @@
+# Only the leavepilot-runtime-test project may use this fixture. No operator
+# configuration or production volume is mounted by these services.
+services:
+  mysql:
+    image: mysql:8.0.45
+    environment:
+      MYSQL_ROOT_PASSWORD: runtime_root_test_only
+      MYSQL_DATABASE: leavepilot_runtime_test
+      MYSQL_USER: leavepilot_runtime_test
+      MYSQL_PASSWORD: runtime_test_only
+    ports:
+      - "127.0.0.1:13306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-pruntime_root_test_only"]
+      interval: 2s
+      timeout: 2s
+      retries: 25
+
+  redis:
+    # Docker Official Image redis:8.8.0, resolved before pinning.
+    image: redis@sha256:234c902a2db49461a129e2d4aeff85b28cf20187ed274a67f6e50995fa713c7b
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    ports:
+      - "127.0.0.1:16379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 2s
+      timeout: 2s
+      retries: 25
+
+  engram:
+    # Exact deployed Engram image from docker-compose.yml.
+    image: ghcr.io/alexeylavrentev/engram:0.2
+    command: ["--bind", "0.0.0.0", "--persistence", "aof", "--dir", "/data"]
+    ports:
+      - "127.0.0.1:16380:6379"
+    volumes:
+      - engram_data:/data
+    healthcheck:
+      test: ["CMD", "/usr/local/bin/engram-healthcheck"]
+      interval: 2s
+      timeout: 2s
+      retries: 25
+
+volumes:
+  mysql_data:
+  engram_data:

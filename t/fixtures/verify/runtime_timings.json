@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "capturedAt": "2026-09-26T06:42:01Z",
+  "sourceHead": "af548d9bb7588f1c58829806e003154d7e7a17ce",
+  "sourceClean": false,
+  "sourceSha256": {
+    "t/runtime/runtime_matrix.js": "f9b977fdb677bc472770c171230e85ae0c9090a7996c9345821215cf63d482cc",
+    "t/fixtures/runtime/runtime_matrix_case.js": "060c0dbd70cc64c4716b6c82126cbb1f57b03160b943b7db1ccea95b90ac8ee0",
+    "t/fixtures/runtime/services.compose.yml": "748dc0571232dd1f35604897eabdde34a41fdb634b0bffee258dde4af17dbc4b"
+  },
+  "host": {"platform": "darwin", "arch": "arm64", "node": "v22.23.0"},
+  "services": {
+    "mysql": {"version": "8.0.45", "image": "mysql@sha256:4af1f8815716546f5b12410f7621f37f93db8dd11a184706ef59111930b8c2ff"},
+    "redis": {"version": "8.8.0", "image": "redis@sha256:234c902a2db49461a129e2d4aeff85b28cf20187ed274a67f6e50995fa713c7b"},
+    "engram": {"version": "0.2", "image": "ghcr.io/alexeylavrentev/engram@sha256:639a35074e5d02c9771177d4d2e78139291be7dd07ac50f0c6bef672c1a74410"}
+  },
+  "selection": "Dedicated leavepilot-runtime-test Compose project, loopback ports 13306/16379/16380, two successful fresh-process runs per command; raw elapsed monotonic time includes child cleanup. A separate process-group parent watchdog bounded each Redis/Engram command at 30000ms and each matrix command at 90000ms. No failed sample was used to derive a deadline.",
+  "margin": 2,
+  "stages": {
+    "redis-session": {
+      "argv": ["node", "t/fixtures/runtime/runtime_matrix_case.js", "--session-suite", "redis"],
+      "samples": [
+        {"identity": "sample-1", "durationMs": 8125, "exitCode": 0, "parentBoundMs": 30000},
+        {"identity": "sample-2", "durationMs": 7664, "exitCode": 0, "parentBoundMs": 30000}
+      ],
+      "observedMaximumMs": 8125,
+      "deadlineMs": 16250
+    },
+    "engram-session": {
+      "argv": ["node", "t/fixtures/runtime/runtime_matrix_case.js", "--session-suite", "engram"],
+      "samples": [
+        {"identity": "sample-1", "durationMs": 7607, "exitCode": 0, "parentBoundMs": 30000},
+        {"identity": "sample-2", "durationMs": 7628, "exitCode": 0, "parentBoundMs": 30000}
+      ],
+      "observedMaximumMs": 7628,
+      "deadlineMs": 15256
+    },
+    "runtime-matrix": {
+      "argv": ["node", "node_modules/mocha/bin/mocha", "t/runtime/runtime_matrix.js", "--timeout", "15000", "--require", "t/lib/skip_honesty.js"],
+      "samples": [
+        {"identity": "sample-1", "durationMs": 47061, "exitCode": 0, "parentBoundMs": 90000},
+        {"identity": "sample-2", "durationMs": 47045, "exitCode": 0, "parentBoundMs": 90000}
+      ],
+      "observedMaximumMs": 47061,
+      "deadlineMs": 94122
+    }
+  }
+}
