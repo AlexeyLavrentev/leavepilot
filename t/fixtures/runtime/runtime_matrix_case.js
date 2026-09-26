@@ -17,6 +17,8 @@ const MYSQL_PREFIX = 'leavepilot_runtime_test_';
 const MYSQL_HOST = '127.0.0.1';
 const PORTS = {mysql: 13306, redis: 16379, engram: 16380};
 const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
+const childBaseEnv = Object.fromEntries(['PATH', 'TMPDIR', 'LANG'].filter(key => process.env[key])
+  .map(key => [key, process.env[key]]));
 
 // The preload is evaluated separately in every worker, before app.js loads.
 // The primary never loads the application or a selected Store.
@@ -93,7 +95,7 @@ async function prerequisite(selection = 'all') {
 function child(argv, env, deadlineMs) {
   return new Promise((resolve, reject) => {
     const proc = spawnInGroup(process.execPath, argv, {
-      cwd: root, env: {...process.env, ...env}, stdio: ['ignore', 'pipe', 'pipe'],
+      cwd: root, env: {...childBaseEnv, ...env}, stdio: ['ignore', 'pipe', 'pipe'],
     });
     let output = '';
     let timedOut = false;
@@ -146,7 +148,7 @@ async function ready(port, proc, output) {
 
 function baseEnv(dialect, database, backend, entrypoint, port, storage) {
   return {
-    NODE_ENV: 'test', DB_DIALECT: dialect, DB_NAME: database,
+    NODE_ENV: 'test', TZ: 'UTC', DB_DIALECT: dialect, DB_NAME: database,
     DB_HOST: MYSQL_HOST, DB_PORT: String(PORTS.mysql), DB_USER: process.env.DB_USER,
     DB_PASSWORD: process.env.DB_PASSWORD, DB_STORAGE: storage, DB_LOGGING: 'false',
     PORT: String(port), HOST: MYSQL_HOST, SESSION_SECRET: 'matrix-only-session-secret',
@@ -211,7 +213,7 @@ async function runCase(dialect, backend, entrypoint) {
     await seed(env, email);
     const proc = spawnInGroup(process.execPath, ['--require', __filename,
       entrypoint === 'direct' ? 'bin/wwww' : 'bin/wwww_cluster'], {
-      cwd: root, env: {...process.env, ...env}, stdio: ['ignore', 'pipe', 'pipe'],
+      cwd: root, env: {...childBaseEnv, ...env}, stdio: ['ignore', 'pipe', 'pipe'],
     });
     let output = '';
     for (const stream of [proc.stdout, proc.stderr]) {
@@ -278,6 +280,7 @@ async function runSessionSuite(backend) {
     await client.connect();
     await client.set('lp:phase02:session-owner', token);
     const env = {
+      TZ: 'UTC',
       TEST_SESSION_HOST: MYSQL_HOST,
       TEST_SESSION_PORT: String(port),
       TEST_SESSION_BACKEND: 'redis',

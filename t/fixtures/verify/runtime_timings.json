@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "capturedAt": "2026-09-26T06:42:01Z",
-  "sourceHead": "af548d9bb7588f1c58829806e003154d7e7a17ce",
+  "capturedAt": "2026-09-26T06:54:22Z",
+  "sourceHead": "ad540e91f7b158e8df60eedba22f1603012c0b7d",
   "sourceClean": false,
   "sourceSha256": {
     "t/runtime/runtime_matrix.js": "f9b977fdb677bc472770c171230e85ae0c9090a7996c9345821215cf63d482cc",
-    "t/fixtures/runtime/runtime_matrix_case.js": "060c0dbd70cc64c4716b6c82126cbb1f57b03160b943b7db1ccea95b90ac8ee0",
+    "t/fixtures/runtime/runtime_matrix_case.js": "63255501e44ec8bc341f0a7e46d458717f9af746ac9a55d0cc3d29b7f9125a78",
     "t/fixtures/runtime/services.compose.yml": "748dc0571232dd1f35604897eabdde34a41fdb634b0bffee258dde4af17dbc4b"
   },
   "host": {"platform": "darwin", "arch": "arm64", "node": "v22.23.0"},
@@ -20,29 +20,29 @@
     "redis-session": {
       "argv": ["node", "t/fixtures/runtime/runtime_matrix_case.js", "--session-suite", "redis"],
       "samples": [
-        {"identity": "sample-1", "durationMs": 8125, "exitCode": 0, "parentBoundMs": 30000},
-        {"identity": "sample-2", "durationMs": 7664, "exitCode": 0, "parentBoundMs": 30000}
+        {"identity": "sample-1", "durationMs": 7836, "exitCode": 0, "parentBoundMs": 30000},
+        {"identity": "sample-2", "durationMs": 7753, "exitCode": 0, "parentBoundMs": 30000}
       ],
-      "observedMaximumMs": 8125,
-      "deadlineMs": 16250
+      "observedMaximumMs": 7836,
+      "deadlineMs": 15672
     },
     "engram-session": {
       "argv": ["node", "t/fixtures/runtime/runtime_matrix_case.js", "--session-suite", "engram"],
       "samples": [
-        {"identity": "sample-1", "durationMs": 7607, "exitCode": 0, "parentBoundMs": 30000},
-        {"identity": "sample-2", "durationMs": 7628, "exitCode": 0, "parentBoundMs": 30000}
+        {"identity": "sample-1", "durationMs": 7580, "exitCode": 0, "parentBoundMs": 30000},
+        {"identity": "sample-2", "durationMs": 7626, "exitCode": 0, "parentBoundMs": 30000}
       ],
-      "observedMaximumMs": 7628,
-      "deadlineMs": 15256
+      "observedMaximumMs": 7626,
+      "deadlineMs": 15252
     },
     "runtime-matrix": {
       "argv": ["node", "node_modules/mocha/bin/mocha", "t/runtime/runtime_matrix.js", "--timeout", "15000", "--require", "t/lib/skip_honesty.js"],
       "samples": [
-        {"identity": "sample-1", "durationMs": 47061, "exitCode": 0, "parentBoundMs": 90000},
-        {"identity": "sample-2", "durationMs": 47045, "exitCode": 0, "parentBoundMs": 90000}
+        {"identity": "sample-1", "durationMs": 46836, "exitCode": 0, "parentBoundMs": 90000},
+        {"identity": "sample-2", "durationMs": 46824, "exitCode": 0, "parentBoundMs": 90000}
       ],
-      "observedMaximumMs": 47061,
-      "deadlineMs": 94122
+      "observedMaximumMs": 46836,
+      "deadlineMs": 93672
     }
   }
 }
