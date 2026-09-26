@@ -161,4 +161,57 @@ describe('cluster replacement policy', function() {
     assert.deepEqual(run.exits, [1]);
     assert.equal(run.timers.filter(timer => !timer.canceled && !timer.fired).length, 0);
   });
+
+  for (const [code, signal] of [[0, null], [1, null], [null, 'SIGKILL']]) {
+    it(`replaces ${signal || `exit ${code}`} three times, then stops peers nonzero`, function() {
+      const run = supervisor({workerCount: 2});
+      const peer = run.workers[1];
+      let lost = run.workers[0];
+      for (const delay of [250, 500, 1000]) {
+        run.cluster.emit('exit', lost, code, signal);
+        assert.equal(run.fireNext(), delay);
+        lost = run.workers.at(-1);
+        run.cluster.emit('message', lost, {type: 'test-server-ready'});
+      }
+      run.cluster.emit('exit', lost, code, signal);
+      assert.equal(run.forkCount, 5);
+      assert.deepEqual(run.exits, [1]);
+      assert.deepEqual(peer.signals, ['SIGTERM']);
+    });
+  }
+
+  it('keeps one replacement per slot under simultaneous losses and ignores stale callbacks', function() {
+    const run = supervisor({workerCount: 2});
+    const [first, second] = run.workers;
+    run.cluster.emit('exit', first, 1, null);
+    run.cluster.emit('exit', second, 1, null);
+    run.cluster.emit('exit', first, 1, null);
+    run.cluster.emit('message', first, {type: 'test-server-ready'});
+    assert.equal(run.fireNext(), 250);
+    assert.equal(run.fireNext(), 250);
+    assert.equal(run.forkCount, 4);
+    assert.deepEqual(run.exits, []);
+    run.owner.emit('SIGTERM');
+    assert.deepEqual(run.exits, [0]);
+  });
+
+  it('cancels a pending replacement when stopping', function() {
+    const run = supervisor();
+    run.cluster.emit('exit', run.workers[0], 1, null);
+    run.owner.emit('SIGTERM');
+    assert.deepEqual(run.exits, [0]);
+    const lateTimer = run.timers[0];
+    assert.equal(lateTimer.canceled, true);
+    lateTimer.callback();
+    assert.equal(run.forkCount, 1);
+  });
+
+  it('does not replace a worker that exits during boot shutdown', function() {
+    const run = supervisor();
+    const booting = run.workers[0];
+    run.owner.emit('SIGINT');
+    run.cluster.emit('message', booting, {type: 'test-server-ready'});
+    assert.deepEqual(run.exits, [0]);
+    assert.equal(run.forkCount, 1);
+  });
 });
