@@ -106,6 +106,27 @@ docker compose -p leavepilot-runtime-test -f t/fixtures/runtime/services.compose
 конечный бюджет, и превышение любого из них — красный результат, а не
 «медленный успех».
 
+## Локальный запуск смежного профиля ci-mysql
+
+Профиль `ci-mysql` (dialect-sensitive спецификации) можно прогнать на том же
+одноразовом MySQL. Эти спецификации создают собственные временные базы
+`lp_session_*` / `lp_migr_*`, поэтому подключаться нужно пользователем `root`
+этого одноразового экземпляра — как это делает job `mysql-dialect` в CI:
+
+```bash
+export DB_HOST=127.0.0.1
+export DB_PORT=13306
+export DB_NAME=leavepilot_runtime_test
+export DB_USER=root
+export DB_PASSWORD=runtime_root_test_only
+
+node bin/verify.js --profile ci-mysql
+```
+
+Тестовый пользователь `leavepilot_runtime_test` намеренно имеет права только
+на базы с префиксом `leavepilot_runtime_test` — это ограничение изоляции
+фикстуры, и обходить его расширением прав не нужно.
+
 ## Что проверяется и как ведёт себя процесс
 
 - Старт: HTTP-listener не открывается, пока выбранная база данных и выбранное
