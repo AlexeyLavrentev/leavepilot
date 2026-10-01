@@ -522,6 +522,67 @@ jobs:
         if: always()
         run: docker rm -f lp-mysql-dialect || true
 
+  runtime-lifecycle:
+    name: Real runtime lifecycle (MySQL 8, Redis, Engram)
+    runs-on: ubuntu-24.04
+    # The registry's measured stage deadlines sum to ~125s; the rest is
+    # dependency install and the dedicated Compose fixture. A bounded job
+    # turns a wedged run into a visible timeout, never a silent hang.
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+        env:
+          CHROMEDRIVER_SKIP_DOWNLOAD: 'true'
+          PUPPETEER_SKIP_DOWNLOAD: 'true'
+
+      # The canonical verifier never provisions its own prerequisites: this
+      # job owns the disposable services and removes them itself. The
+      # project name, loopback ports and synthetic credentials all come from
+      # the checked-in fixture, so this gate cannot reach an operator
+      # installation or depend on repository secrets.
+      - name: Start dedicated runtime test services
+        run: docker compose -p leavepilot-runtime-test -f t/fixtures/runtime/services.compose.yml up -d --wait --wait-timeout 60
+
+      - name: Run registry-selected runtime lifecycle profile
+        run: node bin/verify.js --profile ci-runtime
+        env:
+          DB_HOST: 127.0.0.1
+          DB_PORT: '13306'
+          DB_NAME: leavepilot_runtime_test
+          DB_USER: leavepilot_runtime_test
+          DB_PASSWORD: runtime_test_only
+          TEST_SESSION_HOST: 127.0.0.1
+          TEST_REDIS_PORT: '16379'
+          TEST_ENGRAM_PORT: '16380'
+
+      - name: Upload complete verification evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: verify-runtime-lifecycle
+          # Keep all diagnostics; exclude only the browser installation cache.
+          path: |
+            .artifacts/verify/
+            !.artifacts/verify/browser/**
+          if-no-files-found: error
+
+      - name: Stop dedicated runtime test services
+        # Unconditional, and scoped to this job's own Compose project with
+        # its volumes: nothing outside leavepilot-runtime-test is touched.
+        if: always()
+        run: docker compose -p leavepilot-runtime-test -f t/fixtures/runtime/services.compose.yml down -v
+
   security:
     name: Security gates
     runs-on: ubuntu-24.04

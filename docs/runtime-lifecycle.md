@@ -1,0 +1,142 @@
+# Проверка жизненного цикла runtime на реальных сервисах
+
+Этот документ описывает локальную и CI-проверку жизненного цикла приложения
+LeavePilot на реальных внешних сервисах: MySQL 8, Redis и Engram
+(RESP2-совместимое хранилище сессий, используемое в compose-контуре
+production).
+
+Проверка выполняется каноническим верификатором репозитория:
+
+```bash
+node bin/verify.js --profile ci-runtime
+```
+
+Профиль `ci-runtime` включает три stage с измеренными ограничениями времени:
+
+- `redis-session` — реальный жизненный цикл Redis-сессий (запись, чтение,
+  восстановление после сбоя, остановка);
+- `engram-session` — тот же жизненный цикл на Engram;
+- `runtime-matrix` — полная матрица контуров: SQLite/MySQL × SQL/Redis/Engram
+  × direct/cluster, включая миграции, вход/выход по cookie, остановку по
+  сигналу и штатные отказы (неверная схема базы, неверные учётные данные).
+
+## Кто поднимает сервисы
+
+Верификатор никогда не устанавливает и не запускает внешние сервисы сам.
+Отсутствующий сервис — это красный (проваленный) prerequisite с точной
+командой запуска в сообщении об ошибке, а не пропущенная проверка.
+Сервисы поднимает тот, кто запускает проверку: локально — вы, в CI — job
+`runtime-lifecycle` в `.github/workflows/core-ci.yml`.
+
+## Одноразовые тестовые сервисы
+
+Все ресурсы живут в отдельном compose-проекте `leavepilot-runtime-test` и
+слушают только loopback-порты:
+
+| Сервис | Адрес | Назначение |
+|---|---|---|
+| MySQL 8.0.45 | `127.0.0.1:13306` | база данных и SQL-сессии |
+| Redis 8.8.0 | `127.0.0.1:16379` | хранилище сессий (RESP2) |
+| Engram 0.2 | `127.0.0.1:16380` | хранилище сессий из compose-контура (RESP2) |
+
+Запуск:
+
+```bash
+docker compose -p leavepilot-runtime-test -f t/fixtures/runtime/services.compose.yml up -d --wait --wait-timeout 60
+```
+
+Удаление вместе с томами:
+
+```bash
+docker compose -p leavepilot-runtime-test -f t/fixtures/runtime/services.compose.yml down -v
+```
+
+Фикстура `t/fixtures/runtime/services.compose.yml` не монтирует
+operator-конфигурацию и production-тома. Тестовые базы данных создаются с
+префиксом `leavepilot_runtime_test_` и удаляются самими проверками; команда
+`down -v` стирает оставшиеся одноразовые тома проекта.
+
+## Синтетические тестовые переменные
+
+Перед запуском профиля экспортируйте фиксированные тестовые значения. Все
+команды этого документа не зависят от неуказанных секретов operator-окружения:
+файл `.env` не используется, значения синтетические и только для тестов.
+
+```bash
+export DB_HOST=127.0.0.1
+export DB_PORT=13306
+export DB_NAME=leavepilot_runtime_test
+export DB_USER=leavepilot_runtime_test
+export DB_PASSWORD=runtime_test_only
+export TEST_SESSION_HOST=127.0.0.1
+export TEST_REDIS_PORT=16379
+export TEST_ENGRAM_PORT=16380
+```
+
+Выбор хранилища сессий:
+
+- Redis выбирается портом `TEST_REDIS_PORT=16379`;
+- Engram выбирается отдельным портом `TEST_ENGRAM_PORT=16380`.
+
+Отдельные stage `redis-session` и `engram-session` внутри себя передают
+выбранный порт как `TEST_SESSION_PORT` в реальный lifecycle-набор
+`t/runtime/redis_session_lifecycle.js`; замеренная матрица использует те же
+порты через фикстуру `t/fixtures/runtime/runtime_matrix_case.js`.
+
+## Полный локальный прогон
+
+```bash
+docker compose -p leavepilot-runtime-test -f t/fixtures/runtime/services.compose.yml up -d --wait --wait-timeout 60
+
+export DB_HOST=127.0.0.1
+export DB_PORT=13306
+export DB_NAME=leavepilot_runtime_test
+export DB_USER=leavepilot_runtime_test
+export DB_PASSWORD=runtime_test_only
+export TEST_SESSION_HOST=127.0.0.1
+export TEST_REDIS_PORT=16379
+export TEST_ENGRAM_PORT=16380
+
+node bin/verify.js --profile ci-runtime
+
+docker compose -p leavepilot-runtime-test -f t/fixtures/runtime/services.compose.yml down -v
+```
+
+Профиль может выполняться дольше 60 секунд: у каждого stage измеренный, но
+конечный бюджет, и превышение любого из них — красный результат, а не
+«медленный успех».
+
+## Что проверяется и как ведёт себя процесс
+
+- Старт: HTTP-listener не открывается, пока выбранная база данных и выбранное
+  хранилище сессий не сообщат о готовности. Пока процесс не готов или
+  выбранный Store недоступен, HTTP-запросы (включая healthcheck) получают
+  `503`.
+- Отказ на старте: недоступный сервис, неверная схема базы или неверные
+  учётные данные завершают старт по одному явному пути с ненулевым кодом
+  выхода, не открывая listener.
+- Поведение при потере Redis: процесс не «молча» откатывается на SQL-сессии —
+  отката на SQL нет. Трафик с сессиями получает `503`, а восстановление в том
+  же процессе происходит только после успешной публичной Store-операции; если
+  Redis не вернулся в отведённое окно, процесс завершается с ошибкой.
+  Установка, явно настроенная без Redis, продолжает использовать SQL-сессии.
+- Cookie: имя cookie сессии остаётся `connect.sid`; выбор SQL или Redis не
+  меняет cookie-семантику.
+- Остановка: `SIGTERM`/`SIGINT` дают ограниченный по времени drain и закрытие
+  ресурсов в порядке зависимостей; незавершённое закрытие завершается
+  ненулевым кодом.
+
+Все ограничения времени (старт, восстановление, остановка) сейчас являются
+политикой с измеренными бюджетами stage; их финальные значения будут
+зафиксированы измерениями плана 08.
+
+## Ограничения
+
+- Private Premium-код в этом репозитории отсутствует, поэтому данный gate
+  проверяет Community-контур. Commercial/Premium-модуль проверяется за
+  пределами этого репозитория и этой проверкой не покрывается.
+- Измеренные бюджеты stage и хеши исходников зафиксированы в
+  `t/fixtures/verify/runtime_timings.json`; изменение проверяемых файлов
+  требует повторной калибровки бюджетов.
+- Развёртывание и публикация workflow не выполняются этим планом: job
+  `runtime-lifecycle` срабатывает штатными триггерами Core CI после мерджа.

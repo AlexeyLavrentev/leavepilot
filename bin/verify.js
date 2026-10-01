@@ -25,7 +25,7 @@ let stopActive = null;
 });
 const usage = message => {
   if (message) { console.error(message); }
-  console.error('Usage: node bin/verify.js --profile <full|quick|ci-browser|ci-mysql> | --stage <id> [--run-path-file <path>]');
+  console.error('Usage: node bin/verify.js --profile <full|quick|ci-browser|ci-mysql|ci-runtime> | --stage <id> [--run-path-file <path>]');
   process.exitCode = 2;
 };
 const redact = value => redactDiagnosticText(value).slice(-4096);
