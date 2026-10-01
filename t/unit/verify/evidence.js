@@ -34,8 +34,32 @@ describe('verification evidence certification', () => {
     return validate(['--validate-run-path-file', pointer, '--expected-head', head, '--started-after', '2026-01-01T00:00:00Z', ...extra]);
   }
 
+  // Names of every real certification record under the shared artifact root
+  // (legacy pairs and phase-final named pairs), independent of the
+  // test-root override, so a test can prove those files stay untouched.
+  function certifiedRootContents() {
+    const base = path.join(root, registry.artifactRoot);
+    const entries = [];
+    const legacy = path.join(base, 'certify');
+    if (fs.existsSync(legacy)) {
+      entries.push(...fs.readdirSync(legacy).map(file => path.join('certify', file)));
+    }
+    for (const name of Object.keys(certifyHelper().NAMED_CERTIFICATIONS)) {
+      for (const suffix of ['.invocation.json', '.path']) {
+        if (fs.existsSync(path.join(base, name + suffix))) { entries.push(`${name}${suffix}`); }
+      }
+    }
+    return entries.sort();
+  }
+
   beforeEach(() => {
     directory = fs.mkdtempSync(path.join(root, '.artifacts/verify/evidence-test-'));
+    // Confine every certification capture (including actual-CLI children, via
+    // the inherited environment) to this test-owned root: the suite must never
+    // read, overwrite or delete real invocation records under the shared
+    // artifact root — a full-profile certification runs this very suite inside
+    // its own workspace while its records must stay untouched.
+    process.env.TEST_CERTIFY_ROOT = directory;
     const invocationId = crypto.randomUUID();
     const startedAt = new Date().toISOString();
     runRoot = path.join(directory, `${Date.parse(startedAt)}-${invocationId}`);
@@ -51,14 +75,8 @@ describe('verification evidence certification', () => {
   });
 
   afterEach(() => {
+    delete process.env.TEST_CERTIFY_ROOT;
     fs.rmSync(directory, {recursive: true, force: true});
-    // Certification helper captures are runtime output under the shared
-    // artifact root; never leave them behind for unrelated suites.
-    fs.rmSync(path.join(root, registry.artifactRoot, 'certify'), {recursive: true, force: true});
-    for (const name of Object.keys(certifyHelper().NAMED_CERTIFICATIONS)) {
-      fs.rmSync(certifyHelper().namedMetadataFile(name), {force: true});
-      fs.rmSync(certifyHelper().namedPointerFile(name), {force: true});
-    }
   });
 
   it('accepts complete first-pass evidence with matching identity and files', () => {
@@ -523,6 +541,50 @@ describe('verification evidence certification', () => {
         expect(result.status).to.equal(2);
       });
     }
+
+    it('never reads, overwrites or deletes real certification records', async () => {
+      // Regression: this suite's captures used to clean the shared artifact
+      // root, which destroyed the live invocation records of a full-profile
+      // certification executing its unit stage in the same workspace.
+      const sentinelRoot = fs.mkdtempSync(path.join(root, '.artifacts/verify/evidence-sentinel-'));
+      const created = [];
+      try {
+        delete process.env.TEST_CERTIFY_ROOT;
+        const realFiles = [
+          certifyHelper().metadataFile('local-full'),
+          certifyHelper().pointerFile('local-full'),
+          ...Object.keys(certifyHelper().NAMED_CERTIFICATIONS)
+            .flatMap(name => [certifyHelper().namedMetadataFile(name), certifyHelper().namedPointerFile(name)]),
+        ];
+        const original = certifiedRootContents();
+        for (const file of realFiles) {
+          if (fs.existsSync(file)) { continue; }
+          fs.mkdirSync(path.dirname(file), {recursive: true});
+          fs.writeFileSync(file, 'live-certification-record\n');
+          created.push(file);
+        }
+        process.env.TEST_CERTIFY_ROOT = sentinelRoot;
+        await certifyHelper().runCertification('full', async () => ({code: 0}));
+        await certifyHelper().runNamedCertification('phase02-final-runtime', 'ci-runtime', async () => ({code: 0}));
+        expect(fs.existsSync(path.join(sentinelRoot, 'certify', 'local-full.json'))).to.equal(true);
+        expect(fs.existsSync(path.join(sentinelRoot, 'phase02-final-runtime.invocation.json'))).to.equal(true);
+        for (const file of created) {
+          expect(fs.readFileSync(file, 'utf8')).to.equal('live-certification-record\n');
+        }
+        // Exactly the pre-existing records plus this test's own sentinels:
+        // the captures neither added nor removed anything in the real root.
+        const base = path.join(root, registry.artifactRoot);
+        expect(certifiedRootContents()).to.deep.equal(
+          original.concat(created.map(file => path.relative(base, file))).sort()
+        );
+      } finally {
+        delete process.env.TEST_CERTIFY_ROOT;
+        for (const file of created) { fs.rmSync(file, {force: true}); }
+        try { fs.rmdirSync(path.join(root, registry.artifactRoot, 'certify')); }
+        catch { /* absent or holding live records: leave it alone */ }
+        fs.rmSync(sentinelRoot, {recursive: true, force: true});
+      }
+    });
   });
 
   describe('named final certifications', () => {
@@ -542,8 +604,10 @@ describe('verification evidence certification', () => {
       expect(metadata.expectedProfile).to.equal('ci-runtime');
       expect(metadata.pointer).to.equal(certifyHelper().namedPointerFile('phase02-final-runtime'));
       // The invocation record and its pointer live directly beside the run
-      // evidence, never inside the reusable legacy certify directory.
-      expect(path.dirname(metadata.pointer)).to.equal(path.join(root, registry.artifactRoot));
+      // evidence, never inside the reusable legacy certify directory — here
+      // inside this suite's confined root, in production inside the artifact
+      // root itself.
+      expect(path.dirname(metadata.pointer)).to.equal(directory);
       expect(observed[0].pointer).to.equal('');
       expect(observed[0].execution.args).to.include('--run-path-file');
       const total = registry.profile('ci-runtime').stageIds.reduce((sum, id) => sum + registry.stage(id).deadlineMs, 0) + 2 * DEFAULT_GRACE_MS;

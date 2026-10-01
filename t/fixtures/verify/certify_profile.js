@@ -43,11 +43,23 @@ const MAX_METADATA_BYTES = 4096;
 const VALIDATION_TIMEOUT_MS = 30000;
 const npm = process.platform === 'win32' ? 'npm.cmd' : 'npm';
 
-const certificationDir = () => path.join(root, registry.artifactRoot, 'certify');
+/*
+  Certification records live beside the run evidence they bind. The evidence
+  regression suite (t/unit/verify/evidence.js) drives these same functions and
+  would otherwise read, overwrite or delete the real records — including while
+  a full-profile certification is executing its unit stage in this same
+  workspace. TEST_CERTIFY_ROOT is a test-only containment override with no
+  operator-facing effect: it is set exclusively by that suite around its own
+  captures, so production and CI invocations always use the artifact root.
+*/
+const certificationBaseDir = () => process.env.TEST_CERTIFY_ROOT
+  ? path.resolve(process.env.TEST_CERTIFY_ROOT)
+  : path.join(root, registry.artifactRoot);
+const certificationDir = () => path.join(certificationBaseDir(), 'certify');
 const pointerFile = name => path.join(certificationDir(), `${name}.path`);
 const metadataFile = name => path.join(certificationDir(), `${name}.json`);
-const namedPointerFile = name => path.join(root, registry.artifactRoot, `${name}.path`);
-const namedMetadataFile = name => path.join(root, registry.artifactRoot, `${name}.invocation.json`);
+const namedPointerFile = name => path.join(certificationBaseDir(), `${name}.path`);
+const namedMetadataFile = name => path.join(certificationBaseDir(), `${name}.invocation.json`);
 
 const requireCondition = (condition, message) => { if (!condition) { throw new Error(message); } };
 
