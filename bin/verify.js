@@ -25,7 +25,8 @@ let stopActive = null;
 });
 const usage = message => {
   if (message) { console.error(message); }
-  console.error('Usage: node bin/verify.js --profile <full|quick|ci-browser|ci-mysql|ci-runtime> | --stage <id> [--run-path-file <path>]');
+  console.error('Usage: node bin/verify.js --profile <full|quick|ci-browser|ci-mysql|ci-runtime> | --stage <id> [--run-path-file <path>]\n' +
+    '       node bin/verify.js (--validate-run-root <dir> | --validate-run-path-file <path>) [--expected-head <sha>] [--expected-profile <full|ci-browser|ci-mysql|ci-runtime>] [--started-after <iso>]');
   process.exitCode = 2;
 };
 const redact = value => redactDiagnosticText(value).slice(-4096);
@@ -45,7 +46,7 @@ const parse = argv => {
   const result = {};
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index];
-    if (!['--profile', '--stage', '--run-path-file', '--validate-run-root', '--validate-run-path-file', '--expected-head', '--started-after'].includes(arg)) {
+    if (!['--profile', '--stage', '--run-path-file', '--validate-run-root', '--validate-run-path-file', '--expected-head', '--expected-profile', '--started-after'].includes(arg)) {
       throw new Error(`Unknown option: ${arg}`);
     }
     if (!argv[index + 1] || argv[index + 1].startsWith('--')) { throw new Error(`Missing value for ${arg}`); }
@@ -147,12 +148,19 @@ const main = async () => {
   let options;
   try { options = parse(process.argv.slice(2)); } catch (error) { usage(error.message); return; }
   try {
+    if (options['expected-profile'] && !options['validate-run-root'] && !options['validate-run-path-file']) {
+      throw new Error('--expected-profile is only valid for validation');
+    }
     if (options['validate-run-root']) { validateRunRoot(options['validate-run-root'], options); console.log('Valid authoritative run evidence'); return; }
     if (options['validate-run-path-file']) {
       const pointer = path.resolve(options['validate-run-path-file']);
       const target = fs.readFileSync(pointer, 'utf8').trim();
       if (!path.isAbsolute(target)) { throw new Error('Run pointer must be absolute'); }
-      validateRunRoot(target, options, true); console.log('Valid authoritative run evidence'); return;
+      // Without an explicit expected profile the pointer path keeps its strict
+      // full-only contract; naming another authoritative profile relaxes
+      // exactly that, and full itself stays on the strict path.
+      const expected = options['expected-profile'];
+      validateRunRoot(target, options, !expected || expected === 'full'); console.log('Valid authoritative run evidence'); return;
     }
     if ((options.profile && options.stage) || (!options.profile && !options.stage)) { usage('Choose exactly one profile or stage'); return; }
     const selected = options.profile ? registry.profile(options.profile) : null;
