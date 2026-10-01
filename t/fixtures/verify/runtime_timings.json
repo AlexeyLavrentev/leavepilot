@@ -44,5 +44,103 @@
       "observedMaximumMs": 46836,
       "deadlineMs": 93672
     }
+  },
+  "lifecycle": {
+    "capturedAt": "2026-10-01T10:52:00Z",
+    "sourceHead": "af6ebe9a82aa8030e61c5c1fde0df069396ef794",
+    "sourceNote": "Plan 08-1 measurements. The working tree differed from sourceHead only by the new measurement harness (t/fixtures/runtime/lifecycle_measurements.js) and this fixture; lib/, bin/ and app.js matched sourceHead exactly. Every scenario drives the production entrypoints (bin/wwww, bin/wwww_cluster) with the same preload the committed runtime matrix uses, under a parent process-group watchdog that owns every child tree.",
+    "host": {"platform": "darwin", "arch": "arm64", "node": "v22.23.0"},
+    "services": {
+      "mysql": {"version": "8.0.45"},
+      "redis": {"version": "8.8.0"},
+      "engram": {"version": "0.2"}
+    },
+    "selection": "Dedicated leavepilot-runtime-test compose fixture on loopback 13306/16379/16380 with the synthetic matrix inputs. Startup = spawn to first HTTP 200 on /login/ (listener cannot open before SQL and selected Store are ready). Shutdown = SIGTERM delivery to process exit. Outage detection/recovery are external polls at 50 ms granularity through a loopback RESP2 interrupting proxy; recovery keeps the same PID. Store initialize = createSessionMiddleware().sessionLifecycle.initialize() (RESP2 connect + public Store set/get/touch/destroy probe + cleanup). Worker replacement = SIGKILL of a serving worker to its replacement's first readiness report. No failed sample was discarded; every listed scenario exited as asserted.",
+    "scenarios": [
+      {"id": "contour-sqlite-sql-direct", "dialect": "sqlite", "backend": "sql", "entrypoint": "direct", "migrationMs": 508, "coldStartupMs": 366, "warmStartupMs": 297, "coldShutdownMs": 5, "warmShutdownMs": 5},
+      {"id": "contour-sqlite-sql-cluster", "dialect": "sqlite", "backend": "sql", "entrypoint": "cluster", "migrationMs": 281, "coldStartupMs": 419, "warmStartupMs": 404, "coldShutdownMs": 9, "warmShutdownMs": 6},
+      {"id": "contour-sqlite-redis-direct", "dialect": "sqlite", "backend": "redis", "entrypoint": "direct", "migrationMs": 284, "coldStartupMs": 306, "warmStartupMs": 349, "coldShutdownMs": 5, "warmShutdownMs": 5},
+      {"id": "contour-sqlite-redis-cluster", "dialect": "sqlite", "backend": "redis", "entrypoint": "cluster", "migrationMs": 283, "coldStartupMs": 410, "warmStartupMs": 400, "coldShutdownMs": 8, "warmShutdownMs": 7},
+      {"id": "contour-sqlite-engram-direct", "dialect": "sqlite", "backend": "engram", "entrypoint": "direct", "migrationMs": 286, "coldStartupMs": 309, "warmStartupMs": 345, "coldShutdownMs": 6, "warmShutdownMs": 7},
+      {"id": "contour-sqlite-engram-cluster", "dialect": "sqlite", "backend": "engram", "entrypoint": "cluster", "migrationMs": 287, "coldStartupMs": 416, "warmStartupMs": 401, "coldShutdownMs": 9, "warmShutdownMs": 7},
+      {"id": "contour-mysql-sql-direct", "dialect": "mysql", "backend": "sql", "entrypoint": "direct", "migrationMs": 836, "coldStartupMs": 424, "warmStartupMs": 416, "coldShutdownMs": 5, "warmShutdownMs": 4},
+      {"id": "contour-mysql-sql-cluster", "dialect": "mysql", "backend": "sql", "entrypoint": "cluster", "migrationMs": 792, "coldStartupMs": 472, "warmStartupMs": 458, "coldShutdownMs": 8, "warmShutdownMs": 7},
+      {"id": "contour-mysql-redis-direct", "dialect": "mysql", "backend": "redis", "entrypoint": "direct", "migrationMs": 809, "coldStartupMs": 420, "warmStartupMs": 402, "coldShutdownMs": 6, "warmShutdownMs": 5},
+      {"id": "contour-mysql-redis-cluster", "dialect": "mysql", "backend": "redis", "entrypoint": "cluster", "migrationMs": 838, "coldStartupMs": 464, "warmStartupMs": 446, "coldShutdownMs": 8, "warmShutdownMs": 9},
+      {"id": "contour-mysql-engram-direct", "dialect": "mysql", "backend": "engram", "entrypoint": "direct", "migrationMs": 796, "coldStartupMs": 417, "warmStartupMs": 401, "coldShutdownMs": 6, "warmShutdownMs": 5},
+      {"id": "contour-mysql-engram-cluster", "dialect": "mysql", "backend": "engram", "entrypoint": "cluster", "migrationMs": 834, "coldStartupMs": 465, "warmStartupMs": 454, "coldShutdownMs": 8, "warmShutdownMs": 7},
+      {"id": "outage-redis", "backend": "redis", "dialect": "sqlite", "entrypoint": "direct", "startupMs": 306, "pollGranularityMs": 50, "cycles": [{"outageDetectionMs": 2, "recoveryMs": 212}, {"outageDetectionMs": 3, "recoveryMs": 150}], "normalShutdownMs": 5, "samePid": true},
+      {"id": "outage-engram", "backend": "engram", "dialect": "sqlite", "entrypoint": "direct", "startupMs": 361, "pollGranularityMs": 50, "cycles": [{"outageDetectionMs": 2, "recoveryMs": 212}, {"outageDetectionMs": 3, "recoveryMs": 151}], "normalShutdownMs": 6, "samePid": true},
+      {"id": "probe-redis", "backend": "redis", "samples": [{"identity": "sample-1", "initializeMs": 10}, {"identity": "sample-2", "initializeMs": 9}]},
+      {"id": "probe-engram", "backend": "engram", "samples": [{"identity": "sample-1", "initializeMs": 9}, {"identity": "sample-2", "initializeMs": 8}]},
+      {"id": "replacement-sqlite-sql", "dialect": "sqlite", "backend": "sql", "entrypoint": "cluster", "workerReplacementMs": [544, 556], "supervisorStopMs": 9},
+      {"id": "replacement-sqlite-redis", "dialect": "sqlite", "backend": "redis", "entrypoint": "cluster", "workerReplacementMs": [562], "supervisorStopMs": 8},
+      {"id": "replacement-sqlite-engram", "dialect": "sqlite", "backend": "engram", "entrypoint": "cluster", "workerReplacementMs": [579], "supervisorStopMs": 11},
+      {"id": "replacement-mysql-sql", "dialect": "mysql", "backend": "sql", "entrypoint": "cluster", "workerReplacementMs": [600], "supervisorStopMs": 8},
+      {"id": "fault-sqlite-schema-direct", "dialect": "sqlite", "fault": "schema", "entrypoint": "direct", "faultExitMs": 475, "exitCode": 1, "listenerClosed": true},
+      {"id": "fault-mysql-schema-cluster", "dialect": "mysql", "fault": "schema", "entrypoint": "cluster", "faultExitMs": 3133, "exitCode": 1, "listenerClosed": true},
+      {"id": "fault-mysql-credentials-direct", "dialect": "mysql", "fault": "credentials", "entrypoint": "direct", "faultExitMs": 286, "exitCode": 1, "listenerClosed": true},
+      {"id": "forced-sqlite-sql-direct", "dialect": "sqlite", "backend": "sql", "entrypoint": "direct", "forcedShutdownMs": 8025, "exitCode": 1, "incomplete": true, "note": "Real in-flight request with a trickled body; drain deadline at 8000 ms fired forced disposal and the stop completed at 8025 ms with the required nonzero incomplete exit."},
+      {"id": "matrix-cold-run", "command": "node node_modules/mocha/bin/mocha t/runtime/runtime_matrix.js --timeout 15000 --require t/lib/skip_honesty.js", "testsPassing": 17, "durationMs": 25000, "durationSource": "mocha-reported (25s)"},
+      {"id": "matrix-warm-run", "command": "node node_modules/mocha/bin/mocha t/runtime/runtime_matrix.js --timeout 15000 --require t/lib/skip_honesty.js", "testsPassing": 17, "durationMs": 25060, "durationSource": "parent wall clock"}
+    ],
+    "policy": [
+      {
+        "constant": "startupTimeoutMs",
+        "valueMs": 20000,
+        "file": "lib/runtime_startup.js",
+        "decision": "retained",
+        "rationale": "One absolute deadline covering SQL connect, schema check, selected Store initialize and listen, plus allowlisted transient retries. Observed cold/warm startup maximum is 472 ms across all twelve contours on the disposable fixture; the 20000 ms budget is deliberate headroom for container/CI hosts and in-window dependency retry, and it stays inside the existing 30000 ms bin/test.js readiness envelope with 10 s left for harness detection and cleanup. Reducing it would buy nothing and risk flapping slow hosts; the deadline-exceeded and never-settling startup paths exit nonzero without opening the listener (fault scenarios and t/unit/runtime_startup.js injected-clock cases).",
+        "evidence": ["contour-* coldStartupMs/warmStartupMs", "fault-sqlite-schema-direct", "fault-mysql-credentials-direct", "matrix-cold-run", "matrix-warm-run"]
+      },
+      {
+        "constant": "retryDelayMs (startup backoff base)",
+        "valueMs": 250,
+        "file": "lib/runtime_startup.js",
+        "decision": "retained",
+        "rationale": "Exponential floor for the four allowlisted transient connection codes, doubling to at most 1000 ms inside the single startup deadline. Healthy fixture boots never needed a retry (all cold startups succeeded first attempt), so 250 ms only paces retries against a just-restarting dependency; permanent auth/schema/config errors bypass retries entirely (fault-mysql-credentials-direct exited in 286 ms).",
+        "evidence": ["contour-* coldStartupMs", "fault-mysql-credentials-direct", "fault-sqlite-schema-direct"]
+      },
+      {
+        "constant": "shutdownTimeoutMs with 0.8 drain split",
+        "valueMs": 10000,
+        "file": "lib/runtime_shutdown.js",
+        "decision": "retained",
+        "rationale": "Preserves the pre-phase default envelope. Normal signal stops complete in at most 9 ms on every contour, so the 8000 ms drain window exists entirely for slow in-flight work; the real forced case hit the 8000 ms boundary, completed forced disposal in the reserved tail and exited 8025 ms later with code 1 (incomplete stop never reports success). Delayed close callbacks are checked against the absolute deadline in t/unit/runtime_shutdown.js with injected clocks and real subprocess watchdogs.",
+        "evidence": ["contour-* coldShutdownMs/warmShutdownMs", "forced-sqlite-sql-direct"]
+      },
+      {
+        "constant": "RECOVERY_TIMEOUT_MS",
+        "valueMs": 20000,
+        "file": "lib/middleware/session_lifecycle.js",
+        "decision": "retained",
+        "rationale": "Bounded recovery window for the selected Redis-compatible store after a runtime loss, symmetric with the startup deadline per D-06. Real outages were detected within one 50 ms poll on Redis and Engram and recovered in 150-212 ms in the same PID after a successful public Store probe; the window is headroom for a realistic dependency restart, is never reset by reconnect attempts, and its expiry exits nonzero (t/runtime/redis_session_lifecycle.js deadline tracer).",
+        "evidence": ["outage-redis", "outage-engram", "probe-redis", "probe-engram"]
+      },
+      {
+        "constant": "OPERATION_TIMEOUT_MS / CLOSE_TIMEOUT_MS",
+        "valueMs": 1000,
+        "file": "lib/middleware/session_lifecycle.js",
+        "decision": "retained",
+        "rationale": "Ceilings for one public Store callback and for a graceful client close. Healthy round-trips through the real middleware measured 8-10 ms including connect and the full probe; 1000 ms bounds blackholed in-flight commands and hung closes on degraded hosts while staying far below the recovery window (blackhole and close-fault cases covered by t/unit/middleware/session_lifecycle.js and the real lifecycle suite).",
+        "evidence": ["probe-redis", "probe-engram", "outage-redis", "outage-engram"]
+      },
+      {
+        "constant": "DEFAULT_DELAYS_MS (replacement backoff)",
+        "valueMs": [250, 500, 1000],
+        "file": "lib/runtime_cluster.js",
+        "decision": "retained",
+        "rationale": "Three cumulative replacement attempts per worker slot with growing backoff. A real SIGKILLed worker was replaced and serving again in 544-600 ms (250 ms backoff plus boot); the sequence bounds crash-loop impact while tolerating three transient worker losses, and exhaustion stops peers with a nonzero cluster exit (t/unit/runtime_cluster.js supervisor cases).",
+        "evidence": ["replacement-sqlite-sql", "replacement-sqlite-redis", "replacement-sqlite-engram", "replacement-mysql-sql"]
+      },
+      {
+        "constant": "DEFAULT_SHUTDOWN_MS / DEFAULT_FORCE_RESERVE_MS",
+        "valueMs": [12000, 500],
+        "file": "lib/runtime_cluster.js",
+        "decision": "retained",
+        "rationale": "The supervisor waits one full worker shutdown budget (10000 ms) plus 2000 ms of primary-side accounting before SIGKILL; observed supervisor stops completed in 8-11 ms after all workers drained, and the overdue-worker path escalates to SIGKILL with a 500 ms reserve and a nonzero exit (t/unit/runtime_cluster.js bounded-overdue case).",
+        "evidence": ["replacement-* supervisorStopMs", "contour-*-cluster coldShutdownMs/warmShutdownMs"]
+      }
+    ]
   }
 }
