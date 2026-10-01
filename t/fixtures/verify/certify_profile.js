@@ -28,6 +28,14 @@ const CERTIFICATIONS = Object.freeze({
   'ci-mysql': Object.freeze({name: 'real-mysql'}),
   'ci-runtime': Object.freeze({name: 'real-runtime'}),
 });
+// Phase-final invocations (plan 08-2): each named certification owns exactly
+// one invocation record and pointer directly under the artifact root, so a
+// final gate can never be confused with the reusable legacy pairs above.
+const NAMED_CERTIFICATIONS = Object.freeze({
+  'phase02-final-local': Object.freeze({profile: 'full'}),
+  'phase02-final-mysql': Object.freeze({profile: 'ci-mysql'}),
+  'phase02-final-runtime': Object.freeze({profile: 'ci-runtime'}),
+});
 const METADATA_KEYS = Object.freeze(['expectedHead', 'expectedProfile', 'name', 'pointer', 'schemaVersion', 'startedAfter']);
 const MAX_METADATA_BYTES = 4096;
 // Validation only reads bounded evidence; a generous finite cap keeps even a
@@ -38,6 +46,8 @@ const npm = process.platform === 'win32' ? 'npm.cmd' : 'npm';
 const certificationDir = () => path.join(root, registry.artifactRoot, 'certify');
 const pointerFile = name => path.join(certificationDir(), `${name}.path`);
 const metadataFile = name => path.join(certificationDir(), `${name}.json`);
+const namedPointerFile = name => path.join(root, registry.artifactRoot, `${name}.path`);
+const namedMetadataFile = name => path.join(root, registry.artifactRoot, `${name}.invocation.json`);
 
 const requireCondition = (condition, message) => { if (!condition) { throw new Error(message); } };
 
@@ -65,6 +75,27 @@ function pairFor(profile) {
   requireCondition(pair, `Unsupported certification profile: ${profile}`);
   requireCondition(registry.profile(profile).authoritative, `Profile is not authoritative: ${profile}`);
   return pair;
+}
+
+/*
+  A slot is the one place every certification path resolves to: the fixed
+  name/profile pair plus the exact metadata and pointer files it owns. Legacy
+  pairs live under certify/; phase-final named pairs live directly under the
+  artifact root. Nothing else in the helper branches on which form was used.
+*/
+function legacySlot(profile) {
+  const pair = pairFor(profile);
+  return {name: pair.name, profile,
+    metadataFile: metadataFile(pair.name), pointerFile: pointerFile(pair.name)};
+}
+
+function namedSlot(name, profile) {
+  const pair = NAMED_CERTIFICATIONS[name];
+  requireCondition(pair, `Unsupported named certification: ${name}`);
+  requireCondition(pair.profile === profile, `Named certification ${name} is not bound to profile ${profile}`);
+  requireCondition(registry.profile(profile).authoritative, `Profile is not authoritative: ${profile}`);
+  return {name, profile,
+    metadataFile: namedMetadataFile(name), pointerFile: namedPointerFile(name)};
 }
 
 /*
@@ -106,17 +137,17 @@ function runBoundedChild(execution, timeoutMs) {
   });
 }
 
-async function runCertification(profile, spawnChild = runBoundedChild) {
-  const pair = pairFor(profile);
+async function runForSlot(slot, spawnChild = runBoundedChild) {
+  const {profile} = slot;
   const head = boundedHead();
-  const pointer = pointerFile(pair.name);
+  const pointer = slot.pointerFile;
   const startedAfter = new Date().toISOString();
   // Clear only this certification's own pointer first: a killed child must not
   // leave a previous green run behind as certifiable, and no other profile's
   // pointer is touched. The identity is captured atomically immediately before
   // the child starts, binding the evidence to this exact invocation.
   atomicWrite(pointer, '');
-  atomicWrite(metadataFile(pair.name), `${JSON.stringify({schemaVersion: 1, name: pair.name, expectedProfile: profile, expectedHead: head, startedAfter, pointer}, null, 2)}\n`);
+  atomicWrite(slot.metadataFile, `${JSON.stringify({schemaVersion: 1, name: slot.name, expectedProfile: profile, expectedHead: head, startedAfter, pointer}, null, 2)}\n`);
   // Finite overall budget: every selected stage deadline plus the shared
   // cleanup grace the child's own sweeps may still need after the last stage.
   const budgetMs = registry.profile(profile).stageIds.reduce((total, id) => total + registry.stage(id).deadlineMs, 0)
@@ -130,9 +161,8 @@ async function runCertification(profile, spawnChild = runBoundedChild) {
   return outcome;
 }
 
-async function validateCertification(profile, spawnChild = runBoundedChild) {
-  const pair = pairFor(profile);
-  const file = metadataFile(pair.name);
+async function validateForSlot(slot, spawnChild = runBoundedChild) {
+  const file = slot.metadataFile;
   const stat = fs.statSync(file);
   requireCondition(stat.isFile() && stat.size <= MAX_METADATA_BYTES, 'Invalid certification metadata file');
   const metadata = JSON.parse(fs.readFileSync(file, 'utf8'));
@@ -140,8 +170,8 @@ async function validateCertification(profile, spawnChild = runBoundedChild) {
   // different profile or pointed elsewhere can certify this invocation.
   requireCondition(isDeepStrictEqual(Object.keys(metadata).sort(), [...METADATA_KEYS].sort()), 'Unexpected certification metadata fields');
   requireCondition(metadata.schemaVersion === 1, 'Unsupported certification metadata schema');
-  requireCondition(metadata.name === pair.name && metadata.expectedProfile === profile, 'Certification name/profile pair mismatch');
-  requireCondition(metadata.pointer === pointerFile(pair.name), 'Certification pointer path mismatch');
+  requireCondition(metadata.name === slot.name && metadata.expectedProfile === slot.profile, 'Certification name/profile pair mismatch');
+  requireCondition(metadata.pointer === slot.pointerFile, 'Certification pointer path mismatch');
   requireCondition(/^[0-9a-f]{40}$/.test(metadata.expectedHead), 'Invalid certification HEAD');
   requireCondition(Number.isFinite(Date.parse(metadata.startedAfter)), 'Invalid certification start time');
   const head = boundedHead();
@@ -161,18 +191,40 @@ async function validateCertification(profile, spawnChild = runBoundedChild) {
   }, VALIDATION_TIMEOUT_MS);
 }
 
-module.exports = {CERTIFICATIONS, metadataFile, pointerFile, runCertification, validateCertification};
+const runCertification = (profile, spawnChild) => runForSlot(legacySlot(profile), spawnChild);
+const validateCertification = (profile, spawnChild) => validateForSlot(legacySlot(profile), spawnChild);
+const runNamedCertification = (name, profile, spawnChild) => runForSlot(namedSlot(name, profile), spawnChild);
+const validateNamedCertification = (name, profile, spawnChild) => validateForSlot(namedSlot(name, profile), spawnChild);
+
+module.exports = {CERTIFICATIONS, NAMED_CERTIFICATIONS, metadataFile, pointerFile,
+  namedMetadataFile, namedPointerFile, runCertification, validateCertification,
+  runNamedCertification, validateNamedCertification};
 
 if (require.main === module) {
-  const usage = 'Usage: node t/fixtures/verify/certify_profile.js (--run|--validate) <full|ci-mysql|ci-runtime>';
+  const usage = 'Usage: node t/fixtures/verify/certify_profile.js (--run|--validate) <full|ci-mysql|ci-runtime>\n'
+    + '       node t/fixtures/verify/certify_profile.js (--run|--validate) --name <phase02-final-local|phase02-final-mysql|phase02-final-runtime> --profile <full|ci-mysql|ci-runtime>';
   const argv = process.argv.slice(2);
-  if (argv.length !== 2 || !['--run', '--validate'].includes(argv[0])) {
+  // Exactly one of the two legal forms; everything else fails closed so no
+  // invocation can claim a pair it did not name explicitly.
+  const positional = argv.length === 2 && ['--run', '--validate'].includes(argv[0])
+    ? {mode: argv[0], profile: argv[1]} : null;
+  const flagged = argv.length === 5 && ['--run', '--validate'].includes(argv[0])
+    && argv[1] === '--name' && argv[3] === '--profile'
+    ? {mode: argv[0], name: argv[2], profile: argv[4]} : null;
+  const request = positional || flagged;
+  if (!request || (flagged && !NAMED_CERTIFICATIONS[flagged.name])) {
     console.error(usage);
     process.exitCode = 2;
   } else {
     (async () => {
       try {
-        const outcome = argv[0] === '--run' ? await runCertification(argv[1]) : await validateCertification(argv[1]);
+        const outcome = request.name
+          ? request.mode === '--run'
+            ? await runNamedCertification(request.name, request.profile)
+            : await validateNamedCertification(request.name, request.profile)
+          : request.mode === '--run'
+            ? await runCertification(request.profile)
+            : await validateCertification(request.profile);
         if (outcome.reason) { console.error(outcome.reason); }
         process.exitCode = outcome.code;
       } catch (error) { console.error(error.message); process.exitCode = 2; }

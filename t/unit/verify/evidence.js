@@ -55,6 +55,10 @@ describe('verification evidence certification', () => {
     // Certification helper captures are runtime output under the shared
     // artifact root; never leave them behind for unrelated suites.
     fs.rmSync(path.join(root, registry.artifactRoot, 'certify'), {recursive: true, force: true});
+    for (const name of Object.keys(certifyHelper().NAMED_CERTIFICATIONS)) {
+      fs.rmSync(certifyHelper().namedMetadataFile(name), {force: true});
+      fs.rmSync(certifyHelper().namedPointerFile(name), {force: true});
+    }
   });
 
   it('accepts complete first-pass evidence with matching identity and files', () => {
@@ -493,7 +497,11 @@ describe('verification evidence certification', () => {
     it('rejects an older successful pointer on the same HEAD through the actual CLI', () => {
       const file = certifyHelper().metadataFile('local-full');
       fs.mkdirSync(path.dirname(file), {recursive: true});
-      fs.writeFileSync(file, JSON.stringify({schemaVersion: 1, name: 'local-full', expectedProfile: 'full', expectedHead: head, startedAfter: new Date().toISOString(), pointer: certifyHelper().pointerFile('local-full')}));
+      // One millisecond after the retained run's own start: deterministic
+      // staleness even when beforeEach and this test land in the same clock
+      // millisecond (the validator accepts an equal-or-later run start).
+      const staleAfter = new Date(Date.parse(summary.startedAt) + 1).toISOString();
+      fs.writeFileSync(file, JSON.stringify({schemaVersion: 1, name: 'local-full', expectedProfile: 'full', expectedHead: head, startedAfter: staleAfter, pointer: certifyHelper().pointerFile('local-full')}));
       // The retained green run predates the new invocation's start time.
       fs.writeFileSync(certifyHelper().pointerFile('local-full'), runRoot + '\n');
       const result = spawnSync(process.execPath, ['t/fixtures/verify/certify_profile.js', '--validate', 'full'], {cwd: root, encoding: 'utf8', timeout: 45000});
@@ -510,6 +518,100 @@ describe('verification evidence certification', () => {
     });
 
     for (const argv of [[], ['--run'], ['--run', 'nope'], ['--validate', 'quick']]) {
+      it(`rejects helper arguments ${JSON.stringify(argv)}`, () => {
+        const result = spawnSync(process.execPath, ['t/fixtures/verify/certify_profile.js', ...argv], {cwd: root, encoding: 'utf8', timeout: 15000});
+        expect(result.status).to.equal(2);
+      });
+    }
+  });
+
+  describe('named final certifications', () => {
+    it('captures a phase-final invocation identity beside its own pointer', async () => {
+      const observed = [];
+      const outcome = await certifyHelper().runNamedCertification('phase02-final-runtime', 'ci-runtime', async (execution, budgetMs) => {
+        observed.push({
+          metadata: fs.readFileSync(certifyHelper().namedMetadataFile('phase02-final-runtime'), 'utf8'),
+          pointer: fs.readFileSync(certifyHelper().namedPointerFile('phase02-final-runtime'), 'utf8'),
+          execution, budgetMs,
+        });
+        return {code: 0};
+      });
+      expect(outcome.code).to.equal(0);
+      const metadata = JSON.parse(observed[0].metadata);
+      expect(metadata.name).to.equal('phase02-final-runtime');
+      expect(metadata.expectedProfile).to.equal('ci-runtime');
+      expect(metadata.pointer).to.equal(certifyHelper().namedPointerFile('phase02-final-runtime'));
+      // The invocation record and its pointer live directly beside the run
+      // evidence, never inside the reusable legacy certify directory.
+      expect(path.dirname(metadata.pointer)).to.equal(path.join(root, registry.artifactRoot));
+      expect(observed[0].pointer).to.equal('');
+      expect(observed[0].execution.args).to.include('--run-path-file');
+      const total = registry.profile('ci-runtime').stageIds.reduce((sum, id) => sum + registry.stage(id).deadlineMs, 0) + 2 * DEFAULT_GRACE_MS;
+      expect(observed[0].budgetMs).to.equal(total);
+    });
+
+    it('validates a named invocation from its saved identity without regenerating it', async () => {
+      let saved;
+      await certifyHelper().runNamedCertification('phase02-final-runtime', 'ci-runtime', async () => {
+        const {run} = writeProfileRun('ci-runtime', directory);
+        fs.writeFileSync(certifyHelper().namedPointerFile('phase02-final-runtime'), run + '\n');
+        saved = JSON.parse(fs.readFileSync(certifyHelper().namedMetadataFile('phase02-final-runtime'), 'utf8'));
+        return {code: 0};
+      });
+      const observed = [];
+      const outcome = await certifyHelper().validateNamedCertification('phase02-final-runtime', 'ci-runtime', async execution => {
+        observed.push({execution});
+        return {code: 0};
+      });
+      expect(outcome.code).to.equal(0);
+      const args = observed[0].execution.args;
+      expect(args[args.indexOf('--started-after') + 1]).to.equal(saved.startedAfter);
+      expect(args[args.indexOf('--expected-profile') + 1]).to.equal('ci-runtime');
+      expect(args[args.indexOf('--expected-head') + 1]).to.equal(head);
+      expect(args[args.indexOf('--validate-run-path-file') + 1]).to.equal(saved.pointer);
+    });
+
+    it('rejects a named invocation bound to a different profile', async () => {
+      let rejected = null;
+      try { await certifyHelper().runNamedCertification('phase02-final-local', 'ci-mysql', async () => ({code: 0})); }
+      catch (error) { rejected = error; }
+      expect(rejected, 'expected the pair mismatch to reject').to.be.instanceOf(Error);
+      expect(fs.existsSync(certifyHelper().namedMetadataFile('phase02-final-local'))).to.equal(false);
+    });
+
+    it('accepts a fresh named pointer through the actual helper CLI', () => {
+      const name = 'phase02-final-local';
+      fs.writeFileSync(certifyHelper().namedMetadataFile(name), JSON.stringify({
+        schemaVersion: 1, name, expectedProfile: 'full', expectedHead: head,
+        startedAfter: '2026-01-01T00:00:00Z', pointer: certifyHelper().namedPointerFile(name),
+      }));
+      fs.writeFileSync(certifyHelper().namedPointerFile(name), runRoot + '\n');
+      const result = spawnSync(process.execPath,
+        ['t/fixtures/verify/certify_profile.js', '--validate', '--name', name, '--profile', 'full'],
+        {cwd: root, encoding: 'utf8', timeout: 45000});
+      expect(result.status, result.stdout + result.stderr).to.equal(0);
+    });
+
+    it('rejects an older named pointer on the same HEAD through the actual CLI', () => {
+      const name = 'phase02-final-mysql';
+      fs.writeFileSync(certifyHelper().namedMetadataFile(name), JSON.stringify({
+        schemaVersion: 1, name, expectedProfile: 'ci-mysql', expectedHead: head,
+        startedAfter: new Date().toISOString(), pointer: certifyHelper().namedPointerFile(name),
+      }));
+      // The retained green run predates the new invocation's start time.
+      fs.writeFileSync(certifyHelper().namedPointerFile(name), runRoot + '\n');
+      const result = spawnSync(process.execPath,
+        ['t/fixtures/verify/certify_profile.js', '--validate', '--name', name, '--profile', 'ci-mysql'],
+        {cwd: root, encoding: 'utf8', timeout: 45000});
+      expect(result.status, result.stdout + result.stderr).to.equal(2);
+    });
+
+    for (const argv of [
+      ['--run', '--name', 'phase02-final-local', '--profile', 'ci-mysql'],
+      ['--run', '--name', 'unknown-final-name', '--profile', 'full'],
+      ['--validate', '--name', 'phase02-final-local'],
+      ['--run', '--name', 'phase02-final-local', '--profile', 'full', 'extra'],
+    ]) {
       it(`rejects helper arguments ${JSON.stringify(argv)}`, () => {
         const result = spawnSync(process.execPath, ['t/fixtures/verify/certify_profile.js', ...argv], {cwd: root, encoding: 'utf8', timeout: 15000});
         expect(result.status).to.equal(2);
