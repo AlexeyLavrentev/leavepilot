@@ -7,9 +7,14 @@ const {spawnSync, execFileSync} = require('child_process');
 const {expect} = require('chai');
 const registry = require('../../../lib/verify/stages');
 const {LIMITS} = require('../../../lib/verify/artifact_bundle');
+const {DEFAULT_GRACE_MS} = require('../../../bin/lib/spawn_group');
 const {png} = require('../../fixtures/verify/png');
 const {createReproduction, expectsTests} = require('../../../lib/verify/reproduction');
 const {featureFlags} = require('../../../lib/verify/stage_diagnostic');
+
+// Loaded lazily so the tracer RED commit keeps this suite's legacy cases green
+// while the new helper module does not exist yet.
+const certifyHelper = () => require('../../fixtures/verify/certify_profile');
 
 const root = path.resolve(__dirname, '../../..');
 const head = execFileSync('git', ['rev-parse', 'HEAD'], {cwd: root, encoding: 'utf8'}).trim();
@@ -45,7 +50,12 @@ describe('verification evidence certification', () => {
     fs.writeFileSync(pointer, runRoot + '\n');
   });
 
-  afterEach(() => fs.rmSync(directory, {recursive: true, force: true}));
+  afterEach(() => {
+    fs.rmSync(directory, {recursive: true, force: true});
+    // Certification helper captures are runtime output under the shared
+    // artifact root; never leave them behind for unrelated suites.
+    fs.rmSync(path.join(root, registry.artifactRoot, 'certify'), {recursive: true, force: true});
+  });
 
   it('accepts complete first-pass evidence with matching identity and files', () => {
     const result = certify();
@@ -281,4 +291,229 @@ describe('verification evidence certification', () => {
       expect(validate(['--validate-run-root', bundle, '--expected-head', head]).status).to.equal(2);
     });
   }
+
+  function writeProfileRun(profileId, parent, startedAt = new Date().toISOString()) {
+    const invocationId = crypto.randomUUID();
+    const run = path.join(parent, `${Date.parse(startedAt)}-${invocationId}`);
+    fs.mkdirSync(run, {recursive: true});
+    const record = {...summary, invocationId, startedAt, profile: profileId, stages: registry.profile(profileId).stageIds.map(id => {
+      const stage = registry.stage(id);
+      const contour = stage.env && stage.env.TEST_DB_DIALECT === 'mysql' ? 'mysql' : 'sqlite';
+      return {id, status: 'passed', failureClass: null, reason: null, durationMs: 1, attempts: [{number: 1, status: 'passed', evidence: path.join(run, `${id}.attempt-1.json`), reproduction: {command: stage.command, args: stage.args, nodeVersion: process.version, dbContour: contour, featureFlags: 'not-recorded'}}]};
+    })};
+    record.stages.forEach(stage => fs.writeFileSync(stage.attempts[0].evidence, JSON.stringify(stage)));
+    fs.writeFileSync(path.join(run, 'summary.json'), JSON.stringify(record));
+    return {run, record};
+  }
+
+  describe('expected-profile certification', () => {
+    const profilePointer = profileId => {
+      const {run} = writeProfileRun(profileId, directory);
+      const file = path.join(directory, `${profileId}.path`);
+      fs.writeFileSync(file, run + '\n');
+      return file;
+    };
+
+    it('validates a fresh full pointer with its explicit expected profile', () => {
+      const file = path.join(directory, 'full.path');
+      fs.writeFileSync(file, runRoot + '\n');
+      expect(validate(['--validate-run-path-file', file, '--expected-profile', 'full', '--expected-head', head, '--started-after', '2026-01-01T00:00:00Z']).status).to.equal(0);
+    });
+
+    for (const profileId of ['ci-mysql', 'ci-runtime']) {
+      it(`validates a fresh ${profileId} pointer only through its expected profile`, () => {
+        expect(validate(['--validate-run-path-file', profilePointer(profileId), '--expected-profile', profileId, '--expected-head', head, '--started-after', '2026-01-01T00:00:00Z']).status).to.equal(0);
+        // Without the explicit profile the pointer path keeps its full-only contract.
+        expect(validate(['--validate-run-path-file', profilePointer(profileId), '--expected-head', head]).status).to.equal(2);
+      });
+    }
+
+    it('rejects evidence of a different profile than the expected one', () => {
+      expect(validate(['--validate-run-path-file', profilePointer('ci-mysql'), '--expected-profile', 'ci-runtime', '--expected-head', head, '--started-after', '2026-01-01T00:00:00Z']).status).to.equal(2);
+    });
+
+    it('rejects an expected profile with an incomplete stage set', () => {
+      const {run, record} = writeProfileRun('ci-runtime', directory);
+      record.stages.pop();
+      fs.writeFileSync(path.join(run, 'summary.json'), JSON.stringify(record));
+      const file = path.join(directory, 'incomplete.path');
+      fs.writeFileSync(file, run + '\n');
+      expect(validate(['--validate-run-path-file', file, '--expected-profile', 'ci-runtime', '--expected-head', head, '--started-after', '2026-01-01T00:00:00Z']).status).to.equal(2);
+    });
+
+    it('rejects a non-authoritative or unknown expected profile', () => {
+      const file = path.join(directory, 'full.path');
+      fs.writeFileSync(file, runRoot + '\n');
+      expect(validate(['--validate-run-path-file', file, '--expected-profile', 'quick', '--expected-head', head]).status).to.equal(2);
+      expect(validate(['--validate-run-path-file', file, '--expected-profile', 'nope', '--expected-head', head]).status).to.equal(2);
+    });
+
+    it('keeps runtime stages bound to their registered reproduction contour', () => {
+      const {run, record} = writeProfileRun('ci-runtime', directory);
+      record.stages[0].attempts[0].reproduction.dbContour = 'mysql';
+      fs.writeFileSync(record.stages[0].attempts[0].evidence, JSON.stringify(record.stages[0]));
+      fs.writeFileSync(path.join(run, 'summary.json'), JSON.stringify(record));
+      const file = path.join(directory, 'contour.path');
+      fs.writeFileSync(file, run + '\n');
+      expect(validate(['--validate-run-path-file', file, '--expected-profile', 'ci-runtime', '--expected-head', head, '--started-after', '2026-01-01T00:00:00Z']).status).to.equal(2);
+    });
+
+    it('rejects an expected profile for an aggregate CI directory', () => {
+      const {bundle} = ciBundle();
+      expect(validate(['--validate-run-root', bundle, '--expected-profile', 'full', '--expected-head', head]).status).to.equal(2);
+    });
+
+    it('rejects an expected profile without a validation target', () => {
+      expect(validate(['--expected-profile', 'full', '--expected-head', head]).status).to.equal(2);
+    });
+
+    it('accepts runtime invocations in a complete CI bundle without requiring them', () => {
+      const {bundle} = ciBundle();
+      writeProfileRun('ci-runtime', path.join(bundle, '123', 'verify-ci-runtime'));
+      expect(validate(['--validate-run-root', bundle, '--expected-head', head]).status).to.equal(0);
+    });
+
+    it('rejects duplicated runtime stage evidence in a CI bundle', () => {
+      const {bundle} = ciBundle();
+      writeProfileRun('ci-runtime', path.join(bundle, '123', 'verify-ci-runtime-a'));
+      writeProfileRun('ci-runtime', path.join(bundle, '123', 'verify-ci-runtime-b'));
+      expect(validate(['--validate-run-root', bundle, '--expected-head', head]).status).to.equal(2);
+    });
+  });
+
+  describe('certification helper', () => {
+    it('captures the invocation identity and clears its own pointer before spawning', async () => {
+      const observed = [];
+      const outcome = await certifyHelper().runCertification('ci-runtime', async (execution, budgetMs) => {
+        observed.push({
+          metadata: fs.readFileSync(certifyHelper().metadataFile('real-runtime'), 'utf8'),
+          pointer: fs.readFileSync(certifyHelper().pointerFile('real-runtime'), 'utf8'),
+          execution, budgetMs,
+        });
+        return {code: 0};
+      });
+      expect(outcome.code).to.equal(0);
+      const metadata = JSON.parse(observed[0].metadata);
+      expect(Object.keys(metadata).sort()).to.deep.equal(['expectedHead', 'expectedProfile', 'name', 'pointer', 'schemaVersion', 'startedAfter']);
+      expect(metadata.schemaVersion).to.equal(1);
+      expect(metadata.name).to.equal('real-runtime');
+      expect(metadata.expectedProfile).to.equal('ci-runtime');
+      expect(metadata.expectedHead).to.equal(head);
+      expect(metadata.pointer).to.equal(certifyHelper().pointerFile('real-runtime'));
+      expect(Number.isFinite(Date.parse(metadata.startedAfter))).to.equal(true);
+      expect(observed[0].pointer).to.equal('');
+    });
+
+    it('spawns the canonical full command and direct commands for the other profiles', async () => {
+      const commands = {};
+      for (const profileId of ['full', 'ci-mysql', 'ci-runtime']) {
+        await certifyHelper().runCertification(profileId, async (execution, budgetMs) => {
+          commands[profileId] = {execution, budgetMs};
+          return {code: profileId === 'full' ? 1 : 0};
+        });
+      }
+      expect(commands.full.execution.args.slice(0, 3)).to.deep.equal(['run', 'verify', '--']);
+      expect(commands.full.execution.args).to.include('--run-path-file');
+      for (const profileId of ['ci-mysql', 'ci-runtime']) {
+        const pair = certifyHelper().CERTIFICATIONS[profileId];
+        expect(commands[profileId].execution.command).to.equal(process.execPath);
+        expect(commands[profileId].execution.args).to.deep.equal(['bin/verify.js', '--profile', profileId, '--run-path-file', certifyHelper().pointerFile(pair.name)]);
+      }
+      const total = registry.profile('ci-runtime').stageIds.reduce((sum, id) => sum + registry.stage(id).deadlineMs, 0) + 2 * DEFAULT_GRACE_MS;
+      expect(commands['ci-runtime'].budgetMs).to.equal(total);
+      expect(commands.full.budgetMs).to.be.a('number').and.to.be.greaterThan(0);
+    });
+
+    it('propagates a failed child once without certifying or retrying', async () => {
+      let calls = 0;
+      const outcome = await certifyHelper().runCertification('ci-mysql', async () => {
+        calls += 1;
+        return {code: 1};
+      });
+      expect(calls).to.equal(1);
+      expect(outcome.code).to.equal(1);
+      expect(fs.existsSync(certifyHelper().metadataFile('real-mysql'))).to.equal(true);
+    });
+
+    it('validates from the saved invocation timestamp without regenerating it', async () => {
+      let saved;
+      await certifyHelper().runCertification('ci-runtime', async () => {
+        const {run} = writeProfileRun('ci-runtime', directory);
+        fs.writeFileSync(certifyHelper().pointerFile('real-runtime'), run + '\n');
+        saved = JSON.parse(fs.readFileSync(certifyHelper().metadataFile('real-runtime'), 'utf8'));
+        return {code: 0};
+      });
+      await new Promise(resolve => setTimeout(resolve, 5));
+      const observed = [];
+      const outcome = await certifyHelper().validateCertification('ci-runtime', async (execution, timeoutMs) => {
+        observed.push({execution, timeoutMs});
+        return {code: 0};
+      });
+      expect(outcome.code).to.equal(0);
+      const args = observed[0].execution.args;
+      const startedAfter = args[args.indexOf('--started-after') + 1];
+      expect(startedAfter).to.equal(saved.startedAfter);
+      expect(Date.parse(saved.startedAfter)).to.be.lessThan(Date.now());
+      expect(args[args.indexOf('--expected-profile') + 1]).to.equal('ci-runtime');
+      expect(args[args.indexOf('--expected-head') + 1]).to.equal(head);
+      expect(args).to.include('--validate-run-path-file');
+      expect(observed[0].timeoutMs).to.be.a('number').and.to.be.greaterThan(0);
+    });
+
+    for (const [name, mutate] of [
+      ['a missing field', metadata => delete metadata.expectedHead],
+      ['an extra field', metadata => { metadata.extra = true; }],
+      ['a wrong schema version', metadata => { metadata.schemaVersion = 2; }],
+      ['a mismatched name pair', metadata => { metadata.name = 'real-mysql'; }],
+      ['a foreign pointer path', metadata => { metadata.pointer = path.join(directory, 'other.path'); }],
+      ['a malformed head', metadata => { metadata.expectedHead = '0'.repeat(12); }],
+      ['a malformed timestamp', metadata => { metadata.startedAfter = 'not-a-date'; }],
+    ]) {
+      it(`rejects saved metadata with ${name}`, async () => {
+        await certifyHelper().runCertification('full', async () => ({code: 0}));
+        const file = certifyHelper().metadataFile('local-full');
+        const metadata = JSON.parse(fs.readFileSync(file, 'utf8'));
+        mutate(metadata);
+        fs.writeFileSync(file, JSON.stringify(metadata));
+        let rejected = null;
+        try { await certifyHelper().validateCertification('full', async () => ({code: 0})); } catch (error) { rejected = error; }
+        expect(rejected, 'expected validation to reject the metadata').to.be.instanceOf(Error);
+      });
+    }
+
+    it('rejects validation after HEAD moved', async () => {
+      const file = certifyHelper().metadataFile('local-full');
+      fs.mkdirSync(path.dirname(file), {recursive: true});
+      fs.writeFileSync(file, JSON.stringify({schemaVersion: 1, name: 'local-full', expectedProfile: 'full', expectedHead: '0'.repeat(40), startedAfter: new Date().toISOString(), pointer: certifyHelper().pointerFile('local-full')}));
+      let rejected = null;
+      try { await certifyHelper().validateCertification('full', async () => ({code: 0})); } catch (error) { rejected = error; }
+      expect(rejected).to.be.instanceOf(Error);
+    });
+
+    it('rejects an older successful pointer on the same HEAD through the actual CLI', () => {
+      const file = certifyHelper().metadataFile('local-full');
+      fs.mkdirSync(path.dirname(file), {recursive: true});
+      fs.writeFileSync(file, JSON.stringify({schemaVersion: 1, name: 'local-full', expectedProfile: 'full', expectedHead: head, startedAfter: new Date().toISOString(), pointer: certifyHelper().pointerFile('local-full')}));
+      // The retained green run predates the new invocation's start time.
+      fs.writeFileSync(certifyHelper().pointerFile('local-full'), runRoot + '\n');
+      const result = spawnSync(process.execPath, ['t/fixtures/verify/certify_profile.js', '--validate', 'full'], {cwd: root, encoding: 'utf8', timeout: 45000});
+      expect(result.status, result.stdout + result.stderr).to.equal(2);
+    });
+
+    it('accepts a fresh full pointer through the actual helper CLI', () => {
+      const file = certifyHelper().metadataFile('local-full');
+      fs.mkdirSync(path.dirname(file), {recursive: true});
+      fs.writeFileSync(file, JSON.stringify({schemaVersion: 1, name: 'local-full', expectedProfile: 'full', expectedHead: head, startedAfter: '2026-01-01T00:00:00Z', pointer: certifyHelper().pointerFile('local-full')}));
+      fs.writeFileSync(certifyHelper().pointerFile('local-full'), runRoot + '\n');
+      const result = spawnSync(process.execPath, ['t/fixtures/verify/certify_profile.js', '--validate', 'full'], {cwd: root, encoding: 'utf8', timeout: 45000});
+      expect(result.status, result.stdout + result.stderr).to.equal(0);
+    });
+
+    for (const argv of [[], ['--run'], ['--run', 'nope'], ['--validate', 'quick']]) {
+      it(`rejects helper arguments ${JSON.stringify(argv)}`, () => {
+        const result = spawnSync(process.execPath, ['t/fixtures/verify/certify_profile.js', ...argv], {cwd: root, encoding: 'utf8', timeout: 15000});
+        expect(result.status).to.equal(2);
+      });
+    }
+  });
 });
