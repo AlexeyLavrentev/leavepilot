@@ -106,6 +106,35 @@ const rejectingExecutor = {
   },
 };
 
+const requestsRouteSource = fs.readFileSync(
+  path.join(__dirname, '..', '..', '..', 'lib', 'route', 'requests.js'),
+  'utf8'
+);
+
+describe('Decision routes delivery-outcome source contract', function() {
+
+  it('contains no in-request email invocation tokens (MUT-01)', function() {
+    expect(
+      (requestsRouteSource.match(/promise_leave_request/g) || []).length,
+      'lib/route/requests.js still invokes leave email promises in-request'
+    ).to.equal(0);
+  });
+
+  it('contains no in-request edition event dispatch tokens (MUT-01)', function() {
+    expect(
+      (requestsRouteSource.match(/dispatchLeaveEvent/g) || []).length,
+      'lib/route/requests.js still dispatches edition leave events in-request'
+    ).to.equal(0);
+  });
+
+  it('constructs no email transport (MUT-01)', function() {
+    expect(
+      (requestsRouteSource.match(/EmailTransport/g) || []).length,
+      'lib/route/requests.js still constructs an email transport'
+    ).to.equal(0);
+  });
+});
+
 describe('Leave create delivery outcome (MUT-01 tracer)', function() {
 
   this.timeout(30000);
