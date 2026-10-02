@@ -62,6 +62,7 @@ describe('team view invalidation hooks', function() {
   let company1;
   let company2;
   let user1;
+  let department1;
   let client;
   const bumpCount = companyId => client.bumps.get(`teamview:version:${companyId}`) || 0;
 
@@ -83,6 +84,7 @@ describe('team view invalidation hooks', function() {
       password: model.User.hashify_password('unit-only-password'),
       companyId: company2.id,
     });
+    department1 = await model.Department.create({name: 'InvSupervisors', companyId: company1.id});
   });
 
   beforeEach(function() {
@@ -243,15 +245,163 @@ describe('team view invalidation hooks', function() {
 
   it('logs red without throwing when the where clause resolves no company', async function() {
     await model.Department.update({name: 'NoCompany'}, {where: {name: 'no-such-department-name'}});
-    await until(() => errorLogs().some(([, event]) => event === 'team_view_invalidation_failed'));
-    const failures = errorLogs().filter(([, event]) => event === 'team_view_invalidation_failed');
+    await until(() => errorLogs().some(([, event]) => event === 'team_view_invalidation_unresolved'));
+    const failures = errorLogs().filter(([, event]) => event === 'team_view_invalidation_unresolved');
     assert.ok(failures.length >= 1);
     assert.ok(failures.some(([, , meta]) => meta && meta.model === 'Department'));
+  });
+
+  it('bumps leave type create, update and destroy with the direct company id', async function() {
+    const before = bumpCount(company1.id);
+    const leaveType = await model.LeaveType.create({name: 'InvType', color: '#123456', companyId: company1.id});
+    await until(() => bumpCount(company1.id) === before + 1);
+
+    await leaveType.update({name: 'InvTypeRenamed'});
+    await until(() => bumpCount(company1.id) === before + 2);
+
+    await leaveType.destroy();
+    await until(() => bumpCount(company1.id) === before + 3);
+  });
+
+  it('bumps bank holiday instance mutations with the direct company id', async function() {
+    const before = bumpCount(company1.id);
+    const bankHoliday = await model.BankHoliday.create({
+      name: 'InvBankHoliday',
+      date: '2026-05-04',
+      companyId: company1.id,
+    });
+    await until(() => bumpCount(company1.id) === before + 1);
+
+    await bankHoliday.update({name: 'InvBankHolidayRenamed'});
+    await until(() => bumpCount(company1.id) === before + 2);
+
+    await bankHoliday.destroy();
+    await until(() => bumpCount(company1.id) === before + 3);
+  });
+
+  it('bumps the preset-import bulk bank holiday update from the where clause alone', async function() {
+    const bankHoliday = await model.BankHoliday.create({
+      name: 'PresetTarget',
+      date: '2026-05-04',
+      companyId: company1.id,
+    });
+    await until(() => bumpCount(company1.id) >= 1);
+    const before = bumpCount(company1.id);
+
+    // The calendar-preset import shape (lib/model/calendar_preset.js): a bulk
+    // update whose where clause carries the owning companyId.
+    await model.BankHoliday.update(
+      {name: 'PresetRenamed', import_source: 'preset'},
+      {where: {id: bankHoliday.id, companyId: company1.id}}
+    );
+    await until(() => bumpCount(company1.id) === before + 1);
+  });
+
+  it('bumps the work-calendar cascade bank holiday destroy through the work calendar hop', async function() {
+    const calendar = await model.WorkCalendar.create({name: 'InvCalendar', companyId: company1.id});
+    await until(() => bumpCount(company1.id) >= 1);
+    await model.BankHoliday.create({
+      name: 'CascadeDay',
+      date: '2026-05-05',
+      companyId: company1.id,
+      workCalendarId: calendar.id,
+    });
+    await until(() => bumpCount(company1.id) >= 2);
+    const before = bumpCount(company1.id);
+
+    // The cascade shape (lib/route/bankHolidays.js calendar delete): bank
+    // holidays destroyed by workCalendarId, before the calendar row itself.
+    await model.BankHoliday.destroy({where: {workCalendarId: calendar.id}});
+    await until(() => bumpCount(company1.id) === before + 1);
+  });
+
+  it('bumps work calendar create and destroy with the direct company id', async function() {
+    const before = bumpCount(company1.id);
+    const calendar = await model.WorkCalendar.create({name: 'InvCalendarTwo', companyId: company1.id});
+    await until(() => bumpCount(company1.id) === before + 1);
+
+    await calendar.destroy();
+    await until(() => bumpCount(company1.id) === before + 2);
+  });
+
+  it('bumps a company-scoped schedule from its company id', async function() {
+    const before = bumpCount(company1.id);
+    const schedule = await model.Schedule.create({company_id: company1.id});
+    await until(() => bumpCount(company1.id) === before + 1);
+
+    await schedule.update({monday: 2});
+    await until(() => bumpCount(company1.id) === before + 2);
+
+    await schedule.destroy();
+    await until(() => bumpCount(company1.id) === before + 3);
+  });
+
+  it('bumps a user-scoped schedule through the user hop', async function() {
+    const before = bumpCount(company1.id);
+    const schedule = await model.Schedule.create({user_id: user1.id});
+    await until(() => bumpCount(company1.id) === before + 1);
+
+    await schedule.update({monday: 2});
+    await until(() => bumpCount(company1.id) === before + 2);
+
+    await schedule.destroy();
+    await until(() => bumpCount(company1.id) === before + 3);
+  });
+
+  it('bumps supervisor link bulk create and destroy through the department hop', async function() {
+    const before = bumpCount(company1.id);
+    await model.DepartmentSupervisor.bulkCreate([
+      {user_id: user1.id, department_id: department1.id},
+    ]);
+    await until(() => bumpCount(company1.id) === before + 1);
+
+    // The remove-supervisor shape (lib/route/departments.js): bulk destroy by
+    // department_id/user_id, autocommitted.
+    await model.DepartmentSupervisor.destroy({
+      where: {department_id: department1.id, user_id: user1.id},
+    });
+    await until(() => bumpCount(company1.id) === before + 2);
+  });
+
+  it('bumps an allowance adjustment through the user hop', async function() {
+    const before = bumpCount(company1.id);
+    const adjustment = await model.UserAllowanceAdjustment.create({
+      user_id: user1.id,
+      year: 2026,
+      adjustment: 1,
+    });
+    await until(() => bumpCount(company1.id) === before + 1);
+
+    await adjustment.update({adjustment: 2});
+    await until(() => bumpCount(company1.id) === before + 2);
+  });
+
+  it('bumps group and user-group mutations through direct and hop resolution', async function() {
+    const before = bumpCount(company1.id);
+    const otherBefore = bumpCount(company2.id);
+    const group = await model.Group.create({name: 'InvGroup', companyId: company1.id});
+    await until(() => bumpCount(company1.id) === before + 1);
+
+    await model.UserGroup.create({userId: user1.id, groupId: group.id});
+    await until(() => bumpCount(company1.id) === before + 2);
+    assert.equal(bumpCount(company2.id), otherBefore, 'the hops resolve the owning company only');
+  });
+
+  it('documents the five excluded audit families as non-registering table rows', function() {
+    const excluded = _families.filter(family => family.excluded);
+    assert.equal(excluded.length, 5);
+    for (const family of excluded) {
+      assert.ok(family.family, 'excluded rows name the audited family');
+      assert.ok(family.reason, 'excluded rows carry their exclusion reason');
+      assert.equal(family.hooks, undefined, 'excluded rows register no hooks');
+      assert.equal(family.resolveCompanyIds, undefined, 'excluded rows resolve nothing');
+    }
   });
 
   it('registers exactly the family-table hooks on each model', function() {
     const expected = new Set();
     for (const family of _families) {
+      if (family.excluded) { continue; }
       const familyModel = model[family.model];
       assert.ok(familyModel, `family model ${family.model} is missing from the registry`);
       for (const hook of family.hooks) {
