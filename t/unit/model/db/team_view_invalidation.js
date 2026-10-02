@@ -19,7 +19,7 @@ process.env.DB_STORAGE = process.env.DB_STORAGE
 
 const model = require('../../../../lib/model/db');
 const teamViewCache = require('../../../../lib/cache/team_view_cache');
-const {_families} = require('../../../../lib/model/db/team_view_invalidation');
+const {_families, register} = require('../../../../lib/model/db/team_view_invalidation');
 const log = require('../../../../lib/logger');
 
 const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
@@ -235,6 +235,20 @@ describe('team view invalidation hooks', function() {
     await until(() => bumpCount(company1.id) === before1 + 1 && bumpCount(company2.id) === before2 + 1);
   });
 
+  it('bumps each distinct company exactly once for a leave type bulk create in mixed instance order', async function() {
+    const before1 = bumpCount(company1.id);
+    const before2 = bumpCount(company2.id);
+    await model.LeaveType.bulkCreate([
+      {name: 'DedupOtherFirst', color: '#111111', companyId: company2.id},
+      {name: 'DedupOwnerA', color: '#222222', companyId: company1.id},
+      {name: 'DedupOwnerB', color: '#333333', companyId: company1.id},
+    ]);
+    await until(() => bumpCount(company1.id) === before1 + 1 && bumpCount(company2.id) === before2 + 1);
+    await wait(80);
+    assert.equal(bumpCount(company1.id), before1 + 1, 'the owning company bumps once regardless of order');
+    assert.equal(bumpCount(company2.id), before2 + 1);
+  });
+
   it('produces no bump and no log for an empty instances array', async function() {
     const before = bumpCount(company1.id);
     await model.Department.bulkCreate([]);
@@ -243,12 +257,29 @@ describe('team view invalidation hooks', function() {
     assert.equal(errorLogs().length, 0);
   });
 
-  it('logs red without throwing when the where clause resolves no company', async function() {
+  it('produces no bump and no log for empty bulk inputs on the audited gap families', async function() {
+    const before = bumpCount(company1.id);
+    await model.LeaveType.create({name: 'EmptyProbe', color: '#444444', companyId: company1.id});
+    await until(() => bumpCount(company1.id) === before + 1);
+    const settled = bumpCount(company1.id);
+
+    await model.LeaveType.bulkCreate([]);
+    await model.LeaveType.update({name: 'EmptyProbeNoop'}, {where: {}});
+    await model.BankHoliday.update({name: 'EmptyProbeNoop'}, {where: {}});
+    await wait(80);
+    assert.equal(bumpCount(company1.id), settled, 'empty inputs register nothing');
+    assert.equal(errorLogs().length, 0, 'empty inputs log nothing');
+  });
+
+  it('logs exactly one unresolved event and does not throw when the where clause resolves no company', async function() {
+    const before = bumpCount(company1.id);
     await model.Department.update({name: 'NoCompany'}, {where: {name: 'no-such-department-name'}});
-    await until(() => errorLogs().some(([, event]) => event === 'team_view_invalidation_unresolved'));
+    await until(() => errorLogs().filter(([, event]) => event === 'team_view_invalidation_unresolved').length === 1);
+    await wait(80);
     const failures = errorLogs().filter(([, event]) => event === 'team_view_invalidation_unresolved');
-    assert.ok(failures.length >= 1);
-    assert.ok(failures.some(([, , meta]) => meta && meta.model === 'Department'));
+    assert.equal(failures.length, 1, 'one red event per unresolved mutation');
+    assert.ok(failures[0][2] && failures[0][2].model === 'Department');
+    assert.equal(bumpCount(company1.id), before, 'no bump accompanies the unresolved log');
   });
 
   it('bumps leave type create, update and destroy with the direct company id', async function() {
@@ -366,6 +397,24 @@ describe('team view invalidation hooks', function() {
     await until(() => bumpCount(company1.id) === before + 2);
   });
 
+  it('defers both supervisor-link bumps until the departments transaction commits', async function() {
+    const before = bumpCount(company1.id);
+    // The update-supervisors shape (lib/route/departments.js): bulk destroy
+    // plus bulkCreate for the same department inside one transaction.
+    await model.sequelize.transaction(async transaction => {
+      await model.DepartmentSupervisor.destroy({
+        where: {department_id: department1.id},
+        transaction,
+      });
+      await model.DepartmentSupervisor.bulkCreate([
+        {user_id: user1.id, department_id: department1.id},
+      ], {transaction});
+      await wait(80);
+      assert.equal(bumpCount(company1.id), before, 'no bump before commit');
+    });
+    await until(() => bumpCount(company1.id) === before + 2);
+  });
+
   it('bumps an allowance adjustment through the user hop', async function() {
     const before = bumpCount(company1.id);
     const adjustment = await model.UserAllowanceAdjustment.create({
@@ -377,6 +426,33 @@ describe('team view invalidation hooks', function() {
 
     await adjustment.update({adjustment: 2});
     await until(() => bumpCount(company1.id) === before + 2);
+  });
+
+  it('results in exactly one bump for the findOrCreate internal-transaction path', async function() {
+    const before = bumpCount(company1.id);
+    // The absence_aware shape: findOrCreate wraps its create in an internal
+    // transaction when none is passed, so the bump defers to that commit.
+    const [, created] = await model.UserAllowanceAdjustment.findOrCreate({
+      where: {user_id: user1.id, year: 2027},
+      defaults: {adjustment: 5},
+    });
+    assert.equal(created, true);
+    await until(() => bumpCount(company1.id) === before + 1);
+    await wait(120);
+    assert.equal(bumpCount(company1.id), before + 1, 'the internal transaction deduplicates to one bump');
+
+    // The found path saves the instance outside any transaction: exactly one
+    // more, immediate bump.
+    const [record, createdAgain] = await model.UserAllowanceAdjustment.findOrCreate({
+      where: {user_id: user1.id, year: 2027},
+      defaults: {adjustment: 6},
+    });
+    assert.equal(createdAgain, false);
+    record.set('adjustment', 7);
+    await record.save();
+    await until(() => bumpCount(company1.id) === before + 2);
+    await wait(80);
+    assert.equal(bumpCount(company1.id), before + 2, 'the save bumps exactly once more');
   });
 
   it('bumps group and user-group mutations through direct and hop resolution', async function() {
@@ -401,7 +477,12 @@ describe('team view invalidation hooks', function() {
     }
   });
 
-  it('registers exactly the family-table hooks on each model', function() {
+  it('locks hook registration and the family table in lockstep', function() {
+    // Full-table completeness: every registering row in _families is hooked
+    // exactly as declared, and every team_view_invalidation hook anywhere in
+    // the registry comes from a table row — table and registration can never
+    // drift apart in either direction (D-08 lockstep). The expected set is
+    // derived from _families, never a duplicated literal model list.
     const expected = new Set();
     for (const family of _families) {
       if (family.excluded) { continue; }
@@ -428,5 +509,15 @@ describe('team view invalidation hooks', function() {
       }
     }
     assert.deepEqual([...registered].sort(), [...expected].sort());
+  });
+
+  it('skips table rows whose model is absent from the registry without error', function() {
+    // Premium-only families join through the registry when their edition
+    // loads; rows naming absent models must be skipped silently, and repeat
+    // registration stays idempotent per model.
+    assert.doesNotThrow(() => {
+      register({db: {}});
+      register({db: {Leave: model.Leave}});
+    });
   });
 });
