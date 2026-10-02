@@ -21,4 +21,22 @@ describe('Safe request path', function() {
     expect(requestPath.getSafeRequestPath()).to.equal(null);
     expect(requestPath.getSafeRequestPath({})).to.equal(null);
   });
+
+  it('masks the feed bearer token segment before logging', function() {
+    expect(requestPath.getSafeRequestPath({
+      path: '/feed/1f0a9c2e-3b4d-4e5f-8a9b-0c1d2e3f4a5b/ical.ics',
+    })).to.equal('/feed/[redacted]/ical.ics');
+  });
+
+  it('masks the token in fallback URLs together with the query string', function() {
+    expect(requestPath.getSafeRequestPath({
+      originalUrl: '/feed/some-feed-token/ical.ics?from=calendar-client',
+    })).to.equal('/feed/[redacted]/ical.ics');
+  });
+
+  it('leaves non-feed paths untouched', function() {
+    expect(requestPath.getSafeRequestPath({
+      path: '/calendar/teamview/',
+    })).to.equal('/calendar/teamview/');
+  });
 });
