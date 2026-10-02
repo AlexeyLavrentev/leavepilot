@@ -483,7 +483,8 @@
     "outlookTitle": "Outlook / Office 365",
     "outlookStep1": "Open Outlook on the web (outlook.live.com or outlook.office.com).",
     "outlookStep2": "Go to Calendar → \"Add calendar\" → \"Subscribe from web\".",
-    "outlookStep3": "Paste the copied feed URL, name the calendar, and click \"Import\"."
+    "outlookStep3": "Paste the copied feed URL, name the calendar, and click \"Import\".",
+    "urlOnce": "For privacy the feed URL is shown only right after the feed is created or regenerated - regenerate to get a fresh one."
   },
   "leave": {
     "newAbsence": "New absence",
@@ -752,6 +753,16 @@
       "status": {
         "testEmailSent": "Test email sent"
       }
+    },
+    "registrationAttempt": {
+      "subject": "A registration was attempted with this email address ({{brand}})",
+      "body": "Someone tried to register an account with this email address. If it was you and you already have an account, use the forgot-password page to regain access; if not, you can safely ignore this message.",
+      "action": "Reset your password"
+    },
+    "ssoPassword": {
+      "subject": "Your {{brand}} account uses single sign-on",
+      "body": "A password reset was requested for your account, but its password is managed by your organisation’s single sign-on provider. Sign in the usual way, or contact your administrator if you need access restored.",
+      "action": "Sign in"
     }
   },
   "teamView": {

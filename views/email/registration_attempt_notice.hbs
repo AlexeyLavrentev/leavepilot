@@ -1,0 +1,7 @@
+{{t "emails.registrationAttempt.subject" brand=(brand_name)}}
+=====
+<p>{{t "emails.registrationAttempt.body" brand=(brand_name)}}</p>
+
+<p>{{> email/link href=(concatenate (get_application_domain) '/forgot-password/') text=(t "emails.registrationAttempt.action")}}</p>
+
+<p>{{t "emails.thanks"}}</p>
