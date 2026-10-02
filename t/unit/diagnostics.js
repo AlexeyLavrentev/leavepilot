@@ -155,6 +155,94 @@ describe('Operational diagnostics', function() {
     expect(snapshot.cache).to.have.all.keys('mode', 'store');
   });
 
+  it('reports delivery backlog counts from the injected counting function', async function() {
+    const snapshot = await diagnostics.collect({
+      env: { NODE_ENV: 'production' },
+      deliveryCounts: function() {
+        return Promise.resolve({ pending: 3, failed: 1 });
+      },
+      features: {
+        getLicenseStatus: function() {
+          return { valid: true, reason: 'valid', source: 'env' };
+        },
+        getEnabledMap: function() {
+          return {};
+        },
+      },
+      edition: {
+        getInfo: function() {
+          return { initialized: true, premium: { loaded: false } };
+        },
+      },
+    });
+
+    expect(snapshot.delivery).to.deep.equal({ pending: 3, failed: 1 });
+  });
+
+  it('reports null delivery counts without throwing when counting rejects', async function() {
+    const snapshot = await diagnostics.collect({
+      env: { NODE_ENV: 'production' },
+      deliveryCounts: function() {
+        return Promise.reject(new Error('database unavailable'));
+      },
+      features: {
+        getLicenseStatus: function() {
+          return { valid: true, reason: 'valid', source: 'env' };
+        },
+        getEnabledMap: function() {
+          return {};
+        },
+      },
+      edition: {
+        getInfo: function() {
+          return { initialized: true, premium: { loaded: false } };
+        },
+      },
+    });
+
+    expect(snapshot.delivery).to.deep.equal({ pending: null, failed: null });
+  });
+
+  it('keeps the delivery section to exactly the two counts even when the counter returns more', async function() {
+    const snapshot = await diagnostics.collect({
+      env: { NODE_ENV: 'production' },
+      deliveryCounts: function() {
+        return Promise.resolve({
+          pending: 2,
+          failed: 1,
+          last_error: 'SMTP 535 authentication failed',
+          payload: '{"leaveId":15}',
+          recipient: 'approver@example.test',
+          token: 'delivery-token-value',
+          records: [{id: 7, status: 'failed'}],
+        });
+      },
+      features: {
+        getLicenseStatus: function() {
+          return { valid: true, reason: 'valid', source: 'env' };
+        },
+        getEnabledMap: function() {
+          return {};
+        },
+      },
+      edition: {
+        getInfo: function() {
+          return { initialized: true, premium: { loaded: false } };
+        },
+      },
+    });
+
+    expect(snapshot.delivery).to.have.all.keys('pending', 'failed');
+    expect(snapshot.delivery.pending).to.equal(2);
+    expect(snapshot.delivery.failed).to.equal(1);
+
+    const serialized = JSON.stringify(snapshot.delivery);
+    expect(serialized).to.not.contain('SMTP');
+    expect(serialized).to.not.contain('leaveId');
+    expect(serialized).to.not.contain('approver@example.test');
+    expect(serialized).to.not.contain('delivery-token-value');
+  });
+
   it('does not expose raw licenses, signatures, secrets, tokens, or keys', async function() {
     const snapshot = await diagnostics.collect({
       env: {
