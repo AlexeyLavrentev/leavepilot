@@ -91,7 +91,7 @@ describe('runtime lifecycle stages', () => {
       'lib/cache/team_view_cache.js',
       'lib/model/db/team_view_invalidation.js',
     ]) {
-      expect(timings.sourceSha256, pinned).to.be.a('string').and.have.lengthOf(64);
+      expect(timings.sourceSha256[pinned], pinned).to.be.a('string').and.have.lengthOf(64);
     }
     for (const id of ['redis-session', 'engram-session', 'runtime-matrix', 'cache-correctness']) {
       const measured = timings.stages[id];

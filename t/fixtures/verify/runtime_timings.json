@@ -6,7 +6,11 @@
   "sourceSha256": {
     "t/runtime/runtime_matrix.js": "f9b977fdb677bc472770c171230e85ae0c9090a7996c9345821215cf63d482cc",
     "t/fixtures/runtime/runtime_matrix_case.js": "63255501e44ec8bc341f0a7e46d458717f9af746ac9a55d0cc3d29b7f9125a78",
-    "t/fixtures/runtime/services.compose.yml": "748dc0571232dd1f35604897eabdde34a41fdb634b0bffee258dde4af17dbc4b"
+    "t/fixtures/runtime/services.compose.yml": "748dc0571232dd1f35604897eabdde34a41fdb634b0bffee258dde4af17dbc4b",
+    "t/fixtures/runtime/cache_case.js": "e90f6905afa4c45ba36601bada8b1dea9ed9c09d81480b7dadfaf2b3564c30bd",
+    "t/runtime/cache_correctness.js": "2147248e3f1cc2221c678d81a0470412184f7c40cf6f24d66169a4db1849b1ca",
+    "lib/cache/team_view_cache.js": "a0385c9a2547882e0129e1dff1e7e5448774a96f54bc59adb924493a9792010f",
+    "lib/model/db/team_view_invalidation.js": "525120da2b8e69211973f6c16af6437fb6d1b75392d9235006ee66d439ed4950"
   },
   "host": {"platform": "darwin", "arch": "arm64", "node": "v22.23.0"},
   "services": {
@@ -43,7 +47,32 @@
       ],
       "observedMaximumMs": 46836,
       "deadlineMs": 93672
+    },
+    "cache-correctness": {
+      "argv": ["node", "t/fixtures/runtime/cache_case.js", "--suite"],
+      "samples": [
+        {"identity": "sample-1", "durationMs": 21030, "exitCode": 0, "parentBoundMs": 180000},
+        {"identity": "sample-2", "durationMs": 20080, "exitCode": 0, "parentBoundMs": 180000}
+      ],
+      "observedMaximumMs": 21030,
+      "deadlineMs": 42060
     }
+  },
+  "cacheCorrectness": {
+    "capturedAt": "2026-10-02T10:26:00Z",
+    "sourceHead": "50faa8ddcb50626eb6042c50c328489f7c89eaa9",
+    "sourceNote": "Plan 03-05 measurements. The working tree differed from sourceHead by the plan's own in-flight edits (t/fixtures/runtime/cache_case.js --suite mode, the stage registration in lib/verify/stages.js and this fixture); every other pinned source matched its committed state exactly. The command runs the full cache suite (shared, families, bypass-no-coordination, store-outage) against the caller-started compose fixture with the registered stage env, under a parent process-group watchdog that owns the child tree.",
+    "host": {"platform": "darwin", "arch": "arm64", "node": "v22.23.0"},
+    "services": {
+      "mysql": {"version": "8.0.45"},
+      "redis": {"version": "8.8.0"},
+      "engram": {"version": "0.2"}
+    },
+    "selection": "Dedicated leavepilot-runtime-test compose fixture on loopback 13306/16379/16380, two successful fresh-process runs of the suite command with the registered stage environment on the final pinned source; raw elapsed monotonic time from spawn to exit includes child cleanup. A separate process-group parent watchdog bounded each run at 180000ms. An earlier probe of the in-development --suite mode failed (verdict propagation bug) and an earlier sample pair (20447/20684 ms) was measured on pre-lint-fix bytes and superseded when two no-return-await fixes landed; the retained samples are the successful pair on the exact final source. No failed sample was used to derive the deadline.",
+    "failedProbes": [
+      {"identity": "pre-fix-probe-1", "durationMs": 3578, "exitCode": 1, "cause": "Cannot read properties of undefined (reading 'cacheKeyWarmed') - verdict propagation bug in the new --suite mode, fixed before measurement"},
+      {"identity": "superseded-pair-pre-lint-fix", "durationMs": [20447, 20684], "exitCode": 0, "cause": "successful samples on pre-lint-fix bytes, replaced by the retained pair after two no-return-await fixes changed the source"}
+    ]
   },
   "lifecycle": {
     "capturedAt": "2026-10-01T10:52:00Z",

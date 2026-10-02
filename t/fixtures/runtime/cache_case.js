@@ -334,7 +334,7 @@ async function withDatabase(dialect, operation) {
     admin = sqlConnection('leavepilot_runtime_test', 'root', 'runtime_root_test_only');
     await admin.query(`CREATE DATABASE \`${name}\``);
     await admin.query(`GRANT ALL PRIVILEGES ON \`${name}\`.* TO 'leavepilot_runtime_test'@'%'`);
-    await operation(name, storage, admin);
+    return await operation(name, storage, admin);
   } finally {
     if (admin) {
       try { await admin.query(`DROP DATABASE IF EXISTS \`${name}\``); }
@@ -346,7 +346,7 @@ async function withDatabase(dialect, operation) {
 
 async function runShared() {
   await prerequisite('redis');
-  await withDatabase('mysql', async (database, storage, admin) => {
+  return withDatabase('mysql', async (database, storage, admin) => {
     const port = await freePort();
     const env = baseEnv('mysql', database, port, storage);
     const migration = await child(['bin/db_update.js'], env, 20000);
@@ -447,7 +447,7 @@ async function runShared() {
       const stopped = await new Promise(resolve => proc.once('close', (code, signal) => resolve({code, signal})));
       assert.equal(stopped.code, 0, output);
 
-      process.stdout.write(JSON.stringify({
+      return {
         case: 'shared',
         workers: 2,
         cacheKeyWarmed: hasWarmedEntry,
@@ -457,7 +457,7 @@ async function runShared() {
         leaveVisibleAcrossWorkers: leaveVisible,
         elapsedMs,
         signalExit: stopped.code,
-      }) + '\n');
+      };
     } finally {
       clearTimeout(watchdog);
       try { if (redis.isOpen) { await redis.del(`teamview:version:${seeded.companyId}`); } } catch { /* best-effort owned cleanup */ }
@@ -1284,12 +1284,12 @@ async function runFamilies() {
 
   assert.equal(entries.length, 17, `expected 17 family verdicts, got ${entries.length}`);
   const allPassed = entries.every(entry => entry.version_advanced && entry.marker_visible && entry.elapsed_ms < 10000);
-  process.stdout.write(JSON.stringify({
+  return {
     case: 'families',
     workers: workersCount,
     all_families_passed: allPassed,
     families: entries,
-  }) + '\n');
+  };
 }
 
 // ===== Bypass-no-coordination contour (CACHE-02, D-01) =====================
@@ -1304,7 +1304,7 @@ async function runFamilies() {
 
 async function runBypassNoCoordination() {
   await prerequisite('redis');
-  await withDatabase('mysql', async (database, storage, admin) => {
+  return withDatabase('mysql', async (database, storage, admin) => {
     const port = await freePort();
     const env = {
       ...baseEnv('mysql', database, port, storage),
@@ -1374,7 +1374,7 @@ async function runBypassNoCoordination() {
       const stopped = await new Promise(resolve => cluster.proc.once('close', code => resolve(code)));
       assert.equal(stopped, 0, cluster.output());
 
-      process.stdout.write(JSON.stringify({
+      return {
         case: 'bypass-no-coordination',
         workers: cluster.workers.length,
         distinct_worker_pids: new Set(cluster.workers).size,
@@ -1385,7 +1385,7 @@ async function runBypassNoCoordination() {
         bypass_event_logged: bypassEventLogged,
         teamview_keys_in_store: teamviewKeys.length,
         signal_exit: stopped,
-      }) + '\n');
+      };
     } finally {
       await teardownCluster(cluster);
     }
@@ -1406,7 +1406,7 @@ async function runStoreOutage() {
   const proxy = startProxy(HOST, PORTS.redis);
   const proxyPort = await proxy.listen();
   try {
-    await withDatabase('mysql', async (database, storage, admin) => {
+    return await withDatabase('mysql', async (database, storage, admin) => {
       const port = await freePort();
       const env = {
         ...baseEnv('mysql', database, port, storage),
@@ -1561,7 +1561,7 @@ async function runStoreOutage() {
         const stopped = await new Promise(resolve => cluster.proc.once('close', code => resolve(code)));
         assert.equal(stopped, 0, cluster.output());
 
-        process.stdout.write(JSON.stringify({
+        return {
           case: 'store-outage',
           workers: cluster.workers.length,
           cache_key_warmed_before_outage: warmed,
@@ -1577,7 +1577,7 @@ async function runStoreOutage() {
           resumed_caching: resumedCaching,
           cli_bounded_exit: cliExit.code === 0,
           signal_exit: stopped,
-        }) + '\n');
+        };
       } finally {
         await teardownCluster(cluster);
       }
@@ -1587,12 +1587,74 @@ async function runStoreOutage() {
   }
 }
 
+// ===== Suite mode (cache-correctness verify stage) =========================
+//
+// Every cache contour in one bounded invocation, in order: shared, families,
+// bypass-no-coordination, store-outage. Each contour keeps its own fresh
+// database and setup/teardown discipline (the functions above are reused
+// verbatim); a contour that fails aborts the suite through its assertions, so
+// the aggregate verdict line is only printed when every contour really
+// completed - and the boolean is still derived from the verdict fields rather
+// than assumed from the absence of a throw.
+
+const SUITE_CONTOURS = [
+  {id: 'shared', run: runShared},
+  {id: 'families', run: runFamilies},
+  {id: 'bypass-no-coordination', run: runBypassNoCoordination},
+  {id: 'store-outage', run: runStoreOutage},
+];
+
+function contourPassed(id, verdict) {
+  if (id === 'shared') {
+    return verdict.cacheKeyWarmed === true && verdict.versionAdvanced === true
+      && verdict.leaveVisibleAcrossWorkers === true && verdict.signalExit === 0;
+  }
+  if (id === 'families') { return verdict.all_families_passed === true; }
+  if (id === 'bypass-no-coordination') {
+    return verdict.mutation_visible_through_warmed_worker === true
+      && verdict.bypass_event_logged === true
+      && verdict.teamview_keys_in_store === 0
+      && verdict.signal_exit === 0;
+  }
+  return verdict.reads_ok_during_outage === true
+    && verdict.mutation_visible_during_outage === true
+    && verdict.worker_pids_unchanged === true
+    && verdict.resumed_caching === true
+    && verdict.version_advanced === true
+    && verdict.cli_bounded_exit === true
+    && verdict.signal_exit === 0;
+}
+
+async function runSuite() {
+  await prerequisite('redis');
+  const startedAt = Date.now();
+  const results = [];
+  for (const contour of SUITE_CONTOURS) {
+    const contourStartedAt = Date.now();
+    const verdict = await contour.run();
+    const passed = contourPassed(contour.id, verdict);
+    assert.ok(passed, `contour ${contour.id} completed but its verdict reports a failure`);
+    results.push({contour: contour.id, passed, durationMs: Date.now() - contourStartedAt});
+  }
+  const allPassed = results.length === SUITE_CONTOURS.length
+    && results.every(entry => entry.passed);
+  return {
+    case: 'suite',
+    contours: SUITE_CONTOURS.map(contour => contour.id),
+    all_contours_passed: allPassed,
+    results,
+    total_duration_ms: Date.now() - startedAt,
+  };
+}
+
 async function main() {
   const [mode] = process.argv.slice(2);
+  const printVerdict = verdict => process.stdout.write(JSON.stringify(verdict) + '\n');
   if (mode === '--prerequisite') { await prerequisite('redis'); return; }
-  if (mode === '--case' && process.argv[3] === 'shared') { await runShared(); return; }
-  if (mode === '--case' && process.argv[3] === 'families') { await runFamilies(); return; }
-  if (mode === '--case' && process.argv[3] === 'bypass-no-coordination') { await runBypassNoCoordination(); return; }
-  if (mode === '--case' && process.argv[3] === 'store-outage') { await runStoreOutage(); return; }
-  throw new Error('Usage: cache_case.js --prerequisite redis | --case shared | --case families | --case bypass-no-coordination | --case store-outage');
+  if (mode === '--suite') { printVerdict(await runSuite()); return; }
+  if (mode === '--case' && process.argv[3] === 'shared') { printVerdict(await runShared()); return; }
+  if (mode === '--case' && process.argv[3] === 'families') { printVerdict(await runFamilies()); return; }
+  if (mode === '--case' && process.argv[3] === 'bypass-no-coordination') { printVerdict(await runBypassNoCoordination()); return; }
+  if (mode === '--case' && process.argv[3] === 'store-outage') { printVerdict(await runStoreOutage()); return; }
+  throw new Error('Usage: cache_case.js --prerequisite redis | --suite | --case shared | --case families | --case bypass-no-coordination | --case store-outage');
 }
