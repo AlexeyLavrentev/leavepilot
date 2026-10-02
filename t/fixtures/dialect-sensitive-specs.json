@@ -144,6 +144,12 @@
       "category": "sql-literals",
       "reason": "Plan 05-06: spawns t/lib/db_migrations_data_case.js per data-rewriting migration; the child replays migrations 1..N-1 and executes N with raw sequelize.query('SELECT ... FROM SequelizeMeta') meta-table inspection, raw INSERT/DELETE seeding and table-rebuild SQL from the migration files themselves, on SQLite in the unit contour and on MySQL in this dialect job (per-case databases).",
       "module": "t/lib/db_migrations_data_case.js"
+    },
+    {
+      "file": "t/unit/model/db/team_view_invalidation.js",
+      "category": "locking-transactions",
+      "reason": "Plan 03-01: drives real sequelize.transaction commit and rollback paths to prove the post-commit team-view invalidation deferral (transaction.afterCommit) and rollback silence; the deferral contract depends on the dialect's transaction/commit semantics, so it runs in the MySQL dialect job alongside SQLite.",
+      "module": "lib/model/db/team_view_invalidation.js"
     }
   ]
 }

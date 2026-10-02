@@ -7,7 +7,12 @@ const path = require('node:path');
 const {EventEmitter} = require('node:events');
 
 // The registry reads its dialect/storage from the environment at require
-// time, so the SQLite contour is selected before lib/model/db loads.
+// time, so the SQLite contour is selected before lib/model/db loads. When a
+// runner already pointed DB_STORAGE at a shared database (bin/test.js, the
+// unit-coverage stage), the registry singleton belongs to the whole process:
+// this spec must NOT close it or delete the file (see t/unit/
+// session_user_hydration.js for the ordering hazard).
+const sharedDatabase = Boolean(process.env.DB_STORAGE);
 process.env.DB_DIALECT = process.env.DB_DIALECT || 'sqlite';
 process.env.DB_STORAGE = process.env.DB_STORAGE
   || path.join(os.tmpdir(), `lp-tv-invalidation-${process.pid}.sqlite`);
@@ -99,9 +104,12 @@ describe('team view invalidation hooks', function() {
     try {
       await teamViewCache.close();
     } finally {
+      // Restore the cache singleton for any spec that runs after this one.
       teamViewCache._reset();
-      await model.sequelize.close();
-      fs.rmSync(process.env.DB_STORAGE, {force: true});
+      if (!sharedDatabase) {
+        await model.sequelize.close();
+        fs.rmSync(process.env.DB_STORAGE, {force: true});
+      }
     }
   });
 
