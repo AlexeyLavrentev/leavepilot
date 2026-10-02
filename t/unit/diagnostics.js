@@ -73,6 +73,88 @@ describe('Operational diagnostics', function() {
     }]);
   });
 
+  it('reports the team-view cache mode and store kind from the injected cache status', async function() {
+    const baseDeps = {
+      env: { NODE_ENV: 'production' },
+      features: {
+        getLicenseStatus: function() {
+          return { valid: true, reason: 'valid', source: 'env' };
+        },
+        getEnabledMap: function() {
+          return {};
+        },
+      },
+      edition: {
+        getInfo: function() {
+          return { initialized: true, premium: { loaded: false } };
+        },
+      },
+    };
+
+    const shared = await diagnostics.collect({
+      ...baseDeps,
+      cache: {
+        getStatus: function() {
+          return { mode: 'shared', store: 'redis' };
+        },
+      },
+    });
+    expect(shared.cache.mode).to.equal('shared');
+    expect(shared.cache.store).to.equal('redis');
+
+    const degraded = await diagnostics.collect({
+      ...baseDeps,
+      cache: {
+        getStatus: function() {
+          return { mode: 'bypass-store-unavailable', store: 'redis' };
+        },
+      },
+    });
+    expect(degraded.cache.mode).to.equal('bypass-store-unavailable');
+    expect(degraded.cache.store).to.equal('redis');
+  });
+
+  it('does not expose cache connection details even when the status object carries them', async function() {
+    const snapshot = await diagnostics.collect({
+      env: { NODE_ENV: 'production' },
+      cache: {
+        getStatus: function() {
+          return {
+            mode: 'shared',
+            store: 'redis',
+            host: 'redis.internal.example.test',
+            port: 6379,
+            password: 'cache-password-value',
+            token: 'cache-token-value',
+            connectionString: 'redis://:cache-password-value@redis.internal.example.test:6379',
+          };
+        },
+      },
+      features: {
+        getLicenseStatus: function() {
+          return { valid: true, reason: 'valid', source: 'env' };
+        },
+        getEnabledMap: function() {
+          return {};
+        },
+      },
+      edition: {
+        getInfo: function() {
+          return { initialized: true, premium: { loaded: false } };
+        },
+      },
+    });
+
+    const serialized = JSON.stringify(snapshot.cache);
+    expect(serialized).to.contain('shared');
+    expect(serialized).to.contain('redis');
+    expect(serialized).to.not.contain('redis.internal.example.test');
+    expect(serialized).to.not.contain('6379');
+    expect(serialized).to.not.contain('cache-password-value');
+    expect(serialized).to.not.contain('cache-token-value');
+    expect(snapshot.cache).to.have.all.keys('mode', 'store');
+  });
+
   it('does not expose raw licenses, signatures, secrets, tokens, or keys', async function() {
     const snapshot = await diagnostics.collect({
       env: {
