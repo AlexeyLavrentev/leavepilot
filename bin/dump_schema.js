@@ -99,6 +99,8 @@ db.connect()
     });
   })
   .then(function () {
+    // No team-view cache close needed: the dump is read-only, so no model
+    // hooks (and no lazily-created cache client) ever fire here.
     return db.sequelize.close();
   })
   .catch(function (error) {

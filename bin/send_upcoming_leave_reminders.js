@@ -37,6 +37,9 @@ models.connect()
     });
   })
   .then(function() {
+    // No team-view cache close needed: this scheduler only writes
+    // LeaveNotification rows (an invalidation-family exclusion), so no cache
+    // client is ever created here.
     return models.sequelize.close();
   })
   .catch(function(error) {

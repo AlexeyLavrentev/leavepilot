@@ -56,5 +56,7 @@ db.connect()
     process.exitCode = 1;
   })
   .finally(function() {
+    // No team-view cache close needed: the backfill runs raw SQL through
+    // sequelize.query, which bypasses model hooks entirely.
     return db.sequelize.close();
   });

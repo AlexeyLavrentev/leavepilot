@@ -1539,6 +1539,24 @@ async function runStoreOutage() {
           && String(postRecoveryReadB.workerPid) === String(workerB);
         assert.ok(workerPidsUnchanged, 'the worker PID set changed across the outage window');
 
+        // Pitfall 4 closure, proven on the real contour: a model-mutating CLI
+        // under a Redis-configured environment exits within its bounded
+        // lifetime once it closes the cache alongside sequelize (the
+        // hook-driven bump opens a real socket against this same fixture; a
+        // dangling socket would hold the child past the deadline).
+        const cliEnv = {
+          ...env,
+          TEST_CACHE_CASE_PRELOAD: '',
+          TEST_CACHE_CLI_PRELOAD: '1',
+        };
+        const cliExit = await child([
+          '--require', __filename, 'bin/create_admin.js',
+          '--email', `cli-exit-${runTag}@example.test`,
+          '--company', 'CacheCaseCliExit',
+          '--password', 'cli-exit-only-password',
+        ], cliEnv, 20000);
+        assert.equal(cliExit.code, 0, cliExit.output);
+
         cluster.proc.kill('SIGTERM');
         const stopped = await new Promise(resolve => cluster.proc.once('close', code => resolve(code)));
         assert.equal(stopped, 0, cluster.output());
@@ -1557,6 +1575,7 @@ async function runStoreOutage() {
           invalidation_failure_logged: true,
           worker_pids_unchanged: workerPidsUnchanged,
           resumed_caching: resumedCaching,
+          cli_bounded_exit: cliExit.code === 0,
           signal_exit: stopped,
         }) + '\n');
       } finally {

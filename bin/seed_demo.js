@@ -23,6 +23,13 @@ const crypto = require('crypto');
 const dayjs = require('../lib/util/date');
 
 const models = require('../lib/model/db');
+const teamViewCache = require('../lib/cache/team_view_cache');
+
+// The post-commit invalidation bumps are fire-and-forget: CLIs give them a
+// bounded moment to drain before closing the shared resources, so a healthy
+// run does not end with artifact red invalidation events (the full bump
+// retry window is ~150 ms; 400 ms covers it with margin).
+const INVALIDATION_DRAIN_MS = 400;
 
 const adminEmail = String(argv.email || 'demo-admin@example.local').trim().toLowerCase();
 const companyName = String(argv.company || 'Демо компания').trim();
@@ -166,8 +173,10 @@ async function seed() {
   };
 }
 
-seed()
-  .then(function(summary) {
+async function main() {
+  let failed = false;
+  try {
+    const summary = await seed();
     log.info('demo_data_created', {
       company: summary.company,
       departments: summary.departments,
@@ -179,13 +188,21 @@ seed()
       log.info('demo_password', { password });
     }
     log.info('demo_password_shared');
-    return models.sequelize.close();
-  })
-  .catch(function(error) {
+  } catch (error) {
+    failed = true;
     log.error('seed_demo_failed', { error: error && error.stack || String(error) });
-    return models.sequelize.close()
-      .catch(function() {})
-      .then(function() {
-        process.exit(1);
-      });
-  });
+  } finally {
+    // The seeded users/departments/leaves mutate hooked models, so the
+    // invalidation hooks may have opened the shared-store cache client;
+    // close it alongside the database so this CLI never hangs on a dangling
+    // Redis socket.
+    await new Promise(resolve => setTimeout(resolve, INVALIDATION_DRAIN_MS));
+    await teamViewCache.close().catch(function() {});
+    await models.sequelize.close().catch(function() {});
+  }
+  if (failed) {
+    process.exit(1);
+  }
+}
+
+main();

@@ -25,6 +25,13 @@ const crypto = require('crypto');
 const validator = require('validator');
 
 const models = require('../lib/model/db');
+const teamViewCache = require('../lib/cache/team_view_cache');
+
+// The post-commit invalidation bumps are fire-and-forget: CLIs give them a
+// bounded moment to drain before closing the shared resources, so a healthy
+// run does not end with artifact red invalidation events (the full bump
+// retry window is ~150 ms; 400 ms covers it with margin).
+const INVALIDATION_DRAIN_MS = 400;
 
 function fail(message) {
   log.error('create_admin_error', { message });
@@ -62,9 +69,11 @@ if (password.length < 8) {
   fail('--password must be at least 8 characters long');
 }
 
-models.connect()
-  .then(function() {
-    return models.User.register_new_admin_user({
+async function main() {
+  let failed = false;
+  try {
+    await models.connect();
+    const user = await models.User.register_new_admin_user({
       email        : email,
       password     : password,
       name         : firstName,
@@ -74,8 +83,6 @@ models.connect()
       timezone     : timezone,
       activated    : true,
     });
-  })
-  .then(function(user) {
     log.info('administrator_created', {
       company: companyName,
       email: user.email,
@@ -85,15 +92,22 @@ models.connect()
       log.info('password_notice', { msg: 'This generated password is shown only once. Store it securely and change it after the first login.' });
     }
     log.info('signin_url', { url: '/login/' });
-    return models.sequelize.close();
-  })
-  .catch(function(error) {
+  } catch (error) {
+    failed = true;
     log.error('create_admin_failed', {
       error: error && error.show_to_user ? error.message : (error && error.stack || String(error)),
     });
-    return models.sequelize.close()
-      .catch(function() {})
-      .then(function() {
-        process.exit(1);
-      });
-  });
+  } finally {
+    // The post-commit invalidation hooks open the shared-store cache client
+    // lazily on the first mutation; close it alongside the database so this
+    // CLI never hangs on a dangling Redis socket.
+    await new Promise(resolve => setTimeout(resolve, INVALIDATION_DRAIN_MS));
+    await teamViewCache.close().catch(function() {});
+    await models.sequelize.close().catch(function() {});
+  }
+  if (failed) {
+    process.exit(1);
+  }
+}
+
+main();

@@ -42,6 +42,9 @@ db.connect()
         }
       })
       .finally(function() {
+        // No team-view cache close needed: migrations and the SSO startup
+        // audit run through queryInterface/raw SQL, so no model hooks (and no
+        // lazily-created cache client) ever fire here.
         return sequelize.close();
       });
   })

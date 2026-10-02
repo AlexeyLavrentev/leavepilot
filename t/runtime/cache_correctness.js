@@ -150,6 +150,9 @@ describe('real cross-worker cache correctness', function() {
     assert.equal(result.version_at_or_beyond_outage_mutations, true);
     assert.ok(result.version_after_recovery > result.version_before_outage,
       `version did not advance: ${result.version_before_outage} -> ${result.version_after_recovery}`);
+    // A model-mutating CLI with hooks active under a Redis-configured
+    // environment exits within its bounded lifetime (no dangling socket).
+    assert.equal(result.cli_bounded_exit, true);
     assert.equal(result.signal_exit, 0);
   });
 });
