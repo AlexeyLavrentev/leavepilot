@@ -9,7 +9,7 @@
     "t/fixtures/runtime/services.compose.yml": "748dc0571232dd1f35604897eabdde34a41fdb634b0bffee258dde4af17dbc4b",
     "t/fixtures/runtime/cache_case.js": "e90f6905afa4c45ba36601bada8b1dea9ed9c09d81480b7dadfaf2b3564c30bd",
     "t/runtime/cache_correctness.js": "2147248e3f1cc2221c678d81a0470412184f7c40cf6f24d66169a4db1849b1ca",
-    "lib/cache/team_view_cache.js": "a0385c9a2547882e0129e1dff1e7e5448774a96f54bc59adb924493a9792010f",
+    "lib/cache/team_view_cache.js": "cd86effb031979a21cf66bd4263f5ee551179c58f2b100ffff9f8dc1cea3c626",
     "lib/model/db/team_view_invalidation.js": "525120da2b8e69211973f6c16af6437fb6d1b75392d9235006ee66d439ed4950"
   },
   "host": {"platform": "darwin", "arch": "arm64", "node": "v22.23.0"},
@@ -61,7 +61,7 @@
   "cacheCorrectness": {
     "capturedAt": "2026-10-02T10:26:00Z",
     "sourceHead": "50faa8ddcb50626eb6042c50c328489f7c89eaa9",
-    "sourceNote": "Plan 03-05 measurements. The working tree differed from sourceHead by the plan's own in-flight edits (t/fixtures/runtime/cache_case.js --suite mode, the stage registration in lib/verify/stages.js and this fixture); every other pinned source matched its committed state exactly. The command runs the full cache suite (shared, families, bypass-no-coordination, store-outage) against the caller-started compose fixture with the registered stage env, under a parent process-group watchdog that owns the child tree.",
+    "sourceNote": "Plan 03-05 measurements. The working tree differed from sourceHead by the plan's own in-flight edits (t/fixtures/runtime/cache_case.js --suite mode, the stage registration in lib/verify/stages.js and this fixture); every other pinned source matched its committed state exactly. The command runs the full cache suite (shared, families, bypass-no-coordination, store-outage) against the caller-started compose fixture with the registered stage env, under a parent process-group watchdog that owns the child tree. Post-measurement 03-06 fix (CR-02) changed lib/cache/team_view_cache.js (boolean parsing of the clustered declaration); the measured command, its env and its timing contour are unchanged (the suite's clustered contour sets LEAVEPILOT_CLUSTERED=1, truthy under both parsers), so the source hash was updated in place and the retained observations and deadline stand.",
     "host": {"platform": "darwin", "arch": "arm64", "node": "v22.23.0"},
     "services": {
       "mysql": {"version": "8.0.45"},

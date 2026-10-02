@@ -136,6 +136,54 @@ describe('team view cache policy', function() {
     }
   });
 
+  it('accepts the boolean spellings true/1/yes/on for the clustered declaration, case-insensitive', async function() {
+    config.set('sessionStore', {useRedis: false});
+    for (const literal of ['true', '1', 'yes', 'on', 'TRUE', 'Yes']) {
+      process.env.LEAVEPILOT_CLUSTERED = literal;
+      try {
+        teamViewCache._reset();
+        assert.equal(teamViewCache.getStatus().mode, 'bypass-no-coordination', literal);
+      } finally {
+        delete process.env.LEAVEPILOT_CLUSTERED;
+      }
+    }
+    // The _reset injection seam parses through the same literals.
+    teamViewCache._reset({clustered: 'true'});
+    assert.equal(teamViewCache.getStatus().mode, 'bypass-no-coordination');
+  });
+
+  it('resolves an unrecognized clustered declaration falsy with exactly one explicit warn, never silently', async function() {
+    config.set('sessionStore', {useRedis: false});
+    process.env.LEAVEPILOT_CLUSTERED = 'enabled';
+    try {
+      teamViewCache._reset();
+      assert.equal(teamViewCache.getStatus().mode, 'memory');
+      teamViewCache.getStatus(); // a second resolution stays warn-once
+      const warns = recorded.filter(([level]) => level === 'warn')
+        .filter(([, event]) => event === 'team_view_cache_clustered_unrecognized');
+      assert.equal(warns.length, 1, 'exactly one unrecognized-value warn');
+      assert.equal(warns[0][2].variable, 'LEAVEPILOT_CLUSTERED');
+      assert.equal(warns[0][2].accepted, 'true|1|yes|on');
+    } finally {
+      delete process.env.LEAVEPILOT_CLUSTERED;
+    }
+
+    // An empty value is "unset" by env_resolver semantics: plain memory mode,
+    // and the unrecognized-value warn never fires for it. Only entries recorded
+    // from this point on may carry the warn (the earlier part of this test
+    // legitimately produced exactly one).
+    const recordedBefore = recorded.length;
+    process.env.LEAVEPILOT_CLUSTERED = '';
+    try {
+      teamViewCache._reset();
+      assert.equal(teamViewCache.getStatus().mode, 'memory');
+      assert.ok(!recorded.slice(recordedBefore).some(([level, event]) => level === 'warn' && event === 'team_view_cache_clustered_unrecognized'),
+        'no warn for an empty declaration');
+    } finally {
+      delete process.env.LEAVEPILOT_CLUSTERED;
+    }
+  });
+
   it('keeps the single-process memory mode when neither store nor clustering is declared', function() {
     config.set('sessionStore', {useRedis: false});
     teamViewCache._reset();
