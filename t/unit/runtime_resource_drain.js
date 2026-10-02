@@ -151,15 +151,21 @@ describe('Runtime resource drain', function() {
 
   it('closes an unused cache without creating Redis, then closes a used client once', async function() {
     const redis = require('redis');
-    const config = require('../../config/app.json').sessionStore;
+    const config = require('../../lib/config');
+    const originalSessionStore = config.get('sessionStore');
     const cachePath = require.resolve('../../lib/cache/team_view_cache');
     const originalCreate = redis.createClient;
-    const originalUseRedis = config.useRedis;
     let creates = 0;
     let closes = 0;
     let destroys = 0;
     try {
-      config.useRedis = true;
+      // The cache reads sessionStore through nconf at lazy-init time, so the
+      // selection is driven through the same config seam the worker preloads
+      // use — never a direct config/app.json mutation.
+      config.set('sessionStore', {
+        useRedis: true,
+        redisConnectionConfiguration: {host: '127.0.0.1', port: 6379},
+      });
       redis.createClient = () => {
         creates += 1;
         return {on() {}, connect: async () => {}, close: async () => { closes += 1; }, destroy() { destroys += 1; }};
@@ -179,7 +185,7 @@ describe('Runtime resource drain', function() {
       assert.equal(destroys, 1);
     } finally {
       redis.createClient = originalCreate;
-      config.useRedis = originalUseRedis;
+      config.set('sessionStore', originalSessionStore);
       delete require.cache[cachePath];
     }
   });

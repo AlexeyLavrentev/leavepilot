@@ -324,7 +324,16 @@ async function runShared() {
       const bookingWorker = booking.workerPid;
       assert.ok(bookingWorker);
 
-      const [leaveRow] = await admin.query('SELECT id FROM `Leaves` ORDER BY id DESC LIMIT 1');
+      // The booking redirect never distinguishes success from a flashed
+      // failure, so read the outcome off the leaver's next page: the leave
+      // must have been created before the cross-worker read is meaningful.
+      const aftermath = await request(port, '/calendar/', leaver.cookie);
+      const alerts = (aftermath.body.match(/<div class="alert[^>]*>[^<]*/g) || [])
+        .map(entry => entry.replace(/<div class="alert[^>]*>/, '').trim());
+      assert.ok(alerts.some(text => /added/i.test(text)),
+        `leave booking did not succeed (alerts: ${JSON.stringify(alerts)})\n${output}`);
+
+      const [[leaveRow]] = await admin.query(`SELECT id FROM \`${database}\`.\`Leaves\` ORDER BY id DESC LIMIT 1`);
       assert.ok(leaveRow && leaveRow.id, `no leave row after booking: ${output}`);
 
       // Read through the OTHER worker well inside the 30 s TTL: only the

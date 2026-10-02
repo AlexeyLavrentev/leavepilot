@@ -4,6 +4,14 @@
 const cluster = require('node:cluster');
 
 if (cluster.isPrimary) {
+  // D-02: the clustered declaration is explicit operator configuration, never
+  // topology sniffing. Stamp it before forking (cluster.fork propagates the
+  // primary's env to every worker) so the team-view cache policy can refuse to
+  // present worker-local memory as coherent shared state. An explicit operator
+  // export wins; only an unset value is stamped.
+  if (!process.env.LEAVEPILOT_CLUSTERED) {
+    process.env.LEAVEPILOT_CLUSTERED = '1';
+  }
   require('../lib/runtime_cluster').startCluster();
 } else {
   require('../lib/runtime_startup').startRuntime().start();
