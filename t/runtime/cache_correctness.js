@@ -67,4 +67,48 @@ describe('real cross-worker cache correctness', function() {
     assert.ok(result.elapsedMs < 10000, `warm-to-read interval ${result.elapsedMs}ms is not inside the TTL window`);
     assert.equal(result.signalExit, 0);
   });
+
+  it('family matrix: every HTTP-representative mutation family invalidates cross-worker before any TTL expiry', async function() {
+    this.timeout(360000);
+    const result = await caseResult(['--case', 'families'], 330000);
+    assert.equal(result.case, 'families');
+    assert.equal(result.workers, 2);
+    assert.equal(result.all_families_passed, true);
+
+    // The frozen 17-family list is the CACHE-03 completeness criterion; the
+    // 03-05 stage registration depends on this exact ordering and count.
+    const expectedFamilies = [
+      'leave_approve',
+      'leave_reject',
+      'leave_cancel',
+      'leave_revoke_request',
+      'leave_bulk_approve',
+      'user_create',
+      'user_update',
+      'department_create',
+      'department_update_supervisor',
+      'leave_type_create',
+      'bank_holiday_create',
+      'bank_holiday_preset_import',
+      'work_calendar_create',
+      'schedule_save',
+      'company_settings_save',
+      'csv_import',
+      'user_delete',
+    ];
+    assert.deepEqual(result.families.map(family => family.name), expectedFamilies);
+
+    for (const family of result.families) {
+      assert.equal(family.version_advanced, true, `${family.name}: version did not advance`);
+      assert.ok(family.version_after > family.version_before,
+        `${family.name}: version ${family.version_before} -> ${family.version_after}`);
+      assert.equal(family.marker_visible, true, `${family.name}: marker (${family.direction}) not visible`);
+      assert.ok(family.elapsed_ms < 10000, `${family.name}: cycle took ${family.elapsed_ms}ms; TTL could have contributed`);
+      assert.ok(family.mutation_worker_pid, `${family.name}: no mutation worker pid`);
+      assert.ok(family.read_worker_pid, `${family.name}: no read worker pid`);
+      assert.notEqual(family.mutation_worker_pid, family.read_worker_pid,
+        `${family.name}: the read must be served by a different worker than the mutation`);
+      assert.ok(['appears', 'disappears'].includes(family.direction), `${family.name}: unknown direction`);
+    }
+  });
 });
