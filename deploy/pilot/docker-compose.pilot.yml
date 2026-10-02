@@ -3,6 +3,9 @@ name: timeoff-pilot
 services:
   app:
     environment:
+      # nginx terminates TLS and forwards to the app: the proxy must be
+      # trusted or req.ip collapses to 127.0.0.1 and rate limits share one bucket
+      TRUST_PROXY: "1"
       RUN_DB_MIGRATIONS: "false"
       LEAVE_REMINDER_SCHEDULER_ENABLED: "false"
       PRODUCTION_CALENDAR_SCHEDULER_ENABLED: "false"

@@ -78,7 +78,7 @@ services:
       # markers scream "not a real secret", and a fresh clone interpolates.
       SESSION_SECRET: ${SESSION_SECRET:-demo-session-secret-not-for-production}
       CRYPTO_SECRET: ${CRYPTO_SECRET:-demo-crypto-secret-not-for-production}
-      TRUST_PROXY: ${TRUST_PROXY:-1}
+      TRUST_PROXY: ${TRUST_PROXY:-0}
       SESSION_COOKIE_SECURE: ${SESSION_COOKIE_SECURE:-false}
       SESSION_COOKIE_SAME_SITE: ${SESSION_COOKIE_SAME_SITE:-lax}
       SESSION_COOKIE_MAX_AGE_MS: ${SESSION_COOKIE_MAX_AGE_MS:-43200000}
