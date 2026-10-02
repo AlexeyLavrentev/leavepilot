@@ -88,7 +88,13 @@ async function main() {
       email: user.email,
     });
     if (generatedPassword) {
-      log.info('generated_password', { password });
+      // The one-time credential is CLI output and must bypass the sanitizing
+      // request logger: sanitize() masks any *password* key, which redacted
+      // the very value the operator needs to log in with. The structured
+      // trail keeps only the secret-free notice. Direct console output is
+      // the established convention for command-line programs (bin/db_update.js).
+      // eslint-disable-next-line no-console
+      console.log(`Generated admin password (shown only once): ${password}`);
       log.info('password_notice', { msg: 'This generated password is shown only once. Store it securely and change it after the first login.' });
     }
     log.info('signin_url', { url: '/login/' });

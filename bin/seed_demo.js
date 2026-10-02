@@ -185,7 +185,13 @@ async function main() {
     });
     log.info('demo_signin', { url: '/login/', email: summary.admin });
     if (generatedPassword) {
-      log.info('demo_password', { password });
+      // The one-time credential is CLI output and must bypass the sanitizing
+      // request logger: sanitize() masks any *password* key, which redacted
+      // the very value the operator needs to log in with. The structured
+      // trail keeps only the secret-free notice. Direct console output is
+      // the established convention for command-line programs (bin/db_update.js).
+      // eslint-disable-next-line no-console
+      console.log(`Generated demo password (shown only once): ${password}`);
     }
     log.info('demo_password_shared');
   } catch (error) {
