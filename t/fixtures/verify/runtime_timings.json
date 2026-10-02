@@ -10,108 +10,509 @@
     "t/fixtures/runtime/cache_case.js": "e90f6905afa4c45ba36601bada8b1dea9ed9c09d81480b7dadfaf2b3564c30bd",
     "t/runtime/cache_correctness.js": "2147248e3f1cc2221c678d81a0470412184f7c40cf6f24d66169a4db1849b1ca",
     "lib/cache/team_view_cache.js": "dba5fb21ec99769b37a2fed588ee4f7b3fd40eff7deb09beb4bf96d581e6beb2",
-    "lib/model/db/team_view_invalidation.js": "525120da2b8e69211973f6c16af6437fb6d1b75392d9235006ee66d439ed4950"
+    "lib/model/db/team_view_invalidation.js": "525120da2b8e69211973f6c16af6437fb6d1b75392d9235006ee66d439ed4950",
+    "t/fixtures/runtime/delivery_case.js": "efa379e493e6b936cb9fc9223bbbfc9e168b1c53b80402495907e2c174ee5a7d",
+    "lib/model/delivery_outbox.js": "6a658b14e1689df09ae49f06155a384effe6e0c5456978645e9c993190097b11",
+    "lib/scheduler/delivery_outbox_worker.js": "4745f913bd4bec763aaba57d49d9821ba89c80a1b1db1818883d98b4e0985fee",
+    "lib/edition/community.js": "b7af1753feea5840c7821186f3e37ba25f01342b84c5d5458dcd2f4796156049"
   },
-  "host": {"platform": "darwin", "arch": "arm64", "node": "v22.23.0"},
+  "host": {
+    "platform": "darwin",
+    "arch": "arm64",
+    "node": "v22.23.0"
+  },
   "services": {
-    "mysql": {"version": "8.0.45", "image": "mysql@sha256:4af1f8815716546f5b12410f7621f37f93db8dd11a184706ef59111930b8c2ff"},
-    "redis": {"version": "8.8.0", "image": "redis@sha256:234c902a2db49461a129e2d4aeff85b28cf20187ed274a67f6e50995fa713c7b"},
-    "engram": {"version": "0.2", "image": "ghcr.io/alexeylavrentev/engram@sha256:639a35074e5d02c9771177d4d2e78139291be7dd07ac50f0c6bef672c1a74410"}
+    "mysql": {
+      "version": "8.0.45",
+      "image": "mysql@sha256:4af1f8815716546f5b12410f7621f37f93db8dd11a184706ef59111930b8c2ff"
+    },
+    "redis": {
+      "version": "8.8.0",
+      "image": "redis@sha256:234c902a2db49461a129e2d4aeff85b28cf20187ed274a67f6e50995fa713c7b"
+    },
+    "engram": {
+      "version": "0.2",
+      "image": "ghcr.io/alexeylavrentev/engram@sha256:639a35074e5d02c9771177d4d2e78139291be7dd07ac50f0c6bef672c1a74410"
+    }
   },
   "selection": "Dedicated leavepilot-runtime-test Compose project, loopback ports 13306/16379/16380, two successful fresh-process runs per command; raw elapsed monotonic time includes child cleanup. A separate process-group parent watchdog bounded each Redis/Engram command at 30000ms and each matrix command at 90000ms. No failed sample was used to derive a deadline.",
   "margin": 2,
   "stages": {
     "redis-session": {
-      "argv": ["node", "t/fixtures/runtime/runtime_matrix_case.js", "--session-suite", "redis"],
+      "argv": [
+        "node",
+        "t/fixtures/runtime/runtime_matrix_case.js",
+        "--session-suite",
+        "redis"
+      ],
       "samples": [
-        {"identity": "sample-1", "durationMs": 7836, "exitCode": 0, "parentBoundMs": 30000},
-        {"identity": "sample-2", "durationMs": 7753, "exitCode": 0, "parentBoundMs": 30000}
+        {
+          "identity": "sample-1",
+          "durationMs": 7836,
+          "exitCode": 0,
+          "parentBoundMs": 30000
+        },
+        {
+          "identity": "sample-2",
+          "durationMs": 7753,
+          "exitCode": 0,
+          "parentBoundMs": 30000
+        }
       ],
       "observedMaximumMs": 7836,
       "deadlineMs": 15672
     },
     "engram-session": {
-      "argv": ["node", "t/fixtures/runtime/runtime_matrix_case.js", "--session-suite", "engram"],
+      "argv": [
+        "node",
+        "t/fixtures/runtime/runtime_matrix_case.js",
+        "--session-suite",
+        "engram"
+      ],
       "samples": [
-        {"identity": "sample-1", "durationMs": 7580, "exitCode": 0, "parentBoundMs": 30000},
-        {"identity": "sample-2", "durationMs": 7626, "exitCode": 0, "parentBoundMs": 30000}
+        {
+          "identity": "sample-1",
+          "durationMs": 7580,
+          "exitCode": 0,
+          "parentBoundMs": 30000
+        },
+        {
+          "identity": "sample-2",
+          "durationMs": 7626,
+          "exitCode": 0,
+          "parentBoundMs": 30000
+        }
       ],
       "observedMaximumMs": 7626,
       "deadlineMs": 15252
     },
     "runtime-matrix": {
-      "argv": ["node", "node_modules/mocha/bin/mocha", "t/runtime/runtime_matrix.js", "--timeout", "15000", "--require", "t/lib/skip_honesty.js"],
+      "argv": [
+        "node",
+        "node_modules/mocha/bin/mocha",
+        "t/runtime/runtime_matrix.js",
+        "--timeout",
+        "15000",
+        "--require",
+        "t/lib/skip_honesty.js"
+      ],
       "samples": [
-        {"identity": "sample-1", "durationMs": 46836, "exitCode": 0, "parentBoundMs": 90000},
-        {"identity": "sample-2", "durationMs": 46824, "exitCode": 0, "parentBoundMs": 90000}
+        {
+          "identity": "sample-1",
+          "durationMs": 46836,
+          "exitCode": 0,
+          "parentBoundMs": 90000
+        },
+        {
+          "identity": "sample-2",
+          "durationMs": 46824,
+          "exitCode": 0,
+          "parentBoundMs": 90000
+        }
       ],
       "observedMaximumMs": 46836,
       "deadlineMs": 93672
     },
     "cache-correctness": {
-      "argv": ["node", "t/fixtures/runtime/cache_case.js", "--suite"],
+      "argv": [
+        "node",
+        "t/fixtures/runtime/cache_case.js",
+        "--suite"
+      ],
       "samples": [
-        {"identity": "sample-1", "durationMs": 21030, "exitCode": 0, "parentBoundMs": 180000},
-        {"identity": "sample-2", "durationMs": 20080, "exitCode": 0, "parentBoundMs": 180000}
+        {
+          "identity": "sample-1",
+          "durationMs": 21030,
+          "exitCode": 0,
+          "parentBoundMs": 180000
+        },
+        {
+          "identity": "sample-2",
+          "durationMs": 20080,
+          "exitCode": 0,
+          "parentBoundMs": 180000
+        }
       ],
       "observedMaximumMs": 21030,
       "deadlineMs": 42060
+    },
+    "delivery-outcome": {
+      "argv": [
+        "node",
+        "t/fixtures/runtime/delivery_case.js",
+        "--suite"
+      ],
+      "samples": [
+        {
+          "identity": "sample-1",
+          "durationMs": 61830,
+          "exitCode": 0,
+          "parentBoundMs": 180000
+        },
+        {
+          "identity": "sample-2",
+          "durationMs": 60042,
+          "exitCode": 0,
+          "parentBoundMs": 180000
+        }
+      ],
+      "observedMaximumMs": 61830,
+      "deadlineMs": 123660
     }
   },
   "cacheCorrectness": {
     "capturedAt": "2026-10-02T10:26:00Z",
     "sourceHead": "50faa8ddcb50626eb6042c50c328489f7c89eaa9",
     "sourceNote": "Plan 03-05 measurements. The working tree differed from sourceHead by the plan's own in-flight edits (t/fixtures/runtime/cache_case.js --suite mode, the stage registration in lib/verify/stages.js and this fixture); every other pinned source matched its committed state exactly. The command runs the full cache suite (shared, families, bypass-no-coordination, store-outage) against the caller-started compose fixture with the registered stage env, under a parent process-group watchdog that owns the child tree. Post-measurement 03-06 fix (CR-02) changed lib/cache/team_view_cache.js (boolean parsing of the clustered declaration); the measured command, its env and its timing contour are unchanged (the suite's clustered contour sets LEAVEPILOT_CLUSTERED=1, truthy under both parsers), so the source hash was updated in place and the retained observations and deadline stand. A second 03-06 fix (WR-01) added socketTimeout 1000 and a bounded close to the same file: neither alters the healthy-fixture measurement path (the read deadline only fires on a stalled established connection and the close bound is a ceiling above the measured drain), so the hash was updated again without re-measurement.",
-    "host": {"platform": "darwin", "arch": "arm64", "node": "v22.23.0"},
+    "host": {
+      "platform": "darwin",
+      "arch": "arm64",
+      "node": "v22.23.0"
+    },
     "services": {
-      "mysql": {"version": "8.0.45"},
-      "redis": {"version": "8.8.0"},
-      "engram": {"version": "0.2"}
+      "mysql": {
+        "version": "8.0.45"
+      },
+      "redis": {
+        "version": "8.8.0"
+      },
+      "engram": {
+        "version": "0.2"
+      }
     },
     "selection": "Dedicated leavepilot-runtime-test compose fixture on loopback 13306/16379/16380, two successful fresh-process runs of the suite command with the registered stage environment on the final pinned source; raw elapsed monotonic time from spawn to exit includes child cleanup. A separate process-group parent watchdog bounded each run at 180000ms. An earlier probe of the in-development --suite mode failed (verdict propagation bug) and an earlier sample pair (20447/20684 ms) was measured on pre-lint-fix bytes and superseded when two no-return-await fixes landed; the retained samples are the successful pair on the exact final source. No failed sample was used to derive the deadline.",
     "failedProbes": [
-      {"identity": "pre-fix-probe-1", "durationMs": 3578, "exitCode": 1, "cause": "Cannot read properties of undefined (reading 'cacheKeyWarmed') - verdict propagation bug in the new --suite mode, fixed before measurement"},
-      {"identity": "superseded-pair-pre-lint-fix", "durationMs": [20447, 20684], "exitCode": 0, "cause": "successful samples on pre-lint-fix bytes, replaced by the retained pair after two no-return-await fixes changed the source"}
+      {
+        "identity": "pre-fix-probe-1",
+        "durationMs": 3578,
+        "exitCode": 1,
+        "cause": "Cannot read properties of undefined (reading 'cacheKeyWarmed') - verdict propagation bug in the new --suite mode, fixed before measurement"
+      },
+      {
+        "identity": "superseded-pair-pre-lint-fix",
+        "durationMs": [
+          20447,
+          20684
+        ],
+        "exitCode": 0,
+        "cause": "successful samples on pre-lint-fix bytes, replaced by the retained pair after two no-return-await fixes changed the source"
+      }
     ]
   },
   "lifecycle": {
     "capturedAt": "2026-10-01T10:52:00Z",
     "sourceHead": "af6ebe9a82aa8030e61c5c1fde0df069396ef794",
     "sourceNote": "Plan 08-1 measurements. The working tree differed from sourceHead only by the new measurement harness (t/fixtures/runtime/lifecycle_measurements.js) and this fixture; lib/, bin/ and app.js matched sourceHead exactly. Every scenario drives the production entrypoints (bin/wwww, bin/wwww_cluster) with the same preload the committed runtime matrix uses, under a parent process-group watchdog that owns every child tree.",
-    "host": {"platform": "darwin", "arch": "arm64", "node": "v22.23.0"},
+    "host": {
+      "platform": "darwin",
+      "arch": "arm64",
+      "node": "v22.23.0"
+    },
     "services": {
-      "mysql": {"version": "8.0.45"},
-      "redis": {"version": "8.8.0"},
-      "engram": {"version": "0.2"}
+      "mysql": {
+        "version": "8.0.45"
+      },
+      "redis": {
+        "version": "8.8.0"
+      },
+      "engram": {
+        "version": "0.2"
+      }
     },
     "selection": "Dedicated leavepilot-runtime-test compose fixture on loopback 13306/16379/16380 with the synthetic matrix inputs. Startup = spawn to first HTTP 200 on /login/ (listener cannot open before SQL and selected Store are ready). Shutdown = SIGTERM delivery to process exit. Outage detection/recovery are external polls at 50 ms granularity through a loopback RESP2 interrupting proxy; recovery keeps the same PID. Store initialize = createSessionMiddleware().sessionLifecycle.initialize() (RESP2 connect + public Store set/get/touch/destroy probe + cleanup). Worker replacement = SIGKILL of a serving worker to its replacement's first readiness report. No failed sample was discarded; every listed scenario exited as asserted.",
     "scenarios": [
-      {"id": "contour-sqlite-sql-direct", "dialect": "sqlite", "backend": "sql", "entrypoint": "direct", "migrationMs": 508, "coldStartupMs": 366, "warmStartupMs": 297, "coldShutdownMs": 5, "warmShutdownMs": 5},
-      {"id": "contour-sqlite-sql-cluster", "dialect": "sqlite", "backend": "sql", "entrypoint": "cluster", "migrationMs": 281, "coldStartupMs": 419, "warmStartupMs": 404, "coldShutdownMs": 9, "warmShutdownMs": 6},
-      {"id": "contour-sqlite-redis-direct", "dialect": "sqlite", "backend": "redis", "entrypoint": "direct", "migrationMs": 284, "coldStartupMs": 306, "warmStartupMs": 349, "coldShutdownMs": 5, "warmShutdownMs": 5},
-      {"id": "contour-sqlite-redis-cluster", "dialect": "sqlite", "backend": "redis", "entrypoint": "cluster", "migrationMs": 283, "coldStartupMs": 410, "warmStartupMs": 400, "coldShutdownMs": 8, "warmShutdownMs": 7},
-      {"id": "contour-sqlite-engram-direct", "dialect": "sqlite", "backend": "engram", "entrypoint": "direct", "migrationMs": 286, "coldStartupMs": 309, "warmStartupMs": 345, "coldShutdownMs": 6, "warmShutdownMs": 7},
-      {"id": "contour-sqlite-engram-cluster", "dialect": "sqlite", "backend": "engram", "entrypoint": "cluster", "migrationMs": 287, "coldStartupMs": 416, "warmStartupMs": 401, "coldShutdownMs": 9, "warmShutdownMs": 7},
-      {"id": "contour-mysql-sql-direct", "dialect": "mysql", "backend": "sql", "entrypoint": "direct", "migrationMs": 836, "coldStartupMs": 424, "warmStartupMs": 416, "coldShutdownMs": 5, "warmShutdownMs": 4},
-      {"id": "contour-mysql-sql-cluster", "dialect": "mysql", "backend": "sql", "entrypoint": "cluster", "migrationMs": 792, "coldStartupMs": 472, "warmStartupMs": 458, "coldShutdownMs": 8, "warmShutdownMs": 7},
-      {"id": "contour-mysql-redis-direct", "dialect": "mysql", "backend": "redis", "entrypoint": "direct", "migrationMs": 809, "coldStartupMs": 420, "warmStartupMs": 402, "coldShutdownMs": 6, "warmShutdownMs": 5},
-      {"id": "contour-mysql-redis-cluster", "dialect": "mysql", "backend": "redis", "entrypoint": "cluster", "migrationMs": 838, "coldStartupMs": 464, "warmStartupMs": 446, "coldShutdownMs": 8, "warmShutdownMs": 9},
-      {"id": "contour-mysql-engram-direct", "dialect": "mysql", "backend": "engram", "entrypoint": "direct", "migrationMs": 796, "coldStartupMs": 417, "warmStartupMs": 401, "coldShutdownMs": 6, "warmShutdownMs": 5},
-      {"id": "contour-mysql-engram-cluster", "dialect": "mysql", "backend": "engram", "entrypoint": "cluster", "migrationMs": 834, "coldStartupMs": 465, "warmStartupMs": 454, "coldShutdownMs": 8, "warmShutdownMs": 7},
-      {"id": "outage-redis", "backend": "redis", "dialect": "sqlite", "entrypoint": "direct", "startupMs": 306, "pollGranularityMs": 50, "cycles": [{"outageDetectionMs": 2, "recoveryMs": 212}, {"outageDetectionMs": 3, "recoveryMs": 150}], "normalShutdownMs": 5, "samePid": true},
-      {"id": "outage-engram", "backend": "engram", "dialect": "sqlite", "entrypoint": "direct", "startupMs": 361, "pollGranularityMs": 50, "cycles": [{"outageDetectionMs": 2, "recoveryMs": 212}, {"outageDetectionMs": 3, "recoveryMs": 151}], "normalShutdownMs": 6, "samePid": true},
-      {"id": "probe-redis", "backend": "redis", "samples": [{"identity": "sample-1", "initializeMs": 10}, {"identity": "sample-2", "initializeMs": 9}]},
-      {"id": "probe-engram", "backend": "engram", "samples": [{"identity": "sample-1", "initializeMs": 9}, {"identity": "sample-2", "initializeMs": 8}]},
-      {"id": "replacement-sqlite-sql", "dialect": "sqlite", "backend": "sql", "entrypoint": "cluster", "workerReplacementMs": [544, 556], "supervisorStopMs": 9},
-      {"id": "replacement-sqlite-redis", "dialect": "sqlite", "backend": "redis", "entrypoint": "cluster", "workerReplacementMs": [562], "supervisorStopMs": 8},
-      {"id": "replacement-sqlite-engram", "dialect": "sqlite", "backend": "engram", "entrypoint": "cluster", "workerReplacementMs": [579], "supervisorStopMs": 11},
-      {"id": "replacement-mysql-sql", "dialect": "mysql", "backend": "sql", "entrypoint": "cluster", "workerReplacementMs": [600], "supervisorStopMs": 8},
-      {"id": "fault-sqlite-schema-direct", "dialect": "sqlite", "fault": "schema", "entrypoint": "direct", "faultExitMs": 475, "exitCode": 1, "listenerClosed": true},
-      {"id": "fault-mysql-schema-cluster", "dialect": "mysql", "fault": "schema", "entrypoint": "cluster", "faultExitMs": 3133, "exitCode": 1, "listenerClosed": true},
-      {"id": "fault-mysql-credentials-direct", "dialect": "mysql", "fault": "credentials", "entrypoint": "direct", "faultExitMs": 286, "exitCode": 1, "listenerClosed": true},
-      {"id": "forced-sqlite-sql-direct", "dialect": "sqlite", "backend": "sql", "entrypoint": "direct", "forcedShutdownMs": 8025, "exitCode": 1, "incomplete": true, "note": "Real in-flight request with a trickled body; drain deadline at 8000 ms fired forced disposal and the stop completed at 8025 ms with the required nonzero incomplete exit."},
-      {"id": "matrix-cold-run", "command": "node node_modules/mocha/bin/mocha t/runtime/runtime_matrix.js --timeout 15000 --require t/lib/skip_honesty.js", "testsPassing": 17, "durationMs": 25000, "durationSource": "mocha-reported (25s)"},
-      {"id": "matrix-warm-run", "command": "node node_modules/mocha/bin/mocha t/runtime/runtime_matrix.js --timeout 15000 --require t/lib/skip_honesty.js", "testsPassing": 17, "durationMs": 25060, "durationSource": "parent wall clock"}
+      {
+        "id": "contour-sqlite-sql-direct",
+        "dialect": "sqlite",
+        "backend": "sql",
+        "entrypoint": "direct",
+        "migrationMs": 508,
+        "coldStartupMs": 366,
+        "warmStartupMs": 297,
+        "coldShutdownMs": 5,
+        "warmShutdownMs": 5
+      },
+      {
+        "id": "contour-sqlite-sql-cluster",
+        "dialect": "sqlite",
+        "backend": "sql",
+        "entrypoint": "cluster",
+        "migrationMs": 281,
+        "coldStartupMs": 419,
+        "warmStartupMs": 404,
+        "coldShutdownMs": 9,
+        "warmShutdownMs": 6
+      },
+      {
+        "id": "contour-sqlite-redis-direct",
+        "dialect": "sqlite",
+        "backend": "redis",
+        "entrypoint": "direct",
+        "migrationMs": 284,
+        "coldStartupMs": 306,
+        "warmStartupMs": 349,
+        "coldShutdownMs": 5,
+        "warmShutdownMs": 5
+      },
+      {
+        "id": "contour-sqlite-redis-cluster",
+        "dialect": "sqlite",
+        "backend": "redis",
+        "entrypoint": "cluster",
+        "migrationMs": 283,
+        "coldStartupMs": 410,
+        "warmStartupMs": 400,
+        "coldShutdownMs": 8,
+        "warmShutdownMs": 7
+      },
+      {
+        "id": "contour-sqlite-engram-direct",
+        "dialect": "sqlite",
+        "backend": "engram",
+        "entrypoint": "direct",
+        "migrationMs": 286,
+        "coldStartupMs": 309,
+        "warmStartupMs": 345,
+        "coldShutdownMs": 6,
+        "warmShutdownMs": 7
+      },
+      {
+        "id": "contour-sqlite-engram-cluster",
+        "dialect": "sqlite",
+        "backend": "engram",
+        "entrypoint": "cluster",
+        "migrationMs": 287,
+        "coldStartupMs": 416,
+        "warmStartupMs": 401,
+        "coldShutdownMs": 9,
+        "warmShutdownMs": 7
+      },
+      {
+        "id": "contour-mysql-sql-direct",
+        "dialect": "mysql",
+        "backend": "sql",
+        "entrypoint": "direct",
+        "migrationMs": 836,
+        "coldStartupMs": 424,
+        "warmStartupMs": 416,
+        "coldShutdownMs": 5,
+        "warmShutdownMs": 4
+      },
+      {
+        "id": "contour-mysql-sql-cluster",
+        "dialect": "mysql",
+        "backend": "sql",
+        "entrypoint": "cluster",
+        "migrationMs": 792,
+        "coldStartupMs": 472,
+        "warmStartupMs": 458,
+        "coldShutdownMs": 8,
+        "warmShutdownMs": 7
+      },
+      {
+        "id": "contour-mysql-redis-direct",
+        "dialect": "mysql",
+        "backend": "redis",
+        "entrypoint": "direct",
+        "migrationMs": 809,
+        "coldStartupMs": 420,
+        "warmStartupMs": 402,
+        "coldShutdownMs": 6,
+        "warmShutdownMs": 5
+      },
+      {
+        "id": "contour-mysql-redis-cluster",
+        "dialect": "mysql",
+        "backend": "redis",
+        "entrypoint": "cluster",
+        "migrationMs": 838,
+        "coldStartupMs": 464,
+        "warmStartupMs": 446,
+        "coldShutdownMs": 8,
+        "warmShutdownMs": 9
+      },
+      {
+        "id": "contour-mysql-engram-direct",
+        "dialect": "mysql",
+        "backend": "engram",
+        "entrypoint": "direct",
+        "migrationMs": 796,
+        "coldStartupMs": 417,
+        "warmStartupMs": 401,
+        "coldShutdownMs": 6,
+        "warmShutdownMs": 5
+      },
+      {
+        "id": "contour-mysql-engram-cluster",
+        "dialect": "mysql",
+        "backend": "engram",
+        "entrypoint": "cluster",
+        "migrationMs": 834,
+        "coldStartupMs": 465,
+        "warmStartupMs": 454,
+        "coldShutdownMs": 8,
+        "warmShutdownMs": 7
+      },
+      {
+        "id": "outage-redis",
+        "backend": "redis",
+        "dialect": "sqlite",
+        "entrypoint": "direct",
+        "startupMs": 306,
+        "pollGranularityMs": 50,
+        "cycles": [
+          {
+            "outageDetectionMs": 2,
+            "recoveryMs": 212
+          },
+          {
+            "outageDetectionMs": 3,
+            "recoveryMs": 150
+          }
+        ],
+        "normalShutdownMs": 5,
+        "samePid": true
+      },
+      {
+        "id": "outage-engram",
+        "backend": "engram",
+        "dialect": "sqlite",
+        "entrypoint": "direct",
+        "startupMs": 361,
+        "pollGranularityMs": 50,
+        "cycles": [
+          {
+            "outageDetectionMs": 2,
+            "recoveryMs": 212
+          },
+          {
+            "outageDetectionMs": 3,
+            "recoveryMs": 151
+          }
+        ],
+        "normalShutdownMs": 6,
+        "samePid": true
+      },
+      {
+        "id": "probe-redis",
+        "backend": "redis",
+        "samples": [
+          {
+            "identity": "sample-1",
+            "initializeMs": 10
+          },
+          {
+            "identity": "sample-2",
+            "initializeMs": 9
+          }
+        ]
+      },
+      {
+        "id": "probe-engram",
+        "backend": "engram",
+        "samples": [
+          {
+            "identity": "sample-1",
+            "initializeMs": 9
+          },
+          {
+            "identity": "sample-2",
+            "initializeMs": 8
+          }
+        ]
+      },
+      {
+        "id": "replacement-sqlite-sql",
+        "dialect": "sqlite",
+        "backend": "sql",
+        "entrypoint": "cluster",
+        "workerReplacementMs": [
+          544,
+          556
+        ],
+        "supervisorStopMs": 9
+      },
+      {
+        "id": "replacement-sqlite-redis",
+        "dialect": "sqlite",
+        "backend": "redis",
+        "entrypoint": "cluster",
+        "workerReplacementMs": [
+          562
+        ],
+        "supervisorStopMs": 8
+      },
+      {
+        "id": "replacement-sqlite-engram",
+        "dialect": "sqlite",
+        "backend": "engram",
+        "entrypoint": "cluster",
+        "workerReplacementMs": [
+          579
+        ],
+        "supervisorStopMs": 11
+      },
+      {
+        "id": "replacement-mysql-sql",
+        "dialect": "mysql",
+        "backend": "sql",
+        "entrypoint": "cluster",
+        "workerReplacementMs": [
+          600
+        ],
+        "supervisorStopMs": 8
+      },
+      {
+        "id": "fault-sqlite-schema-direct",
+        "dialect": "sqlite",
+        "fault": "schema",
+        "entrypoint": "direct",
+        "faultExitMs": 475,
+        "exitCode": 1,
+        "listenerClosed": true
+      },
+      {
+        "id": "fault-mysql-schema-cluster",
+        "dialect": "mysql",
+        "fault": "schema",
+        "entrypoint": "cluster",
+        "faultExitMs": 3133,
+        "exitCode": 1,
+        "listenerClosed": true
+      },
+      {
+        "id": "fault-mysql-credentials-direct",
+        "dialect": "mysql",
+        "fault": "credentials",
+        "entrypoint": "direct",
+        "faultExitMs": 286,
+        "exitCode": 1,
+        "listenerClosed": true
+      },
+      {
+        "id": "forced-sqlite-sql-direct",
+        "dialect": "sqlite",
+        "backend": "sql",
+        "entrypoint": "direct",
+        "forcedShutdownMs": 8025,
+        "exitCode": 1,
+        "incomplete": true,
+        "note": "Real in-flight request with a trickled body; drain deadline at 8000 ms fired forced disposal and the stop completed at 8025 ms with the required nonzero incomplete exit."
+      },
+      {
+        "id": "matrix-cold-run",
+        "command": "node node_modules/mocha/bin/mocha t/runtime/runtime_matrix.js --timeout 15000 --require t/lib/skip_honesty.js",
+        "testsPassing": 17,
+        "durationMs": 25000,
+        "durationSource": "mocha-reported (25s)"
+      },
+      {
+        "id": "matrix-warm-run",
+        "command": "node node_modules/mocha/bin/mocha t/runtime/runtime_matrix.js --timeout 15000 --require t/lib/skip_honesty.js",
+        "testsPassing": 17,
+        "durationMs": 25060,
+        "durationSource": "parent wall clock"
+      }
     ],
     "policy": [
       {
@@ -120,7 +521,13 @@
         "file": "lib/runtime_startup.js",
         "decision": "retained",
         "rationale": "One absolute deadline covering SQL connect, schema check, selected Store initialize and listen, plus allowlisted transient retries. Observed cold/warm startup maximum is 472 ms across all twelve contours on the disposable fixture; the 20000 ms budget is deliberate headroom for container/CI hosts and in-window dependency retry, and it stays inside the existing 30000 ms bin/test.js readiness envelope with 10 s left for harness detection and cleanup. Reducing it would buy nothing and risk flapping slow hosts; the deadline-exceeded and never-settling startup paths exit nonzero without opening the listener (fault scenarios and t/unit/runtime_startup.js injected-clock cases).",
-        "evidence": ["contour-* coldStartupMs/warmStartupMs", "fault-sqlite-schema-direct", "fault-mysql-credentials-direct", "matrix-cold-run", "matrix-warm-run"]
+        "evidence": [
+          "contour-* coldStartupMs/warmStartupMs",
+          "fault-sqlite-schema-direct",
+          "fault-mysql-credentials-direct",
+          "matrix-cold-run",
+          "matrix-warm-run"
+        ]
       },
       {
         "constant": "retryDelayMs (startup backoff base)",
@@ -128,7 +535,11 @@
         "file": "lib/runtime_startup.js",
         "decision": "retained",
         "rationale": "Exponential floor for the four allowlisted transient connection codes, doubling to at most 1000 ms inside the single startup deadline. Healthy fixture boots never needed a retry (all cold startups succeeded first attempt), so 250 ms only paces retries against a just-restarting dependency; permanent auth/schema/config errors bypass retries entirely (fault-mysql-credentials-direct exited in 286 ms).",
-        "evidence": ["contour-* coldStartupMs", "fault-mysql-credentials-direct", "fault-sqlite-schema-direct"]
+        "evidence": [
+          "contour-* coldStartupMs",
+          "fault-mysql-credentials-direct",
+          "fault-sqlite-schema-direct"
+        ]
       },
       {
         "constant": "shutdownTimeoutMs with 0.8 drain split",
@@ -136,7 +547,10 @@
         "file": "lib/runtime_shutdown.js",
         "decision": "retained",
         "rationale": "Preserves the pre-phase default envelope. Normal signal stops complete in at most 9 ms on every contour, so the 8000 ms drain window exists entirely for slow in-flight work; the real forced case hit the 8000 ms boundary, completed forced disposal in the reserved tail and exited 8025 ms later with code 1 (incomplete stop never reports success). Delayed close callbacks are checked against the absolute deadline in t/unit/runtime_shutdown.js with injected clocks and real subprocess watchdogs.",
-        "evidence": ["contour-* coldShutdownMs/warmShutdownMs", "forced-sqlite-sql-direct"]
+        "evidence": [
+          "contour-* coldShutdownMs/warmShutdownMs",
+          "forced-sqlite-sql-direct"
+        ]
       },
       {
         "constant": "RECOVERY_TIMEOUT_MS",
@@ -144,7 +558,12 @@
         "file": "lib/middleware/session_lifecycle.js",
         "decision": "retained",
         "rationale": "Bounded recovery window for the selected Redis-compatible store after a runtime loss, symmetric with the startup deadline per D-06. Real outages were detected within one 50 ms poll on Redis and Engram and recovered in 150-212 ms in the same PID after a successful public Store probe; the window is headroom for a realistic dependency restart, is never reset by reconnect attempts, and its expiry exits nonzero (t/runtime/redis_session_lifecycle.js deadline tracer).",
-        "evidence": ["outage-redis", "outage-engram", "probe-redis", "probe-engram"]
+        "evidence": [
+          "outage-redis",
+          "outage-engram",
+          "probe-redis",
+          "probe-engram"
+        ]
       },
       {
         "constant": "OPERATION_TIMEOUT_MS / CLOSE_TIMEOUT_MS",
@@ -152,23 +571,112 @@
         "file": "lib/middleware/session_lifecycle.js",
         "decision": "retained",
         "rationale": "Ceilings for one public Store callback and for a graceful client close. Healthy round-trips through the real middleware measured 8-10 ms including connect and the full probe; 1000 ms bounds blackholed in-flight commands and hung closes on degraded hosts while staying far below the recovery window (blackhole and close-fault cases covered by t/unit/middleware/session_lifecycle.js and the real lifecycle suite).",
-        "evidence": ["probe-redis", "probe-engram", "outage-redis", "outage-engram"]
+        "evidence": [
+          "probe-redis",
+          "probe-engram",
+          "outage-redis",
+          "outage-engram"
+        ]
       },
       {
         "constant": "DEFAULT_DELAYS_MS (replacement backoff)",
-        "valueMs": [250, 500, 1000],
+        "valueMs": [
+          250,
+          500,
+          1000
+        ],
         "file": "lib/runtime_cluster.js",
         "decision": "retained",
         "rationale": "Three cumulative replacement attempts per worker slot with growing backoff. A real SIGKILLed worker was replaced and serving again in 544-600 ms (250 ms backoff plus boot); the sequence bounds crash-loop impact while tolerating three transient worker losses, and exhaustion stops peers with a nonzero cluster exit (t/unit/runtime_cluster.js supervisor cases).",
-        "evidence": ["replacement-sqlite-sql", "replacement-sqlite-redis", "replacement-sqlite-engram", "replacement-mysql-sql"]
+        "evidence": [
+          "replacement-sqlite-sql",
+          "replacement-sqlite-redis",
+          "replacement-sqlite-engram",
+          "replacement-mysql-sql"
+        ]
       },
       {
         "constant": "DEFAULT_SHUTDOWN_MS / DEFAULT_FORCE_RESERVE_MS",
-        "valueMs": [12000, 500],
+        "valueMs": [
+          12000,
+          500
+        ],
         "file": "lib/runtime_cluster.js",
         "decision": "retained",
         "rationale": "The supervisor waits one full worker shutdown budget (10000 ms) plus 2000 ms of primary-side accounting before SIGKILL; observed supervisor stops completed in 8-11 ms after all workers drained, and the overdue-worker path escalates to SIGKILL with a 500 ms reserve and a nonzero exit (t/unit/runtime_cluster.js bounded-overdue case).",
-        "evidence": ["replacement-* supervisorStopMs", "contour-*-cluster coldShutdownMs/warmShutdownMs"]
+        "evidence": [
+          "replacement-* supervisorStopMs",
+          "contour-*-cluster coldShutdownMs/warmShutdownMs"
+        ]
+      },
+      {
+        "constant": "DEFAULT_TICK_MS (delivery outbox worker)",
+        "valueMs": 30000,
+        "file": "lib/scheduler/delivery_outbox_worker.js",
+        "decision": "retained",
+        "rationale": "Bounded delivery tick per the D-05 envelope (~30s): far below any user-facing expectation (delivery is background-only per D-02 and the operator doc states ~30s worst-case first-delivery latency) while keeping MySQL sweep load negligible for self-hosted deployments. The worker is always-on with an immediate startup catch-up sweep, so a restart never waits a tick. The delivery-outcome stage proves exhaustion of the full 5-attempt backoff inside a bounded window; its suite shrinks the tick to 200ms through a test-only preload, never through a production knob.",
+        "evidence": [
+          "delivery-outcome suite contour durations (email/edition contours complete the full 1s..30s backoff envelope to terminal failed)",
+          "t/unit/scheduler/delivery_outbox_worker.js tick/lifecycle contracts",
+          "docs/runtime-lifecycle.md delivery runbook (~30s latency note)"
+        ]
+      },
+      {
+        "constant": "LOCK_TTL_MINUTES (delivery outbox sweep lock)",
+        "valueMs": 60000,
+        "file": "lib/scheduler/delivery_outbox_worker.js",
+        "decision": "retained",
+        "rationale": "Calibrated to the 30s tick (~2x tick plus sweep): the reminder scheduler's 60-minute default would let an expired-lock overlap run for an hour, while a 1-minute TTL bounds double-sweep overlap to one tick. The per-record optimistic claim (WHERE id AND attempts = expected) keeps any overlap harmless - at-least-once, never a double-send the executor contract forbids relying on. The lock is acquired and released around every sweep in the same process-group tree the delivery-outcome stage exercises across four contours.",
+        "evidence": [
+          "delivery-outcome suite (four contours sweeping under the lock at the shrunk test tick)",
+          "t/unit/scheduler/delivery_outbox_worker.js lock-held skip and release contracts",
+          "t/unit/scheduler_task_lock.js conditional-UPDATE claim contracts"
+        ]
+      }
+    ]
+  },
+  "deliveryOutcome": {
+    "capturedAt": "2026-10-02T17:40:00Z",
+    "sourceHead": "1457f737bad091e6a1504eb668448e3c370f5681",
+    "sourceNote": "Plan 04-04 measurements, taken on the committed suite bytes (test(04-04) suite commit). The working tree differed from sourceHead only by pre-existing foreign WIP files owned by another session (passport/feed/docker-compose/deploy/.env.example/session-deactivation, untouched). The command runs all four contours (email, edition_event, cache, control) of the MUT-03 fault-injection suite against the caller-started compose fixture with the registered stage env, under a parent process-group watchdog that owns the child tree. Every contour boots its own bin/wwww child on a fresh MySQL scratch database created and dropped through the fixture's root account, drives the seven-family mutation matrix through real HTTP, and asserts exact success flashes plus committed follow-up state; the email and edition contours additionally drain the faulted outbox records through the real production backoff (1s..30s, five attempts) to terminal failed.",
+    "host": {
+      "platform": "darwin",
+      "arch": "arm64",
+      "node": "v22.23.0"
+    },
+    "services": {
+      "mysql": {
+        "version": "8.0.45"
+      },
+      "redis": {
+        "version": "8.8.0"
+      }
+    },
+    "selection": "Dedicated leavepilot-runtime-test compose fixture on loopback 13306/16379, two successful fresh-process runs of the suite command with the registered stage environment on the final pinned source; raw elapsed monotonic time from spawn to exit includes child cleanup. A separate process-group parent watchdog bounded each run at 180000ms. No failed sample was used to derive the deadline.",
+    "failedProbes": [
+      {
+        "identity": "dispatcher-tdz-probe",
+        "durationMs": 229,
+        "exitCode": 1,
+        "cause": "main() dispatch reached SUITE_CONTOURS before initialization (temporal dead zone) - fixture-authoring bug fixed before measurement"
+      },
+      {
+        "identity": "redirect-chain-probe",
+        "durationMs": 4364,
+        "exitCode": 1,
+        "cause": "outcome follower assumed a single redirect hop; /calendar/bookleave redirects via / which itself redirects - fixed before measurement"
+      },
+      {
+        "identity": "bulk-label-probe",
+        "durationMs": 6528,
+        "exitCode": 1,
+        "cause": "expected the route segment in the bulk flash; the flash carries the translated label (Approve/Reject) - fixed before measurement"
+      },
+      {
+        "identity": "doubled-event-count-probe",
+        "durationMs": 21970,
+        "exitCode": 1,
+        "cause": "structured log lines carry the event name twice (msg + event fields); counting switched to line-based before measurement"
       }
     ]
   }

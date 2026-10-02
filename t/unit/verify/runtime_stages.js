@@ -36,6 +36,7 @@ describe('runtime lifecycle stages', () => {
     expect(registry.profile('ci-runtime').authoritative).to.equal(true);
     expect(registry.profile('ci-runtime').stageIds).to.deep.equal([
       'redis-session', 'engram-session', 'runtime-matrix', 'cache-correctness',
+      'delivery-outcome',
     ]);
     // The Phase 3 stage is additive: the Phase 2 runtime-matrix definition
     // (argv and dependencies) stays byte-unchanged.
@@ -46,6 +47,8 @@ describe('runtime lifecycle stages', () => {
       '--timeout', '15000', '--require', 't/lib/skip_honesty.js',
     ]);
     expect(registry.stage('cache-correctness').dependencies).to.deep.equal([]);
+    // The Phase 4 stage is additive too and carries no dependencies.
+    expect(registry.stage('delivery-outcome').dependencies).to.deep.equal([]);
   });
 
   it('keeps fixed argv, prerequisite selections and synthetic test-only inputs', () => {
@@ -57,12 +60,14 @@ describe('runtime lifecycle stages', () => {
         '--timeout', '15000', '--require', 't/lib/skip_honesty.js',
       ],
       'cache-correctness': ['t/fixtures/runtime/cache_case.js', '--suite'],
+      'delivery-outcome': ['t/fixtures/runtime/delivery_case.js', '--suite'],
     };
     const expectedSelection = {
       'redis-session': 'redis',
       'engram-session': 'engram',
       'runtime-matrix': 'all',
       'cache-correctness': 'redis',
+      'delivery-outcome': 'redis',
     };
     for (const id of Object.keys(expectedArgs)) {
       const stage = registry.stage(id);
@@ -85,15 +90,21 @@ describe('runtime lifecycle stages', () => {
     // The cache-correctness budget pins every source the stage executes or
     // freezes: the case program, the mocha wrapper that shares its frozen
     // family-list contract, and the cache/invalidation production modules.
+    // The delivery-outcome budget pins the MUT-03 case program plus the
+    // delivery production modules whose retry/tick envelope it calibrates.
     for (const pinned of [
       't/fixtures/runtime/cache_case.js',
       't/runtime/cache_correctness.js',
       'lib/cache/team_view_cache.js',
       'lib/model/db/team_view_invalidation.js',
+      't/fixtures/runtime/delivery_case.js',
+      'lib/model/delivery_outbox.js',
+      'lib/scheduler/delivery_outbox_worker.js',
+      'lib/edition/community.js',
     ]) {
       expect(timings.sourceSha256[pinned], pinned).to.be.a('string').and.have.lengthOf(64);
     }
-    for (const id of ['redis-session', 'engram-session', 'runtime-matrix', 'cache-correctness']) {
+    for (const id of ['redis-session', 'engram-session', 'runtime-matrix', 'cache-correctness', 'delivery-outcome']) {
       const measured = timings.stages[id];
       expect(measured.samples, id).to.have.lengthOf.at.least(2);
       for (const sample of measured.samples) {
@@ -154,6 +165,25 @@ describe('runtime lifecycle stages', () => {
     // before any probe. The stage must never provision its own services.
     const result = spawnSync(process.execPath,
       ['t/fixtures/runtime/cache_case.js', '--prerequisite', 'redis'],
+      {
+        cwd: root,
+        encoding: 'utf8',
+        timeout: 9000,
+        env: Object.assign({}, RUNTIME_ENV, {TEST_REDIS_PORT: '1'}),
+      });
+    expect(result.error).to.equal(undefined);
+    expect(result.status).to.equal(1);
+    expect(result.stderr).to.match(/missing-prerequisite|Dedicated TEST_REDIS_PORT required/);
+    expect(result.stderr).to.include(SETUP);
+    expect(result.stdout).to.not.include('ready');
+  });
+
+  it('reports an unusable delivery-outcome endpoint as a red prerequisite with the exact setup command', () => {
+    // Same red-with-guidance contract for the delivery suite: the fixture
+    // pins its dedicated port, so a wrong port is rejected by the input
+    // guard before any probe. The stage must never provision its services.
+    const result = spawnSync(process.execPath,
+      ['t/fixtures/runtime/delivery_case.js', '--prerequisite', 'redis'],
       {
         cwd: root,
         encoding: 'utf8',
