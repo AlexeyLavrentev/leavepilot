@@ -15,6 +15,7 @@ const emailTemplatePaths = require('./lib/email_template_paths');
 const partialTemplatePaths = require('./lib/partial_template_paths');
 const features     = require('./lib/features');
 const createSessionMiddleware = require('./lib/middleware/withSession');
+const redirectGuard = require('./lib/middleware/session_aware_redirect');
 const i18nextMiddleware = require('i18next-http-middleware');
 const { initI18next } = require('./lib/i18n');
 
@@ -199,8 +200,27 @@ app.get('/language/:lng', function(req, res) {
   const supportedLanguages = config.get('supported_languages') || ['en'];
   const targetLanguage = req.params.lng;
 
+  // The Referer is request-controlled: only same-origin targets may be
+  // redirected to (see isSafeRelativeTarget for what counts as off-origin).
+  // The header is always an absolute URL, so a same-origin Referer is reduced
+  // to its path before the safety check; anything else falls back to '/'.
+  let backTo = '/';
+  const referer = req.get('Referer');
+  if (referer) {
+    try {
+      const ref = new URL(referer);
+      const refPath = ref.pathname + ref.search;
+      if (ref.origin === req.protocol + '://' + req.get('host')
+        && redirectGuard.isSafeRelativeTarget(refPath)) {
+        backTo = refPath;
+      }
+    } catch {
+      backTo = '/';
+    }
+  }
+
   if (!supportedLanguages.includes(targetLanguage)) {
-    return res.redirect(req.get('Referer') || '/');
+    return res.redirect(backTo);
   }
 
   if (req.i18n && req.i18n.changeLanguage) {
@@ -209,7 +229,7 @@ app.get('/language/:lng', function(req, res) {
 
   res.cookie('i18next', targetLanguage);
 
-  return res.redirect(req.get('Referer') || '/');
+  return res.redirect(backTo);
 });
 
 // Enable flash messages within session
