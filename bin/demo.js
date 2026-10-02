@@ -43,7 +43,10 @@ const DEMO_PORT = String(process.env.DEMO_PORT || '3001').trim();
 const DEMO_URL = `http://localhost:${DEMO_PORT}`;
 
 const ADMIN_EMAIL = 'demo-admin@leavepilot.local';
-const ADMIN_PASSWORD = 'DemoLeavePilot1!';
+// Random per run: a hardcoded demo password published in the repository made
+// every demo stand carry a public credential (audit finding #13). The value
+// is printed once in the demo_complete summary below.
+const ADMIN_PASSWORD = require('crypto').randomBytes(12).toString('base64url');
 
 const PRETAG_BUILD_HINT = 'docker build --target runtime -t ghcr.io/alexeylavrentev/leavepilot-community:latest .';
 const TEARDOWN_COMMAND = `docker compose -f ${COMPOSE_FILE} down -v`;

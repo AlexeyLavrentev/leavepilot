@@ -102,7 +102,7 @@ services:
       APPLICATION_DOMAIN: ${APPLICATION_DOMAIN:-}
       PROMOTION_WEBSITE_DOMAIN: ${PROMOTION_WEBSITE_DOMAIN:-}
     ports:
-      - "${DEMO_PORT:-3001}:3000"
+      - "127.0.0.1:${DEMO_PORT:-3001}:3000"
     healthcheck:
       test: ["CMD", "node", "-e", "require('http').get('http://127.0.0.1:3000/', (res) => { process.exit(res.statusCode >= 200 && res.statusCode < 500 ? 0 : 1); }).on('error', () => process.exit(1))"]
       interval: 30s
