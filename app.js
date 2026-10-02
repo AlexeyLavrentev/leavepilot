@@ -369,8 +369,10 @@ if (app.get('env') === 'development') {
 app.use(function(err, req, res, _next) {
     logError(err, req);
     res.status(err.status || 500);
+    // Driver/ORM error text must not reach the client: the error view falls
+    // back to its generic i18n message when no message is provided.
     res.render('error', {
-        message: err.message,
+        message: '',
         error: {}
     });
 });
