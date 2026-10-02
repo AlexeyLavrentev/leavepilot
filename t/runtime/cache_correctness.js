@@ -111,4 +111,45 @@ describe('real cross-worker cache correctness', function() {
       assert.ok(['appears', 'disappears'].includes(family.direction), `${family.name}: unknown direction`);
     }
   });
+
+  it('bypass contour: a clustered deployment without shared coordination recomputes every read and never caches (D-01)', async function() {
+    this.timeout(180000);
+    const result = await caseResult(['--case', 'bypass-no-coordination'], 150000);
+    assert.equal(result.case, 'bypass-no-coordination');
+    assert.equal(result.workers, 2);
+    assert.equal(result.distinct_worker_pids, 2);
+    assert.equal(result.reads_ok_both_workers, true);
+    // The stale-memory regression trap: the mutation through worker B is
+    // visible in the twice-warmed worker A's very next read.
+    assert.equal(result.mutation_visible_through_warmed_worker, true);
+    assert.notEqual(result.mutation_worker_pid, result.read_worker_pid,
+      'the mutation must be served by a different worker than the warmed reads');
+    assert.equal(result.bypass_event_logged, true);
+    assert.equal(result.teamview_keys_in_store, 0, 'nothing may be cached without shared coordination');
+    assert.equal(result.signal_exit, 0);
+  });
+
+  it('outage contour: losing the shared store degrades to bypass recompute without exiting and resumes on recovery (D-05)', async function() {
+    this.timeout(240000);
+    const result = await caseResult(['--case', 'store-outage'], 210000);
+    assert.equal(result.case, 'store-outage');
+    assert.equal(result.workers, 2);
+    assert.equal(result.cache_key_warmed_before_outage, true);
+    // Bounded 200 responses with fresh recomputed content while the store is
+    // gone; the process never exits and never restarts a worker.
+    assert.equal(result.reads_ok_during_outage, true);
+    assert.equal(result.mutation_visible_during_outage, true);
+    assert.equal(result.worker_pids_unchanged, true);
+    assert.equal(result.bypass_transition_logged, true);
+    assert.equal(result.invalidation_failure_logged, true);
+    // Recovery in the same process: caching resumes and the shared version
+    // advanced at or beyond the number of mutations attempted during the
+    // outage.
+    assert.equal(result.resumed_caching, true);
+    assert.equal(result.version_advanced, true);
+    assert.equal(result.version_at_or_beyond_outage_mutations, true);
+    assert.ok(result.version_after_recovery > result.version_before_outage,
+      `version did not advance: ${result.version_before_outage} -> ${result.version_after_recovery}`);
+    assert.equal(result.signal_exit, 0);
+  });
 });

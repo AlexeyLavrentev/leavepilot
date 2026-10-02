@@ -20,12 +20,20 @@ const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
 const childBaseEnv = Object.fromEntries(['PATH', 'TMPDIR', 'LANG'].filter(key => process.env[key])
   .map(key => [key, process.env[key]]));
 
-// Evaluated in the primary and in every worker before bin/wwww_cluster loads
-// the application. The primary keeps the cluster_case.js import guard (it must
-// never load application, cache or model code); every worker points BOTH the
-// session store and the team-view cache at the shared Redis fixture through the
-// nconf seam and stamps X-Test-Worker-Pid so the case can target workers.
-if (process.env.TEST_CACHE_CASE_PRELOAD === '1') {
+// Model-mutating CLI contour (Pitfall 4): point the lazily-created cache
+// client at the shared fixture so hook-driven bumps open a real socket the
+// CLI process must close alongside its database connection.
+if (process.env.TEST_CACHE_CLI_PRELOAD === '1') {
+  require('../../../lib/config').set('sessionStore', {
+    useRedis: true,
+    redisConnectionConfiguration: {host: HOST, port: PORTS.redis},
+  });
+} else if (process.env.TEST_CACHE_CASE_PRELOAD === '1') {
+  // Evaluated in the primary and in every worker before bin/wwww_cluster loads
+  // the application. The primary keeps the cluster_case.js import guard (it must
+  // never load application, cache or model code); every worker selects the
+  // session store through the nconf seam and stamps X-Test-Worker-Pid so the
+  // case can target workers.
   if (require('node:cluster').isPrimary) {
     const Module = require('node:module');
     const forbidden = /(?:^|\/)(?:app\.js|withSession\.js|team_view_cache\.js|runtime_startup\.js|runtime_shutdown\.js|scheduler\/|model\/db\/)/;
@@ -47,10 +55,40 @@ if (process.env.TEST_CACHE_CASE_PRELOAD === '1') {
       return originalEmit.apply(this, arguments);
     };
     const config = require('../../../lib/config');
-    config.set('sessionStore', {
-      useRedis: true,
-      redisConnectionConfiguration: {host: HOST, port: PORTS.redis},
-    });
+    if (process.env.TEST_CACHE_CASE_STORE === 'sql') {
+      // D-01 contour: SQL sessions and no shared coordination configured - the
+      // clustered declaration (stamped by bin/wwww_cluster) then forces the
+      // bypass-no-coordination cache policy.
+      config.set('sessionStore', {useRedis: false});
+    } else {
+      config.set('sessionStore', {
+        useRedis: true,
+        redisConnectionConfiguration: {host: HOST, port: PORTS.redis},
+      });
+    }
+
+    // D-05 contour: route ONLY the team-view cache client through a
+    // controllable RESP2 fault proxy in front of the real Redis fixture (the
+    // Phase 2 redis_session_case.js outage mechanism). Sessions keep their
+    // direct connection so the cache degradation is observed without dragging
+    // the session store onto its unready/exit track.
+    const outageProxyPort = Number(process.env.TEST_CACHE_OUTAGE_PROXY_PORT);
+    if (outageProxyPort) {
+      const Module = require('node:module');
+      const originalLoad = Module._load;
+      Module._load = function(request, parent) {
+        const loaded = originalLoad.apply(this, arguments);
+        if (request === 'redis' && parent && /team_view_cache\.js$/.test(parent.filename)) {
+          return {
+            createClient: options => loaded.createClient({
+              ...options,
+              socket: {...(options && options.socket), host: HOST, port: outageProxyPort},
+            }),
+          };
+        }
+        return loaded;
+      };
+    }
   }
 } else if (require.main === module) {
   main().catch(error => {
@@ -79,6 +117,58 @@ async function pingResp(port) {
       else if (response.length > 64) { fail(); }
     });
   });
+}
+
+// RESP2 fault proxy (the Phase 2 redis_session_case.js /
+// redis_session_lifecycle.js outage mechanism): while blocked it destroys
+// every existing connection and every new downstream connection, which the
+// cache client's fail-fast socket options (disableOfflineQueue and
+// connectTimeout from 03-01) turn into an immediate bypass instead of a hang.
+function startProxy(host, port) {
+  const sockets = new Set();
+  let blocked = false;
+  const server = net.createServer(downstream => {
+    sockets.add(downstream);
+    downstream.on('close', () => sockets.delete(downstream));
+    if (blocked) { downstream.destroy(); return; }
+    const upstream = net.connect(port, host);
+    sockets.add(upstream);
+    upstream.on('close', () => sockets.delete(upstream));
+    downstream.on('error', () => upstream.destroy());
+    upstream.on('error', () => downstream.destroy());
+    downstream.on('data', chunk => upstream.write(chunk));
+    upstream.on('data', chunk => downstream.write(chunk));
+  });
+  return {
+    setBlocked(value) {
+      blocked = value;
+      if (blocked) { for (const socket of sockets) { socket.destroy(); } }
+    },
+    async listen() {
+      await new Promise((resolve, reject) => {
+        server.once('error', reject);
+        server.listen(0, HOST, resolve);
+      });
+      return server.address().port;
+    },
+    async close() {
+      for (const socket of sockets) { socket.destroy(); }
+      await new Promise(resolve => server.close(resolve));
+    },
+  };
+}
+
+const countOccurrences = (text, needle) => text.split(needle).length - 1;
+
+// Every wait in this fixture carries an explicit deadline: a hang is a
+// failure, never a slow pass.
+async function until(predicate, timeoutMs, label) {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    if (await predicate()) { return; }
+    await wait(50);
+  }
+  assert.fail(`Timed out after ${timeoutMs}ms waiting for ${label}`);
 }
 
 function sqlConnection(database, user, password) {
@@ -512,6 +602,24 @@ async function bookLeave(port, cookie, leaveTypeId, date) {
   assert.equal(booking.status, 302, booking.body.slice(0, 300));
   const alerts = await consumeFlash(port, cookie, `booking ${date}`);
   assert.ok(alerts.some(text => /added/i.test(text)), `booking ${date} did not succeed: ${JSON.stringify(alerts)}`);
+  assert.ok(booking.workerPid, `booking ${date} did not record a worker pid`);
+  return String(booking.workerPid);
+}
+
+// Book one leave per attempt on a fresh working day until the wanted worker
+// serves the POST: cluster round-robin cannot be told which worker to use,
+// and re-POSTing the same date after a wrong-worker attempt would trip the
+// overlap validation, so every attempt carries its own date.
+async function bookLeaveThroughWorker(port, wantedPid, cookie, leaveTypeId, dates) {
+  const deadline = Date.now() + 15000;
+  for (const date of dates) {
+    if (Date.now() >= deadline) { break; }
+    const workerPid = await bookLeave(port, cookie, leaveTypeId, date);
+    if (workerPid === String(wantedPid)) {
+      return {date, workerPid};
+    }
+  }
+  throw new Error(`worker ${wantedPid} never served a booking attempt`);
 }
 
 async function decideLeave(port, cookie, action, leaveId) {
@@ -628,7 +736,7 @@ async function runFamily(family, ctx) {
   };
 }
 
-async function bootFamiliesCluster(env) {
+async function bootCluster(env) {
   const port = Number(env.PORT);
   const proc = spawnInGroup(process.execPath, ['--require', __filename, 'bin/wwww_cluster'], {
     cwd: root, env: {...childBaseEnv, ...env}, stdio: ['ignore', 'pipe', 'pipe'],
@@ -659,7 +767,7 @@ async function bootFamiliesCluster(env) {
   }
 }
 
-async function stopFamiliesCluster(cluster) {
+async function stopCluster(cluster) {
   clearTimeout(cluster.watchdog);
   try {
     if (cluster.redis.isOpen) {
@@ -671,6 +779,20 @@ async function stopFamiliesCluster(cluster) {
   cluster.proc.kill('SIGTERM');
   const stopped = await new Promise(resolve => cluster.proc.once('close', code => resolve(code)));
   assert.equal(stopped, 0, cluster.output());
+  await terminateTree(cluster.proc, {graceMs: 100});
+}
+
+// Teardown for cases that assert their own SIGTERM exit code before calling
+// this (waiting for a second 'close' event would hang).
+async function teardownCluster(cluster) {
+  clearTimeout(cluster.watchdog);
+  try {
+    if (cluster.redis.isOpen) {
+      const keys = await cluster.redis.keys('teamview:*');
+      if (keys.length) { await cluster.redis.del(keys); }
+    }
+  } catch { /* best-effort owned cleanup */ }
+  try { if (cluster.redis.isOpen) { await cluster.redis.quit(); } } catch { /* best-effort */ }
   await terminateTree(cluster.proc, {graceMs: 100});
 }
 
@@ -1069,7 +1191,7 @@ async function runFamilies() {
     const leaverEmail = `fam-leaver-${runTag}@example.test`;
     const seeded = await seed(env, viewerEmail, leaverEmail);
 
-    const cluster = await bootFamiliesCluster(env);
+    const cluster = await bootCluster(env);
     try {
       const viewer = await login(cluster.port, viewerEmail);
       const leaver = await login(cluster.port, leaverEmail);
@@ -1109,7 +1231,7 @@ async function runFamilies() {
       }
       workersCount = cluster.workers.length;
     } finally {
-      await stopFamiliesCluster(cluster);
+      await stopCluster(cluster);
     }
   });
 
@@ -1127,7 +1249,7 @@ async function runFamilies() {
     const victimEmail = `fam-del-victim-${runTag}@example.test`;
     const seeded = await seed(env, viewerEmail, victimEmail);
 
-    const cluster = await bootFamiliesCluster(env);
+    const cluster = await bootCluster(env);
     try {
       const viewer = await login(cluster.port, viewerEmail);
       await request(cluster.port, '/calendar/', viewer.cookie);
@@ -1156,7 +1278,7 @@ async function runFamilies() {
       }, ctx));
       workersCount = cluster.workers.length;
     } finally {
-      await stopFamiliesCluster(cluster);
+      await stopCluster(cluster);
     }
   });
 
@@ -1170,10 +1292,288 @@ async function runFamilies() {
   }) + '\n');
 }
 
+// ===== Bypass-no-coordination contour (CACHE-02, D-01) =====================
+//
+// A clustered deployment (bin/wwww_cluster stamps LEAVEPILOT_CLUSTERED) with
+// no shared coordination configured (SQL session store) must recompute every
+// team-view read and never cache anywhere. The decisive assertion is the
+// stale-memory regression trap: warming the SAME viewer twice through worker
+// A and then mutating through worker B must still leave worker A's very next
+// read fresh - exactly the sequence that serves stale data if per-worker
+// memory caching ever returns under a cluster.
+
+async function runBypassNoCoordination() {
+  await prerequisite('redis');
+  await withDatabase('mysql', async (database, storage, admin) => {
+    const port = await freePort();
+    const env = {
+      ...baseEnv('mysql', database, port, storage),
+      TEST_CACHE_CASE_STORE: 'sql',
+      // Explicit per the plan wording; bin/wwww_cluster stamps the same
+      // declaration before forking when it is unset.
+      LEAVEPILOT_CLUSTERED: '1',
+    };
+    const migration = await child(['bin/db_update.js'], env, 20000);
+    assert.equal(migration.code, 0, migration.output);
+
+    const runTag = crypto.randomBytes(4).toString('hex');
+    const viewerEmail = `byp-viewer-${runTag}@example.test`;
+    const leaverEmail = `byp-leaver-${runTag}@example.test`;
+    const seeded = await seed(env, viewerEmail, leaverEmail);
+
+    const cluster = await bootCluster(env);
+    try {
+      const viewer = await login(cluster.port, viewerEmail);
+      const leaver = await login(cluster.port, leaverEmail);
+      await request(cluster.port, '/calendar/', viewer.cookie);
+
+      const plan = workMonthPlan(dateInZone('Europe/London'));
+      const route = `/calendar/teamview/?date=${plan.anchor}`;
+      const [workerA, workerB] = cluster.workers;
+
+      // (a) The viewer's team view renders through BOTH workers.
+      const firstB = await requestFromWorker(cluster.port, workerB, route, viewer.cookie);
+      const firstA = await requestFromWorker(cluster.port, workerA, route, viewer.cookie);
+      assert.equal(firstA.status, 200, firstA.body.slice(0, 400));
+      assert.equal(firstB.status, 200, firstB.body.slice(0, 400));
+
+      // (b) Warm the SAME viewer TWICE through worker A - more than enough
+      // reads for a per-worker memory cache to have stabilized an entry -
+      // then mutate through worker B and read through worker A immediately.
+      const warmA1 = await requestFromWorker(cluster.port, workerA, route, viewer.cookie);
+      const warmA2 = await requestFromWorker(cluster.port, workerA, route, viewer.cookie);
+      assert.equal(warmA1.status, 200, warmA1.body.slice(0, 400));
+      assert.equal(warmA2.status, 200, warmA2.body.slice(0, 400));
+
+      const booking = await bookLeaveThroughWorker(cluster.port, workerB, leaver.cookie,
+        seeded.leaveTypeId, plan.leaveDates);
+      const leaveRow = await sqlOne(admin, database,
+        `SELECT id FROM #DB#.\`Leaves\` WHERE date_start = '${booking.date}' ORDER BY id DESC LIMIT 1`);
+      assert.ok(leaveRow && leaveRow.id, 'no leave row for the worker-B booking');
+
+      const nextReadA = await requestFromWorker(cluster.port, workerA, route, viewer.cookie);
+      assert.equal(nextReadA.status, 200, nextReadA.body.slice(0, 400));
+      const mutationVisibleThroughWarmedWorker = nextReadA.body.includes(`data-leave-id="${leaveRow.id}"`);
+      assert.ok(mutationVisibleThroughWarmedWorker,
+        `worker A served stale content after a worker B mutation (booked leave ${leaveRow.id} on ${booking.date} is missing)`);
+
+      // (c) The degraded policy is visible in the application output.
+      const outputText = cluster.output();
+      const bypassEventLogged = outputText.includes('team_view_cache_bypass')
+        && outputText.includes('bypass-no-coordination');
+      assert.ok(bypassEventLogged,
+        `the bypass-no-coordination warn event is missing from the cluster output: ${outputText}`);
+
+      // (d) Nothing was cached anywhere: the fixture store holds zero
+      // teamview keys.
+      const teamviewKeys = await cluster.redis.keys('teamview:*');
+      assert.equal(teamviewKeys.length, 0,
+        `bypass-no-coordination cached anyway: ${teamviewKeys.join(',')}`);
+
+      cluster.proc.kill('SIGTERM');
+      const stopped = await new Promise(resolve => cluster.proc.once('close', code => resolve(code)));
+      assert.equal(stopped, 0, cluster.output());
+
+      process.stdout.write(JSON.stringify({
+        case: 'bypass-no-coordination',
+        workers: cluster.workers.length,
+        distinct_worker_pids: new Set(cluster.workers).size,
+        reads_ok_both_workers: firstA.status === 200 && firstB.status === 200,
+        mutation_visible_through_warmed_worker: mutationVisibleThroughWarmedWorker,
+        mutation_worker_pid: booking.workerPid,
+        read_worker_pid: String(workerA),
+        bypass_event_logged: bypassEventLogged,
+        teamview_keys_in_store: teamviewKeys.length,
+        signal_exit: stopped,
+      }) + '\n');
+    } finally {
+      await teardownCluster(cluster);
+    }
+  });
+}
+
+// ===== Store-outage contour (CACHE-02, D-05) ===============================
+//
+// With the shared store selected, a runtime outage of that store must degrade
+// the team-view cache to bypass recompute WITHOUT exiting the process (the
+// cache never copies the session unready/exit track) and resume caching once
+// the store returns, with the company version advanced past its pre-outage
+// value - the first post-recovery bump is what makes the stale pre-outage
+// entry unreachable again (recovery coherence, D-09).
+
+async function runStoreOutage() {
+  await prerequisite('redis');
+  const proxy = startProxy(HOST, PORTS.redis);
+  const proxyPort = await proxy.listen();
+  try {
+    await withDatabase('mysql', async (database, storage, admin) => {
+      const port = await freePort();
+      const env = {
+        ...baseEnv('mysql', database, port, storage),
+        TEST_CACHE_OUTAGE_PROXY_PORT: String(proxyPort),
+      };
+      const migration = await child(['bin/db_update.js'], env, 20000);
+      assert.equal(migration.code, 0, migration.output);
+
+      const runTag = crypto.randomBytes(4).toString('hex');
+      const viewerEmail = `out-viewer-${runTag}@example.test`;
+      const leaverEmail = `out-leaver-${runTag}@example.test`;
+      const seeded = await seed(env, viewerEmail, leaverEmail);
+
+      const cluster = await bootCluster(env);
+      try {
+        const viewer = await login(cluster.port, viewerEmail);
+        const leaver = await login(cluster.port, leaverEmail);
+        await request(cluster.port, '/calendar/', viewer.cookie);
+
+        const plan = workMonthPlan(dateInZone('Europe/London'));
+        const route = `/calendar/teamview/?date=${plan.anchor}`;
+        const [workerA, workerB] = cluster.workers;
+        const versionKey = `teamview:version:${seeded.companyId}`;
+        const ctx = {
+          port: cluster.port, redis: cluster.redis, workers: cluster.workers,
+          viewer, leaver, versionKey,
+        };
+
+        // Warm both workers until the shared HTML entry exists at the current
+        // version (workers connect their cache clients lazily, see 03-03).
+        let versionBeforeOutage = 0;
+        let warmed = false;
+        for (let attempt = 0; attempt < 20 && !warmed; attempt++) {
+          const warmA = await requestFromWorker(cluster.port, workerA, route, viewer.cookie);
+          const warmB = await requestFromWorker(cluster.port, workerB, route, viewer.cookie);
+          assert.equal(warmA.status, 200, warmA.body.slice(0, 400));
+          assert.equal(warmB.status, 200, warmB.body.slice(0, 400));
+          versionBeforeOutage = Number(await cluster.redis.get(versionKey));
+          assert.ok(versionBeforeOutage > 0, 'company version missing before the outage');
+          warmed = await hasWarmedHtmlEntry(ctx, versionBeforeOutage);
+          if (!warmed) { await wait(50); }
+        }
+        assert.ok(warmed, 'team-view HTML never became cached before the outage');
+
+        const modeEventsBeforePause = countOccurrences(cluster.output(), 'team_view_cache_mode');
+
+        // ==== The outage window. ====
+        proxy.setBlocked(true);
+
+        // Reads through BOTH workers stay 200 with fresh recomputed content:
+        // the fail-fast client options make the outage an immediate bypass,
+        // not a hang (every helper here carries its own deadline).
+        const outageReadA = await requestFromWorker(cluster.port, workerA, route, viewer.cookie);
+        const outageReadB = await requestFromWorker(cluster.port, workerB, route, viewer.cookie);
+        assert.equal(outageReadA.status, 200, outageReadA.body.slice(0, 400));
+        assert.equal(outageReadB.status, 200, outageReadB.body.slice(0, 400));
+
+        // The bypass-store-unavailable transition is visible in the output.
+        await until(() => {
+          const text = cluster.output();
+          return text.includes('team_view_cache_bypass') && text.includes('bypass-store-unavailable');
+        }, 5000, 'the bypass-store-unavailable transition to be logged');
+
+        // Mutate while paused: the leaver books a fresh working day through
+        // whichever worker serves; the bump cannot reach the store, and after
+        // its bounded retry window the red team_view_invalidation_failed is
+        // the honest D-09 record.
+        const mutationPidDuringOutage = await bookLeave(cluster.port, leaver.cookie,
+          seeded.leaveTypeId, plan.leaveDates[0]);
+        const outageLeaveRow = await sqlOne(admin, database,
+          `SELECT id FROM #DB#.\`Leaves\` WHERE date_start = '${plan.leaveDates[0]}' ORDER BY id DESC LIMIT 1`);
+        assert.ok(outageLeaveRow && outageLeaveRow.id, 'no leave row for the during-outage booking');
+        await until(() => cluster.output().includes('team_view_invalidation_failed'),
+          5000, 'the during-outage bump failure to be logged');
+
+        const otherPid = mutationPidDuringOutage === String(workerA) ? workerB : workerA;
+        const outageFinalRead = await requestFromWorker(cluster.port, otherPid, route, viewer.cookie);
+        assert.equal(outageFinalRead.status, 200, outageFinalRead.body.slice(0, 400));
+        const mutationVisibleDuringOutage = outageFinalRead.body.includes(`data-leave-id="${outageLeaveRow.id}"`);
+        assert.ok(mutationVisibleDuringOutage,
+          `the during-outage mutation (leave ${outageLeaveRow.id}) was not visible through the other worker`);
+
+        // No exit, no restart: the very same worker PIDs served the whole
+        // outage window, the supervisor is still alive, and the session
+        // store (on its direct connection) never entered its error track.
+        assert.equal(cluster.proc.exitCode, null, 'the cluster exited during the store outage');
+        const duringOutageOutput = cluster.output();
+        assert.ok(!duringOutageOutput.includes('redis_session_store_error'),
+          `the outage touched the session store: ${duringOutageOutput}`);
+
+        // ==== Recovery. ====
+        proxy.setBlocked(false);
+
+        // Both workers' cache clients reconnect on their own; each logs a
+        // team_view_cache_mode event when its ready event re-fires.
+        const modeEventsTarget = modeEventsBeforePause + cluster.workers.length;
+        await until(() => countOccurrences(cluster.output(), 'team_view_cache_mode') >= modeEventsTarget,
+          15000, 'both workers to reconnect their cache clients');
+
+        // The first post-recovery mutation advances the shared version.
+        const recoveryMutationPid = await bookLeave(cluster.port, leaver.cookie,
+          seeded.leaveTypeId, plan.leaveDates[1]);
+        assert.ok(recoveryMutationPid, 'the post-recovery booking did not record a worker pid');
+        await until(async () => Number(await cluster.redis.get(versionKey)) > versionBeforeOutage,
+          10000, 'the company version to advance after the store returned');
+        const versionAfterRecovery = Number(await cluster.redis.get(versionKey));
+        assert.ok(versionAfterRecovery >= versionBeforeOutage + 1,
+          `version ${versionAfterRecovery} did not reach ${versionBeforeOutage} + the during-outage mutations`);
+
+        // Caching resumed in the same process: a fresh teamview key exists at
+        // the advanced version after a post-recovery warm read.
+        let resumedCaching = false;
+        for (let attempt = 0; attempt < 20 && !resumedCaching; attempt++) {
+          const warmA = await requestFromWorker(cluster.port, workerA, route, viewer.cookie);
+          const warmB = await requestFromWorker(cluster.port, workerB, route, viewer.cookie);
+          assert.equal(warmA.status, 200, warmA.body.slice(0, 400));
+          assert.equal(warmB.status, 200, warmB.body.slice(0, 400));
+          resumedCaching = await hasWarmedHtmlEntry(ctx, versionAfterRecovery);
+          if (!resumedCaching) { await wait(50); }
+        }
+        assert.ok(resumedCaching, 'caching did not resume at the advanced version after the store returned');
+
+        // The worker PID set observed after recovery is unchanged.
+        const postRecoveryReadA = await requestFromWorker(cluster.port, workerA, route, viewer.cookie);
+        const postRecoveryReadB = await requestFromWorker(cluster.port, workerB, route, viewer.cookie);
+        assert.equal(postRecoveryReadA.status, 200, postRecoveryReadA.body.slice(0, 400));
+        assert.equal(postRecoveryReadB.status, 200, postRecoveryReadB.body.slice(0, 400));
+        const workerPidsUnchanged = cluster.proc.exitCode === null
+          && String(postRecoveryReadA.workerPid) === String(workerA)
+          && String(postRecoveryReadB.workerPid) === String(workerB);
+        assert.ok(workerPidsUnchanged, 'the worker PID set changed across the outage window');
+
+        cluster.proc.kill('SIGTERM');
+        const stopped = await new Promise(resolve => cluster.proc.once('close', code => resolve(code)));
+        assert.equal(stopped, 0, cluster.output());
+
+        process.stdout.write(JSON.stringify({
+          case: 'store-outage',
+          workers: cluster.workers.length,
+          cache_key_warmed_before_outage: warmed,
+          version_before_outage: versionBeforeOutage,
+          version_after_recovery: versionAfterRecovery,
+          version_advanced: versionAfterRecovery > versionBeforeOutage,
+          version_at_or_beyond_outage_mutations: versionAfterRecovery >= versionBeforeOutage + 1,
+          reads_ok_during_outage: outageReadA.status === 200 && outageReadB.status === 200,
+          mutation_visible_during_outage: mutationVisibleDuringOutage,
+          bypass_transition_logged: true,
+          invalidation_failure_logged: true,
+          worker_pids_unchanged: workerPidsUnchanged,
+          resumed_caching: resumedCaching,
+          signal_exit: stopped,
+        }) + '\n');
+      } finally {
+        await teardownCluster(cluster);
+      }
+    });
+  } finally {
+    await proxy.close();
+  }
+}
+
 async function main() {
   const [mode] = process.argv.slice(2);
   if (mode === '--prerequisite') { await prerequisite('redis'); return; }
   if (mode === '--case' && process.argv[3] === 'shared') { await runShared(); return; }
   if (mode === '--case' && process.argv[3] === 'families') { await runFamilies(); return; }
-  throw new Error('Usage: cache_case.js --prerequisite redis | --case shared | --case families');
+  if (mode === '--case' && process.argv[3] === 'bypass-no-coordination') { await runBypassNoCoordination(); return; }
+  if (mode === '--case' && process.argv[3] === 'store-outage') { await runStoreOutage(); return; }
+  throw new Error('Usage: cache_case.js --prerequisite redis | --case shared | --case families | --case bypass-no-coordination | --case store-outage');
 }
