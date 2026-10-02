@@ -47,7 +47,7 @@ describe('The iCal feed branding', function() {
   const feedOf = async (user, type) => {
     const feed = await models.UserFeed.promise_new_feed({user, type});
 
-    return feed.feed_token;
+    return feed.raw_token;
   };
 
   const fetchFeed = token => employeeAgent.get('/feed/' + token + '/ical.ics');

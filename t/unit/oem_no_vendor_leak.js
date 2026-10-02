@@ -238,7 +238,7 @@ describe('OEM leak surfaces: no vendor name under a custom brand', function() {
       DepartmentId: department.id, activated: true,
     });
     const feed = await models.UserFeed.promise_new_feed({user: employee, type: 'calendar'});
-    feedToken = feed.feed_token;
+    feedToken = feed.raw_token;
 
     employeeAgent = await httpAgent.agent();
   });

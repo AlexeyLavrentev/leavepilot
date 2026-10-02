@@ -40,18 +40,22 @@
       </div>
     </div>
     <div class="feed-card-content">
-      <a class="feed-card-link" href="webcal://{{current_host}}/feed/{{calendar_feed.feed_token}}/ical.ics"><span class="fa fa-rss" aria-hidden="true"></span> {{t "feeds.openFeed"}}</a>
+      {{# if calendar_feed.raw_token }}
+      <a class="feed-card-link" href="webcal://{{current_host}}/feed/{{calendar_feed.raw_token}}/ical.ics"><span class="fa fa-rss" aria-hidden="true"></span> {{t "feeds.openFeed"}}</a>
       <div class="feed-card-url">
-        <code id="calendar-feed-url">{{current_protocol}}://{{current_host}}/feed/{{calendar_feed.feed_token}}/ical.ics</code>
+        <code id="calendar-feed-url">{{current_protocol}}://{{current_host}}/feed/{{calendar_feed.raw_token}}/ical.ics</code>
         <button type="button" class="btn btn-xs btn-default feed-copy-btn" aria-live="polite"
           data-clipboard-target="#calendar-feed-url" data-copy-success="{{t "feeds.copied"}}"
           data-copy-failure="{{t "feeds.copyFailed"}}"><span class="fa fa-clipboard" aria-hidden="true"></span> {{t "feeds.copyUrl"}}</button>
       </div>
+      {{ else }}
+      <p class="workspace-field-help">{{t "feeds.urlOnce"}}</p>
+      {{/ if }}
       <p class="workspace-field-help">{{t "feeds.regenerateHelp"}}</p>
     </div>
     <form method="POST" action="/calendar/feeds/regenerate/" class="workspace-actions workspace-actions--footer feed-card-action">
       <input type="hidden" name="_csrf" value="{{csrf_token}}">
-      <input type="hidden" name="token" value="{{calendar_feed.feed_token}}">
+      <input type="hidden" name="type" value="calendar">
       <button type="submit" class="btn btn-default single-click"><span class="fa fa-refresh" aria-hidden="true"></span> {{t "feeds.regenerate"}}</button>
     </form>
   </article>
@@ -65,18 +69,22 @@
       </div>
     </div>
     <div class="feed-card-content">
-      <a class="feed-card-link" href="webcal://{{current_host}}/feed/{{team_view_feed.feed_token}}/ical.ics"><span class="fa fa-rss" aria-hidden="true"></span> {{t "feeds.openFeed"}}</a>
+      {{# if team_view_feed.raw_token }}
+      <a class="feed-card-link" href="webcal://{{current_host}}/feed/{{team_view_feed.raw_token}}/ical.ics"><span class="fa fa-rss" aria-hidden="true"></span> {{t "feeds.openFeed"}}</a>
       <div class="feed-card-url">
-        <code id="teamview-feed-url">{{current_protocol}}://{{current_host}}/feed/{{team_view_feed.feed_token}}/ical.ics</code>
+        <code id="teamview-feed-url">{{current_protocol}}://{{current_host}}/feed/{{team_view_feed.raw_token}}/ical.ics</code>
         <button type="button" class="btn btn-xs btn-default feed-copy-btn" aria-live="polite"
           data-clipboard-target="#teamview-feed-url" data-copy-success="{{t "feeds.copied"}}"
           data-copy-failure="{{t "feeds.copyFailed"}}"><span class="fa fa-clipboard" aria-hidden="true"></span> {{t "feeds.copyUrl"}}</button>
       </div>
+      {{ else }}
+      <p class="workspace-field-help">{{t "feeds.urlOnce"}}</p>
+      {{/ if }}
       <p class="workspace-field-help">{{t "feeds.regenerateHelp"}}</p>
     </div>
     <form method="POST" action="/calendar/feeds/regenerate/" class="workspace-actions workspace-actions--footer feed-card-action">
       <input type="hidden" name="_csrf" value="{{csrf_token}}">
-      <input type="hidden" name="token" value="{{team_view_feed.feed_token}}">
+      <input type="hidden" name="type" value="teamview">
       <button type="submit" class="btn btn-default single-click"><span class="fa fa-refresh" aria-hidden="true"></span> {{t "feeds.regenerate"}}</button>
     </form>
   </article>

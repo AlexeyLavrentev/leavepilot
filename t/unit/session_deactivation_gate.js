@@ -52,7 +52,7 @@ describe('Deactivated user access gates', function() {
     });
 
     const feed = await models.UserFeed.promise_new_feed({user: employee, type: 'calendar'});
-    feedToken = feed.feed_token;
+    feedToken = feed.raw_token;
 
     employeeAgent = await httpAgent.agent();
     await employeeAgent.post('/login/').send({email: 'deact-employee@test.com', password: 'test123'});
