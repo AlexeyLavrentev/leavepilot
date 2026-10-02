@@ -25,8 +25,12 @@ describe('Community edition module', function() {
       registerScheduler: function(scheduler) {
         this.schedulers.push(scheduler);
       },
+      registerDeliveryExecutor: function(executor) {
+        this.deliveryExecutors.push(executor);
+      },
       schedulers: [],
       multipartRoutes: [],
+      deliveryExecutors: [],
     };
   }
 
@@ -38,12 +42,24 @@ describe('Community edition module', function() {
     expect(registry.routes.map(function(route) { return route.name; }))
       .to.deep.equal(['reminder-schedules-settings', 'reminder-schedules-api']);
     expect(registry.schedulers.map(function(scheduler) { return scheduler.name; }))
-      .to.deep.equal(['leave-start-reminders']);
+      .to.deep.equal(['leave-start-reminders', 'delivery-outbox']);
     expect(registry.notificationProviders).to.deep.equal([]);
     expect(registry.navigationItems.map(function(item) { return item.name; }))
       .to.deep.equal(['auth-config', 'reminder-schedules']);
     expect(registry.multipartRoutes).to.deep.equal([
       {method: 'POST', path: '/users/import/'},
     ]);
+  });
+
+  it('registers the community delivery executors for email and edition events', function() {
+    var registry = createRegistry();
+    community.register({registry: registry});
+
+    expect(registry.deliveryExecutors.map(function(executor) {
+      return executor.deliveryType;
+    })).to.deep.equal(['email', 'edition_event']);
+    registry.deliveryExecutors.forEach(function(executor) {
+      expect(executor.deliver).to.be.a('function');
+    });
   });
 });

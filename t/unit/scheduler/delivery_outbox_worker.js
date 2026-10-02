@@ -415,7 +415,7 @@ describe('Delivery outbox worker', function() {
       await handle.stop();
 
       expect(harness.rows[0].status).to.equal('delivered');
-      const firstWhere = harness.findAllWheres[0];
+      const firstWhere = harness.findAllWheres[0].where;
       expect(firstWhere.status[Op.in]).to.deep.equal(['pending', 'failed']);
     });
 
@@ -478,10 +478,12 @@ describe('Delivery outbox worker', function() {
 
     it('returns the registered executor or null', function() {
       const registry = new EditionRegistry();
-      const executor = {deliveryType: 'edition_event', deliver: async function() {}};
-      registry.registerDeliveryExecutor(executor);
+      const deliver = async function() {};
+      registry.registerDeliveryExecutor({deliveryType: 'edition_event', deliver});
 
-      expect(registry.getDeliveryExecutor('edition_event')).to.equal(executor);
+      const resolved = registry.getDeliveryExecutor('edition_event');
+      expect(resolved.deliveryType).to.equal('edition_event');
+      expect(resolved.deliver).to.equal(deliver);
       expect(registry.getDeliveryExecutor('email')).to.equal(null);
     });
   });

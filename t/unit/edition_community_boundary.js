@@ -116,7 +116,7 @@ describe('Edition community boundary', function() {
       "process.exit(0);",
     ].join(''));
 
-    expect(JSON.parse(output)).to.deep.equal(['leave-start-reminders']);
+    expect(JSON.parse(output)).to.deep.equal(['leave-start-reminders', 'delivery-outbox']);
   });
 
   it('uses the SSO stub (SSO disabled) in community mode', function() {

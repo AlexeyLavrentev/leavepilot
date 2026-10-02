@@ -14,9 +14,9 @@ describe('Delivery outbox domain module', function() {
       const transaction = {id: 'tx-1'};
       const models = {
         DeliveryOutbox : {
-          create : function(payload) {
-            creates.push(payload);
-            return Promise.resolve(payload);
+          create : function(values, options) {
+            creates.push({values, options});
+            return Promise.resolve(values);
           },
         },
       };
@@ -43,27 +43,27 @@ describe('Delivery outbox domain module', function() {
       });
 
       expect(creates.length).to.equal(2);
-      creates.forEach(function(payload) {
-        expect(payload.transaction).to.equal(transaction);
-        expect(payload.status).to.equal('pending');
-        expect(payload.attempts).to.equal(0);
-        expect(payload.nextAttemptAt).to.be.an.instanceOf(Date);
+      creates.forEach(function(entry) {
+        expect(entry.options.transaction).to.equal(transaction);
+        expect(entry.values.status).to.equal('pending');
+        expect(entry.values.attempts).to.equal(0);
+        expect(entry.values.nextAttemptAt).to.be.an.instanceOf(Date);
       });
-      expect(creates[0].deliveryType).to.equal('email');
-      expect(creates[0].eventType).to.equal('submitted');
-      expect(creates[0].companyId).to.equal(1);
-      expect(creates[0].userId).to.equal(7);
-      expect(creates[0].payload).to.equal(JSON.stringify({leaveId: 11}));
-      expect(creates[1].deliveryType).to.equal('edition_event');
+      expect(creates[0].values.deliveryType).to.equal('email');
+      expect(creates[0].values.eventType).to.equal('submitted');
+      expect(creates[0].values.companyId).to.equal(1);
+      expect(creates[0].values.userId).to.equal(7);
+      expect(creates[0].values.payload).to.equal(JSON.stringify({leaveId: 11}));
+      expect(creates[1].values.deliveryType).to.equal('edition_event');
     });
 
     it('stringifies the payload as JSON of references only', async function() {
       const creates = [];
       const models = {
         DeliveryOutbox : {
-          create : function(payload) {
-            creates.push(payload);
-            return Promise.resolve(payload);
+          create : function(values, options) {
+            creates.push({values, options});
+            return Promise.resolve(values);
           },
         },
       };
@@ -80,7 +80,7 @@ describe('Delivery outbox domain module', function() {
         }],
       });
 
-      expect(creates[0].payload).to.equal(
+      expect(creates[0].values.payload).to.equal(
         JSON.stringify({leaveId: 12, action: 'approve', wasPendedRevoke: false})
       );
     });
@@ -101,8 +101,8 @@ describe('Delivery outbox domain module', function() {
         previous = delay;
       });
 
-      // attempts beyond the cap stay at the cap (deterministic random)
-      const capped = deliveryOutbox.nextAttemptDate({attempts: 10, now, random: () => 0});
+      // attempts beyond the cap stay at the cap (deterministic mid-point jitter)
+      const capped = deliveryOutbox.nextAttemptDate({attempts: 10, now, random: () => 0.5});
       expect(capped.getTime() - now.getTime()).to.equal(30000);
     });
 
