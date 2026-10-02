@@ -283,6 +283,39 @@ describe('team view cache policy', function() {
     assert.equal(client.isOpen, true, 'the client is never closed');
   });
 
+  it('closes a healthy client gracefully without destroying it', async function() {
+    configureRedis();
+    const client = fakeClient();
+    teamViewCache._reset({client, ready: true});
+
+    await teamViewCache.close();
+
+    assert.equal(client.isOpen, false, 'graceful close ran');
+    assert.equal(client.destroyed, false, 'no forced teardown on a healthy drain');
+  });
+
+  it('bounds the graceful close: a stalled drain falls back to destroy so callers never hang', async function() {
+    configureRedis();
+    const client = fakeClient();
+    let closeCalls = 0;
+    client.close = () => {
+      closeCalls += 1;
+      return new Promise(() => {}); // a stalled in-flight command never drains
+    };
+    teamViewCache._reset({client, ready: true});
+
+    const startedAt = Date.now();
+    await teamViewCache.close();
+    const elapsed = Date.now() - startedAt;
+
+    assert.equal(closeCalls, 1, 'graceful close attempted exactly once');
+    assert.ok(client.destroyed, 'the stalled drain was destroyed');
+    assert.ok(elapsed >= 950 && elapsed < 2500, `close settled at the ~1s bound (took ${elapsed}ms)`);
+
+    await teamViewCache.close(); // memoized: the same settled promise
+    assert.equal(closeCalls, 1, 'no second close attempt');
+  });
+
   it('preserves single-process memory semantics: insertion-order eviction and TTL expiry (D-03)', async function() {
     config.set('sessionStore', {useRedis: false});
     const memory = teamViewCache._reset();
