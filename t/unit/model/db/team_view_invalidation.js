@@ -329,7 +329,10 @@ describe('team view invalidation hooks', function() {
     const schedule = await model.Schedule.create({company_id: company1.id});
     await until(() => bumpCount(company1.id) === before + 1);
 
-    await schedule.update({monday: 2});
+    // The weekday setters coerce truthy input to works_whole_day (1), so a
+    // genuinely different value must be falsy (coerced to works_none, 2) —
+    // an unchanged row skips the UPDATE and its afterUpdate hook entirely.
+    await schedule.update({monday: 0});
     await until(() => bumpCount(company1.id) === before + 2);
 
     await schedule.destroy();
@@ -341,7 +344,7 @@ describe('team view invalidation hooks', function() {
     const schedule = await model.Schedule.create({user_id: user1.id});
     await until(() => bumpCount(company1.id) === before + 1);
 
-    await schedule.update({monday: 2});
+    await schedule.update({monday: 0});
     await until(() => bumpCount(company1.id) === before + 2);
 
     await schedule.destroy();
