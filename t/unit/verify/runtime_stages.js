@@ -35,10 +35,17 @@ describe('runtime lifecycle stages', () => {
   it('selects every real-service stage in one authoritative profile', () => {
     expect(registry.profile('ci-runtime').authoritative).to.equal(true);
     expect(registry.profile('ci-runtime').stageIds).to.deep.equal([
-      'redis-session', 'engram-session', 'runtime-matrix',
+      'redis-session', 'engram-session', 'runtime-matrix', 'cache-correctness',
     ]);
+    // The Phase 3 stage is additive: the Phase 2 runtime-matrix definition
+    // (argv and dependencies) stays byte-unchanged.
     expect(registry.stage('runtime-matrix').dependencies)
       .to.deep.equal(['redis-session', 'engram-session']);
+    expect(registry.stage('runtime-matrix').args).to.deep.equal([
+      'node_modules/mocha/bin/mocha', 't/runtime/runtime_matrix.js',
+      '--timeout', '15000', '--require', 't/lib/skip_honesty.js',
+    ]);
+    expect(registry.stage('cache-correctness').dependencies).to.deep.equal([]);
   });
 
   it('keeps fixed argv, prerequisite selections and synthetic test-only inputs', () => {
@@ -49,11 +56,13 @@ describe('runtime lifecycle stages', () => {
         'node_modules/mocha/bin/mocha', 't/runtime/runtime_matrix.js',
         '--timeout', '15000', '--require', 't/lib/skip_honesty.js',
       ],
+      'cache-correctness': ['t/fixtures/runtime/cache_case.js', '--suite'],
     };
     const expectedSelection = {
       'redis-session': 'redis',
       'engram-session': 'engram',
       'runtime-matrix': 'all',
+      'cache-correctness': 'redis',
     };
     for (const id of Object.keys(expectedArgs)) {
       const stage = registry.stage(id);
@@ -73,7 +82,18 @@ describe('runtime lifecycle stages', () => {
   it('derives deadlines from retained successful measurements of the pinned sources', () => {
     expect(timings.schemaVersion).to.equal(1);
     expect(timings.margin).to.equal(2);
-    for (const id of ['redis-session', 'engram-session', 'runtime-matrix']) {
+    // The cache-correctness budget pins every source the stage executes or
+    // freezes: the case program, the mocha wrapper that shares its frozen
+    // family-list contract, and the cache/invalidation production modules.
+    for (const pinned of [
+      't/fixtures/runtime/cache_case.js',
+      't/runtime/cache_correctness.js',
+      'lib/cache/team_view_cache.js',
+      'lib/model/db/team_view_invalidation.js',
+    ]) {
+      expect(timings.sourceSha256, pinned).to.be.a('string').and.have.lengthOf(64);
+    }
+    for (const id of ['redis-session', 'engram-session', 'runtime-matrix', 'cache-correctness']) {
       const measured = timings.stages[id];
       expect(measured.samples, id).to.have.lengthOf.at.least(2);
       for (const sample of measured.samples) {
@@ -115,6 +135,25 @@ describe('runtime lifecycle stages', () => {
     // skipped result here would hide a missing service.
     const result = spawnSync(process.execPath,
       ['t/fixtures/runtime/runtime_matrix_case.js', '--prerequisite', 'redis'],
+      {
+        cwd: root,
+        encoding: 'utf8',
+        timeout: 9000,
+        env: Object.assign({}, RUNTIME_ENV, {TEST_REDIS_PORT: '1'}),
+      });
+    expect(result.error).to.equal(undefined);
+    expect(result.status).to.equal(1);
+    expect(result.stderr).to.match(/missing-prerequisite|Dedicated TEST_REDIS_PORT required/);
+    expect(result.stderr).to.include(SETUP);
+    expect(result.stdout).to.not.include('ready');
+  });
+
+  it('reports an unusable cache-correctness endpoint as a red prerequisite with the exact setup command', () => {
+    // Same red-with-guidance contract for the cache suite: the fixture pins
+    // its dedicated port, so a wrong port is rejected by the input guard
+    // before any probe. The stage must never provision its own services.
+    const result = spawnSync(process.execPath,
+      ['t/fixtures/runtime/cache_case.js', '--prerequisite', 'redis'],
       {
         cwd: root,
         encoding: 'utf8',
