@@ -60,7 +60,9 @@ describe('Reuse email from existing acount when creating new company', function(
     register_new_user_func({
       application_host      : application_host,
       user_email            : admin_email,
-      failing_error_message : 'Email is already used',
+      // Security audit #10: the duplicate-email reason is masked (uniform
+      // failure), the registration helper just expects its generic substring.
+      failing_error_message : 'Failed to register user',
     })
     .then(function(data){
       driver = data .driver;
